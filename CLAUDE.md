@@ -41,6 +41,8 @@ CHANGELOG.md                              per-version changes
 
 ## Shipping a version
 
+The site has its own version (the zip name and the Site section of the changelog); each project keeps its own number. Bump the site version on every drop, and the project version only when that project changed.
+
 1. Bump `const VERSION = '0.xx'` near the top of the script in `index.html`.
 2. Add a section to `CHANGELOG.md`.
 3. Update the badge in `public/index.html` (`<span class="ver">v0.xx</span>`).

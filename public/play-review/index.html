@@ -53,7 +53,12 @@
   .controls input[type=range] { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
   .controls .spd { display: flex; gap: 4px; }
   .tread { font-variant-numeric: tabular-nums; min-width: 48px; font-weight: 600; color: var(--fg); }
-  .method { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; font-size: 0.93rem; }
+  .method { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; font-size: 0.93rem; margin-top: 36px; }
+  .method summary { cursor: pointer; font: 600 0.78rem/1 Inter, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); list-style: none; }
+  .method summary::-webkit-details-marker { display: none; }
+  .method summary::before { content: '\25B8'; display: inline-block; margin-right: 8px; transition: transform .15s; }
+  .method[open] summary::before { transform: rotate(90deg); }
+  .method[open] summary { margin-bottom: 12px; }
   .method p { margin: 0 0 10px; } .method p:last-child { margin: 0; }
   .toggle { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
   .toggle button { font: 500 0.82rem Inter, sans-serif; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
@@ -69,7 +74,12 @@
 
   <div class="stats" id="stats"></div>
 
-  <h2>Shots where a pass was worth more</h2>
+  <h2 id="scenarioTitle">Shots where a pass was worth more</h2>
+  <div class="toggle" id="scenarios">
+    <button type="button" data-sc="pass" aria-pressed="true">Pass worth more</button>
+    <button type="button" data-sc="drive">Drive worth more</button>
+    <button type="button" data-sc="right">Right call</button>
+  </div>
   <div class="toggle" id="filters">
     <button type="button" data-team="" aria-pressed="true">Both teams</button>
     <button type="button" data-team="BOS">Bruins</button>
@@ -80,8 +90,7 @@
     <div class="detail" id="detail"></div>
   </div>
 
-  <h2>How this is scored</h2>
-  <div class="method" id="method"></div>
+  <details class="method"><summary>How this is scored</summary><div id="method"></div></details>
 
   <footer>Shot data from the NHL play-by-play and shift chart for this game. Expected goals from a model fit on MoneyPuck.com shot data (free for non-commercial use, credit MoneyPuck.com). <span id="version"></span></footer>
 </main>
@@ -822,7 +831,7 @@
 
 <script>
 (async () => {
-  const VERSION = '0.2';
+  const VERSION = '0.4';
   document.getElementById('version').textContent = 'Play review v' + VERSION;
   const $ = id => document.getElementById(id);
   const get = async u => { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
@@ -888,6 +897,8 @@
     return { shooter, mates, opps, goalie };
   }
 
+  const laneBlockedPt = (a, b, o, w = 3.5) => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1; const t = clamp(((o.x - a.x) * dx + (o.y - a.y) * dy) / L2, 0, 1); if (t < 0.05) return false; return Math.hypot(a.x + dx * t - o.x, a.y + dy * t - o.y) < w; };
+  const RP_DRIVE = { ft: 15, minFromNetFt: 10, corridorFt: 4.5, cutFt: 6, carryFtPerSec: 20, closeFtPerSec: 18, turnoverBase: 0.12, turnoverPerBody: 0.3, underPressureFt: 4, turnoverUnderPressure: 0.2 };
   const laneBlocked = (a, b, opps, w = 3.5) => opps.some(o => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1; const t = clamp(((o.x - a.x) * dx + (o.y - a.y) * dy) / L2, 0, 1); if (t < 0.12 || t > 0.9) return false; return Math.hypot(a.x + dx * t - o.x, a.y + dy * t - o.y) < w; });
 
   function score(s) {
@@ -904,12 +915,30 @@
       return { m, d: Math.round(d), blocked, completion, recXg, pressure, value };
     }).sort((a, b) => b.value - a.value);
     const best = options[0];
-    return { s, R, ctx, shotXg, options, best, gap: best ? best.value - shotXg : -1 };
+    // the drive: walk the puck DRIVE.ft closer along the line to the net if the corridor is clear, and shoot from there
+    const D = RP_DRIVE; const toNet = dist(R.shooter, NET); let drive = null;
+    if (toNet > D.ft + D.minFromNetFt && !/tip|defl/.test(s.shotType || '')) {   // a tip or deflection is not a possession decision
+      const u = D.ft / toNet; let spot = { x: R.shooter.x + (NET.x - R.shooter.x) * u, y: R.shooter.y + (NET.y - R.shooter.y) * u };
+      // the drive goes around the man closing on the shooter: cut to the side away from him
+      const press = R.opps.find(o => o.pressurer);
+      // cut toward the middle of the ice (a better angle), unless the man closing on the shooter is on that side
+      { const mid = R.shooter.y > 42.5 ? -1 : 1; const side = press && Math.sign(press.y - R.shooter.y) === mid && Math.abs(press.y - R.shooter.y) > 1 ? -mid : mid; spot = { x: spot.x, y: clamp(spot.y + side * D.cutFt, 6, 79) }; }
+      // The inference always puts one defender closing on the shooter, which the page cannot verify, so the drive assumes
+      // the cut beats that man and charges for everyone else in the corridor. The method note says so.
+      const inPath = R.opps.filter(o => o !== press && laneBlockedPt(R.shooter, spot, o, D.corridorFt)).length;
+      const nearest = Math.min(...R.opps.filter(o => o !== press).map(o => dist(o, spot)));
+      const pressure = nearest < 4 ? 0.6 : nearest < 8 ? 0.85 : 1;
+      const turnover = clamp(D.turnoverBase + D.turnoverPerBody * inPath, 0, 0.9);
+      const xg = xgModel(dist(spot, NET), angleTo(spot), { ...ctx, type: 'WRIST' }) * finishing(R.shooter.name) * pressure;
+      drive = { spot, inPath, pressure, turnover, xg, value: (1 - turnover) * xg };
+    }
+    const gapPass = best ? best.value - shotXg : -1, gapDrive = drive ? drive.value - shotXg : -1;
+    return { s, R, ctx, shotXg, options, best, drive, gap: gapPass, gapPass, gapDrive, gapRight: shotXg - Math.max(best ? best.value : 0, drive ? drive.value : 0) };
   }
 
   const shots = GAME.shots.filter(s => s.result !== 'block' && s.attack.fromGoalLine <= 75 && s.onIce[s.team].length >= 3);
   const scored = shots.map(score);
-  const better = scored.filter(x => x.gap > 0.02);
+  const better = scored.filter(x => x.gapPass > 0.02); const betterDrive = scored.filter(x => x.gapDrive > 0.02); const right = scored.filter(x => x.gapRight > 0);
 
   // ---------- header and stats ----------
   const m = GAME.meta;
@@ -918,28 +947,32 @@
   const fmt = v => (100 * v).toFixed(v < 0.095 ? 1 : 0) + '%';
   const sumXg = t => scored.filter(x => x.s.team === t).reduce((a, x) => a + x.shotXg, 0);
   $('stats').innerHTML = [
-    [scored.length, 'unblocked shots scored'], [better.length, 'had a pass worth more (gap over 2 points)'],
+    [scored.length, 'unblocked shots scored'], [better.length, 'had a pass worth more (over 2 points)'], [betterDrive.length, 'had a drive worth more (over 2 points)'], [right.length, 'were the right call'],
     [sumXg('BOS').toFixed(2), 'Bruins expected goals'], [sumXg('MTL').toFixed(2), 'Canadiens expected goals'],
     [GAME.goals.length, 'goals'],
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
 
   // ---------- list and detail ----------
-  let team = '', selected = null;
+  let team = '', selected = null, scenario = 'pass';
+  const SCEN = { pass: { title: 'Shots where a pass was worth more', key: 'gapPass', alt: 'pass' }, drive: { title: 'Shots where driving to the net was worth more', key: 'gapDrive', alt: 'drive' }, right: { title: 'Shots that were the right call', key: 'gapRight', alt: 'best' } };
   function render() {
-    const rows = scored.filter(x => !team || x.s.team === team).filter(x => x.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 10);
-    $('list').innerHTML = rows.map((x, i) => `<div class="row" role="option" data-i="${x.s.i}" aria-selected="${selected === x.s.i}"><span class="n">${i + 1}</span><span class="who">${x.s.team} #${num(x.s.shooter)} ${x.R.shooter.name}<small>P${x.s.period} ${x.s.clock}, ${x.s.shotType || 'shot'} from ${Math.round(dist(x.R.shooter, NET))} ft, ${x.s.result === 'goal' ? 'goal' : x.s.result === 'miss' ? 'missed' : 'saved'}</small></span><span class="gap">+${(100 * x.gap).toFixed(0)}</span></div>`).join('') || '<div class="row">No shots with a better pass option.</div>';
+    const sc = SCEN[scenario]; $('scenarioTitle').textContent = sc.title;
+    const rows = scored.filter(x => !team || x.s.team === team).filter(x => x[sc.key] > 0).sort((a, b) => b[sc.key] - a[sc.key]).slice(0, 10);
+    $('list').innerHTML = rows.map((x, i) => `<div class="row" role="option" data-i="${x.s.i}" aria-selected="${selected === x.s.i}"><span class="n">${i + 1}</span><span class="who">${x.s.team} #${num(x.s.shooter)} ${x.R.shooter.name}<small>P${x.s.period} ${x.s.clock}, ${x.s.shotType || 'shot'} from ${Math.round(dist(x.R.shooter, NET))} ft, ${x.s.result === 'goal' ? 'goal' : x.s.result === 'miss' ? 'missed' : 'saved'}</small></span><span class="gap">+${(100 * x[sc.key]).toFixed(0)}</span></div>`).join('') || '<div class="row">No shots in this scenario.</div>';
     if (rows.length && (selected === null || !rows.some(r => r.s.i === selected))) selected = rows[0].s.i;
     $('list').querySelectorAll('.row[data-i]').forEach(el => { el.setAttribute('aria-selected', +el.dataset.i === selected); el.onclick = () => { selected = +el.dataset.i; render(); }; });
     const x = scored.find(y => y.s.i === selected); if (x) detail(x);
   }
+  $('scenarios').querySelectorAll('button').forEach(b => b.onclick = () => { scenario = b.dataset.sc; $('scenarios').querySelectorAll('button').forEach(o => o.setAttribute('aria-pressed', o === b)); selected = null; render(); });
   $('filters').querySelectorAll('button').forEach(b => b.onclick = () => { team = b.dataset.team; $('filters').querySelectorAll('button').forEach(o => o.setAttribute('aria-pressed', o === b)); selected = null; render(); });
 
   // ---------- replay: a mock reconstruction of the seconds before and after the shot ----------
   // There is no tracking data, so the movement is synthesized: every skater travels from a plausible start to his
   // inferred spot over the lead-in, the puck follows the real preceding event to the real shot, and after the shot
   // the real result plays on the left while the model's pass plays on the right. Every panel is labeled as such.
-  const RP = { leadDefault: 5, leadMin: 2, leadMax: 8, after: 3, passFtPerSec: 70, wristFtPerSec: 90, slapFtPerSec: 120, rushPullbackFt: 42, zoneDriftFt: 7, backcheckFt: 28 };
-  let lead = RP.leadDefault, speed = 1, playing = false, tcur = -RP.leadDefault, clip = null, raf = null, lastTs = 0;
+  // Times are ice time (game-clock seconds). Playback speed stretches them on the wall clock; 0.5x is slow motion.
+  const RP = { leadDefault: 5, leadMin: 2, leadMax: 8, after: 3, passFtPerSec: 70, wristFtPerSec: 90, slapFtPerSec: 120, carryFtPerSec: 22, rushFwdFtPerSec: [20, 27], rushDFtPerSec: [17, 23], backcheckFtPerSec: [18, 25], zoneDriftFtPerSec: 5 };
+  let lead = RP.leadDefault, speed = 0.5, playing = false, tcur = -RP.leadDefault, clip = null, raf = null, lastTs = 0;
   const ease = u => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
   const lerp = (a, b, u) => a + (b - a) * u;
   const seeded = (n) => { let x = (n * 9301 + 49297) % 233280; return () => (x = (x * 9301 + 49297) % 233280) / 233280; };
@@ -955,21 +988,29 @@
     const rush = !prev || prev.x < 125 || (s.prev && /faceoff|takeaway|giveaway|hit/.test(s.prev.type) && prev.x < 150);
     // skaters: start positions by scenario, arrive at the inferred spots just before the shot
     const paths = [];
-    const add = (p, sx, sy, arrive) => paths.push({ p, sx, sy, ex: p.x, ey: p.y, arrive });
-    for (const m of R.mates) rush ? add(m, clamp(m.x - RP.rushPullbackFt + jit(10), 60, 185), clamp(m.y + jit(10), 6, 79), -0.6 + jit(0.4)) : add(m, clamp(m.x + jit(RP.zoneDriftFt), 112, 186), clamp(m.y + jit(RP.zoneDriftFt), 6, 79), -0.4 + jit(0.4));
-    for (const o of R.opps) rush ? add(o, clamp(o.x - RP.backcheckFt + jit(8), 70, 186), clamp(o.y + jit(8), 6, 79), o.pressurer ? -0.3 : -0.9 + jit(0.4)) : add(o, clamp(o.x + jit(RP.zoneDriftFt), 112, 186), clamp(o.y + jit(RP.zoneDriftFt), 6, 79), o.pressurer ? -0.3 : -0.8 + jit(0.5));
+    const pick = ([a, b]) => a + rnd() * (b - a);
+    // start = where a skater at that speed would have been `lead` seconds of ice time before he arrives at his spot
+    const add = (p, arrive, v, lateral) => { const T = Math.max(0.3, arrive + lead); const dx = rush ? v * T : Math.min(v * T, 10 + rnd() * 6); const ang = rush ? jit(0.25) : rnd() * Math.PI * 2; const sx = clamp(p.x - Math.cos(ang) * dx, 4, 186), sy = clamp(p.y - Math.sin(ang) * dx * (rush ? 0.35 : 1) + (rush ? lateral : 0), 6, 79); paths.push({ p, sx, sy, ex: p.x, ey: p.y, arrive }); };
+    for (const m of R.mates) rush ? add(m, -0.6 + jit(0.4), m.pos === 'D' ? pick(RP.rushDFtPerSec) : pick(RP.rushFwdFtPerSec), jit(8)) : add(m, -0.4 + jit(0.4), RP.zoneDriftFtPerSec, 0);
+    for (const o of R.opps) rush ? add(o, o.pressurer ? -0.3 : -0.9 + jit(0.4), pick(RP.backcheckFtPerSec), jit(6)) : add(o, o.pressurer ? -0.3 : -0.8 + jit(0.5), RP.zoneDriftFtPerSec, 0);
     // the puck: from the preceding event to the shooter. A long way means a pass from the nearest teammate; otherwise the shooter carries it.
-    let start = prev ? { x: clamp(prev.x, 30, 186), y: clamp(prev.y, 6, 79) } : { x: clamp(R.shooter.x - 25, 60, 186), y: R.shooter.y + jit(6) };
+    let start = prev ? { x: clamp(prev.x, 20, 186), y: clamp(prev.y, 6, 79) } : { x: clamp(R.shooter.x - RP.carryFtPerSec * Math.min(lead, 2.5), 20, 186), y: R.shooter.y + jit(6) };
     const far = dist(start, R.shooter) > 45 && R.mates.length;
     let carrier = null, passAt = null;
     if (far) { carrier = R.mates.slice().sort((a, b) => dist(a, start) - dist(b, start))[0]; passAt = -Math.min(1.4, secBefore * 0.4); }
-    const shooterStart = far ? { x: clamp(R.shooter.x - 12 + jit(4), 60, 186), y: clamp(R.shooter.y + jit(6), 6, 79) } : start;
-    add(R.shooter, shooterStart.x, shooterStart.y, -0.15);
-    if (carrier) { const cp = paths.find(q => q.p === carrier); cp.sx = start.x; cp.sy = start.y; cp.arrive = -0.3; }
+    // the shooter: carries from the event at carry speed, or skates into his spot to take the pass
+    const shooterT = Math.max(0.3, lead - 0.15);
+    const shooterStart = far ? { x: clamp(R.shooter.x - (rush ? pick(RP.rushFwdFtPerSec) : RP.zoneDriftFtPerSec) * shooterT * 0.6 + jit(4), 4, 186), y: clamp(R.shooter.y + jit(6), 6, 79) }
+                             : (() => { const d = dist(start, R.shooter); const reach = RP.carryFtPerSec * shooterT; if (d <= reach) return start; const u = 1 - reach / d; return { x: lerp(start.x, R.shooter.x, u), y: lerp(start.y, R.shooter.y, u) }; })();
+    paths.push({ p: R.shooter, sx: shooterStart.x, sy: shooterStart.y, ex: R.shooter.x, ey: R.shooter.y, arrive: -0.15 });
+    if (carrier) { const cp = paths.find(q => q.p === carrier); const T = Math.max(0.3, cp.arrive + lead); const d = dist(start, carrier); const reach = RP.carryFtPerSec * T; const u = d <= reach ? 0 : 1 - reach / d; cp.sx = lerp(start.x, carrier.x, u); cp.sy = lerp(start.y, carrier.y, u); cp.arrive = -0.3; }
+    const x0 = clamp(Math.min(...paths.map(q => q.sx), start.x) - 10, 0, 96);
     const shotSpeed = (s.shotType === 'slap') ? RP.slapFtPerSec : RP.wristFtPerSec;
     const tNet = dist(R.shooter, NET) / shotSpeed;
-    const altT = { pass: dist(R.shooter, best.m) / RP.passFtPerSec, release: 0.25 }; altT.net = altT.pass + altT.release + dist(best.m, NET) / shotSpeed;
-    return { s, R, best, paths, secBefore, rush, carrier, passAt, start, shotSpeed, tNet, altT, result: s.result, shotXg: x.shotXg };
+    const useDrive = scenario === 'drive' || (scenario === 'right' && x.drive && (!best || x.drive.value >= best.value));
+    const altT = useDrive ? { drive: RP_DRIVE.ft / RP_DRIVE.carryFtPerSec, release: 0.2 } : { pass: dist(R.shooter, best.m) / RP.passFtPerSec, release: 0.25 };
+    if (useDrive) altT.net = altT.drive + altT.release + dist(x.drive.spot, NET) / shotSpeed; else altT.net = altT.pass + altT.release + dist(best.m, NET) / shotSpeed;
+    return { s, R, best, drive: x.drive, useDrive, paths, secBefore, rush, carrier, passAt, start, shotSpeed, tNet, altT, result: s.result, shotXg: x.shotXg, x0 };
   }
   // position of a path at time t (seconds relative to the shot)
   function at(path, t) {
@@ -996,11 +1037,19 @@
         else { const k = Math.min(1, dt / 1.8); puck = { x: lerp(NET.x - 3, 170, k), y: lerp(ny, ny < 42.5 ? 14 : 71, k) }; note = 'Save'; }
       }
     } else {
-      // the model's alternative: the pass, the one-timer, and the look it would have been
-      const rec = sk.find(q => q.p === c.best.m); const T = c.altT;
+      // the model's alternative: a drive to the net, or the pass, the one-timer, and the look it would have been
+      const T = c.altT;
+      if (c.useDrive) {
+        const sp = c.drive.spot;
+        if (t < T.drive) { const u = t / T.drive; shooter.x = lerp(shooter.x, sp.x, u); shooter.y = lerp(shooter.y, sp.y, u); puck = { x: shooter.x + 2, y: shooter.y }; holder = shooter; }
+        else if (t < T.drive + T.release) { shooter.x = sp.x; shooter.y = sp.y; puck = { x: sp.x + 2, y: sp.y }; holder = shooter; }
+        else { shooter.x = sp.x; shooter.y = sp.y; const u = Math.min(1, (t - T.drive - T.release) / Math.max(0.05, T.net - T.drive - T.release)); puck = { x: lerp(sp.x, NET.x - 1, u), y: lerp(sp.y, NET.y + (sp.y - 42.5) * 0.06, u), v: u < 1 ? c.shotSpeed : 0 }; if (u >= 1) note = fmt(c.drive.xg) + ' look'; }
+      } else {
+      const rec = sk.find(q => q.p === c.best.m);
       if (t < T.pass) { const u = t / T.pass; puck = { x: lerp(shooter.x, rec.x, u), y: lerp(shooter.y, rec.y, u), v: RP.passFtPerSec }; }
       else if (t < T.pass + T.release) { puck = { x: rec.x + 2, y: rec.y }; holder = rec; }
       else { const u = Math.min(1, (t - T.pass - T.release) / Math.max(0.05, T.net - T.pass - T.release)); puck = { x: lerp(rec.x, NET.x - 1, u), y: lerp(rec.y, NET.y + (rec.y - 42.5) * 0.06, u), v: u < 1 ? c.shotSpeed : 0 }; if (u >= 1) note = fmt(c.best.recXg) + ' look'; }
+      }
     }
     // after the shot everyone drifts on with the play: attackers toward the net, defenders hold
     if (t > 0) for (const q of sk) { const k = Math.min(1, t / 2); if (q.p.team === c.R.shooter.team && q.p !== c.R.shooter) { q.x += (NET.x - 8 - q.x) * 0.12 * k; q.y += (NET.y - q.y) * 0.1 * k; } }
@@ -1015,16 +1064,16 @@
       <div class="controls">
         <button type="button" id="playBtn" aria-pressed="true">Pause</button>
         <button type="button" id="replayBtn">Replay</button>
-        <label>Lead-in <input type="number" id="leadIn" min="${RP.leadMin}" max="${RP.leadMax}" step="1" value="${lead}"> s</label>
-        <span class="spd"><button type="button" data-s="0.5">0.5x</button><button type="button" data-s="1" aria-pressed="true">1x</button></span>
+        <label title="Seconds of ice time before the shot; the clip runs ${RP.after} s of ice time after it">Lead-in <input type="number" id="leadIn" min="${RP.leadMin}" max="${RP.leadMax}" step="1" value="${lead}"> s ice time</label>
+        <span class="spd" title="Playback speed; below 1x is slow motion"><button type="button" data-s="0.25" aria-pressed="${speed === 0.25}">0.25x</button><button type="button" data-s="0.5" aria-pressed="${speed === 0.5}">0.5x</button><button type="button" data-s="1" aria-pressed="${speed === 1}">1x</button></span>
         <input type="range" id="scrub" min="${-lead}" max="${RP.after}" step="0.05" value="${-lead}">
-        <span id="tread" class="tread">-${lead.toFixed(1)}s</span>
+        <span id="tread" class="tread" title="Ice time relative to the shot">-${lead.toFixed(1)}s</span>
       </div>
       <div class="rinks">
         <div class="pane"><h4>What happened</h4><canvas id="cA" width="520" height="440"></canvas><p class="num">${fmt(shotXg)}<small>chance to score, shot taken</small></p><p>${R.shooter.name} shoots. ${R.opps.find(o => o.pressurer) ? 'Nearest defender ' + R.opps.find(o => o.pressurer).name + ' closing.' : ''}</p></div>
-        <div class="pane"><h4>What the model saw</h4><canvas id="cB" width="520" height="440"></canvas><p class="num">${fmt(best.value)}<small>pass to ${best.m.name}, then his shot</small></p><p>${Math.round(best.completion * 100)}% to complete a ${best.d} ft pass${best.blocked ? ' through a body' : ''}, then a ${fmt(best.recXg)} look from ${Math.round(dist(best.m, NET))} ft${best.pressure < 1 ? ' with a defender on him' : ''}.</p></div>
+        <div class="pane"><h4>What the model saw</h4><canvas id="cB" width="520" height="440"></canvas>${clip.useDrive ? `<p class="num">${fmt(x.drive.value)}<small>walk in ${RP_DRIVE.ft} ft and shoot</small></p><p>${Math.round((1 - x.drive.turnover) * 100)}% to get there with the puck${x.drive.inPath ? ` past ${x.drive.inPath} defender${x.drive.inPath > 1 ? 's' : ''}` : ''}, then a ${fmt(x.drive.xg)} look from ${Math.round(dist(x.drive.spot, NET))} ft${x.drive.pressure < 1 ? ' under pressure' : ''}.</p>` : `<p class="num">${fmt(best.value)}<small>pass to ${best.m.name}, then his shot</small></p><p>${Math.round(best.completion * 100)}% to complete a ${best.d} ft pass${best.blocked ? ' through a body' : ''}, then a ${fmt(best.recXg)} look from ${Math.round(dist(best.m, NET))} ft${best.pressure < 1 ? ' with a defender on him' : ''}.</p>`}</div>
       </div>
-      <p class="note">Gap: ${(100 * x.gap).toFixed(1)} points of expected goals in favor of the pass. Other options: ${x.options.slice(1, 4).map(o => `${o.m.name} ${fmt(o.value)}`).join(', ') || 'none'}. The shooter's spot, the shot and its result are real; the other positions are inferred and the movement is a mock reconstruction (${clip.rush ? 'rush' : 'in-zone'} scenario from the preceding ${s.prev ? s.prev.type.replace(/-/g, ' ') : 'play'}).</p>`;
+      <p class="note">${scenario === 'right' ? `The shot beat every alternative by ${(100 * x.gapRight).toFixed(1)} points: best pass ${fmt(best.value)}${x.drive ? `, drive ${fmt(x.drive.value)}` : ''}.` : clip.useDrive ? `Gap: ${(100 * x.gapDrive).toFixed(1)} points of expected goals in favor of driving to the net. Best pass instead: ${best ? best.m.name + ' ' + fmt(best.value) : 'none'}.` : `Gap: ${(100 * x.gapPass).toFixed(1)} points of expected goals in favor of the pass. Other options: ${x.options.slice(1, 4).map(o => `${o.m.name} ${fmt(o.value)}`).join(', ') || 'none'}${x.drive ? `; drive ${fmt(x.drive.value)}` : ''}.`} The shooter's spot, the shot and its result are real; the other positions are inferred and the movement is a mock reconstruction (${clip.rush ? 'rush' : 'in-zone'} scenario from the preceding ${s.prev ? s.prev.type.replace(/-/g, ' ') : 'play'}).</p>`;
     $('playBtn').onclick = () => { playing = !playing; $('playBtn').textContent = playing ? 'Pause' : 'Play'; $('playBtn').setAttribute('aria-pressed', playing); if (playing && tcur >= RP.after) tcur = -lead; };
     $('replayBtn').onclick = () => { tcur = -lead; playing = true; $('playBtn').textContent = 'Pause'; $('playBtn').setAttribute('aria-pressed', true); };
     $('leadIn').onchange = () => { lead = clamp(+$('leadIn').value || RP.leadDefault, RP.leadMin, RP.leadMax); $('leadIn').value = lead; $('scrub').min = -lead; clip = buildClip(x); tcur = -lead; };
@@ -1050,17 +1099,19 @@
   // ---------- drawing: the offensive zone, shooter attacking right, in the sim's style ----------
   function draw(cv, F, c, t, alt) {
     const ctx = cv.getContext('2d'); const W = cv.width, H = cv.height;
-    const X0 = 96, X1 = 200, S = W / (X1 - X0); const px = x => (x - X0) * S, py = y => 20 + y * (H - 40) / 85;
+    const X0 = c.x0 !== undefined ? c.x0 : 96, X1 = 200, S = W / (X1 - X0); const px = x => (x - X0) * S, py = y => 20 + y * (H - 40) / 85;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#eef5fb'; ctx.fillRect(0, 0, W, H);
-    ctx.lineWidth = 2; ctx.strokeStyle = '#c8102e'; ctx.beginPath(); ctx.moveTo(px(100), py(0)); ctx.lineTo(px(100), py(85)); ctx.stroke();
-    ctx.strokeStyle = '#0b4ea2'; ctx.beginPath(); ctx.moveTo(px(125), py(0)); ctx.lineTo(px(125), py(85)); ctx.stroke();
-    ctx.strokeStyle = '#c8102e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px(189), py(0)); ctx.lineTo(px(189), py(85)); ctx.stroke();
-    for (const y of [20.5, 64.5]) { ctx.beginPath(); ctx.arc(px(169), py(y), 15 * S, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.arc(px(169), py(y), 3, 0, Math.PI * 2); ctx.fill(); }
+    const vline = (x, col, w) => { if (x < X0) return; ctx.lineWidth = w; ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(px(x), py(0)); ctx.lineTo(px(x), py(85)); ctx.stroke(); };
+    vline(100, '#c8102e', 2); vline(125, '#0b4ea2', 2); vline(75, '#0b4ea2', 2); vline(189, '#c8102e', 1); vline(11, '#c8102e', 1);
+    ctx.lineWidth = 1; ctx.strokeStyle = '#c8102e';
+    for (const cx of [169, 31]) if (cx - 15 > X0) for (const y of [20.5, 64.5]) { ctx.beginPath(); ctx.arc(px(cx), py(y), 15 * S, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.arc(px(cx), py(y), 3, 0, Math.PI * 2); ctx.fill(); }
+    for (const cx of [120, 80]) if (cx > X0) for (const y of [20.5, 64.5]) { ctx.fillStyle = '#c8102e'; ctx.beginPath(); ctx.arc(px(cx), py(y), 3, 0, Math.PI * 2); ctx.fill(); }
+    if (X0 < 85) { ctx.strokeStyle = '#0b4ea2'; ctx.beginPath(); ctx.arc(px(100), py(42.5), 15 * S, 0, Math.PI * 2); ctx.stroke(); }
     ctx.strokeStyle = '#0b4ea2'; ctx.beginPath(); ctx.arc(px(189), py(42.5), 6 * S, Math.PI / 2, Math.PI * 1.5); ctx.stroke();
     if (F.light > 0) { const g = ctx.createRadialGradient(px(192), py(42.5), 0, px(192), py(42.5), 16 * S); g.addColorStop(0, `rgba(230,30,30,${0.55 * F.light})`); g.addColorStop(1, 'rgba(230,30,30,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px(192), py(42.5), 16 * S, 0, Math.PI * 2); ctx.fill(); }
     ctx.fillStyle = 'rgba(200,16,46,0.5)'; ctx.fillRect(px(189), py(39.5), 4 * S, 6 * (H - 40) / 85);
-    ctx.fillStyle = '#9aa4b1'; ctx.font = '600 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillText('mock movement, inferred positions', 10, H - 8);
+    ctx.fillStyle = '#9aa4b1'; ctx.font = '600 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText('mock movement, inferred positions', 10, H - 8);
     const colors = { BOS: ['#000000', '#ffb81c'], MTL: ['#af1e2d', '#192168'] };
     const att = colors[c.R.shooter.team] || ['#333', '#999'], def = colors[F.goalie.team] || ['#777', '#ccc'];
     // skate trails for anyone moving fast
@@ -1075,14 +1126,15 @@
       const dp = Math.hypot(F.puck.x - q.x, F.puck.y - q.y); const v = Math.hypot(q.vx || 0, q.vy || 0);
       const sa = dp < 16 ? Math.atan2(F.puck.y - q.y, F.puck.x - q.x) : v > 2 ? Math.atan2(q.vy, q.vx) : null;
       if (sa !== null) { const len = F.holder === q ? Math.min(3.6, dp) : 3.4; const ex = q.x + Math.cos(sa) * len, ey = q.y + Math.sin(sa) * len; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(q.x), py(q.y)); ctx.lineTo(px(ex), py(ey)); ctx.stroke(); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px(ex), py(ey)); ctx.lineTo(px(ex + Math.cos(sa + 1.35) * 1.1), py(ey + Math.sin(sa + 1.35) * 1.1)); ctx.stroke(); }
-      ctx.beginPath(); ctx.arc(px(q.x), py(q.y), big ? 11 : 9, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col2; ctx.stroke();
+      const rr = (big ? 11 : 9) * Math.max(0.75, Math.min(1, S / 5)); ctx.beginPath(); ctx.arc(px(q.x), py(q.y), rr, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col2; ctx.stroke();
       ctx.fillStyle = col2 === '#ffb81c' ? '#ffb81c' : '#fff'; ctx.font = '700 10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, px(q.x), py(q.y) + 0.5);
-      if (F.holder === q) { ctx.beginPath(); ctx.arc(px(q.x), py(q.y), big ? 15 : 13, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = '#111'; ctx.stroke(); }
+      if (F.holder === q) { ctx.beginPath(); ctx.arc(px(q.x), py(q.y), rr + 4, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = '#111'; ctx.stroke(); }
     };
     for (const q of F.sk) if (q.p.team !== c.R.shooter.team) dot(q, def[0], def[1], num(q.p.id), false);
     for (const q of F.sk) if (q.p.team === c.R.shooter.team && q.p !== c.R.shooter) dot(q, att[0], att[1], num(q.p.id), false);
     dot(F.shooter, att[0], att[1], num(c.R.shooter.id), true);
-    if (alt && t >= 0) { const rec = F.sk.find(q => q.p === c.best.m); ctx.setLineDash([5, 5]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(F.shooter.x), py(F.shooter.y)); ctx.lineTo(px(rec.x), py(rec.y)); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(rec.x), py(rec.y), 15, 0, Math.PI * 2); ctx.stroke(); }
+    if (alt && t >= 0 && c.useDrive) { ctx.setLineDash([5, 5]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(c.R.shooter.x), py(c.R.shooter.y)); ctx.lineTo(px(c.drive.spot.x), py(c.drive.spot.y)); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(c.drive.spot.x), py(c.drive.spot.y), 15, 0, Math.PI * 2); ctx.stroke(); }
+    if (alt && t >= 0 && !c.useDrive) { const rec = F.sk.find(q => q.p === c.best.m); ctx.setLineDash([5, 5]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(F.shooter.x), py(F.shooter.y)); ctx.lineTo(px(rec.x), py(rec.y)); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(rec.x), py(rec.y), 15, 0, Math.PI * 2); ctx.stroke(); }
     // puck with a streak when it is moving fast
     if (F.puck.v > 40) { ctx.strokeStyle = '#111'; ctx.globalAlpha = 0.5; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px(F.puck.x), py(F.puck.y)); const bx = F.puck.x - (F.puck.x - (F.holder ? F.holder.x : F.puck.x)) * 0; ctx.lineTo(px(F.puck.x - 6), py(F.puck.y)); ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(px(F.puck.x), py(F.puck.y), 3.2, 0, Math.PI * 2); ctx.fill();
@@ -1092,7 +1144,8 @@
 
   $('method').innerHTML = `<p>Each unblocked shot in the game is placed on the rink from the play-by-play coordinates, with the shooter attacking to the right. The other nine skaters are not in the public data, so the page places the shooter's teammates on the spots of the offensive-zone system the sim runs for that club (Boston cycles low, Montreal plays an umbrella), mirrored to the puck side, and the defenders on zone coverage: a defenseman boxes out the net-front man, the center plays goal-side of the slot man, and the nearest free defender closes on the shooter.</p>
     <p>The shot taken is scored with the expected-goal model (distance, angle, shot type, rebound, strength) times the shooter's finishing from his last two seasons. Each teammate is scored as a one-timer from his spot, times the chance the pass gets there: 96% for a short pass, falling about half a point per foot, and less than half that through a defender's lane. A receiver with a defender within 4 ft keeps 60% of his look, within 8 ft 85%. The gap is the difference, in points of expected goals. A gap of 10 means the pass was worth a tenth of a goal more than the shot.</p>
-    <p>The replay is a mock reconstruction, not tracking. The lead-in (2 to 8 seconds, your choice) starts the puck at the real preceding event and brings it to the real shot: a long way from the previous event means a teammate carries it and passes; a short way means the shooter carries it himself. Skaters travel from a plausible start to their inferred spots, pulled back toward the neutral zone on a rush and drifting a few feet in a cycle, with the pressuring defender arriving last. After the shot, the left panel plays the real result (goal, save or wide) and the right panel plays the pass, the one-timer and the look it would have been, with no invented result. Nothing in the replay is used for scoring; it is there to make the two reads easy to compare.</p>
+    <p>Three scenarios. Pass worth more ranks shots by how much the best pass beat the shot. Drive worth more asks whether walking the puck 15 ft closer, cutting 6 ft toward the middle for a better angle (or away from the man closing on the shooter if he is on that side), and shooting from there was worth more. The page cannot see how close that man really was, so the drive assumes the cut beats him and charges for everyone else: the chance of getting there with the puck starts at 88% and drops 30 points for every other defender in a 4.5 ft corridor, and the look from the new spot keeps 60% with another defender within 4 ft, 85% within 8. Read a high drive gap as: if he had a step, the walk-in was worth it. Tips and deflections are left out, since nobody chose to shoot from there. Right call ranks the shots that beat every alternative by the most, so the list is not only criticism.</p>
+    <p>The replay is a mock reconstruction, not tracking. All times are ice time: the lead-in is 2 to 8 seconds of game clock before the shot, the clip runs 3 seconds after, and the playback speed stretches that on your screen (0.5x is slow motion, the default). The puck starts at the real preceding event and is carried at about 15 mph toward the real shot; a long way means a teammate carries and passes, a short way means the shooter carries it himself, and if the event was farther than that speed covers in the lead-in, the carry is already under way when the clip opens. Skaters skate at real speeds for the whole lead-in: on a rush, forwards at 20 to 27 ft/s and back-checkers at 18 to 25 ft/s, so a 5 second lead-in starts in the neutral zone and the view widens to show it; in a cycle, everyone drifts a few feet around his spot. The pressuring defender arrives last. After the shot, the left panel plays the real result (goal, save or wide) and the right panel plays the pass, the one-timer and the look it would have been, with no invented result. Nothing in the replay is used for scoring; it is there to make the two reads easy to compare.</p>
     <p>What this does and does not prove. It finds the shots where a better option probably existed given where the teammates usually are. It cannot see whether the teammate was actually open, which is what video, or tracking data, settles. Model: logistic regression fit on ${XG.rowsUsed.toLocaleString()} MoneyPuck unblocked shots from the ${XG.sources.map(x => x.file.replace('shots_', '').replace('.csv', '')).join(' and ')} seasons; holdout log loss ${XG.fit.logLoss} against ${XG.fit.moneypuckLogLoss} for MoneyPuck's own model.</p>`;
 
   render();

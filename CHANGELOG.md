@@ -1,6 +1,23 @@
 # Changelog
 
+The site is versioned as a whole; each project keeps its own number too. Site 0.31 = sim 0.30 + Play Review 0.4. Site versions before 0.31 tracked the sim's number.
+
+## Site
+
+### 0.31
+- Sim 0.30, Play Review 0.4, modeling guide, home page copy.
+
+### 0.30
+- Sim 0.30, Play Review 0.1.
+
 ## Play Review
+
+### 0.4
+- Three scenarios: pass worth more, drive worth more (walk in 15 ft, cut toward the middle, corridor and pressure charged, closing man assumed beaten and labeled as such), and right call (shots that beat every alternative). The replay's right panel follows the scenario.
+- "How this is scored" is collapsed by default.
+
+### 0.3
+- Replay times are ice time: lead-in and after are game-clock seconds, playback speed (0.25x, 0.5x slow motion by default, 1x real time) stretches them on screen, and the readout counts ice time. Skaters and the carrier move at real speeds for the whole lead-in, so a rush clip starts in the neutral or defensive zone and the view widens to show it.
 
 ### 0.2
 - Replay: a mock reconstruction of the seconds around each shot, with a configurable lead-in (2 to 8 s) and 3 s after. The puck runs from the real preceding event to the real shot, skaters travel from plausible starts to their inferred spots (rush or in-zone scenario), the left panel plays the real result and the right panel plays the pass and the one-timer. Play, pause, replay, scrub, 0.5x and 1x. Drawn in the sim's style: numbered skaters, sticks, trails, puck streak, goalie line, goal light.

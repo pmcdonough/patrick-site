@@ -18,7 +18,8 @@ Every model in this repo, what it is built on, how it was fit or tuned, and wher
 | Game ingestion | Where each real shot was taken, by whom, with whom on the ice | NHL play-by-play and shift chart | Coordinate conversion to an attacking frame; on-ice from shift windows | `tools/game_load.py`, `play-review/data/game-*.json` |
 | Position inference | Where the other nine skaters probably were at a real shot | The sim's systems and coverage rules | Teammates on the club's offensive-zone spots, defenders on zone coverage with box-out, slot and pressure rules | `play-review/index.html` reconstruct |
 | Pass scoring | Was a pass worth more than the shot | The xG model on the receiver's inferred spot | Receiver one-timer xG, times completion (0.96 minus 0.0045 per ft, 0.45 through a lane), times pressure (0.6 within 4 ft, 0.85 within 8), times 0.9 | `play-review/index.html` score |
-| Replay | What the seconds around the shot looked like | The real preceding event and shot, the inferred spots | Mock movement: eased travel from scenario-based starts, puck from the previous event, real result on the left, the pass on the right | `play-review/index.html` buildClip and frame |
+| Drive scoring | Was walking the puck in worth more than the shot | The xG model at a spot 15 ft closer and 6 ft toward the middle | Arrival chance 0.88 minus 0.3 per other defender in the corridor, times pressure at the new spot; the closing man is assumed beaten and the page says so | `play-review/index.html` score, `RP_DRIVE` |
+| Replay | What the seconds around the shot looked like | The real preceding event and shot, the inferred spots | Mock movement in ice time at real skating and carrying speeds, scenario-based starts, puck from the previous event, real result on the left, the pass on the right; slow motion is playback, not the clock | `play-review/index.html` buildClip and frame |
 
 ## Three kinds of number
 
