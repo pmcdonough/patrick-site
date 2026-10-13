@@ -37,6 +37,7 @@ CHANGELOG.md                              per-version changes
 - Anything inferred or mocked (positions at a real shot, replay movement) is labeled on the page and never feeds a measured or calibrated number. `docs/MODELING.md` keeps the three kinds apart.
 - Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo; the fitted model and the compact game file go in. Re-run the fit script, not the numbers, when the data changes.
 - The expected-goal formula lives in two places, the engine (`xgModel`) and the review page; change both or neither.
+- The matchup lab reuses the game loop (`playGames`); it has no engine logic of its own. Do not add a second way to play a game.
 - The engine is balanced at the NHL-average multipliers (every slider at 1.0, the tick mark). The build defaults in `defaults.json` deliberately run hotter (acceleration 2.3, speed 1.3, cruise 1.15, shot volume 2) because it is more fun to watch. Calibrate at 1.0, then check that the defaults still look right.
 
 ## Shipping a version

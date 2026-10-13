@@ -186,7 +186,11 @@
   "periodSec": 1200,
   "otSec": 300,
   "faceoffPauseSec": 1.0,
-  "minorPenaltySec": 120
+  "minorPenaltySec": 120,
+  "shootout": {
+   "desc": "After a scoreless overtime: three shooters each, then sudden death. A shooter's chance is leagueRate scaled by his shooting rating and the goalie's high-danger save rate against the league's.",
+   "leagueRate": 0.33
+  }
  },
  "shotDecision": {
   "desc": "When a carrier shoots. A clean look from the slot is a must-shoot (fires within a fraction of a second); everything else is a per-second probability scaled by shot quality, aggression and the shooter's rating. Shot quality is 0 to 1 from distance (75 ft horizon) and angle. Rates were retuned in 0.29 so that, at the NHL-average settings, unblocked attempts and the danger-tier mix match MoneyPuck's league rates with the expected-goal model scoring each shot.",

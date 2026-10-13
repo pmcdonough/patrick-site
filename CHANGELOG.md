@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.33 = sim 0.30 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.34 = sim 0.31 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.34
+- Sim 0.31 (matchup lab, shootouts, records). Matchup Lab card on the home page.
 
 ### 0.33
 - Play Review 0.6.
@@ -39,6 +42,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.31
+- Matchup lab (Lab tab, also at `#lab`): play the two clubs against each other 10 to 100 times with the systems on the cards and report W-L-OTL, win and points percentage with a 95% interval, goals, expected goals and shots for and against per game; sweep every option for one card with everything else held; stop a run early.
+- Games tied after overtime go to a shootout (three shooters each, then sudden death, chance scaled by shooting and the goalie's quality in tight), so every game has a winner.
+- Records are wins, losses and overtime or shootout losses: a session record on the Game tab, the ten-game batch record on the Advanced tab, and the lab.
+- About: overtime and shootout, the session record, the lab.
 
 ### 0.30
 - Hover text on the coaching cards: every system choice explains itself, the dropdown shows the current choice's explanation, and the aggression dial says what it changes. Power-play, penalty-kill and aggression descriptions added to the systems data.

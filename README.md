@@ -43,11 +43,13 @@ Plain HTML, CSS and JavaScript on a 2D canvas. No libraries, no build step. The 
 
 **Goalies.** A goalie is drawn and modeled as a line squared to the puck. A shot that crosses the line is a save with probability equal to that goalie's real 2025-26 save percentage for the shot's danger tier; rebounds are steered to the corners, and the goalie freezes the puck more often with traffic in the crease.
 
-**Rules and officials.** Offside with the tag-up rule, hybrid icing judged at the dots, icing waived while shorthanded, minor penalties with power plays, too-many-men bench minors on bad changes, and goalie freezes. Three officials work NHL mechanics: the referee at the goal line in the zone, the lead linesman on the blue line for offside, the trail linesman on the red line for icing.
+**Rules and officials.** Offside with the tag-up rule, hybrid icing judged at the dots, icing waived while shorthanded, minor penalties with power plays, too-many-men bench minors on bad changes, and goalie freezes. Three officials work NHL mechanics: the referee at the goal line in the zone, the lead linesman on the blue line for offside, the trail linesman on the red line for icing. A tie goes to a five-minute sudden-death overtime and then a shootout, so every game has a winner and the record is kept as wins, losses and overtime or shootout losses.
 
 **Expected goals.** Every unblocked attempt gets a probability from a logistic model fit on two seasons of MoneyPuck shots (distance, angle, shot type, rebound, strength) times the shooter's finishing; the goalie's save roll scales that by his real tier save rate. See `docs/XG-MODEL.md`.
 
-**Reality check.** The Advanced tab compares the simulation's per-game rates (shot attempts, shots on goal, goals, expected goals, blocks, misses, danger-tier mix, penalties, faceoff percentage, goalie freezes, offsides, icings) with each club's real 2025-26 rates and the league average, and can batch ten headless games to average them and show the win record. Cells more than 50 percent off the real rate are flagged. That table is the engine's to-do list.
+**Reality check.** The Advanced tab compares the simulation's per-game rates (shot attempts, shots on goal, goals, expected goals, blocks, misses, danger-tier mix, penalties, faceoff percentage, goalie freezes, offsides, icings) with each club's real 2025-26 rates and the league average, and can batch ten headless games to average them and show the record. Cells more than 50 percent off the real rate are flagged. That table is the engine's to-do list.
+
+**Matchup lab.** The Lab tab plays the two clubs against each other 10 to 100 times with the systems on the coaching cards and reports each club's W-L-OTL, win and points percentage with a 95% Wilson interval, goals, expected goals and shots for and against per game. A sweep holds everything else and tries every option for one card, so a forecheck or breakout can be judged against what the other bench is running, and the interval says how many games it takes to separate two choices. The engine's system effects have not been validated against real results, and the tab says so; it is a way to ask a question of the video, not an answer. The home page links to it at `/bruins-vs-canadiens/#lab`.
 
 ### The data that drives it
 
@@ -73,7 +75,7 @@ MoneyPuck 2025-26 skaters, goalies, lines and teams downloads (ratings, danger t
 
 ### Controls
 
-Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Advanced tab: the reality check, engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
+Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks, plus this session's record. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Lab tab: the matchup lab, a run with the current cards or a sweep of one card. Advanced tab: the reality check, engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
 
 ## Play Review
 
