@@ -7,6 +7,10 @@
 
 ## Bruins vs Canadiens
 
+### 0.30
+- Hover text on the coaching cards: every system choice explains itself, the dropdown shows the current choice's explanation, and the aggression dial says what it changes. Power-play, penalty-kill and aggression descriptions added to the systems data.
+- About: a new section listing every system with its description, and what the aggression dial does.
+
 ### 0.29
 - Expected-goal model fit on two seasons of MoneyPuck shots (`tools/xg_fit.py`, `data/xg-model.json`) replaces the distance-box danger tiers: every shot gets its own probability from distance, angle, shot type, rebound and strength, times the shooter's finishing. Tiers now follow MoneyPuck's xG thresholds.
 - Goalie save roll uses the shot's xG scaled by the goalie's real tier save rate; `goalie.tierGoalScale` retuned to 0.72.

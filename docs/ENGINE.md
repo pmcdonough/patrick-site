@@ -36,6 +36,8 @@ Formations and most rules use team-relative coordinates: `toFx(t, x)` gives dist
 
 **Drawing and HUD** (`drawRink`, `drawBenches`, `drawPlayers`, `drawSkater`, `drawGoalie`, `drawOfficials`, `drawWhistle`, `updateHud`, roster sheets, `renderCalib`, `runBatch`). The reality check reads `teamSample` per team and compares with `moneypuck-2025.json` benchmarks; `runBatch` plays ten headless games inside the page with the display paused.
 
+The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal rate and the minor-penalty rate when a checker is on the carrier (`turnover.*PerAggression`), the probabilistic shot rate, and how long the carrier holds the puck under pressure. Its description, and every system's, lives in `systems.json` and is shown as hover text and in the About dialog.
+
 ## Invariants
 
 - Only the helpers above read direction. If something looks mirrored in the second period, a raw x slipped in.

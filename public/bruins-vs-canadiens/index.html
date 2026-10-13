@@ -233,8 +233,11 @@
     <h3>Physics and calibration</h3>
     <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts on rushes, breakouts and chases, cruising otherwise. Wrist shots run 58 to 85 mph and point shots 80 to 100; the dump is about 85 mph around the glass. Every unblocked attempt gets an expected-goal value from a model fit on two seasons of MoneyPuck shot data: distance and angle to the net, shot type, rebound, and the strength on the ice, times the shooter's own finishing over those seasons. The danger tiers follow MoneyPuck's expected-goal thresholds, and a goal is scored against each goalie at that value scaled by his real save rate in the tier. The engine is balanced at the NHL-average settings, the tick mark on each slider; the defaults it ships with run hotter on speed and shot volume because that is more fun to watch. The reality check under Advanced compares the sim's per-game rates with each club's real 2025-26 rates and the league average, live or over a ten-game batch with the win record, and flags anything more than 50 percent off. That table is the honest statement of where the engine still differs from the real game.</p>
 
+    <h3>The systems</h3>
+    <div id="aboutSystems"></div>
+
     <h3>Using it</h3>
-    <p>Game: pause, speed, a new game, Effects and Sticks, with the box score and play-by-play. Effects are skate trails behind anyone moving fast, a streak on hard shots and passes, a ripple on takeaways and blocked shots, a flash on big saves, and the goal light with the scorer picked out. Sticks point at the puck when it is close; turned off, each skater shows a short heading tick. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Rosters: who is on the ice, time on ice and current shift, goals and blocks, with each player's real stat line on hover. Advanced holds the reality check, the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone. The version number is at the bottom of the page.</p>
+    <p>Game: pause, speed, a new game, Effects and Sticks, with the box score and play-by-play. Effects are skate trails behind anyone moving fast, a streak on hard shots and passes, a ripple on takeaways and blocked shots, a flash on big saves, and the goal light with the scorer picked out. Sticks point at the puck when it is close; turned off, each skater shows a short heading tick. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Hover any choice for what it does. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems. Rosters: who is on the ice, time on ice and current shift, goals and blocks, with each player's real stat line on hover. Advanced holds the reality check, the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone. The version number is at the bottom of the page.</p>
 
     <h3>What it is not</h3>
     <p>It is not a replay of real games. Player movement is a decision model, tuned against public aggregates, not tracking data, so the engine can be systematically wrong in ways the calibration table will show. Ratings reflect one season of results and a weak defensive proxy, and systems are drawn from coaching references, not from either club's actual playbook. Everything that drives it, from rosters to formation coordinates to the speed of a rimmed puck, is kept as plain data with its sources, so any of it can be questioned and corrected without touching the engine.</p>
@@ -1373,14 +1376,14 @@
   },
   "chip": {
    "label": "Chip and chase",
-   "desc": "Chip the puck past a defender standing up at the line (or at fx 110 regardless) and chase; happens before any headman read.",
+   "desc": "Chip the puck past a defender standing up at the line and chase it; the read comes before any headman pass.",
    "chipFromFx": 100,
    "chipToFx": 132,
    "chipSpeedFtPerSec": 38
   },
   "dump": {
    "label": "Dump and chase",
-   "desc": "Hard rim (about 85 mph) into the near corner from the dump window (past the red line, before the blue line) when a defender is standing up at the line; it wraps behind the net to the far corner, where the weak-side forward is sprinting to beat the defense to it.",
+   "desc": "Hard rim into the near corner from between the red line and the blue line when a defender is standing up at the line; it wraps behind the net to the far corner, where the weak-side forward is sprinting to beat the defense to it.",
    "dumpFromFx": 92,
    "dumpToFx": 177,
    "dumpSpeedFtPerSec": 125,
@@ -1503,7 +1506,8 @@
      172,
      44
     ]
-   }
+   },
+   "desc": "One at the point, three across the middle (half walls and the bumper in the slot), one at the net. Built for one-timers from the flanks and the bumper."
   },
   "umbrella": {
    "label": "Umbrella",
@@ -1528,7 +1532,8 @@
      168,
      22
     ]
-   }
+   },
+   "desc": "Three up top in an arc (point and two half walls), two low at the net and the goal line. Built for point and half-wall shots through traffic."
   },
   "overload": {
    "label": "Overload",
@@ -1554,7 +1559,8 @@
      122,
      56
     ]
-   }
+   },
+   "desc": "Four players on the puck side of the ice, one weak-side man. Short passes along the wall to pull the kill out of shape; mirrors to the puck side."
   }
  },
  "forecheck": {
@@ -1779,7 +1785,8 @@
      57
     ]
    ],
-   "pressure": false
+   "pressure": false,
+   "desc": "A tight box in the slot. Nobody chases the puck above the circles; block lanes and keep the middle closed."
   },
   "diamond": {
    "label": "Diamond",
@@ -1801,7 +1808,8 @@
      42
     ]
    ],
-   "pressure": false
+   "pressure": false,
+   "desc": "One high, two wide, one low. Takes away the point and the half walls against a 1-3-1 or umbrella; the bumper in the slot is the risk."
   },
   "pressure": {
    "label": "Aggressive box",
@@ -1823,7 +1831,8 @@
      57
     ]
    ],
-   "pressure": true
+   "pressure": true,
+   "desc": "A box that pressures: the nearest killer attacks the puck carrier, clears at the first sign of pressure, and the box collapses behind him."
   }
  },
  "deployment": {
@@ -1934,6 +1943,13 @@
   "aimFx": 125,
   "speedFtPerSec": 95,
   "gassedPressureFt": 8
+ },
+ "coaching": {
+  "aggression": {
+   "desc": "How hard the team plays on and with the puck. Higher: checkers go after the carrier harder (more takeaways, more penalties), skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems.",
+   "min": 0,
+   "max": 1
+  }
  }
 }
 </script>
@@ -3944,7 +3960,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.29';
+  const VERSION = '0.30';
   $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -4037,6 +4053,20 @@ function startSim(DATA) {
   }
   document.querySelectorAll('select, input[type=range]').forEach(el => el.addEventListener('input', readTactics));
   readTactics();
+  // Hover text on the coaching cards, read from the systems data: every option explains itself, the select shows the
+  // current choice's explanation, and the aggression dial says what it changes.
+  (() => {
+    const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
+    for (const side of ['h', 'a']) {
+      for (const [suffix, section] of Object.entries(SECTION)) {
+        const sel = $(side + suffix); if (!sel) continue;
+        const describe = () => { const d = SYS[section][sel.value]; sel.title = d && d.desc ? `${d.label || sel.selectedOptions[0].textContent}: ${d.desc}` : ''; };
+        for (const o of sel.options) { const d = SYS[section][o.value]; if (d && d.desc) o.title = d.desc; }
+        sel.addEventListener('input', describe); describe();
+      }
+      const agg = $(side + 'Agg'); if (agg && SYS.coaching) { const d = SYS.coaching.aggression.desc; const show = () => { agg.title = `Aggression ${(agg.value / 100).toFixed(2)}. ${d}`; }; agg.addEventListener('input', show); show(); }
+    }
+  })();
   // build the admin sliders
   (() => {
     const box = $('admin');
@@ -5383,6 +5413,11 @@ function startSim(DATA) {
   }));
   try { let t = localStorage.getItem('rink.tab'); if (t === 'calib' || t === 'admin') t = 'advanced'; if (t === 'systems') t = 'game'; const b = t && document.querySelector(`.tab[data-tab="${t}"]`); if (b) b.click(); } catch (e) {}
   const aboutDlg = $('about');
+  (() => {   // the About dialog's systems list, one line per choice, from the same descriptions the coaching cards show
+    const el = $('aboutSystems'); if (!el) return;
+    const groups = [['Forecheck', 'forecheck'], ['Breakout', 'breakout'], ['Zone entry', 'entry'], ['Offensive zone', 'offensiveZone'], ['Defensive zone', 'defensiveZone'], ['Power play', 'powerPlay'], ['Penalty kill', 'penaltyKill']];
+    el.innerHTML = groups.map(([title, key]) => `<p><b>${title}.</b> ` + Object.values(SYS[key]).filter(v => v && typeof v === 'object' && v.label && v.desc).map(v => `<i>${v.label}</i>: ${v.desc}`).join(' ') + '</p>').join('');
+  })();
   $('aboutBtn').addEventListener('click', () => { if (aboutDlg.showModal) aboutDlg.showModal(); else aboutDlg.setAttribute('open', ''); });
   $('aboutClose').addEventListener('click', () => aboutDlg.close ? aboutDlg.close() : aboutDlg.removeAttribute('open'));
   aboutDlg.addEventListener('click', e => { if (e.target === aboutDlg) aboutDlg.close(); });
