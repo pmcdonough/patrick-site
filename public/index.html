@@ -1,11 +1,124 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Patrick</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patrick McDonough</title>
+<meta name="description" content="Technology executive. Simulations and experiments built with AI.">
+<meta property="og:title" content="Patrick McDonough">
+<meta property="og:description" content="Technology executive. Simulations and experiments built with AI.">
+<meta property="og:type" content="profile">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316202c'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='16' font-weight='700' fill='%23f3efe6' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --fg: #16202c;
+    --dim: #5f6b78;
+    --line: #e2ded5;
+    --accent: #1f5f9e;
+    --tag: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #12161c; --card: #1a2029; --fg: #e9edf2; --dim: #95a1ae; --line: #2a323d; --accent: #7fb2e5; --tag: #232b36; }
+  }
+  :root[data-theme="dark"] { --bg: #12161c; --card: #1a2029; --fg: #e9edf2; --dim: #95a1ae; --line: #2a323d; --accent: #7fb2e5; --tag: #232b36; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.55 Inter, system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 72px 16px 56px; }
+
+  header h1 { font: 600 clamp(2.2rem, 6vw, 3.2rem)/1.05 Fraunces, Georgia, serif; margin: 0 0 12px; letter-spacing: -0.01em; }
+  header .role { font-size: 1.1rem; font-weight: 500; margin: 0 0 4px; }
+  header .sub { color: var(--dim); margin: 0; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .links a { color: var(--fg); text-decoration: none; font-weight: 500; font-size: 0.92rem; border: 1px solid var(--line); background: var(--card); padding: 6px 14px; border-radius: 999px; }
+  .links a:hover { border-color: var(--accent); color: var(--accent); }
+
+  h2 { font: 600 0.78rem/1 Inter, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin: 56px 0 16px; }
+  .intro { color: var(--dim); margin: -6px 0 18px; max-width: 60ch; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; color: inherit; text-decoration: none; transition: transform .15s ease, border-color .15s ease; }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card .thumb { aspect-ratio: 16 / 9; background: #0f1b2b; display: block; }
+  .card .thumb svg { width: 100%; height: 100%; display: block; }
+  .card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .card h3 { font-size: 1.05rem; font-weight: 600; margin: 0; }
+  .card p { margin: 0; color: var(--dim); font-size: 0.92rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 8px; }
+  .tags span { font-size: 0.72rem; font-weight: 500; background: var(--tag); color: var(--dim); padding: 3px 8px; border-radius: 6px; }
+
+  .card.soon { border-style: dashed; background: transparent; justify-content: center; align-items: center; min-height: 180px; color: var(--dim); font-size: 0.92rem; }
+  .card.soon:hover { transform: none; border-color: var(--line); }
+
+  footer { margin-top: 64px; color: var(--dim); font-size: 0.82rem; }
+</style>
 </head>
 <body>
-  <h1>Coming soon</h1>
+<main>
+  <header>
+    <h1>Patrick McDonough</h1>
+    <p class="role">Technology executive</p>
+    <p class="sub">Product, data science and applied AI. I still like to build things myself.</p>
+    <nav class="links">
+      <!-- Replace the LinkedIn URL below with your profile link -->
+      <a href="https://www.linkedin.com/in/" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://github.com/pmcdonough" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <section>
+    <h2>Simulations and experiments</h2>
+    <p class="intro">Interactive models and side projects, mostly built with AI coding tools. Each one runs in your browser.</p>
+    <div class="grid">
+
+      <a class="card" href="/bruins-vs-canadiens/">
+        <span class="thumb" aria-hidden="true">
+          <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="180" fill="#0f1b2b"/>
+            <rect x="30" y="34" width="260" height="112" rx="36" fill="#eef5fb"/>
+            <line x1="160" y1="34" x2="160" y2="146" stroke="#c8102e" stroke-width="2.4"/>
+            <line x1="127" y1="34" x2="127" y2="146" stroke="#0b4ea2" stroke-width="2.4"/>
+            <line x1="193" y1="34" x2="193" y2="146" stroke="#0b4ea2" stroke-width="2.4"/>
+            <line x1="45" y1="42" x2="45" y2="138" stroke="#c8102e" stroke-width="0.8"/>
+            <line x1="275" y1="42" x2="275" y2="138" stroke="#c8102e" stroke-width="0.8"/>
+            <circle cx="160" cy="90" r="19" fill="none" stroke="#0b4ea2" stroke-width="0.8"/>
+            <circle cx="70" cy="62" r="13" fill="none" stroke="#c8102e" stroke-width="0.8"/>
+            <circle cx="70" cy="118" r="13" fill="none" stroke="#c8102e" stroke-width="0.8"/>
+            <circle cx="250" cy="62" r="13" fill="none" stroke="#c8102e" stroke-width="0.8"/>
+            <circle cx="250" cy="118" r="13" fill="none" stroke="#c8102e" stroke-width="0.8"/>
+            <rect x="40" y="86" width="5" height="8" fill="#c8102e" opacity=".5"/>
+            <rect x="275" y="86" width="5" height="8" fill="#c8102e" opacity=".5"/>
+            <g stroke-width="2">
+              <circle cx="108" cy="70" r="6" fill="#000" stroke="#ffb81c"/>
+              <circle cx="140" cy="104" r="6" fill="#000" stroke="#ffb81c"/>
+              <circle cx="176" cy="80" r="6" fill="#000" stroke="#ffb81c"/>
+              <circle cx="96" cy="114" r="6" fill="#000" stroke="#ffb81c"/>
+              <circle cx="214" cy="66" r="6" fill="#af1e2d" stroke="#192168"/>
+              <circle cx="190" cy="110" r="6" fill="#af1e2d" stroke="#192168"/>
+              <circle cx="228" cy="100" r="6" fill="#af1e2d" stroke="#192168"/>
+              <circle cx="152" cy="62" r="6" fill="#af1e2d" stroke="#192168"/>
+            </g>
+            <circle cx="183" cy="86" r="2.2" fill="#111"/>
+            <path d="M176 80 L183 86" stroke="#111" stroke-width="0.8" stroke-dasharray="2 2"/>
+          </svg>
+        </span>
+        <span class="body">
+          <h3>Bruins vs Canadiens</h3>
+          <p>A full 5-on-5 hockey game simulation with real rosters, player ratings built from 2025-26 stats, selectable team systems, line changes and NHL rules. It grades itself against real 2025-26 team stats.</p>
+          <span class="tags"><span>Simulation</span><span>Canvas</span><span>NHL data</span><span>JavaScript</span></span>
+        </span>
+      </a>
+
+      <div class="card soon">More coming soon</div>
+
+    </div>
+  </section>
+
+  <footer>&copy; 2026 Patrick McDonough</footer>
+</main>
 </body>
 </html>
