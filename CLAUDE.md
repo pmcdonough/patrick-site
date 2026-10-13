@@ -11,11 +11,17 @@ A static personal site in `public/`. The main project is the Bruins vs Canadiens
 ```
 public/index.html                         home page (card for each project, version badge)
 public/bruins-vs-canadiens/index.html     the engine: CSS, markup, embedded data copies, script
-public/bruins-vs-canadiens/data/*.json    the data that drives it (rosters, ratings, systems, physics, moneypuck-2025, defaults)
+public/bruins-vs-canadiens/data/*.json    the data that drives it (rosters, ratings, systems, physics, moneypuck-2025, defaults, xg-model)
+public/play-review/index.html             shot versus pass review of a real game; embeds xg-model, systems and its game file (fetch first, embedded fallback)
+public/play-review/data/game-*.json       one file per game, from tools/game_load.py
 tools/build.py                            re-embeds data/*.json into index.html; --check verifies
+tools/xg_fit.py                           fits data/xg-model.json from MoneyPuck shot CSVs (not in the repo; download from moneypuck.com)
+tools/game_load.py                        NHL play-by-play + shift chart JSON -> play-review game file
 tools/*.js                                headless Playwright checks (smoke, calibration, nhl-average, shifts, rules)
 docs/ENGINE.md                            how the engine is organized, invariants, tuning knobs, lessons learned
 docs/HISTORY.md                           what was built before version numbers existed, in order
+docs/XG-MODEL.md                          the expected-goal model and how the engine scores shots with it
+docs/PLAY-REVIEW.md                       the review page's pipeline, reconstruction and scoring
 CHANGELOG.md                              per-version changes
 ```
 
@@ -24,9 +30,11 @@ CHANGELOG.md                              per-version changes
 - The app's visible copy never mentions technical internals: no file names, no "data/systems.json", no function names. Data sources are listed only in the Advanced tab, in a collapsed section. The About dialog explains how the game works in hockey terms.
 - Copy is plain and factual. No em dashes. Short sentences. Hockey vocabulary, not marketing.
 - Every number a hockey person might question lives in `data/`, not in the script. If you add a threshold to the engine, put it in `physics.json` or `systems.json` with a `desc`, and read it from `PH` or `SYS`.
-- After editing anything in `data/`, run `python3 tools/build.py` so the embedded copies in `index.html` match. The page fetches `data/` over HTTP and falls back to the embedded copies from `file://`.
-- The single file must keep working when opened from disk. Do not add external scripts or stylesheets beyond the Google Fonts link already there.
+- After editing anything in `data/` or a game file, run `python3 tools/build.py` so the embedded copies in both pages match. Pages fetch their data over HTTP and fall back to the embedded copies from `file://`.
+- Every page must keep working when opened from disk as a single file. Do not add external scripts or stylesheets beyond the Google Fonts link already there.
 - Balance is measured, not eyeballed. Before shipping an engine change, run `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and for anything touching shots or goalies, `node tools/calibration.js`. Compare against the baselines in `docs/ENGINE.md`.
+- Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo; the fitted model and the compact game file go in. Re-run the fit script, not the numbers, when the data changes.
+- The expected-goal formula lives in two places, the engine (`xgModel`) and the review page; change both or neither.
 - The engine is balanced at the NHL-average multipliers (every slider at 1.0, the tick mark). The build defaults in `defaults.json` deliberately run hotter (acceleration 2.3, speed 1.3, cruise 1.15, shot volume 2) because it is more fun to watch. Calibrate at 1.0, then check that the defaults still look right.
 
 ## Shipping a version

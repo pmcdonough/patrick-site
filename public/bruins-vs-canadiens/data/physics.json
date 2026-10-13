@@ -121,7 +121,12 @@
   "errorPerFt": 0.001111,
   "oneTimerExtraError": 0.05,
   "aimSpreadFt": 2.6,
-  "note": "wrist 58 to 85 mph, slap 80 to 100 mph"
+  "note": "wrist 58 to 85 mph, slap 80 to 100 mph",
+  "xg": {
+   "desc": "Context flags for the expected-goal model, matching MoneyPuck's definitions: a rebound is a shot within reboundWithinSec of the goalie's last save; a rush shot comes within rushWithinSec of the team's entry into the offensive zone.",
+   "reboundWithinSec": 3,
+   "rushWithinSec": 4
+  }
  },
  "puck": {
   "frictionPerFrameAt60Hz": 0.008,
@@ -152,8 +157,9 @@
   },
   "bodyRadiusFt": 2.3,
   "reboundCoolSec": 0.55,
-  "tierGoalScale": 1.0,
-  "tierGoalScaleNote": "Multiplies the goal probability implied by a goalie's tier save percentage. 1.0 means the real tier rates are used as-is."
+  "tierGoalScale": 0.72,
+  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie; 0.72 lands goals per game at the league rate at the NHL-average settings, since the sim's shot mix still carries more medium-danger looks than the real game.",
+  "desc": ""
  },
  "shotBlock": {
   "laneHalfWidthFt": 4.0,
@@ -183,18 +189,18 @@
   "minorPenaltySec": 120
  },
  "shotDecision": {
-  "desc": "When a carrier shoots. A clean look from the slot is a must-shoot (fires within a fraction of a second); everything else is a per-second probability scaled by shot quality, aggression and the shooter's rating. Shot quality is 0 to 1 from distance (75 ft horizon) and angle.",
+  "desc": "When a carrier shoots. A clean look from the slot is a must-shoot (fires within a fraction of a second); everything else is a per-second probability scaled by shot quality, aggression and the shooter's rating. Shot quality is 0 to 1 from distance (75 ft horizon) and angle. Rates were retuned in 0.29 so that, at the NHL-average settings, unblocked attempts and the danger-tier mix match MoneyPuck's league rates with the expected-goal model scoring each shot.",
   "slot": {
    "maxDistFromNetFt": 30,
    "halfWidthFt": 14,
-   "minQuality": 0.6,
-   "shootRatePerSec": 0.5,
+   "minQuality": 0.7,
+   "shootRatePerSec": 0.3,
    "requiresClearLane": true,
    "minDistFromNetFt": 9,
    "openRequiresNoOpponentWithinFt": 6
   },
   "probabilistic": {
-   "baseRate": 0.03,
+   "baseRate": 0.02,
    "qualityPower": 2,
    "aggressionWeight": 1.5,
    "shooterWeight": 0.8,
@@ -219,14 +225,20 @@
    "desc": "Puck on the stick in front of the goalie with no defender on him, within a second of getting it: shoot now. Only the goalie can stop this one, so no lane check.",
    "maxDistFt": 14,
    "maxOffCenterFt": 9,
-   "noDefenderWithinFt": 6,
-   "shootRatePerSec": 2,
-   "withinSecOfReceiving": 1.0
+   "noDefenderWithinFt": 8,
+   "shootRatePerSec": 1.0,
+   "withinSecOfReceiving": 0.7
   },
-  "stuckAfterSec": 2.2
+  "stuckAfterSec": 2.2,
+  "breakaway": {
+   "desc": "An opponent counts as goal-side unless he is clearly behind the carrier (behindByFt); a wide opponent needs a bigger head start to be beaten.",
+   "behindByFt": 14,
+   "wideAllowanceFt": 30
+  },
+  "stuckShotRatePerSec": 0.2
  },
  "dangerTiers": {
-  "desc": "Maps a shot's release point onto MoneyPuck's danger tiers (its tiers are defined by expected goals; these boxes approximate them). Distance is from the net center, off-center is lateral distance from the net's midline.",
+  "desc": "Fallback only, used when the expected-goal model is not loaded. With the model, a shot's tier follows MoneyPuck's xG thresholds (low under 0.08, medium under 0.20, high 0.20 and up).",
   "high": {
    "maxDistFt": 12,
    "maxOffCenterFt": 8

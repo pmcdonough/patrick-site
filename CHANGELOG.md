@@ -1,6 +1,17 @@
 # Changelog
 
+## Play Review
+
+### 0.1
+- First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
+
 ## Bruins vs Canadiens
+
+### 0.29
+- Expected-goal model fit on two seasons of MoneyPuck shots (`tools/xg_fit.py`, `data/xg-model.json`) replaces the distance-box danger tiers: every shot gets its own probability from distance, angle, shot type, rebound and strength, times the shooter's finishing. Tiers now follow MoneyPuck's xG thresholds.
+- Goalie save roll uses the shot's xG scaled by the goalie's real tier save rate; `goalie.tierGoalScale` retuned to 0.72.
+- Shot decisions retuned to the real mix (in-tight, slot, probabilistic and stuck rates down; breakaway detection stricter and parameterized) so attempts and the danger-tier split match league rates at the NHL-average settings.
+- About and the Data sources panel describe the model; `tools/build.py` embeds it.
 
 ### 0.28
 - About dialog rewritten to cover the current engine: carrier reads, breakout burst and rush, cycle motion, hard dump, forecheck and coverage, fatigue effects, hybrid icing, calibration at the NHL-average tick.

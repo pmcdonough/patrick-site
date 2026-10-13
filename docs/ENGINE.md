@@ -26,6 +26,8 @@ Formations and most rules use team-relative coordinates: `toFx(t, x)` gives dist
 
 **AI** (`assignTargets`, `carrierThink`, `pass`, `shoot`, `chip`, `clearPuck`, `laneClear`, `shotQuality`, `leadForward`). `assignTargets` picks the chaser (nearest to the puck or carrier; a second chaser on 2-1-2 and lock forechecks), a fronter in our zone, the dump-and-chase sprinter, and gives everyone else a formation spot, clamped onside at fx 106 while we attack. `carrierThink` runs the carrier's decision each tick: in-tight shot, slot must-shoot, perimeter shots through traffic, probabilistic and point shots, breakaway, spring pass to a lead forward, the chosen zone entry (headman, carry, chip, dump), the stuck rule after `shotDecision.stuckAfterSec`, clearing under pressure in our zone, and pass scoring (openness, progress, shot quality of the receiver, distance).
 
+**Expected goals** (`xgModel`, `xgTier`, `XGF`). The logistic model from `xg-model.json`, evaluated in `shoot()` with the shot's distance, angle, type, rebound and strength; `puck.xg` feeds the team total and the goalie's save roll. `docs/XG-MODEL.md` has the fit and the calibration story.
+
 **Movement and physics** (`movePlayers`, `fatigueLevel`, `fatigue`, `hands`, `movePuck`, `keepOffNets`, `keepOnIce`, goalie helpers). Effort: full speed when chasing, rushing, bursting on a breakout, back-checking caught above the puck, or far from the spot; otherwise cruise. Fatigue scales top speed and acceleration down and pass and shot error up after `skater.fatigue.startsAtShiftSec`. The puck has friction, board and rim restitution, and `puck.cool` prevents instant re-pickup after releases. `movePuck` handles pickups, steals, blocks (`shotBlock`), goalie saves against the goalie line (`goalieLine`, one save roll per shot via `puck.beaten`), rebounds kicked to the corner, freezes, goals, icing and the dead-puck whistle.
 
 **Rules** (`checkOffside`, `whistleOffside`, `penalize`, `releaseFromBox`, hybrid icing inside `movePuck`). Tag-up offside with a delayed flag, hybrid icing judged at the dots with the icing team unable to change, penalties drawn from each player's MoneyPuck penalty rate, too-many-men on a mid-change turnover.
@@ -37,20 +39,20 @@ Formations and most rules use team-relative coordinates: `toFx(t, x)` gives dist
 ## Invariants
 
 - Only the helpers above read direction. If something looks mirrored in the second period, a raw x slipped in.
-- Each shot gets exactly one save roll (`puck.beaten`), and whether it is on net is decided at release (`puck.onNet`). Wide pucks the goalie touches are misses, not saves.
+- Each shot gets exactly one save roll (`puck.beaten`), and whether it is on net is decided at release (`puck.onNet`). Wide pucks the goalie touches are misses, not saves. The save roll divides xG by the league on-net share because xG is per unblocked attempt and the roll only sees pucks that reached the goalie.
 - A player is never in two places: `onIce`, `leaving`, `entering`, `box` are mutually consistent; `rebuildOnIce` recomputes `t.players` after any change.
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 
-## Baselines (v0.27 to v0.28)
+## Baselines (v0.29)
 
-At NHL-average multipliers, per team per game, over 6 games: about 28 to 32 shots on goal, 3 to 4 goals, 7 high-danger shots, 6 goalie freezes, 3 offsides, 4 icings; mean shift about 49 s, p90 about 73 s, 3 percent of shifts past 90 s (units pinned in their zone); line changes about 150 per team.
+At NHL-average multipliers, per team per game, over a ten-game batch: about 21 to 27 shots on goal, 3.5 to 4.3 goals on 3.5 expected, 43 unblocked attempts in a 28 / 13 / 3 low / medium / high split (league 31 / 8 / 3), 3 offsides, 5 icings; mean shift about 49 s, p90 about 73 s.
 
-At build defaults (shots 2x, speed 1.3x): about 45 shots on goal and 6 to 8 goals per team, which is intended.
+At build defaults (speed 1.3x, shot volume 2x): about 26 to 34 shots on goal and 4 goals per team on 4 to 5 expected. Boston's dump-and-chase system produces fewer attempts than Montreal's stretch and umbrella.
 
 ## Tuning knobs most likely to matter
 
-`physics.json`: `skater.fatigue`, `skater.effort`, `shotDecision.*`, `goalie.freeze`, `goalie.tierGoalScale`, `turnover`, `puck.friction`, `rulesBenchmarks`.
+`physics.json`: `shotDecision.*` (rates per rule, breakaway detection), `goalie.tierGoalScale`, `shot.xg`, `skater.fatigue`, `skater.effort`, `shotDecision.*`, `goalie.freeze`, `goalie.tierGoalScale`, `turnover`, `puck.friction`, `rulesBenchmarks`.
 `systems.json`: `breakout.flow`, `offensiveZone.motion`, `entry.dump`, `clearing`, `deployment.shiftTargetsSec`, `deployment.changeWindows`, formation spots per system.
 `defaults.json`: what the sliders and systems start at.
 
@@ -73,4 +75,6 @@ Things that were wrong once and the fix, so nobody reintroduces them.
 - Forwards standing still on breakouts and in the cycle: formation spots were fixed; see `breakout.flow` and `offensiveZone.motion`.
 - Gassed units icing the puck constantly: the gassed clear now needs pressure within `clearing.gassedPressureFt` (8 ft), not the penalty-kill distance.
 - Hidden panes showing in the standalone file: `[hidden] { display: none !important; }` is required in the CSS.
+- The xG model's unmeasured features (puck speed before the shot, off wing) must take their dataset means, or every shot is inflated by about a third. MoneyPuck's rush flag is empty in 2025-26 and must not be used.
+- The old distance-box tiers hid a shot mix that was far too close to the net; the first xG swap tripled goals until the decision rates were retuned against the real tier split.
 - Measuring pace: compare builds with the same harness and the same multipliers; a quick harness that skipped whistle ticks produced misleading averages once.

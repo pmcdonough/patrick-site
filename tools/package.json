@@ -9,6 +9,8 @@
     "shifts": "node shifts.js",
     "rules": "node rules.js",
     "build": "python3 build.py",
+    "xg": "python3 xg_fit.py",
+    "game": "python3 game_load.py",
     "check": "python3 build.py --check && node smoke.js"
   },
   "devDependencies": { "playwright": "^1.47.0" }
