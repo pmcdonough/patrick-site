@@ -1,6 +1,6 @@
 # Play Review
 
-The first slice of the counterfactual play-review product described in the product brief: one real game, every unblocked shot scored by expected goals against the best pass the model saw from the same spot, with a replay of the seconds around each shot. Version 0.4, at `public/play-review/`.
+The first slice of the counterfactual play-review product described in the product brief: one real game, every unblocked shot scored by expected goals against the best pass the model saw from the same spot, with a replay of the seconds around each shot. Version 0.5, at `public/play-review/`.
 
 ## What it shows
 
@@ -41,19 +41,21 @@ Drive worth more: was walking the puck 15 ft closer, cutting 6 ft toward the mid
 
 Right call: shots that beat every alternative (best pass and the drive) by the most, so the review is not only criticism. In this game about half the shots are the right call by this measure.
 
-The replay's right panel follows the tab: the pass and one-timer, or the walk-in and shot, or whichever alternative scored higher on the right-call tab.
+The replay's alternative follows the tab: the pass and one-timer, or the walk-in and shot, or whichever alternative scored higher on the right-call tab.
 
 ## Replay
 
 Added in 0.2. The replay is a mock reconstruction drawn in the sim's style, not tracking, and every panel says so. Its inputs are real: the preceding event's type, location and time, the shot's location, type and result, and who was on the ice. Everything between those anchors is synthesized.
 
+Views. One rink, three views: the default shows the real play with the model's alternative as a green ghost on the same clock from the moment of the shot (the pass or the walk-in, the ghost puck, the look it would have been), and the other two show either read alone. Side-by-side panels were dropped in 0.5 because two clips at once were hard to follow.
+
 Timeline. All times are ice time, game-clock seconds relative to the shot. The lead-in is configurable from 2 to 8 seconds (default 5) and the clip runs 3 seconds after. Playback speed stretches ice time on the wall clock: 0.25x, 0.5x (slow motion, the default) and 1x (real time); the readout counts ice time, so in slow motion it ticks slowly. Play, pause, replay and a scrubber. Both panels share the clock; they are identical until the shot and diverge at zero.
 
-Scenario. If the preceding event was outside the offensive zone, or was a faceoff, takeaway, giveaway or hit in the top of the zone, the clip is a rush; otherwise it is an in-zone clip. Skaters move at real speeds for the whole lead-in, so where they start is where that speed puts them `lead` seconds earlier: on a rush, forwards at 20 to 27 ft/s and defensemen at 17 to 23 ft/s with a slight lane angle, back-checkers at 18 to 25 ft/s, which means a 5 second lead-in starts in the neutral or defensive zone and the view widens to show it; in a cycle, everyone drifts at about 5 ft/s around his spot. Each skater arrives at his inferred spot shortly before the shot, the pressuring defender last. Movement between positions is eased (slow, fast, slow), with velocities derived for stick direction and skate trails.
+Scenario. If the preceding event was outside the offensive zone, or was a faceoff, takeaway, giveaway or hit in the top of the zone, the clip is a rush; otherwise it is an in-zone clip. Skaters move at real speeds for the whole lead-in, so where they start is where that speed puts them `lead` seconds earlier: on a rush, forwards at 20 to 27 ft/s and defensemen at 17 to 23 ft/s with a slight lane angle, back-checkers at 18 to 25 ft/s, which means a 5 second lead-in starts in the neutral or defensive zone and the view widens to show it; in a cycle, everyone drifts at about 5 ft/s around his spot. Each skater arrives at his inferred spot shortly before the shot, the pressuring defender last. Movement between positions is eased (slow, fast, slow), with velocities derived for stick direction and skate trails. Sticks reach for the puck only when it is on the ice near them, never for a puck in flight, and the streak behind a moving puck follows its own path.
 
 Puck. The puck starts at the real preceding event's location and is carried at 22 ft/s (about 15 mph). If that event is more than 45 ft from the shooter, the nearest teammate carries it and passes about a second before the shot at 70 ft/s; otherwise the shooter carries it himself. If the event is farther than the carry speed covers in the lead-in, the carry is already under way when the clip opens.
 
-After the shot. Left panel: the puck travels at 90 ft/s (120 for a slap shot) and the real result plays: a goal lights the lamp, a save stops at the goalie and rebounds to the corner, a miss goes wide and around the boards. Right panel: the pass travels at 70 ft/s to the receiver, he releases a one-timer a quarter second later, and the puck reaches the net with the look's expected-goal value as the label. No result is invented for the alternative.
+After the shot. The real play: the puck travels at 90 ft/s (120 for a slap shot) and the real result plays: a goal lights the lamp, a save stops at the goalie and rebounds to the corner, a miss goes wide and around the boards. The alternative (ghost, or alone in its view): the pass travels at 70 ft/s to the receiver, he releases a one-timer a quarter second later, and the puck reaches the net with the look's expected-goal value as the label. No result is invented for the alternative.
 
 Nothing in the replay feeds the scoring. The scoring uses the shot's real location and the inferred spots; the replay only animates them.
 

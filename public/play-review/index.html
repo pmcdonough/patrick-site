@@ -37,10 +37,14 @@
   .detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
   .detail h3 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }
   .detail .meta { color: var(--dim); font-size: 0.9rem; margin: 0 0 14px; }
-  .rinks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media (max-width: 640px) { .rinks { grid-template-columns: 1fr; } }
+  .detail > canvas { width: 100%; height: auto; display: block; border-radius: 10px; background: var(--ice); }
+  .reads { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+  @media (max-width: 640px) { .reads { grid-template-columns: 1fr; } }
+  .pane.alt h4, .pane.alt .num { color: var(--good); }
+  .view { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .view button { font: 500 0.82rem Inter, sans-serif; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .view button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
   .pane h4 { margin: 0 0 6px; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-  .pane canvas { width: 100%; height: auto; display: block; border-radius: 10px; background: var(--ice); }
   .pane .num { font-size: 1.6rem; font-weight: 600; margin: 8px 0 0; line-height: 1.1; }
   .pane .num small { font-size: 0.8rem; color: var(--dim); font-weight: 500; margin-left: 6px; }
   .pane p { margin: 4px 0 0; font-size: 0.9rem; color: var(--dim); }
@@ -831,7 +835,7 @@
 
 <script>
 (async () => {
-  const VERSION = '0.4';
+  const VERSION = '0.5';
   document.getElementById('version').textContent = 'Play review v' + VERSION;
   const $ = id => document.getElementById(id);
   const get = async u => { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
@@ -972,7 +976,7 @@
   // the real result plays on the left while the model's pass plays on the right. Every panel is labeled as such.
   // Times are ice time (game-clock seconds). Playback speed stretches them on the wall clock; 0.5x is slow motion.
   const RP = { leadDefault: 5, leadMin: 2, leadMax: 8, after: 3, passFtPerSec: 70, wristFtPerSec: 90, slapFtPerSec: 120, carryFtPerSec: 22, rushFwdFtPerSec: [20, 27], rushDFtPerSec: [17, 23], backcheckFtPerSec: [18, 25], zoneDriftFtPerSec: 5 };
-  let lead = RP.leadDefault, speed = 0.5, playing = false, tcur = -RP.leadDefault, clip = null, raf = null, lastTs = 0;
+  let view = 'both', lead = RP.leadDefault, speed = 0.5, playing = false, tcur = -RP.leadDefault, clip = null, raf = null, lastTs = 0;
   const ease = u => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
   const lerp = (a, b, u) => a + (b - a) * u;
   const seeded = (n) => { let x = (n * 9301 + 49297) % 233280; return () => (x = (x * 9301 + 49297) % 233280) / 233280; };
@@ -1069,15 +1073,22 @@
         <input type="range" id="scrub" min="${-lead}" max="${RP.after}" step="0.05" value="${-lead}">
         <span id="tread" class="tread" title="Ice time relative to the shot">-${lead.toFixed(1)}s</span>
       </div>
-      <div class="rinks">
-        <div class="pane"><h4>What happened</h4><canvas id="cA" width="520" height="440"></canvas><p class="num">${fmt(shotXg)}<small>chance to score, shot taken</small></p><p>${R.shooter.name} shoots. ${R.opps.find(o => o.pressurer) ? 'Nearest defender ' + R.opps.find(o => o.pressurer).name + ' closing.' : ''}</p></div>
-        <div class="pane"><h4>What the model saw</h4><canvas id="cB" width="520" height="440"></canvas>${clip.useDrive ? `<p class="num">${fmt(x.drive.value)}<small>walk in ${RP_DRIVE.ft} ft and shoot</small></p><p>${Math.round((1 - x.drive.turnover) * 100)}% to get there with the puck${x.drive.inPath ? ` past ${x.drive.inPath} defender${x.drive.inPath > 1 ? 's' : ''}` : ''}, then a ${fmt(x.drive.xg)} look from ${Math.round(dist(x.drive.spot, NET))} ft${x.drive.pressure < 1 ? ' under pressure' : ''}.</p>` : `<p class="num">${fmt(best.value)}<small>pass to ${best.m.name}, then his shot</small></p><p>${Math.round(best.completion * 100)}% to complete a ${best.d} ft pass${best.blocked ? ' through a body' : ''}, then a ${fmt(best.recXg)} look from ${Math.round(dist(best.m, NET))} ft${best.pressure < 1 ? ' with a defender on him' : ''}.</p>`}</div>
+      <div class="view" id="view">
+        <button type="button" data-v="both" aria-pressed="true">Both: real play, model as a ghost</button>
+        <button type="button" data-v="real">What happened</button>
+        <button type="button" data-v="alt">What the model saw</button>
+      </div>
+      <canvas id="cA" width="1040" height="560"></canvas>
+      <div class="reads">
+        <div class="pane real"><h4>What happened</h4><p class="num">${fmt(shotXg)}<small>chance to score, shot taken</small></p><p>${R.shooter.name} shoots. ${R.opps.find(o => o.pressurer) ? 'Nearest defender ' + R.opps.find(o => o.pressurer).name + ' closing.' : ''}</p></div>
+        <div class="pane alt"><h4>What the model saw</h4>${clip.useDrive ? `<p class="num">${fmt(x.drive.value)}<small>walk in ${RP_DRIVE.ft} ft and shoot</small></p><p>${Math.round((1 - x.drive.turnover) * 100)}% to get there with the puck${x.drive.inPath ? ` past ${x.drive.inPath} defender${x.drive.inPath > 1 ? 's' : ''}` : ''}, then a ${fmt(x.drive.xg)} look from ${Math.round(dist(x.drive.spot, NET))} ft${x.drive.pressure < 1 ? ' under pressure' : ''}.</p>` : `<p class="num">${fmt(best.value)}<small>pass to ${best.m.name}, then his shot</small></p><p>${Math.round(best.completion * 100)}% to complete a ${best.d} ft pass${best.blocked ? ' through a body' : ''}, then a ${fmt(best.recXg)} look from ${Math.round(dist(best.m, NET))} ft${best.pressure < 1 ? ' with a defender on him' : ''}.</p>`}</div>
       </div>
       <p class="note">${scenario === 'right' ? `The shot beat every alternative by ${(100 * x.gapRight).toFixed(1)} points: best pass ${fmt(best.value)}${x.drive ? `, drive ${fmt(x.drive.value)}` : ''}.` : clip.useDrive ? `Gap: ${(100 * x.gapDrive).toFixed(1)} points of expected goals in favor of driving to the net. Best pass instead: ${best ? best.m.name + ' ' + fmt(best.value) : 'none'}.` : `Gap: ${(100 * x.gapPass).toFixed(1)} points of expected goals in favor of the pass. Other options: ${x.options.slice(1, 4).map(o => `${o.m.name} ${fmt(o.value)}`).join(', ') || 'none'}${x.drive ? `; drive ${fmt(x.drive.value)}` : ''}.`} The shooter's spot, the shot and its result are real; the other positions are inferred and the movement is a mock reconstruction (${clip.rush ? 'rush' : 'in-zone'} scenario from the preceding ${s.prev ? s.prev.type.replace(/-/g, ' ') : 'play'}).</p>`;
     $('playBtn').onclick = () => { playing = !playing; $('playBtn').textContent = playing ? 'Pause' : 'Play'; $('playBtn').setAttribute('aria-pressed', playing); if (playing && tcur >= RP.after) tcur = -lead; };
     $('replayBtn').onclick = () => { tcur = -lead; playing = true; $('playBtn').textContent = 'Pause'; $('playBtn').setAttribute('aria-pressed', true); };
     $('leadIn').onchange = () => { lead = clamp(+$('leadIn').value || RP.leadDefault, RP.leadMin, RP.leadMax); $('leadIn').value = lead; $('scrub').min = -lead; clip = buildClip(x); tcur = -lead; };
     $('detail').querySelectorAll('.spd button').forEach(b => b.onclick = () => { speed = +b.dataset.s; $('detail').querySelectorAll('.spd button').forEach(o => o.setAttribute('aria-pressed', o === b)); });
+    $('view').querySelectorAll('button').forEach(b => b.onclick = () => { view = b.dataset.v; $('view').querySelectorAll('button').forEach(o => o.setAttribute('aria-pressed', o === b)); paint(); });
     $('scrub').oninput = () => { tcur = +$('scrub').value; playing = false; $('playBtn').textContent = 'Play'; $('playBtn').setAttribute('aria-pressed', false); paint(); };
     if (!raf) raf = requestAnimationFrame(tick);
     paint();
@@ -1090,14 +1101,19 @@
     paint();
   }
   function paint() {
-    const cA = $('cA'), cB = $('cB'); if (!cA || !cB || !clip) return;
+    const cA = $('cA'); if (!cA || !clip) return;
     const sc = $('scrub'); if (sc && document.activeElement !== sc) sc.value = tcur;
     const tr = $('tread'); if (tr) tr.textContent = (tcur < 0 ? '-' : '+') + Math.abs(tcur).toFixed(1) + 's';
-    draw(cA, frame(clip, tcur, false), clip, tcur, false); draw(cB, frame(clip, tcur, true), clip, tcur, true);
+    const Freal = frame(clip, tcur, false), Falt = frame(clip, tcur, true);
+    const Preal = frame(clip, Math.max(-lead, tcur - 0.05), false), Palt = frame(clip, Math.max(-lead, tcur - 0.05), true);
+    Freal.puckPrev = Preal.puck; Falt.puckPrev = Palt.puck;
+    if (view === 'real') draw(cA, Freal, clip, tcur, false, null);
+    else if (view === 'alt') draw(cA, Falt, clip, tcur, true, null);
+    else draw(cA, Freal, clip, tcur, false, Falt);
   }
 
   // ---------- drawing: the offensive zone, shooter attacking right, in the sim's style ----------
-  function draw(cv, F, c, t, alt) {
+  function draw(cv, F, c, t, alt, ghost) {
     const ctx = cv.getContext('2d'); const W = cv.width, H = cv.height;
     const X0 = c.x0 !== undefined ? c.x0 : 96, X1 = 200, S = W / (X1 - X0); const px = x => (x - X0) * S, py = y => 20 + y * (H - 40) / 85;
     ctx.clearRect(0, 0, W, H);
@@ -1124,9 +1140,10 @@
     const dot = (q, col, col2, label, big) => {
       // stick toward the puck when close, else along the line of travel
       const dp = Math.hypot(F.puck.x - q.x, F.puck.y - q.y); const v = Math.hypot(q.vx || 0, q.vy || 0);
-      const sa = dp < 16 ? Math.atan2(F.puck.y - q.y, F.puck.x - q.x) : v > 2 ? Math.atan2(q.vy, q.vx) : null;
+      const flying = (F.puck.v || 0) > 40 && F.holder !== q;   // nobody reaches for a puck in flight
+      const sa = dp < 16 && !flying ? Math.atan2(F.puck.y - q.y, F.puck.x - q.x) : v > 2 ? Math.atan2(q.vy, q.vx) : null;
       if (sa !== null) { const len = F.holder === q ? Math.min(3.6, dp) : 3.4; const ex = q.x + Math.cos(sa) * len, ey = q.y + Math.sin(sa) * len; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(q.x), py(q.y)); ctx.lineTo(px(ex), py(ey)); ctx.stroke(); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px(ex), py(ey)); ctx.lineTo(px(ex + Math.cos(sa + 1.35) * 1.1), py(ey + Math.sin(sa + 1.35) * 1.1)); ctx.stroke(); }
-      const rr = (big ? 11 : 9) * Math.max(0.75, Math.min(1, S / 5)); ctx.beginPath(); ctx.arc(px(q.x), py(q.y), rr, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col2; ctx.stroke();
+      const rr = (big ? 11 : 9) * Math.max(0.8, Math.min(1.25, S / 8)); ctx.beginPath(); ctx.arc(px(q.x), py(q.y), rr, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col2; ctx.stroke();
       ctx.fillStyle = col2 === '#ffb81c' ? '#ffb81c' : '#fff'; ctx.font = '700 10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, px(q.x), py(q.y) + 0.5);
       if (F.holder === q) { ctx.beginPath(); ctx.arc(px(q.x), py(q.y), rr + 4, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = '#111'; ctx.stroke(); }
     };
@@ -1135,9 +1152,21 @@
     dot(F.shooter, att[0], att[1], num(c.R.shooter.id), true);
     if (alt && t >= 0 && c.useDrive) { ctx.setLineDash([5, 5]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(c.R.shooter.x), py(c.R.shooter.y)); ctx.lineTo(px(c.drive.spot.x), py(c.drive.spot.y)); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(c.drive.spot.x), py(c.drive.spot.y), 15, 0, Math.PI * 2); ctx.stroke(); }
     if (alt && t >= 0 && !c.useDrive) { const rec = F.sk.find(q => q.p === c.best.m); ctx.setLineDash([5, 5]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(F.shooter.x), py(F.shooter.y)); ctx.lineTo(px(rec.x), py(rec.y)); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#0d8a5a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(rec.x), py(rec.y), 15, 0, Math.PI * 2); ctx.stroke(); }
-    // puck with a streak when it is moving fast
-    if (F.puck.v > 40) { ctx.strokeStyle = '#111'; ctx.globalAlpha = 0.5; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px(F.puck.x), py(F.puck.y)); const bx = F.puck.x - (F.puck.x - (F.holder ? F.holder.x : F.puck.x)) * 0; ctx.lineTo(px(F.puck.x - 6), py(F.puck.y)); ctx.stroke(); ctx.globalAlpha = 1; }
+    // puck with a streak back along its own path when it is moving fast
+    const streak = (pk, prev, col) => { if (!prev || !(pk.v > 40)) return; const dx = pk.x - prev.x, dy = pk.y - prev.y, L = Math.hypot(dx, dy) || 1; const k = Math.min(8, L * 3); ctx.strokeStyle = col; ctx.globalAlpha = 0.45; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px(pk.x), py(pk.y)); ctx.lineTo(px(pk.x - dx / L * k), py(pk.y - dy / L * k)); ctx.stroke(); ctx.globalAlpha = 1; };
+    streak(F.puck, F.puckPrev, '#111');
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(px(F.puck.x), py(F.puck.y), 3.2, 0, Math.PI * 2); ctx.fill();
+    if (ghost && t >= 0) {
+      // the model's alternative as a ghost on the same rink: green, translucent, same clock
+      const g = '#0d8a5a';
+      if (c.useDrive) { ctx.setLineDash([5, 5]); ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.moveTo(px(c.R.shooter.x), py(c.R.shooter.y)); ctx.lineTo(px(c.drive.spot.x), py(c.drive.spot.y)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(px(ghost.shooter.x), py(ghost.shooter.y), 11, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '700 10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(num(c.R.shooter.id), px(ghost.shooter.x), py(ghost.shooter.y) + 0.5); }
+      else { const rec = ghost.sk.find(q => q.p === c.best.m); ctx.setLineDash([5, 5]); ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.moveTo(px(c.R.shooter.x), py(c.R.shooter.y)); ctx.lineTo(px(rec.x), py(rec.y)); ctx.stroke(); ctx.setLineDash([]); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(rec.x), py(rec.y), 15, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+      streak(ghost.puck, ghost.puckPrev, g);
+      ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(13,138,90,0.35)'; ctx.beginPath(); ctx.arc(px(ghost.puck.x), py(ghost.puck.y), 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      if (ghost.note) { ctx.fillStyle = g; ctx.font = '700 15px Inter, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillText(ghost.note, W - 12, 46); }
+    }
     if (F.note) { ctx.fillStyle = alt ? '#0d8a5a' : (F.note === 'Goal' ? '#c8102e' : '#16202c'); ctx.font = '700 15px Inter, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillText(F.note, W - 12, 24); }
     ctx.fillStyle = '#5f6b78'; ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText((t < 0 ? '-' : '+') + Math.abs(t).toFixed(1) + 's', 12, 24);
   }
@@ -1145,6 +1174,7 @@
   $('method').innerHTML = `<p>Each unblocked shot in the game is placed on the rink from the play-by-play coordinates, with the shooter attacking to the right. The other nine skaters are not in the public data, so the page places the shooter's teammates on the spots of the offensive-zone system the sim runs for that club (Boston cycles low, Montreal plays an umbrella), mirrored to the puck side, and the defenders on zone coverage: a defenseman boxes out the net-front man, the center plays goal-side of the slot man, and the nearest free defender closes on the shooter.</p>
     <p>The shot taken is scored with the expected-goal model (distance, angle, shot type, rebound, strength) times the shooter's finishing from his last two seasons. Each teammate is scored as a one-timer from his spot, times the chance the pass gets there: 96% for a short pass, falling about half a point per foot, and less than half that through a defender's lane. A receiver with a defender within 4 ft keeps 60% of his look, within 8 ft 85%. The gap is the difference, in points of expected goals. A gap of 10 means the pass was worth a tenth of a goal more than the shot.</p>
     <p>Three scenarios. Pass worth more ranks shots by how much the best pass beat the shot. Drive worth more asks whether walking the puck 15 ft closer, cutting 6 ft toward the middle for a better angle (or away from the man closing on the shooter if he is on that side), and shooting from there was worth more. The page cannot see how close that man really was, so the drive assumes the cut beats him and charges for everyone else: the chance of getting there with the puck starts at 88% and drops 30 points for every other defender in a 4.5 ft corridor, and the look from the new spot keeps 60% with another defender within 4 ft, 85% within 8. Read a high drive gap as: if he had a step, the walk-in was worth it. Tips and deflections are left out, since nobody chose to shoot from there. Right call ranks the shots that beat every alternative by the most, so the list is not only criticism.</p>
+    <p>One rink, three views. The default shows the real play with the model's alternative as a green ghost on the same clock from the moment of the shot: the pass or the walk-in, the ghost puck, and the look it would have been. The other two views show either read alone. The gray streak behind a puck is its own path, drawn only while it is in flight.</p>
     <p>The replay is a mock reconstruction, not tracking. All times are ice time: the lead-in is 2 to 8 seconds of game clock before the shot, the clip runs 3 seconds after, and the playback speed stretches that on your screen (0.5x is slow motion, the default). The puck starts at the real preceding event and is carried at about 15 mph toward the real shot; a long way means a teammate carries and passes, a short way means the shooter carries it himself, and if the event was farther than that speed covers in the lead-in, the carry is already under way when the clip opens. Skaters skate at real speeds for the whole lead-in: on a rush, forwards at 20 to 27 ft/s and back-checkers at 18 to 25 ft/s, so a 5 second lead-in starts in the neutral zone and the view widens to show it; in a cycle, everyone drifts a few feet around his spot. The pressuring defender arrives last. After the shot, the left panel plays the real result (goal, save or wide) and the right panel plays the pass, the one-timer and the look it would have been, with no invented result. Nothing in the replay is used for scoring; it is there to make the two reads easy to compare.</p>
     <p>What this does and does not prove. It finds the shots where a better option probably existed given where the teammates usually are. It cannot see whether the teammate was actually open, which is what video, or tracking data, settles. Model: logistic regression fit on ${XG.rowsUsed.toLocaleString()} MoneyPuck unblocked shots from the ${XG.sources.map(x => x.file.replace('shots_', '').replace('.csv', '')).join(' and ')} seasons; holdout log loss ${XG.fit.logLoss} against ${XG.fit.moneypuckLogLoss} for MoneyPuck's own model.</p>`;
 

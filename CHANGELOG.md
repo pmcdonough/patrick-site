@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.31 = sim 0.30 + Play Review 0.4. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.32 = sim 0.30 + Play Review 0.5. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.32
+- Play Review 0.5.
 
 ### 0.31
 - Sim 0.30, Play Review 0.4, modeling guide, home page copy.
@@ -11,6 +14,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Play Review
+
+### 0.5
+- One rink instead of two: the real play with the model's alternative as a green ghost on the same clock, or either read alone. Puck streaks follow the puck's own path and sticks no longer reach for a puck in flight.
 
 ### 0.4
 - Three scenarios: pass worth more, drive worth more (walk in 15 ft, cut toward the middle, corridor and pressure charged, closing man assumed beaten and labeled as such), and right call (shots that beat every alternative). The replay's right panel follows the scenario.

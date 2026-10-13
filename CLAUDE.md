@@ -41,7 +41,7 @@ CHANGELOG.md                              per-version changes
 
 ## Shipping a version
 
-The site has its own version (the zip name and the Site section of the changelog); each project keeps its own number. Bump the site version on every drop, and the project version only when that project changed.
+The site has its own version (the zip name and the Site section of the changelog); each project keeps its own number. Bump the site version on every drop (the home page footer shows it), and the project version only when that project changed (its card badge and, for the sim, its page footer).
 
 1. Bump `const VERSION = '0.xx'` near the top of the script in `index.html`.
 2. Add a section to `CHANGELOG.md`.
