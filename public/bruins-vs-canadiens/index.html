@@ -3924,7 +3924,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.26';
+  const VERSION = '0.27';
   $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -4288,7 +4288,7 @@ function startSim(DATA) {
     }
     if (!changing(t)) {
       // solo changes: a skater who is both tired and close to the gate while the puck is far away
-      const far = Math.abs(puck.x - t.bench.door) > 55 && !(puck.carrier && puck.carrier.team !== t && toFx(t, puck.x) < 80);
+      const far = Math.abs(puck.x - t.bench.door) > 55 && zone(t, puck.x) !== 'own' && !(puck.carrier && puck.carrier.team !== t && toFx(t, puck.x) < 80);
       for (const p of [...t.onF, ...t.onD]) {
         const target = shiftTarget(t, p.isD ? 'D' : 'F', p.isD ? t.lineD : t.lineF);
         if (far && !defending(t) && p.shift > target + 4 && Math.abs(p.x - doorFor(t, p)) < 30 && p.y < 45 && p !== puck.carrier) { startSoloChange(t, p); break; }

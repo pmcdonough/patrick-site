@@ -2,6 +2,10 @@
 
 ## Bruins vs Canadiens
 
+### 0.27
+- A tired skater no longer swaps himself out while the puck is in his own zone, even when it is loose and far from the bench.
+- Repo: CLAUDE.md, engine notes, build history, data-embedding build script and headless checks under `tools/`.
+
 ### 0.26
 - Sticks toggle, independent of Effects; with sticks off, skaters show a short heading tick.
 

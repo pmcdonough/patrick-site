@@ -8,6 +8,10 @@ public/
   bruins-vs-canadiens/
     index.html                     the hockey engine, single file, no build step
     data/                          the data that drives it (see below)
+tools/                             build script (embeds data into the page) and headless checks
+docs/ENGINE.md                     how the engine is organized, invariants, baselines, lessons learned
+docs/HISTORY.md                    what was built before version numbers, in order
+CLAUDE.md                          project memory for working on this with Claude (chat or Claude Code)
 CHANGELOG.md                       version history for the projects
 ```
 
@@ -62,6 +66,10 @@ MoneyPuck 2025-26 skaters, goalies, lines and teams downloads (ratings, danger t
 
 Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Advanced tab: the reality check, engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
 
+### Tools and checks
+
+`tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` prints the ten-game reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once with `cd tools && npm install && npx playwright install chromium`.
+
 ### Versioning
 
-Bump `VERSION` in the script, add a line to `CHANGELOG.md`, and update the version badge on the home page card.
+Bump `VERSION` in the script, add a section to `CHANGELOG.md`, update the version badge on the home page card, and run `python3 tools/build.py --check` and `node tools/smoke.js`. See `CLAUDE.md` for the full checklist.
