@@ -31,6 +31,7 @@
     --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --ice: #dfe9f2; --home: #141414; color-scheme: dark; }
 
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); }
+  footer.version { text-align: center; color: var(--fg-dim); font-size: 0.75rem; padding: 4px 16px 18px; }
   .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding-block: 16px; padding-inline: 16px; max-width: 1440px; margin: 0 auto; }
   @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } }
   .rink { min-width: 0; }
@@ -150,6 +151,8 @@
         <button type="button" class="spd" data-s="3" aria-pressed="true">3x</button>
         <button type="button" class="spd" data-s="8">8x</button>
         <button id="newgame" type="button">New game</button>
+        <button id="fxBtn" type="button" aria-pressed="true" title="Skate trails, puck streaks, hits, saves and the goal light">Effects</button>
+        <button id="stickBtn" type="button" aria-pressed="true" title="Draw sticks on the skaters">Sticks</button>
       </div>
       <button id="aboutBtn" type="button" class="about" aria-haspopup="dialog">About this game</button>
     </div>
@@ -217,14 +220,14 @@
 
     <h3>How a game is played</h3>
     <p>The engine runs the clock in real time at 1x. Every tick, the player with the puck makes a read: a clean look from the slot is a shot, a teammate with a step on the last defender gets sprung, a lead forward at the far blue line gets the headman pass, and otherwise he carries, dumps or chips the puck in according to his team's entry system. Everyone else takes a spot from the team's current system: breakout, neutral-zone attack, offensive-zone shape, forecheck, defensive-zone coverage, power play or penalty kill. Defensemen play gap control, box out the net-front man and step into shooting lanes; the center owns the slot; wingers shade the point men. Passes lead the receiver and the receiver skates to meet them. Shots are blocked, miss or reach the goalie, who is a line squared to the shooter.</p>
-    <p>Lines change the way benches do. Forwards and pairs change separately, on the fly only when the moment is right: our carrier is through the neutral zone and can dump it in, or the other team is retrieving a puck deep in their own end. Nobody changes off a loose puck, during a rush against, or while the other team has it in our zone. First man off nearest the gate, replacement on once he is within a stick length. The next unit stands at the gate as a shift gets long, a tired skater near the bench swaps himself out alone, and a turnover mid-change can draw a too-many-men minor. At stoppages the visitors change first and Boston gets the last change. Shifts target about 45 seconds for forwards and 55 for defense, the top lines and pairs get the most ice, and the bench shortens late in a close game. Shift length is not a hard rule. After about 30 seconds a skater starts to fade, losing top speed, acceleration and hands, and by 65 seconds he is gassed. A unit stuck defending plays through it, which is where tired legs cost goals. A ring around a skater shows how tired he is.</p>
+    <p>Lines change the way benches do. Forwards and pairs change separately, on the fly only when the moment is right: our carrier is through the neutral zone and can dump it in, or the other team is retrieving a puck deep in their own end. Nobody changes off a loose puck, during a rush against, or while the other team has it in our zone. Each bench has two doors: forwards change through the door at the attacking end and defense through the door at the defending end, and both swap when the teams change ends for the second period. Forwards sit at their door's end of the bench and defense at theirs, the next unit stands at its door as a shift gets long, first man off nearest his door, replacement on once he is within a stick length. A tired skater near his door swaps himself out alone, and a turnover mid-change can draw a too-many-men minor. At stoppages the visitors change first and Boston gets the last change. Shifts target about 45 seconds for forwards and 55 for defense, the top lines and pairs get the most ice, and the bench shortens late in a close game. Shift length is not a hard rule. After about 30 seconds a skater starts to fade, losing top speed, acceleration and hands, and by 65 seconds he is gassed. A unit stuck defending plays through it, which is where tired legs cost goals. A ring around a skater shows how tired he is.</p>
     <p>The rules in play are offside with the tag-up rule, no-touch icing (waived while shorthanded, and the team that iced cannot change), minor penalties with power plays, and goalie freezes when there is traffic in the crease. Three officials work NHL mechanics: the referee at the goal line in the zone, the lead linesman on the blue line for offside, the trail linesman on the red line for icing.</p>
 
     <h3>Physics and calibration</h3>
     <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts only on rushes and chases, roughly 2.5 to 3 miles per game. Wrist shots run 58 to 85 mph and point shots 80 to 100. Every unblocked attempt is placed in MoneyPuck's low, medium or high danger tier by its location and carries the league expected-goal value of that tier. The reality check under Advanced compares the sim's per-game rates with each club's real 2025-26 rates and the league average, live or over a ten-game batch, and flags anything more than 50 percent off. That table is the honest statement of where the engine still differs from the real game.</p>
 
     <h3>Using it</h3>
-    <p>Game: pause, speed and a new game, with the box score and play-by-play. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Rosters: who is on the ice, time on ice, goals and blocks, with each player's real stat line on hover. Advanced holds the reality check, which grades the simulation against real NHL rates, the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone.</p>
+    <p>Game: pause, speed, a new game, Effects (skate trails behind anyone moving fast, a streak on hard shots and passes, a ripple on takeaways and blocked shots, a flash on big saves, and the goal light with the scorer picked out) and Sticks (on or off; without them each skater shows a short heading tick), with the box score and play-by-play. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Rosters: who is on the ice, time on ice, goals and blocks, with each player's real stat line on hover. Advanced holds the reality check, which grades the simulation against real NHL rates, the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone.</p>
 
     <h3>What it is not</h3>
     <p>It is not a replay of real games. Player movement is a decision model, tuned against public aggregates, not tracking data, so the engine can be systematically wrong in ways the calibration table will show: it still produces more high-danger shots and shots on goal than the real teams do. Ratings reflect one season of results and a weak defensive proxy, and systems are drawn from coaching references, not from either club's actual playbook.</p>
@@ -233,6 +236,7 @@
     <p>The architecture is built so that each of those gaps can be closed with better data, which is what makes it interesting beyond a toy. NHL clubs have access to puck-and-player tracking at roughly 60 frames per second for every game. Fed those frames, the same rink would replay a real game exactly as it happened, and the decision model could be scored against what the players actually did in the same situations, shift by shift. That validation is the step that would let a staff trust the model. From there the useful tools follow: a player-specific view that replays his shifts with the alternatives the model would have taken at each read (the pass he had, the lane he did not take, the change that came a beat late); a pre-scout mode that loads an opponent's observed systems and tendencies and lets a coach test breakouts and entries against them before the game; a special-teams lab for power-play shapes against a specific kill; and a development tool that shows a young player the difference between his reads and a veteran's in identical spots. Shot-location data, which is public, would tighten the expected-goal model and give each shooter his real map, and the lines file would let the engine score its line combinations against the real results of those same combinations. None of that requires a different engine; it requires feeding this one real frames.</p>
   </div>
 </dialog>
+<footer class="version">Bruins vs Canadiens <span id="version"></span></footer>
 
 <script type="application/json" id="data-rosters">{
  "schema": "rink-sim-rosters/1",
@@ -3920,6 +3924,8 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
+  const VERSION = '0.26';
+  $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
   const canvas = $('c'), ctx = canvas.getContext('2d');
@@ -3982,6 +3988,7 @@ function startSim(DATA) {
     t.goalies = R.G.map(r => mkGoalie(r, t)); t.goalie = t.goalies[0];
     t.all = [...t.lines.F.flat(), ...t.lines.D.flat()];
     t.bench = { x0: t.id ? 104 : 58, x1: t.id ? 142 : 96 }; t.bench.door = (t.bench.x0 + t.bench.x1) / 2;
+    t.bench.left = t.bench.x0 + 5; t.bench.right = t.bench.x1 - 5;
     t.pbox = { x0: t.id ? 112 : 62, x1: t.id ? 138 : 88 };
     t.rot = { F: 0, D: 0 }; t.onF = []; t.onD = []; t.lineF = 0; t.lineD = 0;
   });
@@ -4231,12 +4238,18 @@ function startSim(DATA) {
     return ST.F[idx] || 40;
   }
   const changing = t => [...t.onF, ...t.onD].some(p => p.leaving || p.entering);
+  // Two doors per bench. Forwards change through the door at the attacking end, defense through the
+  // door at the defending end; both swap when the teams change ends for the second period.
+  const fDoor = t => t.dir > 0 ? t.bench.right : t.bench.left;
+  const dDoor = t => t.dir > 0 ? t.bench.left : t.bench.right;
+  const doorFor = (t, p) => p.isD ? dDoor(t) : fDoor(t);
   function startUnitChange(t, unit) {
     const on = unit === 'F' ? t.onF : t.onD;
     const idx = nextLine(t, unit);
     const fresh = buildUnit(t, unit, idx);
     // the skater nearest the bench is first man off; everyone takes the matching slot's replacement
-    const order = on.slice().sort((a, b) => Math.abs(a.x - t.bench.door) - Math.abs(b.x - t.bench.door));
+    const door = unit === 'D' ? dDoor(t) : fDoor(t);
+    const order = on.slice().sort((a, b) => Math.abs(a.x - door) - Math.abs(b.x - door));
     order.forEach((p, i) => { p.leaving = true; p.sub = fresh[i] || null; p.subOn = false; });
     if (unit === 'F') t.lineF = idx; else t.lineD = idx;
     t.flash = { t: 2.2, text: unit === 'F' ? 'LINE CHANGE' : 'D CHANGE' };
@@ -4278,7 +4291,7 @@ function startSim(DATA) {
       const far = Math.abs(puck.x - t.bench.door) > 55 && !(puck.carrier && puck.carrier.team !== t && toFx(t, puck.x) < 80);
       for (const p of [...t.onF, ...t.onD]) {
         const target = shiftTarget(t, p.isD ? 'D' : 'F', p.isD ? t.lineD : t.lineF);
-        if (far && !defending(t) && p.shift > target + 4 && Math.abs(p.x - t.bench.door) < 30 && p.y < 45 && p !== puck.carrier) { startSoloChange(t, p); break; }
+        if (far && !defending(t) && p.shift > target + 4 && Math.abs(p.x - doorFor(t, p)) < 30 && p.y < 45 && p !== puck.carrier) { startSoloChange(t, p); break; }
       }
     }
     // complete swaps: the fresh skater may step on once the tired one is within a stick length of the gate
@@ -4288,12 +4301,13 @@ function startSim(DATA) {
         const p = on[i];
         if (p.entering) { if (p.y > 6 || p.shift > 2) p.entering = false; continue; }
         if (!p.leaving) continue;
-        const near = Math.abs(p.x - t.bench.door) < 9 && p.y < 7;
+        const door = doorFor(t, p);
+        const near = Math.abs(p.x - door) < 9 && p.y < 7;
         if (near && p.sub && !p.subOn && !p.sub.onIce && !p.sub.box) {
-          const s = p.sub; s.onIce = true; s.shift = 0; s.leaving = false; s.entering = true; s.x = clamp(t.bench.door + rnd(-4, 4), 4, RW - 4); s.y = 2.4; s.vx = 0; s.vy = 14;
+          const s = p.sub; s.onIce = true; s.shift = 0; s.leaving = false; s.entering = true; s.x = clamp(door + rnd(-2.5, 2.5), 4, RW - 4); s.y = 2.4; s.vx = 0; s.vy = 14;
           on.push(s); p.subOn = true;
         }
-        if (Math.abs(p.x - t.bench.door) < 5 && p.y < 4.2) {
+        if (Math.abs(p.x - door) < 5 && p.y < 4.2) {
           p.onIce = false; p.leaving = false; p.subOn = false; p.sub = null; p.shift = 0; p.vx = p.vy = 0;
           on.splice(i, 1); i--;
         }
@@ -4312,6 +4326,7 @@ function startSim(DATA) {
 
   function setFaceoff(x, y, note, noChangeTeam) {
     game.faceoff = { x, y }; game.faceT = PH.game.faceoffPauseSec; game.note = note;
+    teams.forEach(q => q.players.forEach(p => { p.trail = null; })); puck.trail = null;
     if (note !== 'Faceoff') blowWhistle(note);
     puck.carrier = null; puck.vx = puck.vy = 0; puck.x = x; puck.y = y; puck.shot = false; puck.touched = true; puck.releaseTeam = null; puck.receiver = null; puck.oneTimer = false; puck.holdT = 0; puck.lastHolder = null; puck.rim = false; puck.beaten = false; teams.forEach(q => { q.possT = 0; });
     // line changes at the stoppage: visitors first, then the home team (which may match lines); the icing team cannot change
@@ -4645,7 +4660,7 @@ function startSim(DATA) {
       const off = Math.abs(-(o.x - from.x) * dy + (o.y - from.y) * dx);
       const reach = PH.shotBlock.laneHalfWidthFt + (along < PH.shotBlock.closeWithinFt ? PH.shotBlock.closeBonusFt : 0); // a defender right on the shooter covers more of the lane
       if (off < reach && Math.random() < PH.shotBlock.probBase + o.def * PH.shotBlock.probPerDef) {
-        ot.blocked++; puck.shot = false; puck.touched = true; puck.lastTeam = ot; puck.cool = 0.2;
+        ot.blocked++; puck.shot = false; puck.touched = true; puck.lastTeam = ot; puck.cool = 0.2; fxRing(o.x, o.y, '#222', false);
         puck.x = o.x + dx * 1.5; puck.y = o.y + dy * 1.5;
         const ra = Math.atan2(-dy, -dx) + rnd(-1.1, 1.1); const rs = rnd(12, 28);
         puck.vx = Math.cos(ra) * rs; puck.vy = Math.sin(ra) * rs;
@@ -4685,7 +4700,7 @@ function startSim(DATA) {
       t.fronter = fronter;
       for (const p of active(t)) {
         if (p === carrier) { p.target = carrierThink(p, dt); continue; }
-        if (p.leaving) { p.target = { x: t.bench.door + (p.x < t.bench.door ? -3 : 3), y: 1.5 }; continue; }
+        if (p.leaving) { const door = doorFor(t, p); p.target = { x: door + (p.x < door ? -1.5 : 1.5), y: 1.5 }; continue; }
         if (t.dumpT > 0 && loose && attacking && !p.isD && p !== chaser) { // dump and chase: the far-side forward sprints for the far corner where the rim arrives
           const farY = t.dumpSide === 'top' ? 78 : 7; if ((p.role === 'RW') === (t.dumpSide === 'top')) { const corner = toRink(t, 170, farY); p.target = onside(dist(puck, corner) < 30 ? { x: puck.x + puck.vx * 0.25, y: puck.y + puck.vy * 0.25 } : corner); p.sprint = true; continue; }
         }
@@ -4807,7 +4822,7 @@ function startSim(DATA) {
       for (const o of opp) {
         if (dist(o, c) < PH.turnover.stealRadiusFt) {
           if (!shorthanded(ot) && Math.random() < dt * (PH.turnover.minorPenaltyRateBase + ot.tac.agg * PH.turnover.minorPenaltyRatePerAggression) * clamp(o.pen60 / (MP ? MP.league.penaltiesPer60Skater : 0.7), 0.4, 2.2)) { penalize(o, c); return; }
-          if (Math.random() < dt * (PH.turnover.stealRateBase + ot.tac.agg * PH.turnover.stealRatePerAggression) * (0.7 + o.def - c.skill * 0.6) * (c.rushed > 0 ? 3 : 1) * hands(c)) { puck.carrier = o; puck.cool = 0.3; ot.take++; puck.touched = true; break; }
+          if (Math.random() < dt * (PH.turnover.stealRateBase + ot.tac.agg * PH.turnover.stealRatePerAggression) * (0.7 + o.def - c.skill * 0.6) * (c.rushed > 0 ? 3 : 1) * hands(c)) { puck.carrier = o; puck.cool = 0.3; ot.take++; puck.touched = true; fxRing(o.x, o.y, ot.col2, false); break; }
         }
       }
       return;
@@ -4836,7 +4851,7 @@ function startSim(DATA) {
         if (puck.shot) { if (wide) puck.shooter.team.missed++; else puck.shooter.team.shots++; countUnblocked(puck.shooter.team); puck.shot = false; }
         if (!(wide || Math.random() < saveP)) puck.beaten = true; // through him: no second chance on the next tick
         if (!puck.beaten) {
-          puck.lastTeam = t; puck.touched = true;
+          puck.lastTeam = t; puck.touched = true; if (FX.on && sp > 25) FX.saveFlash = { x: g.x, y: g.y, t: 0.3 };
           const FZ = PH.goalie.freeze; const attackers = active(teams[1 - t.id]).filter(o => dist(o, g) < FZ.attackerWithinFt).length;
           const fzScale = g.freezeRate && MP ? clamp(g.freezeRate / 0.21, 0.6, 1.6) : 1; // each goalie's own freeze tendency (freezes per shot on goal, league ~0.21)
           const freezeP = ((attackers ? FZ.probWithPressure : FZ.probNoPressure) + (hard ? FZ.hardShotBonus : 0)) * fzScale;
@@ -4942,6 +4957,7 @@ function startSim(DATA) {
     scorer.score++;
     const sh = puck.shooter && puck.shooter.team === scorer ? puck.shooter : null;
     if (sh) sh.gg = (sh.gg || 0) + 1;
+    if (FX.on) { const n = ownNet(against); FX.goalLight = { net: n, dir: against.dir, t: 2.5 }; FX.lastGoalScorer = sh; FX.scorerT = 2.5; fxRing(puck.x, puck.y, scorer.col2, true); }
     const who = sh ? `#${sh.num} ${sh.name}` : 'deflection';
     const pp = onPP(scorer);
     log(`${pp ? 'POWER PLAY ' : ''}GOAL ${scorer.name} (${who}). ${teams[0].abbr} ${teams[0].score}, ${teams[1].abbr} ${teams[1].score}`, 'goal');
@@ -4962,7 +4978,66 @@ function startSim(DATA) {
     setFaceoff(100, 42.5, 'Faceoff');
   }
 
+  // ---------- Effects: skate trails, puck streak, hit ripples, goal light ----------
+  const FX = { on: true, sticks: true, rings: [], goalLight: null, saveFlash: null, lastGoalScorer: null, scorerT: 0 };
+  try { FX.on = localStorage.getItem('rinkFx') !== 'off'; FX.sticks = localStorage.getItem('rinkSticks') !== 'off'; } catch (e) {}
+  const fxRing = (x, y, col, big) => { if (FX.on) FX.rings.push({ x, y, col, t: 0, max: big ? 0.9 : 0.5, r: big ? 9 : 5 }); };
+  function fxTick(dt) {
+    for (const r of FX.rings) r.t += dt; FX.rings = FX.rings.filter(r => r.t < r.max);
+    if (FX.goalLight) { FX.goalLight.t -= dt; if (FX.goalLight.t <= 0) FX.goalLight = null; }
+    if (FX.saveFlash) { FX.saveFlash.t -= dt; if (FX.saveFlash.t <= 0) FX.saveFlash = null; }
+    if (FX.scorerT > 0) FX.scorerT -= dt;
+    if (!FX.on) return;
+    for (const t of teams) for (const p of t.players) {
+      if (!p.onIce || p.goalie) { p.trail = null; continue; }
+      const v = Math.hypot(p.vx, p.vy);
+      if (!p.trail) p.trail = [];
+      p.trail.push({ x: p.x, y: p.y, v }); if (p.trail.length > 16) p.trail.shift();
+    }
+    if (!puck.trail) puck.trail = [];
+    puck.trail.push({ x: puck.x, y: puck.y, v: Math.hypot(puck.vx, puck.vy), c: !!puck.carrier }); if (puck.trail.length > 12) puck.trail.shift();
+  }
+  function drawFx() {
+    if (!FX.on) return;
+    // goal light: a red glow behind the net that was just beaten
+    if (FX.goalLight) {
+      const n = FX.goalLight.net; const k = FX.goalLight.t / 2.5; const pulse = 0.55 + 0.45 * Math.sin(FX.goalLight.t * 14);
+      const g = ctx.createRadialGradient(n.x - FX.goalLight.dir * 3, n.y, 0, n.x - FX.goalLight.dir * 3, n.y, 16);
+      g.addColorStop(0, `rgba(230,30,30,${0.55 * k * pulse})`); g.addColorStop(1, 'rgba(230,30,30,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.x - FX.goalLight.dir * 3, n.y, 16, 0, Math.PI * 2); ctx.fill();
+    }
+    // save flash: a quick white bloom on the goalie
+    if (FX.saveFlash) { const f = FX.saveFlash; const k = f.t / 0.3; ctx.fillStyle = `rgba(255,255,255,${0.7 * k})`; ctx.beginPath(); ctx.arc(f.x, f.y, 2 + (1 - k) * 4, 0, Math.PI * 2); ctx.fill(); }
+    // skate trails: a tapered ribbon behind anyone really moving, in his team's color
+    ctx.lineCap = 'round';
+    for (const t of teams) for (const p of t.players) {
+      const tr = p.trail; if (!tr || tr.length < 3) continue;
+      for (let i = 1; i < tr.length; i++) {
+        const a = tr[i]; const k = i / tr.length; const sp = clamp((a.v - 14) / 16, 0, 1); if (sp <= 0) continue;
+        ctx.strokeStyle = t.trailCol || (t.trailCol = /^#[0-2]/.test(t.col) ? t.col2 : t.col); ctx.globalAlpha = 0.35 * k * sp; ctx.lineWidth = 0.6 + 1.6 * k * sp;
+        ctx.beginPath(); ctx.moveTo(tr[i - 1].x, tr[i - 1].y); ctx.lineTo(a.x, a.y); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    // puck streak on shots and hard passes
+    const pt = puck.trail;
+    if (pt && pt.length > 2) for (let i = 1; i < pt.length; i++) {
+      const a = pt[i]; if (a.c || a.v < 40) continue; const k = i / pt.length;
+      ctx.strokeStyle = '#111'; ctx.globalAlpha = 0.5 * k; ctx.lineWidth = 0.3 + 0.9 * k;
+      ctx.beginPath(); ctx.moveTo(pt[i - 1].x, pt[i - 1].y); ctx.lineTo(a.x, a.y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // rings: hits, blocks and the scorer
+    for (const r of FX.rings) { const k = r.t / r.max; ctx.strokeStyle = r.col; ctx.globalAlpha = 0.8 * (1 - k); ctx.lineWidth = 0.7 * (1 - k) + 0.2; ctx.beginPath(); ctx.arc(r.x, r.y, 2.5 + r.r * k, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+  }
+  $('fxBtn').addEventListener('click', () => { FX.on = !FX.on; $('fxBtn').setAttribute('aria-pressed', FX.on); try { localStorage.setItem('rinkFx', FX.on ? 'on' : 'off'); } catch (e) {} });
+  $('fxBtn').setAttribute('aria-pressed', FX.on);
+  $('stickBtn').addEventListener('click', () => { FX.sticks = !FX.sticks; $('stickBtn').setAttribute('aria-pressed', FX.sticks); try { localStorage.setItem('rinkSticks', FX.sticks ? 'on' : 'off'); } catch (e) {} });
+  $('stickBtn').setAttribute('aria-pressed', FX.sticks);
+
   function tick(dt) {
+    fxTick(dt);
     if (game.over) return;
     if (game.faceoff) {
       game.faceT -= dt;
@@ -5045,7 +5120,10 @@ function startSim(DATA) {
       ctx.fillStyle = t.ink; ctx.textAlign = 'left'; ctx.font = '800 2.6px "Barlow Condensed", "Arial Narrow", sans-serif';
       ctx.fillText(`${t.name.toUpperCase()} BENCH`, b.x0 + 1.2, 2.15);
       // door marker
-      ctx.fillStyle = t.col2; ctx.fillRect(b.door - 3.5, BENCH_H - 0.6, 7, 0.6);
+      const fd = fDoor(t), dd = dDoor(t);
+      ctx.fillStyle = t.col2; ctx.fillRect(fd - 3, BENCH_H - 0.6, 6, 0.6); ctx.fillRect(dd - 3, BENCH_H - 0.6, 6, 0.6);
+      ctx.fillStyle = s.getPropertyValue('--fg-dim').trim(); ctx.font = '700 1.6px Barlow, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('F', fd, BENCH_H - 1.4); ctx.fillText('D', dd, BENCH_H - 1.4);
       // who is on deck: the next line and pair stand at the gate once the unit on the ice is getting tired
       const deck = new Set();
       for (const unit of ['F', 'D']) {
@@ -5058,9 +5136,15 @@ function startSim(DATA) {
       }
       const benched = [...t.all.filter(p => !p.onIce && !p.box && !deck.has(p)), t.goalies[1]];
       const row1 = benched.filter(p => !p.isD && !p.goalie), row2 = benched.filter(p => p.isD || p.goalie);
-      [row1, row2].forEach((row, ri) => row.forEach((p, i) => drawSkater(p, b.x0 + 3 + i * 3.6, 5.3 + ri * 2.6, 1.15, false)));
-      [...deck].forEach((p, i) => { const x = b.door - 7 + i * 2.9, y = BENCH_H - 1.7; ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,140,0,0.35)'; ctx.fill(); drawSkater(p, x, y, 1.15, false); });
-      if (t.flash) { ctx.globalAlpha = Math.min(1, t.flash.t); ctx.fillStyle = '#ff8c00'; ctx.textAlign = 'center'; ctx.font = '800 3px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(t.flash.text, t.id ? b.x1 - 12 : b.x0 + 12, BENCH_H - 1.7); ctx.globalAlpha = 1; }
+      // forwards sit at their door's end of the bench, defense (and the backup goalie) at theirs
+      const fSide = fd > dd ? 1 : -1;
+      row1.forEach((p, i) => drawSkater(p, fSide > 0 ? b.x1 - 3 - i * 3.6 : b.x0 + 3 + i * 3.6, 5.3, 1.15, false));
+      row2.forEach((p, i) => drawSkater(p, fSide > 0 ? b.x0 + 3 + i * 3.6 : b.x1 - 3 - i * 3.6, 7.9, 1.15, false));
+      // on deck: each man stands at his unit's door, forwards and defense on their own sides
+      const deckF = [...deck].filter(p => !p.isD), deckD = [...deck].filter(p => p.isD);
+      const place = (list, door, side) => list.map((p, i) => ({ p, x: door + side * (i - (list.length - 1) / 2) * 3.0 }));
+      [...place(deckF, fd, 1), ...place(deckD, dd, 1)].forEach(({ p, x }) => { const y = BENCH_H - 1.7; ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,140,0,0.35)'; ctx.fill(); drawSkater(p, x, y, 1.15, false); });
+      if (t.flash) { ctx.globalAlpha = Math.min(1, t.flash.t); ctx.fillStyle = '#ff8c00'; ctx.textAlign = 'right'; ctx.font = '800 2.6px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(t.flash.text, b.x1 - 1.2, 2.15); ctx.globalAlpha = 1; }
       // penalty box below the ice
       const pb = t.pbox; const y0 = RINK_Y + RH + 0.8;
       ctx.fillStyle = s.getPropertyValue('--panel').trim(); ctx.strokeStyle = s.getPropertyValue('--line').trim();
@@ -5083,6 +5167,7 @@ function startSim(DATA) {
   }
   function drawPlayers() {
     ctx.save(); ctx.scale(S, S); ctx.translate(0, RINK_Y);
+    drawFx();
     for (const t of teams) for (const p of t.players) {
       if (p.box) continue;
       // shadow for fatigue: a tired skater's ring fades
@@ -5094,11 +5179,20 @@ function startSim(DATA) {
         ctx.strokeStyle = fl > 0.75 ? 'rgba(220,60,50,0.9)' : 'rgba(240,170,40,0.85)';
         ctx.lineWidth = 0.45; ctx.beginPath(); ctx.arc(p.x, p.y, 2.9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * fl); ctx.stroke();
       }
-      const m = Math.hypot(p.vx, p.vy); if (m > 2) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.vx / m * 3.4, p.y + p.vy / m * 3.4); ctx.lineWidth = 0.4; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.stroke(); }
+      // stick: on the puck when it is close, otherwise carried along the line of travel; a short blade at the end
+      const m = Math.hypot(p.vx, p.vy); const dp = dist(p, puck);
+      let sa = null; if (dp < 16 && !p.leaving) sa = Math.atan2(puck.y - p.y, puck.x - p.x); else if (m > 2) sa = Math.atan2(p.vy, p.vx);
+      if (!FX.sticks) { if (m > 2) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.vx / m * 3.4, p.y + p.vy / m * 3.4); ctx.lineWidth = 0.4; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.stroke(); } }
+      else if (sa !== null) {
+        const len = p === puck.carrier ? Math.min(3.6, dp) : 3.4; const ex = p.x + Math.cos(sa) * len, ey = p.y + Math.sin(sa) * len;
+        ctx.lineWidth = 0.4; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.lineWidth = 0.55; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(sa + 1.35) * 1.1, ey + Math.sin(sa + 1.35) * 1.1); ctx.stroke();
+      }
+      if (FX.on && FX.scorerT > 0 && p === FX.lastGoalScorer) { const k = 0.5 + 0.5 * Math.sin(FX.scorerT * 10); ctx.strokeStyle = t.col2; ctx.globalAlpha = 0.9; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.arc(p.x, p.y, 3.6 + k, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; }
       if (p === puck.carrier) { ctx.beginPath(); ctx.arc(p.x, p.y, 3.3, 0, Math.PI * 2); ctx.lineWidth = 0.5; ctx.strokeStyle = '#111'; ctx.stroke(); }
       if (p.leaving) { // headed to the gate
         ctx.setLineDash([1.2, 1.2]); ctx.strokeStyle = t.col2 === '#ffb81c' ? '#b8860b' : t.col; ctx.lineWidth = 0.35;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(t.bench.door, 0.5); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(doorFor(t, p), 0.5); ctx.stroke(); ctx.setLineDash([]);
       }
       if (p.entering) { ctx.beginPath(); ctx.arc(p.x, p.y, 3.0, 0, Math.PI * 2); ctx.lineWidth = 0.5; ctx.strokeStyle = t.col2; ctx.stroke(); }
     }
