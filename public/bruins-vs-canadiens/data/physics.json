@@ -1,0 +1,259 @@
+{
+ "schema": "rink-sim-physics/1",
+ "units": "feet, seconds; speeds in ft/s (1 mph = 1.4667 ft/s)",
+ "references": [
+  {
+   "title": "NHL EDGE Pro Reference Benchmarks",
+   "url": "https://www.elitehockeyhq.com/nhl-edge-benchmarks",
+   "usedFor": "22 mph burst threshold, 100 mph hard-shot threshold, top recorded speeds"
+  },
+  {
+   "title": "NHL EDGE Skating Stats Deep Dive 2025-26",
+   "url": "https://www.thehockeyfanatic.com/2026/03/nhl-edge-skating-stats-deep-dive-the-standout-skaters-of-the-2025-26-season/",
+   "usedFor": "league-average top speed ~21.7 mph, distance per game"
+  },
+  {
+   "title": "Two-referee positioning system",
+   "url": "https://www.aiha.org.nz/wp-content/uploads/2_2-Official-System.pdf",
+   "usedFor": "official positioning mechanics"
+  },
+  {
+   "title": "Official (ice hockey), Wikipedia",
+   "url": "https://en.wikipedia.org/wiki/Official_(ice_hockey)",
+   "usedFor": "linesman duties, lead/trail referee"
+  }
+ ],
+ "rink": {
+  "lengthFt": 200,
+  "widthFt": 85,
+  "goalLineFromBoardsFt": 11,
+  "blueLineFromCenterFt": 25,
+  "netWidthFt": 6,
+  "netDepthFt": 4,
+  "cornerRadiusFt": 28,
+  "faceoffDots": {
+   "endZone": [
+    [
+     31,
+     20.5
+    ],
+    [
+     31,
+     64.5
+    ],
+    [
+     169,
+     20.5
+    ],
+    [
+     169,
+     64.5
+    ]
+   ],
+   "neutral": [
+    [
+     80,
+     20.5
+    ],
+    [
+     80,
+     64.5
+    ],
+    [
+     120,
+     20.5
+    ],
+    [
+     120,
+     64.5
+    ]
+   ]
+  }
+ },
+ "skater": {
+  "topSpeed": {
+   "baseFtPerSec": 27,
+   "perSkateRating": 6,
+   "note": "27 to 33 ft/s = 18.4 to 22.5 mph; league-average top speed in simulated games is ~21.7 mph"
+  },
+  "accelFtPerSec2": 21,
+  "brakingFtPerSec2": 18,
+  "effort": {
+   "desc": "share of top speed when not chasing, rushing or far from the spot",
+   "withPurpose": 0.88,
+   "cruise": 0.72,
+   "carrierFactor": 0.95
+  },
+  "fatigue": {
+   "desc": "Shift fatigue. After startsAt seconds on the ice a skater loses top speed, acceleration and hands, reaching the full penalty at fullAt seconds. A unit stuck defending past 30-45 s is the case this models.",
+   "startsAtShiftSec": 30,
+   "fullAtShiftSec": 65,
+   "maxSlowdown": 0.25,
+   "accelSlowdown": 0.35,
+   "handsPenalty": 0.6
+  },
+  "separationFt": 3,
+  "pickupRadiusFt": 3.0,
+  "receiverPickupRadiusFt": 4.2
+ },
+ "pass": {
+  "speedBaseFtPerSec": 50,
+  "speedPerFt": 0.8,
+  "minFtPerSec": 55,
+  "maxFtPerSec": 85,
+  "errorPerPassDeficit": 0.12,
+  "errorPerFt": 0.000909,
+  "leadFactor": 0.9,
+  "note": "55 to 85 ft/s is 37 to 58 mph"
+ },
+ "shot": {
+  "wrist": {
+   "baseFtPerSec": 85,
+   "perShootRating": 40
+  },
+  "slap": {
+   "baseFtPerSec": 118,
+   "perShootRating": 28,
+   "usedWhen": "defenseman or 45+ ft from the net",
+   "extraError": 0.03
+  },
+  "errorPerShootDeficit": 0.14,
+  "errorPerFt": 0.001111,
+  "oneTimerExtraError": 0.05,
+  "aimSpreadFt": 2.6,
+  "note": "wrist 58 to 85 mph, slap 80 to 100 mph"
+ },
+ "puck": {
+  "frictionPerFrameAt60Hz": 0.008,
+  "boardRestitution": 0.65,
+  "note": "a 75 ft/s pass glides about 180 ft; a hard rim (70+ ft/s) keeps 88 percent of its speed off the boards so a dump wraps behind the net",
+  "rimRestitution": 0.93
+ },
+ "goalie": {
+  "lineHalfWidthBaseFt": 2.8,
+  "lineHalfWidthPerRating": 0.8,
+  "turnRateRadPerSec": 2.6,
+  "speedFtPerSec": 16,
+  "accelFtPerSec2": 18,
+  "depthMaxFt": 4,
+  "lateralClampFt": 4.5,
+  "saveProb": {
+   "hardBase": 0.915,
+   "hardPerRating": 0.06,
+   "soft": 0.985,
+   "hardShotFtPerSec": 60
+  },
+  "freeze": {
+   "desc": "After a save the goalie covers the puck for a faceoff when an attacker is close enough to jam a rebound; otherwise he plays it or leaves a rebound.",
+   "attackerWithinFt": 9,
+   "probWithPressure": 0.4,
+   "probNoPressure": 0.05,
+   "hardShotBonus": 0.05
+  },
+  "bodyRadiusFt": 2.3,
+  "reboundCoolSec": 0.55,
+  "tierGoalScale": 1.0,
+  "tierGoalScaleNote": "Multiplies the goal probability implied by a goalie's tier save percentage. 1.0 means the real tier rates are used as-is."
+ },
+ "shotBlock": {
+  "laneHalfWidthFt": 4.0,
+  "closeBonusFt": 1.6,
+  "closeWithinFt": 12,
+  "laneFraction": 0.75,
+  "probBase": 0.7,
+  "probPerDef": 0.3
+ },
+ "turnover": {
+  "stealRadiusFt": 3.2,
+  "stealRateBase": 0.9,
+  "stealRatePerAggression": 1.6,
+  "minorPenaltyRateBase": 0.08,
+  "minorPenaltyRatePerAggression": 0.2,
+  "benchMinorOnMidChangeTouch": 0.25
+ },
+ "officials": {
+  "skateSpeedFtPerSec": 26,
+  "hustleSpeedFtPerSec": 30,
+  "accelFtPerSec2": 20
+ },
+ "game": {
+  "periodSec": 1200,
+  "otSec": 300,
+  "faceoffPauseSec": 1.0,
+  "minorPenaltySec": 120
+ },
+ "shotDecision": {
+  "desc": "When a carrier shoots. A clean look from the slot is a must-shoot (fires within a fraction of a second); everything else is a per-second probability scaled by shot quality, aggression and the shooter's rating. Shot quality is 0 to 1 from distance (75 ft horizon) and angle.",
+  "slot": {
+   "maxDistFromNetFt": 30,
+   "halfWidthFt": 14,
+   "minQuality": 0.6,
+   "shootRatePerSec": 0.5,
+   "requiresClearLane": true,
+   "minDistFromNetFt": 9,
+   "openRequiresNoOpponentWithinFt": 6
+  },
+  "probabilistic": {
+   "baseRate": 0.03,
+   "qualityPower": 2,
+   "aggressionWeight": 1.5,
+   "shooterWeight": 0.8,
+   "openLookBonus": 1.6,
+   "openLookMinQuality": 0.5,
+   "pressureBonus": 1.2,
+   "pressureWithinFt": 6
+  },
+  "pointShot": {
+   "minQuality": 0.12,
+   "baseRate": 0.04,
+   "openBonus": 0.08,
+   "usedWhen": "defenseman or fx < 135"
+  },
+  "perimeter": {
+   "desc": "A skater with a reasonable lane from the half wall, circles or point (28 to 55 ft) throws it at the net through traffic: that is where most NHL shots come from, and where most blocks happen.",
+   "minDistFt": 28,
+   "maxDistFt": 55,
+   "ratePerSec": 0.1
+  },
+  "inTight": {
+   "desc": "Puck on the stick in front of the goalie with no defender on him, within a second of getting it: shoot now. Only the goalie can stop this one, so no lane check.",
+   "maxDistFt": 14,
+   "maxOffCenterFt": 9,
+   "noDefenderWithinFt": 6,
+   "shootRatePerSec": 2,
+   "withinSecOfReceiving": 1.0
+  },
+  "stuckAfterSec": 2.2
+ },
+ "dangerTiers": {
+  "desc": "Maps a shot's release point onto MoneyPuck's danger tiers (its tiers are defined by expected goals; these boxes approximate them). Distance is from the net center, off-center is lateral distance from the net's midline.",
+  "high": {
+   "maxDistFt": 12,
+   "maxOffCenterFt": 8
+  },
+  "medium": {
+   "maxDistFt": 36,
+   "maxOffCenterFt": 20
+  },
+  "low": "everything else"
+ },
+ "rulesBenchmarks": {
+  "offsidesPerTeamGame": 3.0,
+  "icingsPerTeamGame": 4.2,
+  "note": "Approximate NHL per-team per-game rates. Icings: 10,264 icing events in the 2016-17 regular season (rjweise.github.io/Icing) over 1,230 games is about 8.3 per game, 4.2 per team. Offsides: roughly 6 per game league-wide from play-by-play stoppage counts, 3 per team.",
+  "sources": [
+   {
+    "title": "Looking at icing tendencies of NHL teams, players and coaches",
+    "url": "https://rjweise.github.io/Icing/"
+   },
+   {
+    "title": "Icing (ice hockey), Wikipedia: NHL hybrid icing rule",
+    "url": "https://en.wikipedia.org/wiki/Icing_(ice_hockey)"
+   },
+   {
+    "title": "Offsides statistics for NHL teams (MoreHockeyStats)",
+    "url": "https://morehockeystats.com/teams/offsides"
+   }
+  ]
+ }
+}

@@ -1,0 +1,1692 @@
+{
+ "schema": "rink-sim-moneypuck/1",
+ "source": {
+  "title": "MoneyPuck data downloads, 2025-26 regular season (skaters.csv, goalies.csv, teams.csv, lines.csv)",
+  "url": "https://moneypuck.com/data.htm",
+  "retrieved": "2026-10-12",
+  "note": "Per-60 rates from 'all situations' rows; percentiles among skaters with 300+ minutes. Shooting = percentile of individual expected goals per 60 plus finishing (goals vs expected, shrunk). Passing = primary assists per 60 and on-ice expected goals for. Defense = on-ice expected goals against relative to the player's team, net takeaways, blocked shots. Faceoff = win rate shrunk with 50 pseudo-draws. Ratings for players under 600 minutes are shrunk toward 0.5. Goalie tier save percentages are shrunk toward league tier rates with 150 pseudo-shots. Danger tiers are MoneyPuck's; the sim maps its own shot locations onto them."
+ },
+ "league": {
+  "perGame": {
+   "shotAttempts": 58.293,
+   "shotsOnGoal": 27.843,
+   "goals": 3.082,
+   "xGoals": 3.134,
+   "blocked": 15.574,
+   "missed": 14.877,
+   "highDangerShots": 3.384,
+   "mediumDangerShots": 8.144,
+   "lowDangerShots": 31.191,
+   "penalties": 3.494,
+   "pim": 7.795,
+   "hits": 20.449,
+   "takeaways": 4.611,
+   "giveaways": 15.383,
+   "freezes": 5.86,
+   "rebounds": 3.453,
+   "faceoffWinPct": 0.5
+  },
+  "dangerTiers": {
+   "low": {
+    "goalRate": 0.0364,
+    "xgPerShot": 0.0302,
+    "unblockedShotsPerGame": 31.19,
+    "leagueSvPct": 0.9637
+   },
+   "medium": {
+    "goalRate": 0.1294,
+    "xgPerShot": 0.1231,
+    "unblockedShotsPerGame": 8.14,
+    "leagueSvPct": 0.8706
+   },
+   "high": {
+    "goalRate": 0.2633,
+    "xgPerShot": 0.3515,
+    "unblockedShotsPerGame": 3.38,
+    "leagueSvPct": 0.7678
+   }
+  },
+  "regularSkaters": 684,
+  "penaltiesPer60Skater": 0.691
+ },
+ "teams": {
+  "BOS": {
+   "shotAttempts": 58.037,
+   "shotsOnGoal": 27.024,
+   "goals": 3.268,
+   "xGoals": 3.019,
+   "blocked": 15.634,
+   "missed": 15.378,
+   "highDangerShots": 3.256,
+   "mediumDangerShots": 7.5,
+   "lowDangerShots": 31.646,
+   "penalties": 4.28,
+   "pim": 9.927,
+   "faceoffWinPct": 0.53,
+   "hits": 22.695,
+   "takeaways": 4.585,
+   "giveaways": 16.39,
+   "freezes": 5.707,
+   "rebounds": 3.451,
+   "goalsAgainst": 3.012,
+   "xGoalsAgainst": 3.385,
+   "shotsOnGoalAgainst": 29.707,
+   "xGoalsPct": 0.47,
+   "corsiPct": 0.48
+  },
+  "MTL": {
+   "shotAttempts": 56.122,
+   "shotsOnGoal": 26.305,
+   "goals": 3.402,
+   "xGoals": 3.272,
+   "blocked": 14.744,
+   "missed": 15.073,
+   "highDangerShots": 3.415,
+   "mediumDangerShots": 8.451,
+   "lowDangerShots": 29.512,
+   "penalties": 4.049,
+   "pim": 8.817,
+   "faceoffWinPct": 0.51,
+   "hits": 22.073,
+   "takeaways": 4.439,
+   "giveaways": 13.659,
+   "freezes": 5.634,
+   "rebounds": 2.89,
+   "goalsAgainst": 3.061,
+   "xGoalsAgainst": 3.334,
+   "shotsOnGoalAgainst": 27.829,
+   "xGoalsPct": 0.5,
+   "corsiPct": 0.48
+  }
+ },
+ "skaters": {
+  "geekie": {
+   "mpName": "Morgan Geekie",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 81,
+   "toiMin": 1409.9,
+   "per60": {
+    "xg": 0.957,
+    "goals": 1.66,
+    "shotAttempts": 15.108,
+    "highDangerShots": 1.149,
+    "primaryAssists": 0.596,
+    "onIceXgFor": 3.896,
+    "onIceXgAgainst": 3.137,
+    "takeaways": 0.851,
+    "giveaways": 3.319,
+    "shotsBlocked": 1.447,
+    "penalties": 0.468,
+    "hits": 4.681,
+    "penaltiesDrawn": 0.809
+   },
+   "finishing": 1.542,
+   "relativeXgAgainst": 0.94,
+   "percentiles": {
+    "xg60": 0.787,
+    "pa60": 0.629,
+    "onxgf60": 0.838,
+    "relxga": 0.411,
+    "netto": 0.282,
+    "blk60": 0.178
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.904,
+    "pass": 0.784,
+    "def": 0.569,
+    "faceoff": 0.467,
+    "penaltiesPer60": 0.486
+   },
+   "onIceXgPct": 0.55,
+   "gameScore": 61.18
+  },
+  "zacha": {
+   "mpName": "Pavel Zacha",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 78,
+   "toiMin": 1314.0,
+   "per60": {
+    "xg": 1.056,
+    "goals": 1.37,
+    "shotAttempts": 10.639,
+    "highDangerShots": 1.416,
+    "primaryAssists": 0.776,
+    "onIceXgFor": 3.931,
+    "onIceXgAgainst": 3.387,
+    "takeaways": 0.822,
+    "giveaways": 2.785,
+    "shotsBlocked": 1.187,
+    "penalties": 0.594,
+    "hits": 2.922,
+    "penaltiesDrawn": 0.274
+   },
+   "finishing": 1.221,
+   "relativeXgAgainst": 1.015,
+   "percentiles": {
+    "xg60": 0.868,
+    "pa60": 0.773,
+    "onxgf60": 0.848,
+    "relxga": 0.627,
+    "netto": 0.535,
+    "blk60": 0.092
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.864,
+    "pass": 0.852,
+    "def": 0.52,
+    "faceoff": 0.531,
+    "penaltiesPer60": 0.602
+   },
+   "onIceXgPct": 0.54,
+   "gameScore": 53.77
+  },
+  "pastrnak": {
+   "mpName": "David Pastrnak",
+   "mpTeam": "BOS",
+   "mpPos": "R",
+   "gp": 77,
+   "toiMin": 1590.5,
+   "per60": {
+    "xg": 1.121,
+    "goals": 1.094,
+    "shotAttempts": 21.201,
+    "highDangerShots": 0.981,
+    "primaryAssists": 2.15,
+    "onIceXgFor": 3.996,
+    "onIceXgAgainst": 3.162,
+    "takeaways": 1.207,
+    "giveaways": 5.055,
+    "shotsBlocked": 1.207,
+    "penalties": 0.943,
+    "hits": 3.244,
+    "penaltiesDrawn": 1.169
+   },
+   "finishing": 0.981,
+   "relativeXgAgainst": 0.948,
+   "percentiles": {
+    "xg60": 0.906,
+    "pa60": 1.0,
+    "onxgf60": 0.868,
+    "relxga": 0.434,
+    "netto": 0.016,
+    "blk60": 0.098
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.778,
+    "pass": 0.961,
+    "def": 0.494,
+    "faceoff": 0.458,
+    "penaltiesPer60": 0.925
+   },
+   "onIceXgPct": 0.56,
+   "gameScore": 91.22
+  },
+  "khusnutdinov": {
+   "mpName": "Marat Khusnutdinov",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 77,
+   "toiMin": 1116.5,
+   "per60": {
+    "xg": 0.68,
+    "goals": 0.806,
+    "shotAttempts": 7.846,
+    "highDangerShots": 0.752,
+    "primaryAssists": 0.376,
+    "onIceXgFor": 2.605,
+    "onIceXgAgainst": 3.324,
+    "takeaways": 1.129,
+    "giveaways": 2.526,
+    "shotsBlocked": 2.096,
+    "penalties": 0.43,
+    "hits": 2.257,
+    "penaltiesDrawn": 0.914
+   },
+   "finishing": 1.114,
+   "relativeXgAgainst": 0.996,
+   "percentiles": {
+    "xg60": 0.525,
+    "pa60": 0.345,
+    "onxgf60": 0.363,
+    "relxga": 0.573,
+    "netto": 0.813,
+    "blk60": 0.374
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.664,
+    "pass": 0.514,
+    "def": 0.639,
+    "faceoff": 0.476,
+    "penaltiesPer60": 0.455
+   },
+   "onIceXgPct": 0.44,
+   "gameScore": 28.87
+  },
+  "minten": {
+   "mpName": "Fraser Minten",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 82,
+   "toiMin": 1275.2,
+   "per60": {
+    "xg": 0.708,
+    "goals": 0.8,
+    "shotAttempts": 10.822,
+    "highDangerShots": 0.941,
+    "primaryAssists": 0.518,
+    "onIceXgFor": 2.745,
+    "onIceXgAgainst": 3.05,
+    "takeaways": 1.27,
+    "giveaways": 1.882,
+    "shotsBlocked": 2.4,
+    "penalties": 0.471,
+    "hits": 6.681,
+    "penaltiesDrawn": 0.565
+   },
+   "finishing": 1.085,
+   "relativeXgAgainst": 0.914,
+   "percentiles": {
+    "xg60": 0.554,
+    "pa60": 0.526,
+    "onxgf60": 0.442,
+    "relxga": 0.333,
+    "netto": 0.978,
+    "blk60": 0.459
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.664,
+    "pass": 0.619,
+    "def": 0.781,
+    "faceoff": 0.494,
+    "penaltiesPer60": 0.489
+   },
+   "onIceXgPct": 0.47,
+   "gameScore": 38.44
+  },
+  "peterka": {
+   "mpName": "JJ Peterka",
+   "mpTeam": "UTA",
+   "mpPos": "R",
+   "gp": 82,
+   "toiMin": 1310.7,
+   "per60": {
+    "xg": 0.762,
+    "goals": 1.144,
+    "shotAttempts": 15.472,
+    "highDangerShots": 0.549,
+    "primaryAssists": 0.504,
+    "onIceXgFor": 3.131,
+    "onIceXgAgainst": 2.793,
+    "takeaways": 0.87,
+    "giveaways": 3.983,
+    "shotsBlocked": 0.87,
+    "penalties": 0.641,
+    "hits": 0.732,
+    "penaltiesDrawn": 0.595
+   },
+   "finishing": 1.339,
+   "relativeXgAgainst": 0.906,
+   "percentiles": {
+    "xg60": 0.614,
+    "pa60": 0.513,
+    "onxgf60": 0.607,
+    "relxga": 0.306,
+    "netto": 0.092,
+    "blk60": 0.02
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.8,
+    "pass": 0.663,
+    "def": 0.549,
+    "faceoff": 0.446,
+    "penaltiesPer60": 0.645
+   },
+   "onIceXgPct": 0.53,
+   "gameScore": 54.47
+  },
+  "mittelstadt": {
+   "mpName": "Casey Mittelstadt",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 71,
+   "toiMin": 1076.5,
+   "per60": {
+    "xg": 0.667,
+    "goals": 0.836,
+    "shotAttempts": 8.973,
+    "highDangerShots": 0.613,
+    "primaryAssists": 0.836,
+    "onIceXgFor": 3.4,
+    "onIceXgAgainst": 2.873,
+    "takeaways": 0.669,
+    "giveaways": 4.124,
+    "shotsBlocked": 1.17,
+    "penalties": 0.334,
+    "hits": 1.282,
+    "penaltiesDrawn": 0.725
+   },
+   "finishing": 1.152,
+   "relativeXgAgainst": 0.861,
+   "percentiles": {
+    "xg60": 0.513,
+    "pa60": 0.819,
+    "onxgf60": 0.708,
+    "relxga": 0.209,
+    "netto": 0.038,
+    "blk60": 0.088
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.675,
+    "pass": 0.831,
+    "def": 0.587,
+    "faceoff": 0.492,
+    "penaltiesPer60": 0.37
+   },
+   "onIceXgPct": 0.54,
+   "gameScore": 39.56
+  },
+  "e-lindholm": {
+   "mpName": "Elias Lindholm",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 69,
+   "toiMin": 1233.9,
+   "per60": {
+    "xg": 0.9,
+    "goals": 0.827,
+    "shotAttempts": 12.643,
+    "highDangerShots": 1.216,
+    "primaryAssists": 0.584,
+    "onIceXgFor": 3.83,
+    "onIceXgAgainst": 3.509,
+    "takeaways": 0.827,
+    "giveaways": 2.529,
+    "shotsBlocked": 2.869,
+    "penalties": 0.681,
+    "hits": 1.994,
+    "penaltiesDrawn": 0.34
+   },
+   "finishing": 0.943,
+   "relativeXgAgainst": 1.052,
+   "percentiles": {
+    "xg60": 0.74,
+    "pa60": 0.611,
+    "onxgf60": 0.82,
+    "relxga": 0.735,
+    "netto": 0.661,
+    "blk60": 0.58
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.687,
+    "pass": 0.771,
+    "def": 0.575,
+    "faceoff": 0.558,
+    "penaltiesPer60": 0.682
+   },
+   "onIceXgPct": 0.52,
+   "gameScore": 37.23
+  },
+  "hagens": {
+   "mpName": "James Hagens",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 2,
+   "toiMin": 29.1,
+   "per60": {
+    "xg": 0.351,
+    "goals": 0.0,
+    "shotAttempts": 10.309,
+    "highDangerShots": 0.0,
+    "primaryAssists": 0.0,
+    "onIceXgFor": 1.526,
+    "onIceXgAgainst": 1.216,
+    "takeaways": 6.186,
+    "giveaways": 6.186,
+    "shotsBlocked": 0.0,
+    "penalties": 2.062,
+    "hits": 2.062,
+    "penaltiesDrawn": 0.0
+   },
+   "finishing": 0.979,
+   "relativeXgAgainst": 0.365,
+   "percentiles": {
+    "xg60": 0.32,
+    "pa60": 0.02,
+    "onxgf60": 0.0,
+    "relxga": 0.0,
+    "netto": 0.996,
+    "blk60": 0.0
+   },
+   "sampleWeight": 0.05,
+   "ratings": {
+    "shoot": 0.501,
+    "pass": 0.488,
+    "def": 0.517,
+    "faceoff": 0.49,
+    "penaltiesPer60": 0.959
+   },
+   "onIceXgPct": 0.56,
+   "gameScore": 0.54
+  },
+  "jeannot": {
+   "mpName": "Tanner Jeannot",
+   "mpTeam": "BOS",
+   "mpPos": "L",
+   "gp": 77,
+   "toiMin": 973.5,
+   "per60": {
+    "xg": 0.72,
+    "goals": 0.37,
+    "shotAttempts": 11.217,
+    "highDangerShots": 0.986,
+    "primaryAssists": 0.555,
+    "onIceXgFor": 2.349,
+    "onIceXgAgainst": 3.33,
+    "takeaways": 0.431,
+    "giveaways": 2.712,
+    "shotsBlocked": 3.575,
+    "penalties": 1.294,
+    "hits": 14.73,
+    "penaltiesDrawn": 1.109
+   },
+   "finishing": 0.711,
+   "relativeXgAgainst": 0.998,
+   "percentiles": {
+    "xg60": 0.572,
+    "pa60": 0.563,
+    "onxgf60": 0.202,
+    "relxga": 0.576,
+    "netto": 0.368,
+    "blk60": 0.711
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.512,
+    "pass": 0.564,
+    "def": 0.6,
+    "faceoff": 0.485,
+    "penaltiesPer60": 1.228
+   },
+   "onIceXgPct": 0.41,
+   "gameScore": 20.33
+  },
+  "kuraly": {
+   "mpName": "Sean Kuraly",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 82,
+   "toiMin": 1093.0,
+   "per60": {
+    "xg": 0.535,
+    "goals": 0.329,
+    "shotAttempts": 10.869,
+    "highDangerShots": 0.549,
+    "primaryAssists": 0.549,
+    "onIceXgFor": 2.109,
+    "onIceXgAgainst": 3.784,
+    "takeaways": 0.988,
+    "giveaways": 3.129,
+    "shotsBlocked": 2.58,
+    "penalties": 0.494,
+    "hits": 4.776,
+    "penaltiesDrawn": 0.384
+   },
+   "finishing": 0.789,
+   "relativeXgAgainst": 1.134,
+   "percentiles": {
+    "xg60": 0.405,
+    "pa60": 0.557,
+    "onxgf60": 0.096,
+    "relxga": 0.896,
+    "netto": 0.444,
+    "blk60": 0.503
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.47,
+    "pass": 0.53,
+    "def": 0.456,
+    "faceoff": 0.51,
+    "penaltiesPer60": 0.514
+   },
+   "onIceXgPct": 0.36,
+   "gameScore": 26.14
+  },
+  "kastelic": {
+   "mpName": "Mark Kastelic",
+   "mpTeam": "BOS",
+   "mpPos": "C",
+   "gp": 82,
+   "toiMin": 1034.8,
+   "per60": {
+    "xg": 0.823,
+    "goals": 0.696,
+    "shotAttempts": 12.699,
+    "highDangerShots": 1.102,
+    "primaryAssists": 0.406,
+    "onIceXgFor": 2.185,
+    "onIceXgAgainst": 3.67,
+    "takeaways": 1.74,
+    "giveaways": 2.435,
+    "shotsBlocked": 3.711,
+    "penalties": 2.029,
+    "hits": 12.467,
+    "penaltiesDrawn": 1.74
+   },
+   "finishing": 0.901,
+   "relativeXgAgainst": 1.1,
+   "percentiles": {
+    "xg60": 0.658,
+    "pa60": 0.382,
+    "onxgf60": 0.135,
+    "relxga": 0.846,
+    "netto": 0.974,
+    "blk60": 0.734
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.632,
+    "pass": 0.462,
+    "def": 0.616,
+    "faceoff": 0.599,
+    "penaltiesPer60": 1.89
+   },
+   "onIceXgPct": 0.37,
+   "gameScore": 23.32
+  },
+  "brunet": {
+   "mpName": null,
+   "note": "No NHL data in 2025-26 (AHL); engine falls back to the stat-line formula"
+  },
+  "mcavoy": {
+   "mpName": "Charlie McAvoy",
+   "mpTeam": "BOS",
+   "mpPos": "D",
+   "gp": 69,
+   "toiMin": 1682.9,
+   "per60": {
+    "xg": 0.355,
+    "goals": 0.392,
+    "shotAttempts": 9.662,
+    "highDangerShots": 0.392,
+    "primaryAssists": 1.07,
+    "onIceXgFor": 3.639,
+    "onIceXgAgainst": 3.76,
+    "takeaways": 1.034,
+    "giveaways": 3.137,
+    "shotsBlocked": 4.599,
+    "penalties": 1.141,
+    "hits": 2.817,
+    "penaltiesDrawn": 0.784
+   },
+   "finishing": 1.058,
+   "relativeXgAgainst": 1.127,
+   "percentiles": {
+    "xg60": 0.322,
+    "pa60": 0.933,
+    "onxgf60": 0.779,
+    "relxga": 0.885,
+    "netto": 0.468,
+    "blk60": 0.858
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.548,
+    "pass": 0.904,
+    "def": 0.518,
+    "faceoff": 0.45,
+    "penaltiesPer60": 1.111
+   },
+   "onIceXgPct": 0.49,
+   "gameScore": 53.87
+  },
+  "h-lindholm": {
+   "mpName": "Hampus Lindholm",
+   "mpTeam": "BOS",
+   "mpPos": "D",
+   "gp": 67,
+   "toiMin": 1448.8,
+   "per60": {
+    "xg": 0.192,
+    "goals": 0.207,
+    "shotAttempts": 10.271,
+    "highDangerShots": 0.083,
+    "primaryAssists": 0.456,
+    "onIceXgFor": 2.818,
+    "onIceXgAgainst": 3.367,
+    "takeaways": 1.035,
+    "giveaways": 3.313,
+    "shotsBlocked": 4.266,
+    "penalties": 1.118,
+    "hits": 0.497,
+    "penaltiesDrawn": 0.414
+   },
+   "finishing": 1.028,
+   "relativeXgAgainst": 1.009,
+   "percentiles": {
+    "xg60": 0.183,
+    "pa60": 0.449,
+    "onxgf60": 0.475,
+    "relxga": 0.604,
+    "netto": 0.371,
+    "blk60": 0.826
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.473,
+    "pass": 0.595,
+    "def": 0.607,
+    "faceoff": 0.45,
+    "penaltiesPer60": 1.086
+   },
+   "onIceXgPct": 0.46,
+   "gameScore": 29.25
+  },
+  "borgen": {
+   "mpName": "Will Borgen",
+   "mpTeam": "NYR",
+   "mpPos": "D",
+   "gp": 75,
+   "toiMin": 1353.1,
+   "per60": {
+    "xg": 0.105,
+    "goals": 0.222,
+    "shotAttempts": 8.026,
+    "highDangerShots": 0.044,
+    "primaryAssists": 0.222,
+    "onIceXgFor": 2.011,
+    "onIceXgAgainst": 3.16,
+    "takeaways": 0.754,
+    "giveaways": 2.572,
+    "shotsBlocked": 4.39,
+    "penalties": 0.842,
+    "hits": 4.922,
+    "penaltiesDrawn": 0.532
+   },
+   "finishing": 1.254,
+   "relativeXgAgainst": 0.976,
+   "percentiles": {
+    "xg60": 0.031,
+    "pa60": 0.162,
+    "onxgf60": 0.06,
+    "relxga": 0.522,
+    "netto": 0.601,
+    "blk60": 0.841
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.501,
+    "pass": 0.341,
+    "def": 0.688,
+    "faceoff": 0.45,
+    "penaltiesPer60": 0.83
+   },
+   "onIceXgPct": 0.39,
+   "gameScore": 10.23
+  },
+  "zadorov": {
+   "mpName": "Nikita Zadorov",
+   "mpTeam": "BOS",
+   "mpPos": "D",
+   "gp": 81,
+   "toiMin": 1691.4,
+   "per60": {
+    "xg": 0.217,
+    "goals": 0.071,
+    "shotAttempts": 9.33,
+    "highDangerShots": 0.142,
+    "primaryAssists": 0.355,
+    "onIceXgFor": 2.488,
+    "onIceXgAgainst": 3.658,
+    "takeaways": 1.171,
+    "giveaways": 3.335,
+    "shotsBlocked": 3.618,
+    "penalties": 1.667,
+    "hits": 6.953,
+    "penaltiesDrawn": 0.922
+   },
+   "finishing": 0.708,
+   "relativeXgAgainst": 1.096,
+   "percentiles": {
+    "xg60": 0.216,
+    "pa60": 0.316,
+    "onxgf60": 0.285,
+    "relxga": 0.838,
+    "netto": 0.433,
+    "blk60": 0.718
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.351,
+    "pass": 0.478,
+    "def": 0.509,
+    "faceoff": 0.45,
+    "penaltiesPer60": 1.603
+   },
+   "onIceXgPct": 0.4,
+   "gameScore": 21.93
+  },
+  "clifton": {
+   "mpName": "Connor Clifton",
+   "mpTeam": "PIT",
+   "mpPos": "D",
+   "gp": 50,
+   "toiMin": 838.3,
+   "per60": {
+    "xg": 0.119,
+    "goals": 0.143,
+    "shotAttempts": 8.16,
+    "highDangerShots": 0.072,
+    "primaryAssists": 0.143,
+    "onIceXgFor": 2.689,
+    "onIceXgAgainst": 3.214,
+    "takeaways": 0.93,
+    "giveaways": 2.863,
+    "shotsBlocked": 6.012,
+    "penalties": 1.36,
+    "hits": 12.883,
+    "penaltiesDrawn": 0.286
+   },
+   "finishing": 1.035,
+   "relativeXgAgainst": 1.034,
+   "percentiles": {
+    "xg60": 0.048,
+    "pa60": 0.075,
+    "onxgf60": 0.406,
+    "relxga": 0.687,
+    "netto": 0.55,
+    "blk60": 0.975
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.415,
+    "pass": 0.405,
+    "def": 0.631,
+    "faceoff": 0.45,
+    "penaltiesPer60": 1.276
+   },
+   "onIceXgPct": 0.46,
+   "gameScore": 6.88
+  },
+  "caufield": {
+   "mpName": "Cole Caufield",
+   "mpTeam": "MTL",
+   "mpPos": "R",
+   "gp": 81,
+   "toiMin": 1472.9,
+   "per60": {
+    "xg": 1.372,
+    "goals": 2.078,
+    "shotAttempts": 18.82,
+    "highDangerShots": 1.141,
+    "primaryAssists": 0.937,
+    "onIceXgFor": 4.547,
+    "onIceXgAgainst": 2.708,
+    "takeaways": 0.896,
+    "giveaways": 2.281,
+    "shotsBlocked": 0.855,
+    "penalties": 0.285,
+    "hits": 2.037,
+    "penaltiesDrawn": 0.652
+   },
+   "finishing": 1.416,
+   "relativeXgAgainst": 0.827,
+   "percentiles": {
+    "xg60": 0.977,
+    "pa60": 0.879,
+    "onxgf60": 0.966,
+    "relxga": 0.148,
+    "netto": 0.817,
+    "blk60": 0.018
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.97,
+    "pass": 0.935,
+    "def": 0.757,
+    "faceoff": 0.456,
+    "penaltiesPer60": 0.316
+   },
+   "onIceXgPct": 0.63,
+   "gameScore": 94.29
+  },
+  "suzuki": {
+   "mpName": "Nick Suzuki",
+   "mpTeam": "MTL",
+   "mpPos": "C",
+   "gp": 82,
+   "toiMin": 1707.3,
+   "per60": {
+    "xg": 1.043,
+    "goals": 1.019,
+    "shotAttempts": 13.53,
+    "highDangerShots": 1.3,
+    "primaryAssists": 1.581,
+    "onIceXgFor": 4.679,
+    "onIceXgAgainst": 2.967,
+    "takeaways": 1.019,
+    "giveaways": 2.53,
+    "shotsBlocked": 2.179,
+    "penalties": 0.316,
+    "hits": 2.179,
+    "penaltiesDrawn": 0.351
+   },
+   "finishing": 0.982,
+   "relativeXgAgainst": 0.906,
+   "percentiles": {
+    "xg60": 0.858,
+    "pa60": 0.987,
+    "onxgf60": 0.978,
+    "relxga": 0.301,
+    "netto": 0.77,
+    "blk60": 0.399
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.757,
+    "pass": 0.97,
+    "def": 0.743,
+    "faceoff": 0.504,
+    "penaltiesPer60": 0.341
+   },
+   "onIceXgPct": 0.61,
+   "gameScore": 96.25
+  },
+  "slafkovsky": {
+   "mpName": "Juraj Slafkovsk",
+   "mpTeam": "MTL",
+   "mpPos": "L",
+   "gp": 82,
+   "toiMin": 1520.0,
+   "per60": {
+    "xg": 1.376,
+    "goals": 1.184,
+    "shotAttempts": 15.631,
+    "highDangerShots": 1.618,
+    "primaryAssists": 1.026,
+    "onIceXgFor": 4.646,
+    "onIceXgAgainst": 3.125,
+    "takeaways": 0.632,
+    "giveaways": 3.237,
+    "shotsBlocked": 3.079,
+    "penalties": 0.789,
+    "hits": 4.145,
+    "penaltiesDrawn": 0.553
+   },
+   "finishing": 0.886,
+   "relativeXgAgainst": 0.954,
+   "percentiles": {
+    "xg60": 0.98,
+    "pa60": 0.92,
+    "onxgf60": 0.974,
+    "relxga": 0.459,
+    "netto": 0.235,
+    "blk60": 0.629
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.771,
+    "pass": 0.956,
+    "def": 0.608,
+    "faceoff": 0.405,
+    "penaltiesPer60": 0.782
+   },
+   "onIceXgPct": 0.6,
+   "gameScore": 67.57
+  },
+  "kreider": {
+   "mpName": "Chris Kreider",
+   "mpTeam": "ANA",
+   "mpPos": "L",
+   "gp": 75,
+   "toiMin": 1278.7,
+   "per60": {
+    "xg": 1.179,
+    "goals": 1.032,
+    "shotAttempts": 13.42,
+    "highDangerShots": 1.267,
+    "primaryAssists": 0.798,
+    "onIceXgFor": 4.454,
+    "onIceXgAgainst": 3.122,
+    "takeaways": 0.798,
+    "giveaways": 3.191,
+    "shotsBlocked": 0.938,
+    "penalties": 0.798,
+    "hits": 3.238,
+    "penaltiesDrawn": 0.188
+   },
+   "finishing": 0.906,
+   "relativeXgAgainst": 0.947,
+   "percentiles": {
+    "xg60": 0.927,
+    "pa60": 0.798,
+    "onxgf60": 0.953,
+    "relxga": 0.433,
+    "netto": 0.314,
+    "blk60": 0.034
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.755,
+    "pass": 0.895,
+    "def": 0.545,
+    "faceoff": 0.435,
+    "penaltiesPer60": 0.789
+   },
+   "onIceXgPct": 0.59,
+   "gameScore": 55.56
+  },
+  "newhook": {
+   "mpName": "Alex Newhook",
+   "mpTeam": "MTL",
+   "mpPos": "C",
+   "gp": 42,
+   "toiMin": 608.4,
+   "per60": {
+    "xg": 0.738,
+    "goals": 1.282,
+    "shotAttempts": 11.145,
+    "highDangerShots": 0.493,
+    "primaryAssists": 0.789,
+    "onIceXgFor": 2.442,
+    "onIceXgAgainst": 3.271,
+    "takeaways": 0.197,
+    "giveaways": 1.282,
+    "shotsBlocked": 1.677,
+    "penalties": 0.493,
+    "hits": 4.734,
+    "penaltiesDrawn": 0.789
+   },
+   "finishing": 1.357,
+   "relativeXgAgainst": 0.999,
+   "percentiles": {
+    "xg60": 0.592,
+    "pa60": 0.789,
+    "onxgf60": 0.257,
+    "relxga": 0.579,
+    "netto": 0.906,
+    "blk60": 0.25
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.798,
+    "pass": 0.682,
+    "def": 0.637,
+    "faceoff": 0.479,
+    "penaltiesPer60": 0.526
+   },
+   "onIceXgPct": 0.43,
+   "gameScore": 19.45
+  },
+  "demidov": {
+   "mpName": "Ivan Demidov",
+   "mpTeam": "MTL",
+   "mpPos": "R",
+   "gp": 82,
+   "toiMin": 1270.8,
+   "per60": {
+    "xg": 0.818,
+    "goals": 0.897,
+    "shotAttempts": 13.314,
+    "highDangerShots": 0.803,
+    "primaryAssists": 1.228,
+    "onIceXgFor": 4.093,
+    "onIceXgAgainst": 2.829,
+    "takeaways": 1.039,
+    "giveaways": 3.399,
+    "shotsBlocked": 1.228,
+    "penalties": 0.803,
+    "hits": 1.322,
+    "penaltiesDrawn": 0.803
+   },
+   "finishing": 1.066,
+   "relativeXgAgainst": 0.864,
+   "percentiles": {
+    "xg60": 0.652,
+    "pa60": 0.962,
+    "onxgf60": 0.882,
+    "relxga": 0.216,
+    "netto": 0.335,
+    "blk60": 0.113
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.7,
+    "pass": 0.947,
+    "def": 0.647,
+    "faceoff": 0.45,
+    "penaltiesPer60": 0.793
+   },
+   "onIceXgPct": 0.59,
+   "gameScore": 45.23
+  },
+  "bolduc": {
+   "mpName": "Zachary Bolduc",
+   "mpTeam": "MTL",
+   "mpPos": "R",
+   "gp": 78,
+   "toiMin": 1063.2,
+   "per60": {
+    "xg": 0.851,
+    "goals": 0.677,
+    "shotAttempts": 13.261,
+    "highDangerShots": 0.903,
+    "primaryAssists": 0.564,
+    "onIceXgFor": 3.16,
+    "onIceXgAgainst": 2.455,
+    "takeaways": 1.016,
+    "giveaways": 3.724,
+    "shotsBlocked": 2.427,
+    "penalties": 0.79,
+    "hits": 9.593,
+    "penaltiesDrawn": 1.241
+   },
+   "finishing": 0.867,
+   "relativeXgAgainst": 0.749,
+   "percentiles": {
+    "xg60": 0.686,
+    "pa60": 0.586,
+    "onxgf60": 0.63,
+    "relxga": 0.047,
+    "netto": 0.189,
+    "blk60": 0.466
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.63,
+    "pass": 0.703,
+    "def": 0.739,
+    "faceoff": 0.5,
+    "penaltiesPer60": 0.78
+   },
+   "onIceXgPct": 0.56,
+   "gameScore": 29.77
+  },
+  "danault": {
+   "mpName": "Phillip Danault",
+   "mpTeam": "MTL",
+   "mpPos": "C",
+   "gp": 75,
+   "toiMin": 1167.5,
+   "per60": {
+    "xg": 0.533,
+    "goals": 0.308,
+    "shotAttempts": 9.148,
+    "highDangerShots": 0.668,
+    "primaryAssists": 0.463,
+    "onIceXgFor": 2.649,
+    "onIceXgAgainst": 3.81,
+    "takeaways": 0.617,
+    "giveaways": 2.467,
+    "shotsBlocked": 2.056,
+    "penalties": 0.668,
+    "hits": 3.238,
+    "penaltiesDrawn": 0.771
+   },
+   "finishing": 0.762,
+   "relativeXgAgainst": 1.163,
+   "percentiles": {
+    "xg60": 0.402,
+    "pa60": 0.462,
+    "onxgf60": 0.38,
+    "relxga": 0.931,
+    "netto": 0.592,
+    "blk60": 0.364
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.457,
+    "pass": 0.572,
+    "def": 0.451,
+    "faceoff": 0.546,
+    "penaltiesPer60": 0.67
+   },
+   "onIceXgPct": 0.41,
+   "gameScore": 21.23
+  },
+  "anderson": {
+   "mpName": "Josh Anderson",
+   "mpTeam": "MTL",
+   "mpPos": "R",
+   "gp": 72,
+   "toiMin": 1009.6,
+   "per60": {
+    "xg": 0.944,
+    "goals": 0.832,
+    "shotAttempts": 10.281,
+    "highDangerShots": 1.307,
+    "primaryAssists": 0.297,
+    "onIceXgFor": 2.569,
+    "onIceXgAgainst": 3.992,
+    "takeaways": 0.475,
+    "giveaways": 2.496,
+    "shotsBlocked": 2.555,
+    "penalties": 2.021,
+    "hits": 7.666,
+    "penaltiesDrawn": 1.664
+   },
+   "finishing": 0.921,
+   "relativeXgAgainst": 1.219,
+   "percentiles": {
+    "xg60": 0.776,
+    "pa60": 0.238,
+    "onxgf60": 0.348,
+    "relxga": 0.969,
+    "netto": 0.503,
+    "blk60": 0.501
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.694,
+    "pass": 0.462,
+    "def": 0.438,
+    "faceoff": 0.578,
+    "penaltiesPer60": 1.879
+   },
+   "onIceXgPct": 0.39,
+   "gameScore": 19.85
+  },
+  "texier": {
+   "mpName": "Alexandre Texier",
+   "mpTeam": "MTL",
+   "mpPos": "L",
+   "gp": 51,
+   "toiMin": 696.4,
+   "per60": {
+    "xg": 0.644,
+    "goals": 0.689,
+    "shotAttempts": 12.925,
+    "highDangerShots": 0.689,
+    "primaryAssists": 0.517,
+    "onIceXgFor": 2.733,
+    "onIceXgAgainst": 2.573,
+    "takeaways": 0.517,
+    "giveaways": 1.982,
+    "shotsBlocked": 1.292,
+    "penalties": 0.689,
+    "hits": 5.601,
+    "penaltiesDrawn": 0.689
+   },
+   "finishing": 1.034,
+   "relativeXgAgainst": 0.785,
+   "percentiles": {
+    "xg60": 0.485,
+    "pa60": 0.525,
+    "onxgf60": 0.437,
+    "relxga": 0.077,
+    "netto": 0.787,
+    "blk60": 0.129
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.612,
+    "pass": 0.617,
+    "def": 0.796,
+    "faceoff": 0.424,
+    "penaltiesPer60": 0.69
+   },
+   "onIceXgPct": 0.52,
+   "gameScore": 23.75
+  },
+  "dach": {
+   "mpName": "Kirby Dach",
+   "mpTeam": "MTL",
+   "mpPos": "C",
+   "gp": 37,
+   "toiMin": 505.3,
+   "per60": {
+    "xg": 0.677,
+    "goals": 0.95,
+    "shotAttempts": 10.924,
+    "highDangerShots": 0.95,
+    "primaryAssists": 0.356,
+    "onIceXgFor": 2.586,
+    "onIceXgAgainst": 2.51,
+    "takeaways": 1.306,
+    "giveaways": 2.019,
+    "shotsBlocked": 3.562,
+    "penalties": 1.662,
+    "hits": 6.293,
+    "penaltiesDrawn": 1.9
+   },
+   "finishing": 1.168,
+   "relativeXgAgainst": 0.766,
+   "percentiles": {
+    "xg60": 0.522,
+    "pa60": 0.32,
+    "onxgf60": 0.352,
+    "relxga": 0.057,
+    "netto": 0.971,
+    "blk60": 0.708
+   },
+   "sampleWeight": 0.84,
+   "ratings": {
+    "shoot": 0.656,
+    "pass": 0.5,
+    "def": 0.86,
+    "faceoff": 0.44,
+    "penaltiesPer60": 1.476
+   },
+   "onIceXgPct": 0.51,
+   "gameScore": 13.42
+  },
+  "evans": {
+   "mpName": "Jake Evans",
+   "mpTeam": "MTL",
+   "mpPos": "C",
+   "gp": 68,
+   "toiMin": 1044.2,
+   "per60": {
+    "xg": 0.822,
+    "goals": 0.69,
+    "shotAttempts": 9.021,
+    "highDangerShots": 1.379,
+    "primaryAssists": 0.287,
+    "onIceXgFor": 2.492,
+    "onIceXgAgainst": 4.012,
+    "takeaways": 0.862,
+    "giveaways": 2.758,
+    "shotsBlocked": 2.873,
+    "penalties": 0.517,
+    "hits": 5.114,
+    "penaltiesDrawn": 0.747
+   },
+   "finishing": 0.897,
+   "relativeXgAgainst": 1.225,
+   "percentiles": {
+    "xg60": 0.655,
+    "pa60": 0.227,
+    "onxgf60": 0.289,
+    "relxga": 0.975,
+    "netto": 0.575,
+    "blk60": 0.582
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.629,
+    "pass": 0.439,
+    "def": 0.462,
+    "faceoff": 0.555,
+    "penaltiesPer60": 0.535
+   },
+   "onIceXgPct": 0.38,
+   "gameScore": 19.81
+  },
+  "hutson": {
+   "mpName": "Lane Hutson",
+   "mpTeam": "MTL",
+   "mpPos": "D",
+   "gp": 82,
+   "toiMin": 1949.3,
+   "per60": {
+    "xg": 0.328,
+    "goals": 0.369,
+    "shotAttempts": 9.234,
+    "highDangerShots": 0.339,
+    "primaryAssists": 0.954,
+    "onIceXgFor": 3.971,
+    "onIceXgAgainst": 2.638,
+    "takeaways": 1.324,
+    "giveaways": 2.863,
+    "shotsBlocked": 4.217,
+    "penalties": 0.523,
+    "hits": 0.954,
+    "penaltiesDrawn": 0.677
+   },
+   "finishing": 1.071,
+   "relativeXgAgainst": 0.805,
+   "percentiles": {
+    "xg60": 0.311,
+    "pa60": 0.889,
+    "onxgf60": 0.861,
+    "relxga": 0.107,
+    "netto": 0.76,
+    "blk60": 0.817
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.549,
+    "pass": 0.908,
+    "def": 0.882,
+    "faceoff": 0.45,
+    "penaltiesPer60": 0.533
+   },
+   "onIceXgPct": 0.6,
+   "gameScore": 80.7
+  },
+  "dobson": {
+   "mpName": "Noah Dobson",
+   "mpTeam": "MTL",
+   "mpPos": "D",
+   "gp": 80,
+   "toiMin": 1798.7,
+   "per60": {
+    "xg": 0.311,
+    "goals": 0.4,
+    "shotAttempts": 11.909,
+    "highDangerShots": 0.133,
+    "primaryAssists": 0.6,
+    "onIceXgFor": 3.214,
+    "onIceXgAgainst": 3.527,
+    "takeaways": 1.201,
+    "giveaways": 3.169,
+    "shotsBlocked": 6.271,
+    "penalties": 0.6,
+    "hits": 2.068,
+    "penaltiesDrawn": 0.467
+   },
+   "finishing": 1.154,
+   "relativeXgAgainst": 1.077,
+   "percentiles": {
+    "xg60": 0.306,
+    "pa60": 0.639,
+    "onxgf60": 0.648,
+    "relxga": 0.797,
+    "netto": 0.529,
+    "blk60": 0.98
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.582,
+    "pass": 0.732,
+    "def": 0.584,
+    "faceoff": 0.45,
+    "penaltiesPer60": 0.606
+   },
+   "onIceXgPct": 0.48,
+   "gameScore": 45.4
+  },
+  "matheson": {
+   "mpName": "Mike Matheson",
+   "mpTeam": "MTL",
+   "mpPos": "D",
+   "gp": 78,
+   "toiMin": 1884.8,
+   "per60": {
+    "xg": 0.246,
+    "goals": 0.223,
+    "shotAttempts": 8.5,
+    "highDangerShots": 0.191,
+    "primaryAssists": 0.414,
+    "onIceXgFor": 2.908,
+    "onIceXgAgainst": 4.07,
+    "takeaways": 0.764,
+    "giveaways": 2.992,
+    "shotsBlocked": 4.775,
+    "penalties": 0.541,
+    "hits": 1.878,
+    "penaltiesDrawn": 0.478
+   },
+   "finishing": 0.954,
+   "relativeXgAgainst": 1.242,
+   "percentiles": {
+    "xg60": 0.251,
+    "pa60": 0.389,
+    "onxgf60": 0.518,
+    "relxga": 0.981,
+    "netto": 0.393,
+    "blk60": 0.877
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.472,
+    "pass": 0.58,
+    "def": 0.468,
+    "faceoff": 0.45,
+    "penaltiesPer60": 0.55
+   },
+   "onIceXgPct": 0.42,
+   "gameScore": 29.25
+  },
+  "carrier": {
+   "mpName": "Alexandre Carrier",
+   "mpTeam": "MTL",
+   "mpPos": "D",
+   "gp": 73,
+   "toiMin": 1393.1,
+   "per60": {
+    "xg": 0.123,
+    "goals": 0.301,
+    "shotAttempts": 6.073,
+    "highDangerShots": 0.086,
+    "primaryAssists": 0.345,
+    "onIceXgFor": 2.504,
+    "onIceXgAgainst": 3.85,
+    "takeaways": 1.206,
+    "giveaways": 2.153,
+    "shotsBlocked": 6.676,
+    "penalties": 0.689,
+    "hits": 1.507,
+    "penaltiesDrawn": 0.345
+   },
+   "finishing": 1.381,
+   "relativeXgAgainst": 1.175,
+   "percentiles": {
+    "xg60": 0.058,
+    "pa60": 0.3,
+    "onxgf60": 0.307,
+    "relxga": 0.944,
+    "netto": 0.94,
+    "blk60": 0.996
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.568,
+    "pass": 0.477,
+    "def": 0.61,
+    "faceoff": 0.45,
+    "penaltiesPer60": 0.689
+   },
+   "onIceXgPct": 0.39,
+   "gameScore": 21.55
+  },
+  "guhle": {
+   "mpName": "Kaiden Guhle",
+   "mpTeam": "MTL",
+   "mpPos": "D",
+   "gp": 39,
+   "toiMin": 759.0,
+   "per60": {
+    "xg": 0.162,
+    "goals": 0.158,
+    "shotAttempts": 8.458,
+    "highDangerShots": 0.0,
+    "primaryAssists": 0.316,
+    "onIceXgFor": 2.912,
+    "onIceXgAgainst": 3.477,
+    "takeaways": 1.66,
+    "giveaways": 2.846,
+    "shotsBlocked": 4.98,
+    "penalties": 1.107,
+    "hits": 6.798,
+    "penaltiesDrawn": 1.028
+   },
+   "finishing": 0.995,
+   "relativeXgAgainst": 1.061,
+   "percentiles": {
+    "xg60": 0.137,
+    "pa60": 0.263,
+    "onxgf60": 0.519,
+    "relxga": 0.76,
+    "netto": 0.892,
+    "blk60": 0.893
+   },
+   "sampleWeight": 1.0,
+   "ratings": {
+    "shoot": 0.438,
+    "pass": 0.524,
+    "def": 0.658,
+    "faceoff": 0.45,
+    "penaltiesPer60": 1.05
+   },
+   "onIceXgPct": 0.46,
+   "gameScore": 7.3
+  },
+  "engstrom": {
+   "mpName": "Adam Engstrom",
+   "mpTeam": "MTL",
+   "mpPos": "D",
+   "gp": 15,
+   "toiMin": 195.8,
+   "per60": {
+    "xg": 0.175,
+    "goals": 0.0,
+    "shotAttempts": 8.887,
+    "highDangerShots": 0.0,
+    "primaryAssists": 0.0,
+    "onIceXgFor": 2.231,
+    "onIceXgAgainst": 3.058,
+    "takeaways": 0.613,
+    "giveaways": 2.145,
+    "shotsBlocked": 2.452,
+    "penalties": 1.226,
+    "hits": 2.145,
+    "penaltiesDrawn": 0.306
+   },
+   "finishing": 0.933,
+   "relativeXgAgainst": 0.934,
+   "percentiles": {
+    "xg60": 0.159,
+    "pa60": 0.02,
+    "onxgf60": 0.154,
+    "relxga": 0.385,
+    "netto": 0.765,
+    "blk60": 0.474
+   },
+   "sampleWeight": 0.33,
+   "ratings": {
+    "shoot": 0.474,
+    "pass": 0.436,
+    "def": 0.572,
+    "faceoff": 0.45,
+    "penaltiesPer60": 1.023
+   },
+   "onIceXgPct": 0.42,
+   "gameScore": 2.02
+  }
+ },
+ "goalies": {
+  "swayman": {
+   "mpName": "Jeremy Swayman",
+   "gp": 55,
+   "toiMin": 3235.3,
+   "tiers": {
+    "low": {
+     "shots": 1732,
+     "goals": 54,
+     "svPct": 0.969,
+     "svPctShrunk": 0.968
+    },
+    "medium": {
+     "shots": 511,
+     "goals": 52,
+     "svPct": 0.898,
+     "svPctShrunk": 0.892
+    },
+    "high": {
+     "shots": 186,
+     "goals": 40,
+     "svPct": 0.785,
+     "svPctShrunk": 0.777
+    }
+   },
+   "freezeRate": 0.252,
+   "reboundRate": 0.133,
+   "goalsSavedAboveExpected": 28.78
+  },
+  "dipietro": {
+   "mpName": "Michael DiPietro",
+   "gp": 1,
+   "toiMin": 6.0,
+   "tiers": {
+    "low": {
+     "shots": 3,
+     "goals": 0,
+     "svPct": 1.0,
+     "svPctShrunk": 0.964
+    },
+    "medium": {
+     "shots": 0,
+     "goals": 0,
+     "svPct": null,
+     "svPctShrunk": 0.871
+    },
+    "high": {
+     "shots": 0,
+     "goals": 0,
+     "svPct": null,
+     "svPctShrunk": 0.768
+    }
+   },
+   "freezeRate": 0.0,
+   "reboundRate": 0.0,
+   "goalsSavedAboveExpected": 0.1
+  },
+  "dobes": {
+   "mpName": "Jakub Dobes",
+   "gp": 43,
+   "toiMin": 2525.6,
+   "tiers": {
+    "low": {
+     "shots": 1275,
+     "goals": 40,
+     "svPct": 0.969,
+     "svPctShrunk": 0.968
+    },
+    "medium": {
+     "shots": 391,
+     "goals": 49,
+     "svPct": 0.875,
+     "svPctShrunk": 0.874
+    },
+    "high": {
+     "shots": 151,
+     "goals": 28,
+     "svPct": 0.815,
+     "svPctShrunk": 0.791
+    }
+   },
+   "freezeRate": 0.201,
+   "reboundRate": 0.137,
+   "goalsSavedAboveExpected": 17.26
+  },
+  "fowler": {
+   "mpName": "Jacob Fowler",
+   "gp": 17,
+   "toiMin": 1010.7,
+   "tiers": {
+    "low": {
+     "shots": 473,
+     "goals": 13,
+     "svPct": 0.973,
+     "svPctShrunk": 0.97
+    },
+    "medium": {
+     "shots": 155,
+     "goals": 22,
+     "svPct": 0.858,
+     "svPctShrunk": 0.864
+    },
+    "high": {
+     "shots": 48,
+     "goals": 6,
+     "svPct": 0.875,
+     "svPctShrunk": 0.794
+    }
+   },
+   "freezeRate": 0.203,
+   "reboundRate": 0.132,
+   "goalsSavedAboveExpected": 7.12
+  }
+ }
+}

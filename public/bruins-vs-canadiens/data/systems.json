@@ -1,0 +1,716 @@
+{
+ "schema": "rink-sim-systems/1",
+ "coordinates": "Team-relative feet: fx is distance up ice from the team's own goal line (0 = own goal line, 64 = own blue line, 89 = center red line, 114 = far blue line, 178 = far goal line); fy is across the ice, 0 to 85, 42.5 = center. Each formation lists a spot per role (LW, C, RW, LD, RD); null means that role is the pressurer and chases the carrier.",
+ "references": [
+  {
+   "title": "Using neutral zone tactics to create controlled zone entries",
+   "url": "https://members.thecoachessite.com/article/using-neutral-zone-tactics-to-create-controlled-zone-entries"
+  },
+  {
+   "title": "Dump and Chase",
+   "url": "https://www.hockeymonkey.com/learn/dump-and-chase"
+  },
+  {
+   "title": "7 Key North American Hockey Systems Explained",
+   "url": "https://my-test.valpo.edu/north-american-hockey-systems-51023"
+  },
+  {
+   "title": "Power Play 1-3-1 (CoachTube)",
+   "url": "https://coachtube.com/course_lesson/how-to-play-hockey-module-5-special-teams-pp-pk/5-1-3-power-play-1-3-1/119063"
+  },
+  {
+   "title": "Power Play Overload (CoachTube)",
+   "url": "https://coachtube.com/course_lesson/how-to-play-hockey-module-5-special-teams-pp-pk/5-1-1-power-play-overload/119046"
+  },
+  {
+   "title": "Penalty Kill Box (CoachTube)",
+   "url": "https://coachtube.com/course_lesson/how-to-play-hockey-module-5-special-teams-pp-pk/5-3-2-penalty-kill-passive-and-aggressive-box/119096"
+  },
+  {
+   "title": "Penalty Kill Diamond (CoachTube)",
+   "url": "https://coachtube.com/course_lesson/how-to-play-hockey-module-5-special-teams-pp-pk/5-3-3-penalty-kill-passive-and-aggressive-diamond/119103"
+  },
+  {
+   "title": "The art of line changes (NHL.com)",
+   "url": "https://www.nhl.com/kraken/news/the-art-of-line-changes-319801808"
+  },
+  {
+   "title": "Shift starts and ends (HockeyViz)",
+   "url": "https://hockeyviz.com/txt/shifts1"
+  },
+  {
+   "title": "A Deep Dive Into Hockey Line Changes",
+   "url": "https://hockeysarsenal.substack.com/p/line-changing-strategies"
+  }
+ ],
+ "breakout": {
+  "boards": {
+   "label": "Up the boards",
+   "desc": "D behind the net, wingers on the half walls, center swings through the middle.",
+   "spots": {
+    "LW": [
+     56,
+     10
+    ],
+    "RW": [
+     56,
+     75
+    ],
+    "C": [
+     44,
+     42
+    ],
+    "LD": [
+     14,
+     30
+    ],
+    "RD": [
+     14,
+     55
+    ]
+   }
+  },
+  "stretch": {
+   "label": "Stretch pass",
+   "desc": "Wingers fly to the far blue line for a long pass; vulnerable to the trap and to icing.",
+   "spots": {
+    "LW": [
+     112,
+     14
+    ],
+    "RW": [
+     112,
+     71
+    ],
+    "C": [
+     72,
+     42
+    ],
+    "LD": [
+     16,
+     28
+    ],
+    "RD": [
+     16,
+     57
+    ]
+   }
+  },
+  "reverse": {
+   "label": "Reverse (D to D)",
+   "desc": "D-to-D behind the net to change the point of attack.",
+   "spots": {
+    "LW": [
+     60,
+     14
+    ],
+    "RW": [
+     60,
+     71
+    ],
+    "C": [
+     50,
+     42
+    ],
+    "LD": [
+     6,
+     24
+    ],
+    "RD": [
+     6,
+     61
+    ]
+   }
+  },
+  "flow": {
+   "desc": "Breakout timing. Once the team has had the puck for startAfterSec the forwards leave their support spots and burst north, settling ahead of the puck by their ahead distance (capped at maxFx so nobody is offside early) over rampSec. The carrier skates it out with speed instead of cruising.",
+   "startAfterSec": 0.5,
+   "rampSec": 1.2,
+   "wingAheadFt": 34,
+   "centerAheadFt": 22,
+   "maxFx": 110
+  }
+ },
+ "neutralAttack": {
+  "desc": "Weak-side winger is the lead forward riding the far blue line (max fx 108); strong-side winger drives the boards (puck fx + 14); center drives the middle lane as the trailer (puck fx + 4); D trail by 18.",
+  "leadMaxFx": 106,
+  "leadAhead": 34,
+  "wingAhead": 14,
+  "centerAhead": 4,
+  "dTrail": 18
+ },
+ "entry": {
+  "headman": {
+   "label": "Headman to lead F",
+   "desc": "Move the puck to the lead forward whenever the lane is there."
+  },
+  "carry": {
+   "label": "Carry, drive wide",
+   "desc": "Carry in wide; pass only under pressure.",
+   "driveFx": 126
+  },
+  "chip": {
+   "label": "Chip and chase",
+   "desc": "Chip the puck past a defender standing up at the line (or at fx 110 regardless) and chase; happens before any headman read.",
+   "chipFromFx": 100,
+   "chipToFx": 132,
+   "chipSpeedFtPerSec": 38
+  },
+  "dump": {
+   "label": "Dump and chase",
+   "desc": "Hard rim (about 85 mph) into the near corner from the dump window (past the red line, before the blue line) when a defender is standing up at the line; it wraps behind the net to the far corner, where the weak-side forward is sprinting to beat the defense to it.",
+   "dumpFromFx": 92,
+   "dumpToFx": 177,
+   "dumpSpeedFtPerSec": 125,
+   "dumpUntilFx": 108
+  },
+  "bailOutPressureFt": 5.5
+ },
+ "offensiveZone": {
+  "cycle": {
+   "label": "Cycle low",
+   "desc": "Forwards work the strong-side wall and net front; D at the points. Mirrors to the puck side. The three forwards rotate corner, half wall and net front every few seconds so the cycle keeps moving.",
+   "mirrorToPuckSide": true,
+   "spots": {
+    "LW": [
+     168,
+     18
+    ],
+    "C": [
+     150,
+     28
+    ],
+    "RW": [
+     172,
+     44
+    ],
+    "LD": [
+     123,
+     26
+    ],
+    "RD": [
+     123,
+     60
+    ]
+   },
+   "cycleOrder": [
+    "LW",
+    "C",
+    "RW"
+   ]
+  },
+  "umbrella": {
+   "label": "Umbrella",
+   "desc": "Three up top (point and half walls), two low.",
+   "spots": {
+    "LD": [
+     121,
+     42
+    ],
+    "LW": [
+     140,
+     16
+    ],
+    "RW": [
+     140,
+     69
+    ],
+    "C": [
+     166,
+     46
+    ],
+    "RD": [
+     164,
+     20
+    ]
+   }
+  },
+  "crash": {
+   "label": "Crash the net",
+   "desc": "Forwards to the slot and crease, point shots through traffic.",
+   "spots": {
+    "LW": [
+     170,
+     32
+    ],
+    "RW": [
+     170,
+     54
+    ],
+    "C": [
+     160,
+     42
+    ],
+    "LD": [
+     123,
+     25
+    ],
+    "RD": [
+     123,
+     60
+    ]
+   }
+  },
+  "motion": {
+   "desc": "Off-puck motion in the offensive zone: how often the cycle spots rotate between the three forwards, and the size of the drift everyone makes around his spot so nobody stands still.",
+   "cycleEverySec": 3.0,
+   "driftFt": 4
+  }
+ },
+ "powerPlay": {
+  "131": {
+   "label": "1-3-1",
+   "spots": {
+    "LD": [
+     121,
+     42
+    ],
+    "LW": [
+     142,
+     10
+    ],
+    "RW": [
+     142,
+     75
+    ],
+    "C": [
+     154,
+     42
+    ],
+    "RD": [
+     172,
+     44
+    ]
+   }
+  },
+  "umbrella": {
+   "label": "Umbrella",
+   "spots": {
+    "LD": [
+     121,
+     42
+    ],
+    "LW": [
+     134,
+     11
+    ],
+    "RW": [
+     134,
+     74
+    ],
+    "C": [
+     172,
+     46
+    ],
+    "RD": [
+     168,
+     22
+    ]
+   }
+  },
+  "overload": {
+   "label": "Overload",
+   "mirrorToPuckSide": true,
+   "spots": {
+    "LW": [
+     150,
+     9
+    ],
+    "C": [
+     170,
+     13
+    ],
+    "RW": [
+     172,
+     44
+    ],
+    "LD": [
+     122,
+     22
+    ],
+    "RD": [
+     122,
+     56
+    ]
+   }
+  }
+ },
+ "forecheck": {
+  "122": {
+   "label": "1-2-2 (balanced)",
+   "desc": "F1 pressures the puck, two wingers at the tops of the circles ready to jump a pass up the wall, D just inside the far blue line.",
+   "inZone": {
+    "LW": [
+     142,
+     16
+    ],
+    "RW": [
+     142,
+     69
+    ],
+    "LD": [
+     104,
+     30
+    ],
+    "RD": [
+     104,
+     55
+    ],
+    "C": null
+   },
+   "neutral": {
+    "LW": [
+     -6,
+     10
+    ],
+    "RW": [
+     -6,
+     75
+    ],
+    "LD": [
+     -22,
+     28
+    ],
+    "RD": [
+     -22,
+     57
+    ],
+    "C": null
+   },
+   "secondChaser": false
+  },
+  "212": {
+   "label": "2-1-2 (aggressive)",
+   "desc": "Two forwards pressure, one high, D at the blue line.",
+   "inZone": {
+    "LW": null,
+    "RW": [
+     122,
+     42
+    ],
+    "LD": [
+     96,
+     25
+    ],
+    "RD": [
+     96,
+     60
+    ],
+    "C": null
+   },
+   "neutral": {
+    "LW": [
+     -6,
+     10
+    ],
+    "RW": [
+     -6,
+     75
+    ],
+    "LD": [
+     -22,
+     28
+    ],
+    "RD": [
+     -22,
+     57
+    ],
+    "C": null
+   },
+   "secondChaser": true
+  },
+  "131": {
+   "label": "1-3-1 trap",
+   "desc": "One forward pressures, three across the neutral zone, one D back.",
+   "inZone": {
+    "LW": [
+     102,
+     12
+    ],
+    "RW": [
+     102,
+     73
+    ],
+    "LD": [
+     102,
+     42
+    ],
+    "RD": [
+     76,
+     42
+    ],
+    "C": null
+   },
+   "neutral": {
+    "LW": [
+     -6,
+     14
+    ],
+    "RW": [
+     -6,
+     71
+    ],
+    "LD": [
+     -22,
+     42
+    ],
+    "RD": [
+     -34,
+     42
+    ],
+    "C": null
+   },
+   "secondChaser": false
+  },
+  "lwl": {
+   "label": "Left wing lock",
+   "desc": "Two forwards forecheck; the left wing locks back with the D to form three across.",
+   "inZone": {
+    "LW": [
+     96,
+     14
+    ],
+    "RW": null,
+    "LD": [
+     96,
+     42
+    ],
+    "RD": [
+     96,
+     70
+    ],
+    "C": null
+   },
+   "neutral": {
+    "LW": [
+     -14,
+     14
+    ],
+    "LD": [
+     -14,
+     42
+    ],
+    "RD": [
+     -14,
+     70
+    ],
+    "RW": [
+     2,
+     42
+    ],
+    "C": null
+   },
+   "secondChaser": true
+  }
+ },
+ "neutralDefenseNote": "neutral spots are relative to the puck's fx (negative = behind the puck toward our net)",
+ "defensiveZone": {
+  "zone": {
+   "label": "Zone (box + 1)",
+   "desc": "Nearest skater pressures; D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters.",
+   "spots": {
+    "LD": [
+     10,
+     35
+    ],
+    "RD": [
+     10,
+     50
+    ],
+    "LW": [
+     38,
+     28
+    ],
+    "RW": [
+     38,
+     57
+    ],
+    "C": [
+     24,
+     42
+    ]
+   }
+  },
+  "man": {
+   "label": "Man-on-man",
+   "desc": "D take the opposing forwards low, forwards take the points and any extra forward; each defender plays 4 ft goal-side of his man."
+  }
+ },
+ "penaltyKill": {
+  "box": {
+   "label": "Passive box",
+   "slots": [
+    [
+     10,
+     30
+    ],
+    [
+     10,
+     55
+    ],
+    [
+     28,
+     28
+    ],
+    [
+     28,
+     57
+    ]
+   ],
+   "pressure": false
+  },
+  "diamond": {
+   "label": "Diamond",
+   "slots": [
+    [
+     6,
+     42
+    ],
+    [
+     22,
+     24
+    ],
+    [
+     22,
+     61
+    ],
+    [
+     38,
+     42
+    ]
+   ],
+   "pressure": false
+  },
+  "pressure": {
+   "label": "Aggressive box",
+   "slots": [
+    [
+     10,
+     30
+    ],
+    [
+     10,
+     55
+    ],
+    [
+     28,
+     28
+    ],
+    [
+     28,
+     57
+    ]
+   ],
+   "pressure": true
+  }
+ },
+ "deployment": {
+  "desc": "Rotation patterns index the line/pair templates; the share of entries is the share of ice time. Shift targets are seconds on ice before the unit looks for a change.",
+  "rotation": {
+   "F": [
+    0,
+    1,
+    2,
+    0,
+    1,
+    3,
+    0,
+    2,
+    1,
+    0,
+    2,
+    3
+   ],
+   "D": [
+    0,
+    1,
+    2,
+    0,
+    1,
+    0,
+    1,
+    2
+   ],
+   "ppF": [
+    0,
+    1
+   ],
+   "ppD": [
+    0,
+    1
+   ],
+   "pkF": [
+    2,
+    3
+   ],
+   "pkD": [
+    1,
+    2
+   ]
+  },
+  "lateCloseGame": {
+   "desc": "3rd period, under 10 minutes, tied or trailing: shorten the bench",
+   "clockUnderSec": 600,
+   "F": [
+    0,
+    1,
+    2,
+    0,
+    1,
+    2,
+    0,
+    1
+   ],
+   "D": [
+    0,
+    1,
+    0,
+    1,
+    2
+   ]
+  },
+  "shiftTargetsSec": {
+   "F": [
+    46,
+    44,
+    41,
+    37
+   ],
+   "Dbase": 52,
+   "DperPair": 2,
+   "ppUnit1": 70,
+   "ppUnit2": 50,
+   "pkF": 38,
+   "pkD": 44
+  },
+  "stoppageChangeIf": {
+   "FshiftOverSec": 22,
+   "DshiftOverSec": 30
+  },
+  "rules": [
+   "Visitors change first at a stoppage; home team gets the last change and may match lines.",
+   "The team that iced the puck may not change.",
+   "On the fly: change when our carrier is through the neutral zone (dump it in, or the puck is already deep), or when they are retrieving a puck deep in their own end.",
+   "Never change off a loose puck, during a rush against, or while the other team has possession in our zone. A unit stuck defending plays tired instead.",
+   "Units stagger: forwards first, defense on the next safe window.",
+   "A tired skater near the gate changes alone when play is at the far end and we are not defending."
+  ],
+  "changeWindows": {
+   "desc": "When a change on the fly is allowed. Own carrier in the neutral zone between the fx bounds (he can dump it in or has crossed the far blue line), or the opponent is retrieving a puck deep in his own end and is not yet moving it up. Loose pucks and any possession in our defensive zone are never a change window; tired units stay out and play tired. A unit with anyone past desperateAfterSec takes the first half-decent window instead: our puck past our own blue line, or a loose puck in their end.",
+   "ownCarryMinFx": 72,
+   "ownCarryMaxFx": 108,
+   "oppRetrievingMaxFx": 40,
+   "oppRetrievingMaxSpeed": 12,
+   "desperateAfterSec": 85
+  }
+ },
+ "clearing": {
+  "desc": "Under pressure in the defensive zone with no safe pass, a skater bangs the puck off the boards up the near wall; on the penalty kill he clears at the first sign of pressure (icing is waived while shorthanded). A clear that nobody touches before the far end-zone dots is judged for hybrid icing. A gassed unit (anyone past the desperate shift length) clears earlier too, so it can change.",
+  "pressureFt": 5.5,
+  "pkPressureFt": 12,
+  "ratePerSec": 1.5,
+  "aimFx": 125,
+  "speedFtPerSec": 95,
+  "gassedPressureFt": 8
+ }
+}

@@ -1,0 +1,54 @@
+{
+ "schema": "rink-sim-ratings/1",
+ "description": "How a player's 2025-26 stat line becomes the four skater ratings (0 to 1) and the goalie rating the engine uses. Every rating is a clamp(base + weighted per-game rates). Edit the weights here; the engine recomputes on load.",
+ "minGamesForRates": 10,
+ "shoot": {
+  "base": 0.35,
+  "perGoalPerGame": 1.0,
+  "perShootingPct": 0.6,
+  "shootingPctFallback": 0.08,
+  "min": 0.32,
+  "max": 0.97,
+  "drives": "shot accuracy, shot speed, willingness to shoot, one-timer quality"
+ },
+ "pass": {
+  "base": 0.3,
+  "perAssistPerGame": 0.85,
+  "min": 0.3,
+  "max": 0.97,
+  "drives": "pass accuracy, willingness to move the puck"
+ },
+ "def": {
+  "base": 0.4,
+  "perPlusMinus": 0.008333,
+  "defenseBonus": 0.15,
+  "perToiMinute": 0.0125,
+  "pimOver": 100,
+  "pimBonus": 0.04,
+  "min": 0.3,
+  "max": 0.95,
+  "drives": "steal rate, shot-block rate, zone coverage"
+ },
+ "skate": {
+  "base": 0.45,
+  "perPointPerGame": 0.35,
+  "perToiMinute": 0.0111,
+  "defensePenalty": 0.05,
+  "min": 0.4,
+  "max": 0.95,
+  "drives": "top speed via physics.skater.topSpeed"
+ },
+ "overall": "mean of shoot, pass, def, skate; used for faceoffs and puck protection",
+ "goalie": {
+  "svPctFloor": 0.88,
+  "svPctRange": 0.04,
+  "min": 0.2,
+  "max": 0.95,
+  "drives": "width of the goalie line, save probability"
+ },
+ "notes": [
+  "Players with under 10 games are regressed toward a 10-game baseline so a 2-game sample does not produce extreme ratings.",
+  "Plus-minus is a weak defensive proxy; a production version should replace it with on-ice expected-goals against or similar."
+ ],
+ "precedence": "When data/moneypuck-2025.json has an entry for a player, its ratings (shoot, pass, def, faceoff, penaltiesPer60) replace the shoot/pass/def formulas below; skate still comes from the formula below. Goalies with MoneyPuck tier data use tier save percentages instead of the single-number goalie rating."
+}

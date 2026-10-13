@@ -1,0 +1,920 @@
+{
+ "schema": "rink-sim-rosters/1",
+ "asOf": "2026-10-12",
+ "ratingsSeason": "2025-26 regular season",
+ "sources": [
+  {
+   "id": "nhl-bos-roster",
+   "title": "Bruins Announce Opening Day Roster for 2026-27 Season",
+   "url": "https://www.nhl.com/bruins/news/bruins-announce-opening-day-roster-for-2026-27-season",
+   "usedFor": "Boston roster composition, injured list"
+  },
+  {
+   "id": "bhn-lines",
+   "title": "Bruins Lines & Starting Goalie Tonight (PuckPedia projection, Oct 11 2026)",
+   "url": "https://bostonhockeynow.com/boston-bruins-lines/",
+   "usedFor": "Boston line combinations, pairings, jersey numbers"
+  },
+  {
+   "id": "hb-mtl-roster",
+   "title": "Montreal Canadiens Set Opening Night Roster for the 2026-27 NHL Season",
+   "url": "https://www.hockeybuzz.com/2026/09/27/montreal-canadiens-set-opening-night-roster-for-the-2026-27-nhl-season",
+   "usedFor": "Montreal roster composition"
+  },
+  {
+   "id": "nhl-mtl-preview",
+   "title": "Red Wings at Canadiens projected lineups (Oct 10 2026)",
+   "url": "https://www.nhl.com/news/detroit-red-wings-montreal-canadiens-game-preview-october-10-2026",
+   "usedFor": "Montreal line combinations, pairings, goalies, injuries"
+  },
+  {
+   "id": "hr-bos-2026",
+   "title": "2025-26 Boston Bruins statistics (Hockey-Reference)",
+   "url": "https://www.hockey-reference.com/teams/BOS/2026.html",
+   "usedFor": "Skater and goalie stats for players who were on Boston in 2025-26"
+  },
+  {
+   "id": "hr-mtl-2026",
+   "title": "2025-26 Montreal Canadiens statistics (Hockey-Reference)",
+   "url": "https://www.hockey-reference.com/teams/MTL/2026.html",
+   "usedFor": "Skater and goalie stats for players who were on Montreal in 2025-26"
+  },
+  {
+   "id": "hr-peterka",
+   "title": "JJ Peterka player page (Hockey-Reference)",
+   "url": "https://www.hockey-reference.com/players/p/peterjo01.html",
+   "usedFor": "2025-26 stats with Utah"
+  },
+  {
+   "id": "hr-kreider",
+   "title": "Chris Kreider player page (Hockey-Reference)",
+   "url": "https://www.hockey-reference.com/players/k/kreidch01.html",
+   "usedFor": "2025-26 stats with Anaheim"
+  },
+  {
+   "id": "hr-borgen",
+   "title": "Will Borgen player page (Hockey-Reference)",
+   "url": "https://www.hockey-reference.com/players/b/borgewi01.html",
+   "usedFor": "2025-26 stats with NY Rangers"
+  },
+  {
+   "id": "hr-clifton",
+   "title": "Connor Clifton player page (Hockey-Reference)",
+   "url": "https://www.hockey-reference.com/players/c/cliftco01.html",
+   "usedFor": "2025-26 stats with Pittsburgh"
+  }
+ ],
+ "teams": {
+  "BOS": {
+   "name": "Bruins",
+   "city": "Boston",
+   "abbr": "BOS",
+   "home": true,
+   "colors": {
+    "primary": "#000000",
+    "secondary": "#ffb81c",
+    "ink": "#ffb81c"
+   },
+   "lineup": {
+    "asOf": "2026-10-11",
+    "sources": [
+     "nhl-bos-roster",
+     "bhn-lines"
+    ],
+    "F": [
+     [
+      "geekie",
+      "zacha",
+      "pastrnak"
+     ],
+     [
+      "khusnutdinov",
+      "minten",
+      "peterka"
+     ],
+     [
+      "mittelstadt",
+      "e-lindholm",
+      "hagens"
+     ],
+     [
+      "jeannot",
+      "kuraly",
+      "kastelic"
+     ]
+    ],
+    "D": [
+     [
+      "brunet",
+      "mcavoy"
+     ],
+     [
+      "h-lindholm",
+      "borgen"
+     ],
+     [
+      "zadorov",
+      "clifton"
+     ]
+    ],
+    "G": [
+     "swayman",
+     "dipietro"
+    ],
+    "extras": [
+     "Eyssimont 32",
+     "Lohrei 6",
+     "Aspirot 60"
+    ],
+    "injured": [
+     "Poitras 51 (IR)"
+    ]
+   },
+   "players": {
+    "geekie": {
+     "name": "Geekie",
+     "number": 39,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 81,
+      "g": 39,
+      "a": 29,
+      "pts": 68,
+      "plusMinus": -5,
+      "pim": 22,
+      "sog": 181,
+      "toiMin": 17.4,
+      "source": "hr-bos-2026"
+     }
+    },
+    "zacha": {
+     "name": "Zacha",
+     "number": 18,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 78,
+      "g": 30,
+      "a": 35,
+      "pts": 65,
+      "plusMinus": 4,
+      "pim": 28,
+      "sog": 131,
+      "toiMin": 16.9,
+      "source": "hr-bos-2026"
+     }
+    },
+    "pastrnak": {
+     "name": "Pastrnak",
+     "number": 88,
+     "pos": "RW",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 77,
+      "g": 29,
+      "a": 71,
+      "pts": 100,
+      "plusMinus": 4,
+      "pim": 72,
+      "sog": 261,
+      "toiMin": 20.7,
+      "source": "hr-bos-2026"
+     }
+    },
+    "khusnutdinov": {
+     "name": "Khusnutdinov",
+     "number": 92,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 77,
+      "g": 15,
+      "a": 18,
+      "pts": 33,
+      "plusMinus": 12,
+      "pim": 16,
+      "sog": 78,
+      "toiMin": 14.5,
+      "source": "hr-bos-2026"
+     }
+    },
+    "minten": {
+     "name": "Minten",
+     "number": 93,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 82,
+      "g": 17,
+      "a": 18,
+      "pts": 35,
+      "plusMinus": 21,
+      "pim": 20,
+      "sog": 117,
+      "toiMin": 15.6,
+      "source": "hr-bos-2026"
+     }
+    },
+    "peterka": {
+     "name": "Peterka",
+     "number": 10,
+     "pos": "RW",
+     "stats": {
+      "season": "2025-26",
+      "team": "UTA",
+      "gp": 82,
+      "g": 25,
+      "a": 22,
+      "pts": 47,
+      "plusMinus": 6,
+      "pim": 30,
+      "sog": 159,
+      "toiMin": 16.0,
+      "source": "hr-peterka"
+     },
+     "note": "Stats are from Utah; joined Boston for 2026-27"
+    },
+    "mittelstadt": {
+     "name": "Mittelstadt",
+     "number": 11,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 71,
+      "g": 15,
+      "a": 27,
+      "pts": 42,
+      "plusMinus": 12,
+      "pim": 12,
+      "sog": 79,
+      "toiMin": 15.2,
+      "source": "hr-bos-2026"
+     }
+    },
+    "e-lindholm": {
+     "name": "E. Lindholm",
+     "number": 28,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 69,
+      "g": 17,
+      "a": 31,
+      "pts": 48,
+      "plusMinus": -7,
+      "pim": 38,
+      "sog": 114,
+      "toiMin": 17.9,
+      "source": "hr-bos-2026"
+     }
+    },
+    "hagens": {
+     "name": "Hagens",
+     "number": 44,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 2,
+      "g": 0,
+      "a": 1,
+      "pts": 1,
+      "plusMinus": 1,
+      "pim": 2,
+      "sog": 2,
+      "toiMin": 14.6,
+      "source": "hr-bos-2026"
+     },
+     "note": "Rookie, 2 NHL games; ratings regress toward the 10-game baseline"
+    },
+    "jeannot": {
+     "name": "Jeannot",
+     "number": 84,
+     "pos": "F",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 77,
+      "g": 6,
+      "a": 16,
+      "pts": 22,
+      "plusMinus": -4,
+      "pim": 66,
+      "sog": 78,
+      "toiMin": 12.7,
+      "source": "hr-bos-2026"
+     }
+    },
+    "kuraly": {
+     "name": "Kuraly",
+     "number": 52,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 82,
+      "g": 6,
+      "a": 16,
+      "pts": 22,
+      "plusMinus": 0,
+      "pim": 41,
+      "sog": 110,
+      "toiMin": 13.3,
+      "source": "hr-bos-2026"
+     }
+    },
+    "kastelic": {
+     "name": "Kastelic",
+     "number": 47,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 82,
+      "g": 12,
+      "a": 10,
+      "pts": 22,
+      "plusMinus": 5,
+      "pim": 140,
+      "sog": 100,
+      "toiMin": 12.6,
+      "source": "hr-bos-2026"
+     }
+    },
+    "brunet": {
+     "name": "Brunet",
+     "number": 42,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 20,
+      "g": 1,
+      "a": 5,
+      "pts": 6,
+      "plusMinus": 2,
+      "pim": 8,
+      "sog": 22,
+      "toiMin": 16.0,
+      "source": "hr-bos-2026"
+     },
+     "note": "Line not in the team table scraped; conservative estimate pending verification"
+    },
+    "mcavoy": {
+     "name": "McAvoy",
+     "number": 73,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 69,
+      "g": 11,
+      "a": 50,
+      "pts": 61,
+      "plusMinus": 13,
+      "pim": 62,
+      "sog": 111,
+      "toiMin": 24.4,
+      "source": "hr-bos-2026"
+     }
+    },
+    "h-lindholm": {
+     "name": "H. Lindholm",
+     "number": 27,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 67,
+      "g": 5,
+      "a": 21,
+      "pts": 26,
+      "plusMinus": 3,
+      "pim": 58,
+      "sog": 100,
+      "toiMin": 21.6,
+      "source": "hr-bos-2026"
+     }
+    },
+    "borgen": {
+     "name": "Borgen",
+     "number": 17,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "NYR",
+      "gp": 75,
+      "g": 5,
+      "a": 10,
+      "pts": 15,
+      "plusMinus": 3,
+      "pim": 41,
+      "sog": 69,
+      "toiMin": 18.1,
+      "source": "hr-borgen"
+     },
+     "note": "Stats are from NY Rangers"
+    },
+    "zadorov": {
+     "name": "Zadorov",
+     "number": 91,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "BOS",
+      "gp": 81,
+      "g": 2,
+      "a": 20,
+      "pts": 22,
+      "plusMinus": 18,
+      "pim": 152,
+      "sog": 107,
+      "toiMin": 20.9,
+      "source": "hr-bos-2026"
+     }
+    },
+    "clifton": {
+     "name": "Clifton",
+     "number": 75,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "PIT",
+      "gp": 50,
+      "g": 2,
+      "a": 4,
+      "pts": 6,
+      "plusMinus": 5,
+      "pim": 53,
+      "sog": 35,
+      "toiMin": 16.8,
+      "source": "hr-clifton"
+     },
+     "note": "Stats are from Pittsburgh"
+    },
+    "swayman": {
+     "name": "Swayman",
+     "number": 1,
+     "pos": "G",
+     "stats": {
+      "season": "2025-26",
+      "gp": 55,
+      "w": 31,
+      "l": 18,
+      "svPct": 0.907,
+      "gaa": 2.71,
+      "source": "hr-bos-2026"
+     }
+    },
+    "dipietro": {
+     "name": "DiPietro",
+     "number": 30,
+     "pos": "G",
+     "stats": {
+      "season": "2025-26",
+      "gp": 1,
+      "w": 0,
+      "l": 0,
+      "svPct": 1.0,
+      "gaa": 0.0,
+      "source": "hr-bos-2026",
+      "svPctUsed": 0.9
+     },
+     "note": "1 NHL game; rated at a .900 baseline"
+    }
+   }
+  },
+  "MTL": {
+   "name": "Canadiens",
+   "city": "Montreal",
+   "abbr": "MTL",
+   "home": false,
+   "colors": {
+    "primary": "#af1e2d",
+    "secondary": "#192168",
+    "ink": "#ffffff"
+   },
+   "lineup": {
+    "asOf": "2026-10-10",
+    "sources": [
+     "hb-mtl-roster",
+     "nhl-mtl-preview"
+    ],
+    "F": [
+     [
+      "caufield",
+      "suzuki",
+      "slafkovsky"
+     ],
+     [
+      "kreider",
+      "newhook",
+      "demidov"
+     ],
+     [
+      "bolduc",
+      "danault",
+      "anderson"
+     ],
+     [
+      "texier",
+      "dach",
+      "evans"
+     ]
+    ],
+    "D": [
+     [
+      "hutson",
+      "dobson"
+     ],
+     [
+      "matheson",
+      "carrier"
+     ],
+     [
+      "guhle",
+      "engstrom"
+     ]
+    ],
+    "G": [
+     "dobes",
+     "fowler"
+    ],
+    "extras": [
+     "A. Xhekaj 72",
+     "Struble 47"
+    ],
+    "injured": [
+     "Montembeault 35",
+     "Kapanen 90",
+     "F. Xhekaj 27"
+    ]
+   },
+   "players": {
+    "caufield": {
+     "name": "Caufield",
+     "number": 13,
+     "pos": "RW",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 81,
+      "g": 51,
+      "a": 37,
+      "pts": 88,
+      "plusMinus": 29,
+      "pim": 14,
+      "sog": 258,
+      "toiMin": 18.2,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "suzuki": {
+     "name": "Suzuki",
+     "number": 14,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 82,
+      "g": 29,
+      "a": 72,
+      "pts": 101,
+      "plusMinus": 37,
+      "pim": 28,
+      "sog": 183,
+      "toiMin": 20.8,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "slafkovsky": {
+     "name": "Slafkovsky",
+     "number": 20,
+     "pos": "LW",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 82,
+      "g": 30,
+      "a": 43,
+      "pts": 73,
+      "plusMinus": 9,
+      "pim": 52,
+      "sog": 180,
+      "toiMin": 18.5,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "kreider": {
+     "name": "Kreider",
+     "number": 29,
+     "pos": "LW",
+     "stats": {
+      "season": "2025-26",
+      "team": "ANA",
+      "gp": 75,
+      "g": 22,
+      "a": 28,
+      "pts": 50,
+      "plusMinus": -4,
+      "pim": 34,
+      "sog": 139,
+      "toiMin": 17.1,
+      "source": "hr-kreider"
+     },
+     "note": "Stats are from Anaheim; Montreal jersey number not confirmed in sources, 29 used"
+    },
+    "newhook": {
+     "name": "Newhook",
+     "number": 15,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 42,
+      "g": 13,
+      "a": 12,
+      "pts": 25,
+      "plusMinus": 9,
+      "pim": 10,
+      "sog": 61,
+      "toiMin": 14.5,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "demidov": {
+     "name": "Demidov",
+     "number": 93,
+     "pos": "RW",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 82,
+      "g": 19,
+      "a": 43,
+      "pts": 62,
+      "plusMinus": 3,
+      "pim": 34,
+      "sog": 127,
+      "toiMin": 15.5,
+      "source": "hr-mtl-2026"
+     },
+     "note": "Listed day-to-day (lower body) on Oct 10 2026; dressed in the sim"
+    },
+    "bolduc": {
+     "name": "Bolduc",
+     "number": 76,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 78,
+      "g": 12,
+      "a": 18,
+      "pts": 30,
+      "plusMinus": -6,
+      "pim": 28,
+      "sog": 101,
+      "toiMin": 13.6,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "danault": {
+     "name": "Danault",
+     "number": 24,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 45,
+      "g": 6,
+      "a": 6,
+      "pts": 12,
+      "plusMinus": -6,
+      "pim": 20,
+      "sog": 49,
+      "toiMin": 15.1,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "anderson": {
+     "name": "Anderson",
+     "number": 17,
+     "pos": "RW",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 72,
+      "g": 14,
+      "a": 9,
+      "pts": 23,
+      "plusMinus": -4,
+      "pim": 90,
+      "sog": 89,
+      "toiMin": 14.0,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "texier": {
+     "name": "Texier",
+     "number": 91,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 43,
+      "g": 8,
+      "a": 12,
+      "pts": 20,
+      "plusMinus": 9,
+      "pim": 24,
+      "sog": 67,
+      "toiMin": 14.3,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "dach": {
+     "name": "Dach",
+     "number": 77,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 37,
+      "g": 8,
+      "a": 7,
+      "pts": 15,
+      "plusMinus": -2,
+      "pim": 31,
+      "sog": 47,
+      "toiMin": 13.7,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "evans": {
+     "name": "Evans",
+     "number": 71,
+     "pos": "C",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 68,
+      "g": 12,
+      "a": 12,
+      "pts": 24,
+      "plusMinus": -8,
+      "pim": 28,
+      "sog": 76,
+      "toiMin": 15.4,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "hutson": {
+     "name": "Hutson",
+     "number": 48,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 82,
+      "g": 12,
+      "a": 66,
+      "pts": 78,
+      "plusMinus": 36,
+      "pim": 34,
+      "sog": 124,
+      "toiMin": 23.8,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "dobson": {
+     "name": "Dobson",
+     "number": 53,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 80,
+      "g": 12,
+      "a": 35,
+      "pts": 47,
+      "plusMinus": 5,
+      "pim": 34,
+      "sog": 158,
+      "toiMin": 22.5,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "matheson": {
+     "name": "Matheson",
+     "number": 8,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 78,
+      "g": 7,
+      "a": 30,
+      "pts": 37,
+      "plusMinus": 9,
+      "pim": 34,
+      "sog": 114,
+      "toiMin": 24.2,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "carrier": {
+     "name": "Carrier",
+     "number": 45,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 73,
+      "g": 7,
+      "a": 15,
+      "pts": 22,
+      "plusMinus": 2,
+      "pim": 34,
+      "sog": 56,
+      "toiMin": 19.1,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "guhle": {
+     "name": "Guhle",
+     "number": 21,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 39,
+      "g": 2,
+      "a": 9,
+      "pts": 11,
+      "plusMinus": 5,
+      "pim": 41,
+      "sog": 39,
+      "toiMin": 19.5,
+      "source": "hr-mtl-2026"
+     },
+     "note": "Returned from abdominal surgery Oct 10 2026"
+    },
+    "engstrom": {
+     "name": "Engstrom",
+     "number": 32,
+     "pos": "D",
+     "stats": {
+      "season": "2025-26",
+      "team": "MTL",
+      "gp": 15,
+      "g": 0,
+      "a": 1,
+      "pts": 1,
+      "plusMinus": 2,
+      "pim": 8,
+      "sog": 11,
+      "toiMin": 13.1,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "dobes": {
+     "name": "Dobes",
+     "number": 75,
+     "pos": "G",
+     "stats": {
+      "season": "2025-26",
+      "gp": 43,
+      "w": 29,
+      "l": 10,
+      "svPct": 0.901,
+      "gaa": 2.78,
+      "source": "hr-mtl-2026"
+     }
+    },
+    "fowler": {
+     "name": "Fowler",
+     "number": 70,
+     "pos": "G",
+     "stats": {
+      "season": "2025-26",
+      "gp": 17,
+      "w": 9,
+      "l": 6,
+      "svPct": 0.908,
+      "gaa": 2.43,
+      "source": "hr-mtl-2026"
+     }
+    }
+   }
+  }
+ }
+}
