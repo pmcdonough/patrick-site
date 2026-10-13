@@ -1,6 +1,4 @@
-#
 # patrick-site
-#
 
 Personal site for sharing interactive models and side projects, mostly built with AI coding tools. Everything is static and runs in the browser. The site is served from `public/`.
 

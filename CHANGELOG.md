@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.32 = sim 0.30 + Play Review 0.5. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.33 = sim 0.30 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.33
+- Play Review 0.6.
 
 ### 0.32
 - Play Review 0.5.
@@ -14,6 +17,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Play Review
+
+### 0.6
+- The replay respects offside: attackers without the puck hold at the blue line until the puck crosses it, then skate in over the next 0.7 s. Before this, rush clips started teammates inside the zone ahead of the puck.
 
 ### 0.5
 - One rink instead of two: the real play with the model's alternative as a green ghost on the same clock, or either read alone. Puck streaks follow the puck's own path and sticks no longer reach for a puck in flight.

@@ -835,7 +835,7 @@
 
 <script>
 (async () => {
-  const VERSION = '0.5';
+  const VERSION = '0.6';
   document.getElementById('version').textContent = 'Play review v' + VERSION;
   const $ = id => document.getElementById(id);
   const get = async u => { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
@@ -975,6 +975,7 @@
   // inferred spot over the lead-in, the puck follows the real preceding event to the real shot, and after the shot
   // the real result plays on the left while the model's pass plays on the right. Every panel is labeled as such.
   // Times are ice time (game-clock seconds). Playback speed stretches them on the wall clock; 0.5x is slow motion.
+  const BLUE = 125;   // the attacking blue line in the rink frame
   const RP = { leadDefault: 5, leadMin: 2, leadMax: 8, after: 3, passFtPerSec: 70, wristFtPerSec: 90, slapFtPerSec: 120, carryFtPerSec: 22, rushFwdFtPerSec: [20, 27], rushDFtPerSec: [17, 23], backcheckFtPerSec: [18, 25], zoneDriftFtPerSec: 5 };
   let view = 'both', lead = RP.leadDefault, speed = 0.5, playing = false, tcur = -RP.leadDefault, clip = null, raf = null, lastTs = 0;
   const ease = u => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
@@ -1014,7 +1015,11 @@
     const useDrive = scenario === 'drive' || (scenario === 'right' && x.drive && (!best || x.drive.value >= best.value));
     const altT = useDrive ? { drive: RP_DRIVE.ft / RP_DRIVE.carryFtPerSec, release: 0.2 } : { pass: dist(R.shooter, best.m) / RP.passFtPerSec, release: 0.25 };
     if (useDrive) altT.net = altT.drive + altT.release + dist(x.drive.spot, NET) / shotSpeed; else altT.net = altT.pass + altT.release + dist(best.m, NET) / shotSpeed;
-    return { s, R, best, drive: x.drive, useDrive, paths, secBefore, rush, carrier, passAt, start, shotSpeed, tNet, altT, result: s.result, shotXg: x.shotXg, x0 };
+    const c = { s, R, best, drive: x.drive, useDrive, paths, secBefore, rush, carrier, passAt, start, shotSpeed, tNet, altT, result: s.result, shotXg: x.shotXg, x0, tEntry: -lead };
+    // offside: nobody on the attacking side may be in the zone before the puck. Find when the puck crosses the blue line,
+    // then frame() holds attackers at the line until it does and lets them in over the next 0.7 s.
+    if (start.x < BLUE) { c.tEntry = 0; for (let t = -lead; t <= 0; t += 0.02) { if (frame(c, t, false, true).puck.x >= BLUE) { c.tEntry = t; break; } } }
+    return c;
   }
   // position of a path at time t (seconds relative to the shot)
   function at(path, t) {
@@ -1022,9 +1027,14 @@
     const x = lerp(path.sx, path.ex, u), y = lerp(path.sy, path.ey, u);
     const du = 0.05; const u2 = ease(clamp((t + du - t0) / (t1 - t0), 0, 1)); return { x, y, vx: (lerp(path.sx, path.ex, u2) - x) / du, vy: (lerp(path.sy, path.ey, u2) - y) / du };
   }
-  function frame(c, t, alt) {
+  function frame(c, t, alt, noGate) {
     const sk = c.paths.map(pt => ({ p: pt.p, ...at(pt, t) }));
     const shooter = sk.find(q => q.p === c.R.shooter);
+    if (!noGate && c.tEntry > -lead) {
+      // hold attackers without the puck at the blue line until the puck is in, then let them in over 0.7 s
+      const g = t < c.tEntry ? 0 : ease(Math.min(1, (t - c.tEntry) / 0.7));
+      for (const q of sk) { if (q.p.team !== c.R.shooter.team || q.p === c.carrier || q.p === c.R.shooter) continue; if (q.x > BLUE - 2) { const over = q.x - (BLUE - 2); q.x = BLUE - 2 + over * g; if (g < 1) { q.vx *= g; } } }
+    }
     let puck, holder = null, note = '', light = 0;
     if (t < 0) {
       if (c.carrier && t < c.passAt) { holder = sk.find(q => q.p === c.carrier); puck = { x: holder.x + 2, y: holder.y }; }
@@ -1174,7 +1184,7 @@
   $('method').innerHTML = `<p>Each unblocked shot in the game is placed on the rink from the play-by-play coordinates, with the shooter attacking to the right. The other nine skaters are not in the public data, so the page places the shooter's teammates on the spots of the offensive-zone system the sim runs for that club (Boston cycles low, Montreal plays an umbrella), mirrored to the puck side, and the defenders on zone coverage: a defenseman boxes out the net-front man, the center plays goal-side of the slot man, and the nearest free defender closes on the shooter.</p>
     <p>The shot taken is scored with the expected-goal model (distance, angle, shot type, rebound, strength) times the shooter's finishing from his last two seasons. Each teammate is scored as a one-timer from his spot, times the chance the pass gets there: 96% for a short pass, falling about half a point per foot, and less than half that through a defender's lane. A receiver with a defender within 4 ft keeps 60% of his look, within 8 ft 85%. The gap is the difference, in points of expected goals. A gap of 10 means the pass was worth a tenth of a goal more than the shot.</p>
     <p>Three scenarios. Pass worth more ranks shots by how much the best pass beat the shot. Drive worth more asks whether walking the puck 15 ft closer, cutting 6 ft toward the middle for a better angle (or away from the man closing on the shooter if he is on that side), and shooting from there was worth more. The page cannot see how close that man really was, so the drive assumes the cut beats him and charges for everyone else: the chance of getting there with the puck starts at 88% and drops 30 points for every other defender in a 4.5 ft corridor, and the look from the new spot keeps 60% with another defender within 4 ft, 85% within 8. Read a high drive gap as: if he had a step, the walk-in was worth it. Tips and deflections are left out, since nobody chose to shoot from there. Right call ranks the shots that beat every alternative by the most, so the list is not only criticism.</p>
-    <p>One rink, three views. The default shows the real play with the model's alternative as a green ghost on the same clock from the moment of the shot: the pass or the walk-in, the ghost puck, and the look it would have been. The other two views show either read alone. The gray streak behind a puck is its own path, drawn only while it is in flight.</p>
+    <p>One rink, three views. The default shows the real play with the model's alternative as a green ghost on the same clock from the moment of the shot: the pass or the walk-in, the ghost puck, and the look it would have been. The other two views show either read alone. The gray streak behind a puck is its own path, drawn only while it is in flight. The replay respects offside: attackers without the puck hold at the blue line until the puck is in the zone.</p>
     <p>The replay is a mock reconstruction, not tracking. All times are ice time: the lead-in is 2 to 8 seconds of game clock before the shot, the clip runs 3 seconds after, and the playback speed stretches that on your screen (0.5x is slow motion, the default). The puck starts at the real preceding event and is carried at about 15 mph toward the real shot; a long way means a teammate carries and passes, a short way means the shooter carries it himself, and if the event was farther than that speed covers in the lead-in, the carry is already under way when the clip opens. Skaters skate at real speeds for the whole lead-in: on a rush, forwards at 20 to 27 ft/s and back-checkers at 18 to 25 ft/s, so a 5 second lead-in starts in the neutral zone and the view widens to show it; in a cycle, everyone drifts a few feet around his spot. The pressuring defender arrives last. After the shot, the left panel plays the real result (goal, save or wide) and the right panel plays the pass, the one-timer and the look it would have been, with no invented result. Nothing in the replay is used for scoring; it is there to make the two reads easy to compare.</p>
     <p>What this does and does not prove. It finds the shots where a better option probably existed given where the teammates usually are. It cannot see whether the teammate was actually open, which is what video, or tracking data, settles. Model: logistic regression fit on ${XG.rowsUsed.toLocaleString()} MoneyPuck unblocked shots from the ${XG.sources.map(x => x.file.replace('shots_', '').replace('.csv', '')).join(' and ')} seasons; holdout log loss ${XG.fit.logLoss} against ${XG.fit.moneypuckLogLoss} for MoneyPuck's own model.</p>`;
 
