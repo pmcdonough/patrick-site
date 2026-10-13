@@ -42,7 +42,7 @@ Formations and most rules use team-relative coordinates: `toFx(t, x)` gives dist
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 
-## Baselines (v0.27)
+## Baselines (v0.27 to v0.28)
 
 At NHL-average multipliers, per team per game, over 6 games: about 28 to 32 shots on goal, 3 to 4 goals, 7 high-danger shots, 6 goalie freezes, 3 offsides, 4 icings; mean shift about 49 s, p90 about 73 s, 3 percent of shifts past 90 s (units pinned in their zone); line changes about 150 per team.
 

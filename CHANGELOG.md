@@ -2,6 +2,9 @@
 
 ## Bruins vs Canadiens
 
+### 0.28
+- About dialog rewritten to cover the current engine: carrier reads, breakout burst and rush, cycle motion, hard dump, forecheck and coverage, fatigue effects, hybrid icing, calibration at the NHL-average tick.
+
 ### 0.27
 - A tired skater no longer swaps himself out while the puck is in his own zone, even when it is loose and far from the bench.
 - Repo: CLAUDE.md, engine notes, build history, data-embedding build script and headless checks under `tools/`.
