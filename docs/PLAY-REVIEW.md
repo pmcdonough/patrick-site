@@ -1,6 +1,6 @@
 # Play Review
 
-The first slice of the counterfactual play-review product described in the product brief: one real game, every unblocked shot scored by expected goals against the best pass the model saw from the same spot. Version 0.1, at `public/play-review/`.
+The first slice of the counterfactual play-review product described in the product brief: one real game, every unblocked shot scored by expected goals against the best pass the model saw from the same spot, with a replay of the seconds around each shot. Version 0.2, at `public/play-review/`.
 
 ## What it shows
 
@@ -30,6 +30,22 @@ Shot taken: the xG model with the real shot type (NHL type names mapped to Money
 Each teammate: xG of a one-timer (type SNAP) from his inferred spot, times his finishing, times a pressure factor (0.6 with a defender within 4 ft, 0.85 within 8 ft), times the chance the pass arrives (0.96 minus 0.0045 per foot, floor 0.4, times 0.45 if a defender is in the lane), times 0.9 for the one-timer having to get off. The best teammate's value minus the shot's xG is the gap, shown in points (hundredths of a goal).
 
 Shots from more than 75 ft out and shots with fewer than three teammates on the ice are left out.
+
+## Replay
+
+Added in 0.2. The replay is a mock reconstruction drawn in the sim's style, not tracking, and every panel says so. Its inputs are real: the preceding event's type, location and time, the shot's location, type and result, and who was on the ice. Everything between those anchors is synthesized.
+
+Timeline. The lead-in is configurable from 2 to 8 seconds (default 5) and the clip runs 3 seconds after the shot. Play, pause, replay, a scrubber, and 0.5x or 1x speed. Both panels share the clock; they are identical until the shot and diverge at zero.
+
+Scenario. If the preceding event was outside the offensive zone, or was a faceoff, takeaway, giveaway or hit in the neutral part of the zone, the clip is a rush: teammates start about 42 ft back toward the neutral zone and defenders about 28 ft back, as if back-checking, and everyone arrives at his inferred spot shortly before the shot, the pressuring defender last. Otherwise it is an in-zone clip: everyone drifts a few feet around his spot.
+
+Puck. The puck starts at the real preceding event's location. If that is more than 45 ft from the shooter, the nearest teammate carries it and passes to the shooter about a second before the shot; otherwise the shooter carries it himself from there. Movement between positions is eased (slow, fast, slow), with velocities derived for the stick direction and skate trails.
+
+After the shot. Left panel: the puck travels at 90 ft/s (120 for a slap shot) and the real result plays: a goal lights the lamp, a save stops at the goalie and rebounds to the corner, a miss goes wide and around the boards. Right panel: the pass travels at 70 ft/s to the receiver, he releases a one-timer a quarter second later, and the puck reaches the net with the look's expected-goal value as the label. No result is invented for the alternative.
+
+Nothing in the replay feeds the scoring. The scoring uses the shot's real location and the inferred spots; the replay only animates them.
+
+Constants are at the top of the replay block (`RP`): lead-in bounds, seconds after, pass and shot speeds, rush pullback, in-zone drift and back-check distances.
 
 ## What it proves and does not
 

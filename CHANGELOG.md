@@ -2,6 +2,10 @@
 
 ## Play Review
 
+### 0.2
+- Replay: a mock reconstruction of the seconds around each shot, with a configurable lead-in (2 to 8 s) and 3 s after. The puck runs from the real preceding event to the real shot, skaters travel from plausible starts to their inferred spots (rush or in-zone scenario), the left panel plays the real result and the right panel plays the pass and the one-timer. Play, pause, replay, scrub, 0.5x and 1x. Drawn in the sim's style: numbered skaters, sticks, trails, puck streak, goalie line, goal light.
+- Home page card copy updated for both projects.
+
 ### 0.1
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 

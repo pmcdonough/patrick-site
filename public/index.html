@@ -78,7 +78,7 @@
 
   <section>
     <h2>Simulations and experiments</h2>
-    <p class="intro">Interactive models and side projects, mostly built with AI coding tools. Each one runs in your browser, no install, and the data behind it is open to inspection.</p>
+    <p class="intro">Interactive models and side projects, mostly built with AI coding tools. Each one runs in your browser, no install, and the data and models behind it are open to inspection.</p>
     <div class="grid">
 
       <div class="card">
@@ -114,8 +114,8 @@
         </div>
         <div class="body">
           <h3>Bruins vs Canadiens <span class="ver">v0.30</span></h3>
-          <p>A 5-on-5 hockey engine built on 2025-26 data. Skaters rated from real stat lines, shots graded against MoneyPuck expected goals, goalies at their actual save percentages, skating calibrated to NHL EDGE tracking. Pick each team’s systems mid-game and grade the results against the real teams.</p>
-          <div class="tags"><span>Simulation</span><span>Physics engine</span><span>MoneyPuck</span><span>NHL EDGE</span><span>Canvas</span><span>JavaScript</span></div>
+          <p>A 5-on-5 hockey engine, not a scripted animation. Real 2025-26 rosters rated from MoneyPuck data, skating calibrated to NHL EDGE tracking, and an expected-goal model fit on two seasons of shots that scores every attempt by distance, angle, type and the shooter's finishing. Line changes, fatigue, officials and the rulebook are modeled. Pick each team's systems mid-game and grade the results against how the real teams played.</p>
+          <div class="tags"><span>Simulation</span><span>Physics engine</span><span>Expected goals</span><span>MoneyPuck</span><span>NHL EDGE</span><span>Canvas</span><span>JavaScript</span></div>
           <div class="card-links"><a class="open" href="/bruins-vs-canadiens/">Open the sim</a><a class="src" href="https://github.com/pmcdonough/patrick-site/tree/main/public/bruins-vs-canadiens" target="_blank" rel="noopener">Source on GitHub</a></div>
         </div>
       </div>
@@ -146,9 +146,9 @@
           </svg>
         </div>
         <div class="body">
-          <h3>Play Review <span class="ver">v0.1</span></h3>
-          <p>A real Bruins game, every shot scored by expected goals against the best pass the model saw from the same spot. Built from the NHL play-by-play and shift chart, with an expected-goal model fit on two seasons of MoneyPuck shot data. First step toward counterfactual play review.</p>
-          <div class="tags"><span>Analytics</span><span>Expected goals</span><span>NHL API</span><span>MoneyPuck</span><span>JavaScript</span></div>
+          <h3>Play Review <span class="ver">v0.2</span></h3>
+          <p>A real Bruins game, every shot scored by expected goals against the best pass the model saw from the same spot, with a replay of the seconds before and after each one. Built from the NHL play-by-play and shift chart, the sim's systems and the same expected-goal model. Positions are inferred and the movement is a reconstruction, and the page says so. First step toward counterfactual play review.</p>
+          <div class="tags"><span>Analytics</span><span>Expected goals</span><span>Replay</span><span>NHL API</span><span>MoneyPuck</span><span>JavaScript</span></div>
           <div class="card-links"><a class="open" href="/play-review/">Open the review</a><a class="src" href="https://github.com/pmcdonough/patrick-site/tree/main/public/play-review" target="_blank" rel="noopener">Source on GitHub</a></div>
         </div>
       </div>

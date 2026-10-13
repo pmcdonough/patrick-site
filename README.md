@@ -14,7 +14,8 @@ public/
 tools/                             build script, data fits (xg_fit.py, game_load.py) and headless checks
 docs/ENGINE.md                     how the engine is organized, invariants, baselines, lessons learned
 docs/XG-MODEL.md                   the expected-goal model: data, method, fit, how the engine uses it
-docs/PLAY-REVIEW.md                the play-review page: pipeline, reconstruction, scoring, limits
+docs/PLAY-REVIEW.md                the play-review page: pipeline, reconstruction, scoring, replay, limits
+docs/MODELING.md                   every model in the repo: what it answers, what it is built on, how it was set, where it lives
 docs/HISTORY.md                    what was built before version numbers, in order
 CLAUDE.md                          project memory for working on this with Claude (chat or Claude Code)
 CHANGELOG.md                       version history for the projects
@@ -24,7 +25,7 @@ To run locally, serve `public/` with any static server, for example `npx serve p
 
 ## Bruins vs Canadiens
 
-A 5-on-5 hockey engine, not a scripted animation. Real 2025-26 rosters with every skater rated from his stat line, shots graded by location against MoneyPuck expected-goal rates, goalies stopping pucks at their actual save percentages by danger tier, and skating calibrated to NHL EDGE tracking. Each team runs selectable systems that can be changed mid-game, and a built-in reality check grades every game against how the real teams played.
+A 5-on-5 hockey engine, not a scripted animation. Real 2025-26 rosters rated from MoneyPuck data, an expected-goal model fit on two seasons of shots that scores every attempt by distance, angle, type and the shooter's finishing, goalies stopping pucks at their actual save percentages by danger tier, and skating calibrated to NHL EDGE tracking. Each team runs selectable systems that can be changed mid-game, and a built-in reality check grades every game against how the real teams played.
 
 Plain HTML, CSS and JavaScript on a 2D canvas. No libraries, no build step. The current version number is shown in the page footer and in the `VERSION` constant at the top of the script.
 
@@ -76,7 +77,7 @@ Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck strea
 
 ## Play Review
 
-A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked shot scored by expected goals against the best pass the model saw from the same spot. Built from the public NHL play-by-play and shift chart by `tools/game_load.py`; the page infers the other skaters' positions from the clubs' systems and says so. It is the first slice of the counterfactual play-review idea and is documented in `docs/PLAY-REVIEW.md`. Like the sim, it fetches its data when served and falls back to embedded copies when opened from disk.
+A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked shot scored by expected goals against the best pass the model saw from the same spot, and a replay of the seconds around each shot (configurable lead-in, 3 seconds after, real result on the left, the pass on the right). Built from the public NHL play-by-play and shift chart by `tools/game_load.py`; the page infers the other skaters' positions from the clubs' systems and says so. It is the first slice of the counterfactual play-review idea and is documented in `docs/PLAY-REVIEW.md`. Like the sim, it fetches its data when served and falls back to embedded copies when opened from disk.
 
 ### Tools and checks
 

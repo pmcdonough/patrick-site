@@ -1,0 +1,41 @@
+# Modeling guide
+
+Every model in this repo, what it is built on, how it was fit or tuned, and where the numbers live. Read this to know which parts are measured, which are calibrated, and which are inferred or mocked. The other docs go deeper: `ENGINE.md` for the code, `XG-MODEL.md` for the expected-goal fit, `PLAY-REVIEW.md` for the review page.
+
+| Model | What it answers | Built on | How it was set | Lives in |
+| --- | --- | --- | --- | --- |
+| Player ratings | How good is each skater at shooting, passing, defending, skating; each goalie by danger tier | MoneyPuck 2025-26 skaters, lines, goalies files; Hockey-Reference stat lines as fallback | Formulas on per-60 rates and percentiles, shrunk for small samples; documented per field | `data/ratings.json`, `data/moneypuck-2025.json`, `rosters.json` |
+| Skating physics | Top speed, acceleration, braking, cruising effort, bursts | NHL EDGE public benchmarks (top speeds 19 to 23 mph, bursts per game) | Calibrated: speed = 27 + 6 times the skate rating in ft/s, acceleration 21 ft/s² | `data/physics.json` skater |
+| Fatigue | How a shift wears a skater down | Line-change and shift-length guidance (NHL.com, coaching references) | Set by hand: fades from 30 s, gassed at 65 s, speed down 25%, acceleration 35%, hands 60% worse | `physics.json` skater.fatigue |
+| Decision model | When the carrier shoots, passes, carries, chips, dumps or clears; what everyone else does | Coaching references for systems; tuned against MoneyPuck league rates | Rules in code, thresholds in data; rates retuned in 0.29 to the real danger-tier mix | `systems.json`, `physics.json` shotDecision, engine `carrierThink` and `formationSpot` |
+| Systems | Where the five skaters stand in each forecheck, breakout, entry, zone shape, coverage, power play and penalty kill | Coaching references cited in the file | Drawn as team-relative coordinates; described per option | `systems.json` |
+| Line changes | When a unit changes and who goes through which door | NHL.com and coaching guides on changing on the fly | Change windows and shift targets as data; stoppage rules in code | `systems.json` deployment |
+| Rules and officials | Offside, hybrid icing, penalties, freezes; where the three officials stand | NHL rulebook; league offside and icing rates per game | Rules in code; rates matched to benchmarks in `physics.json` rulesBenchmarks | engine, `physics.json` |
+| Expected goals | How likely a shot scores, from where and how it was taken | 237,055 MoneyPuck unblocked shots, 2024-25 and 2025-26 | Logistic regression, holdout log loss 0.226 (MoneyPuck 0.218); dataset means for unmeasured features | `tools/xg_fit.py`, `data/xg-model.json` |
+| Shooter finishing | Does this shooter beat or trail his expected goals | Same shot files, shooters with 60 or more shots | (goals + k) / (xG + k), k = 40 shots at the league rate, clamped 0.6 to 1.6 | `xg-model.json` shooters |
+| Goalie save | Does the goalie stop this shot | MoneyPuck goalie save percentage by danger tier | Goal probability = xG over the league on-net share, times the goalie's tier goal rate relative to the league, times 0.72 | engine save roll, `physics.json` goalie |
+| Reality check | Is the sim producing the real game's rates | MoneyPuck team and league per-game rates, league offside and icing rates | Compared live and over ten-game batches; cells more than 50% off are flagged | Advanced tab, `moneypuck-2025.json` |
+| Game ingestion | Where each real shot was taken, by whom, with whom on the ice | NHL play-by-play and shift chart | Coordinate conversion to an attacking frame; on-ice from shift windows | `tools/game_load.py`, `play-review/data/game-*.json` |
+| Position inference | Where the other nine skaters probably were at a real shot | The sim's systems and coverage rules | Teammates on the club's offensive-zone spots, defenders on zone coverage with box-out, slot and pressure rules | `play-review/index.html` reconstruct |
+| Pass scoring | Was a pass worth more than the shot | The xG model on the receiver's inferred spot | Receiver one-timer xG, times completion (0.96 minus 0.0045 per ft, 0.45 through a lane), times pressure (0.6 within 4 ft, 0.85 within 8), times 0.9 | `play-review/index.html` score |
+| Replay | What the seconds around the shot looked like | The real preceding event and shot, the inferred spots | Mock movement: eased travel from scenario-based starts, puck from the previous event, real result on the left, the pass on the right | `play-review/index.html` buildClip and frame |
+
+## Three kinds of number
+
+Measured numbers come straight from a source and can be checked against it: a player's save percentage by tier, the league's shots per game, a shot's coordinates. They are cited in the data file that holds them.
+
+Calibrated numbers are chosen so the sim reproduces a measured number: skating speeds against EDGE, decision rates against the danger-tier mix, `tierGoalScale` against goals per game. Each one is in a data file with a description that says what it was tuned to, and `docs/ENGINE.md` records the baselines they produce.
+
+Inferred and mocked numbers are the engine's or the page's own guesses where no data exists: where the other skaters stood at a real shot, and how everyone moved in the seconds around it. The review page labels every panel that shows one, and nothing inferred feeds back into a measured or calibrated number.
+
+## Provenance rules
+
+The raw inputs (MoneyPuck CSVs, NHL JSON) are not committed; the scripts that turn them into the compact JSON files are, and the outputs carry a `sources` block with the file names, row counts and terms. Refitting means re-running the script, never editing the numbers. The expected-goal formula is implemented twice, in the engine and in the review page, and both read the same `xg-model.json`.
+
+## Known weaknesses, in order of how much they matter
+
+1. The sim's shot mix has more medium-danger looks than the real game; the goal scale compensates and the reality check shows it. Fixing it means better defensive coverage, not a different scale.
+2. The review page's inferred positions make the net-front pass look available more often than it is. Tracking data is the fix; until then the page says so on every panel.
+3. The decision model decides when to shoot from a geometric shot quality, not from the xG model. Switching it is the natural next engine change.
+4. The replay is a reconstruction for the eye, with no claim to accuracy beyond the real event locations and the real result.
+5. Systems are drawn from coaching references, not from either club's observed play; a pre-scout product needs observed systems per opponent.
