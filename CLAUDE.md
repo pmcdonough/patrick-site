@@ -46,7 +46,7 @@ The site has its own version (the zip name and the Site section of the changelog
 
 1. Bump `const VERSION = '0.xx'` near the top of the script in `index.html`.
 2. Add a section to `CHANGELOG.md`.
-3. Update the badge in `public/index.html` (`<span class="ver">v0.xx</span>`).
+3. Update the badge in `public/index.html` (`<span class="ver">v0.xx</span>`) and the footer's site version.
 4. Run `python3 tools/build.py --check` and `node tools/smoke.js`.
 5. Commit the page, the data folder and the changelog together.
 

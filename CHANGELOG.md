@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.34 = sim 0.31 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.35 = sim 0.32 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.35
+- Sim 0.32. One card for the sim, leading with the matchup lab; the separate Matchup Lab card is gone.
 
 ### 0.34
 - Sim 0.31 (matchup lab, shootouts, records). Matchup Lab card on the home page.
@@ -42,6 +45,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.32
+- Lab tab reorganized: the matchup (both cards side by side), the run, the record, the reality check and the sweep, each under its own heading. The reality check moved here from Advanced and reads the last lab run; the separate ten-game batch is gone. Advanced is the last tab and holds only engine settings and data sources.
+- Reality check gains record and points percentage rows against each club's final 2025-26 record (in `rosters.json`).
+- Fixed the batch record showing NaN for the visitors.
+- A result whose cards have changed since the run says so.
 
 ### 0.31
 - Matchup lab (Lab tab, also at `#lab`): play the two clubs against each other 10 to 100 times with the systems on the cards and report W-L-OTL, win and points percentage with a 95% interval, goals, expected goals and shots for and against per game; sweep every option for one card with everything else held; stop a run early.

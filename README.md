@@ -47,9 +47,9 @@ Plain HTML, CSS and JavaScript on a 2D canvas. No libraries, no build step. The 
 
 **Expected goals.** Every unblocked attempt gets a probability from a logistic model fit on two seasons of MoneyPuck shots (distance, angle, shot type, rebound, strength) times the shooter's finishing; the goalie's save roll scales that by his real tier save rate. See `docs/XG-MODEL.md`.
 
-**Reality check.** The Advanced tab compares the simulation's per-game rates (shot attempts, shots on goal, goals, expected goals, blocks, misses, danger-tier mix, penalties, faceoff percentage, goalie freezes, offsides, icings) with each club's real 2025-26 rates and the league average, and can batch ten headless games to average them and show the record. Cells more than 50 percent off the real rate are flagged. That table is the engine's to-do list.
+**Matchup lab.** The Lab tab shows the systems on both coaching cards side by side, plays the two clubs against each other 10 to 100 times and reports each club's W-L-OTL, win and points percentage with a 95% Wilson interval, and goals and expected goals for and against per game. A sweep holds everything else and tries every option for one card, so a forecheck or breakout can be judged against what the other bench is running, and the interval says how many games it takes to separate two choices. The engine's system effects have not been validated against real results, and the tab says so; it is a way to ask a question of the video, not an answer. The home page opens the page on this tab (`/bruins-vs-canadiens/#lab`).
 
-**Matchup lab.** The Lab tab plays the two clubs against each other 10 to 100 times with the systems on the coaching cards and reports each club's W-L-OTL, win and points percentage with a 95% Wilson interval, goals, expected goals and shots for and against per game. A sweep holds everything else and tries every option for one card, so a forecheck or breakout can be judged against what the other bench is running, and the interval says how many games it takes to separate two choices. The engine's system effects have not been validated against real results, and the tab says so; it is a way to ask a question of the video, not an answer. The home page links to it at `/bruins-vs-canadiens/#lab`.
+**Reality check.** Below the record in the Lab tab, the games from the last run (or the current game, scaled to 60 minutes, when nothing has run) are compared per game with each club's real 2025-26 rates and the league average: shot attempts, shots on goal, goals, expected goals, blocks, misses, danger-tier mix, penalties, faceoff percentage, goalie freezes, offsides, icings, plus the record and points percentage against each club's final 2025-26 record. Cells more than 50 percent off the real rate are flagged. That table is the engine's to-do list.
 
 ### The data that drives it
 
@@ -57,7 +57,7 @@ Everything a hockey person might question lives in `public/bruins-vs-canadiens/d
 
 | File | What it holds |
 |---|---|
-| `rosters.json` | Lineups for both clubs, every player's 2025-26 stat line, jersey numbers, injuries, and a `sources` list with the URL each fact came from |
+| `rosters.json` | Lineups for both clubs, every player's 2025-26 stat line, jersey numbers, injuries, each club's final 2025-26 record, and a `sources` list with the URL each fact came from |
 | `ratings.json` | The formulas that turn a stat line into the skater and goalie ratings, with weights, clamps and the precedence rule between MoneyPuck-derived and stat-line ratings |
 | `systems.json` | Formations as team-relative coordinates for every system, zone-entry and dump parameters, clearing rules, breakout timing, offensive-zone motion, line rotation patterns, shift targets, change windows and the late-game bench-shortening rule, with references |
 | `physics.json` | Skating speed and acceleration (NHL EDGE-calibrated), effort, fatigue, pass and shot speeds and accuracy, puck friction and board restitution, goalie coverage and save model, shot blocking, turnover and penalty rates, officials' speeds, rink geometry, and the offside and icing benchmarks, with references |
@@ -75,7 +75,7 @@ MoneyPuck 2025-26 skaters, goalies, lines and teams downloads (ratings, danger t
 
 ### Controls
 
-Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks, plus this session's record. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Lab tab: the matchup lab, a run with the current cards or a sweep of one card. Advanced tab: the reality check, engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
+Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks, plus this session's record. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Lab tab: the matchup, a run of 10 to 100 games, the record, the reality check, and a sweep of one card. Advanced tab: engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
 
 ## Play Review
 
@@ -83,7 +83,7 @@ A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked sh
 
 ### Tools and checks
 
-`tools/xg_fit.py` fits the expected-goal model from MoneyPuck shot files and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` prints the ten-game reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once with `cd tools && npm install && npx playwright install chromium`.
+`tools/xg_fit.py` fits the expected-goal model from MoneyPuck shot files and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once with `cd tools && npm install && npx playwright install chromium`.
 
 ### Versioning
 

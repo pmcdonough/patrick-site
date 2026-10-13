@@ -162,8 +162,8 @@
     <div class="tabs" role="tablist">
       <button type="button" role="tab" class="tab" data-tab="game" aria-selected="true">Game</button>
       <button type="button" role="tab" class="tab" data-tab="rosters">Rosters</button>
-      <button type="button" role="tab" class="tab" data-tab="advanced">Advanced</button>
       <button type="button" role="tab" class="tab" data-tab="lab">Lab</button>
+      <button type="button" role="tab" class="tab" data-tab="advanced">Advanced</button>
     </div>
     <section class="tabpane" data-pane="game">
       <div class="stats">
@@ -190,24 +190,32 @@
       <div class="sheet" id="sheetA"></div>
     </section>
     <section class="tabpane" data-pane="lab" hidden>
-      <p class="hint">The matchup lab plays the two clubs against each other many times with the systems set on the coaching cards and reports the record, with the margin of error, so a strategy can be judged against an opponent's before a real game. Change a card, run again, compare. Ten games cannot separate two close strategies; the interval tells you how many can.</p>
-      <div class="row"><label class="hint">Games per run <select id="labN"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
+      <p class="hint">The matchup lab plays the two clubs against each other many times with the systems on the coaching cards and reports the record with its margin of error, then grades the games against the real NHL. Change a card, run again, compare. Ten games cannot separate two close strategies; the interval says how many can.</p>
+
+      <h3 class="sub">Matchup</h3>
+      <p class="hint">The systems on the cards right now. Change them above either bench.</p>
+      <div id="labCards" class="calib lab"></div>
+      <div class="row" style="margin-top:8px"><label class="hint">Games per run <select id="labN"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
+
+      <h3 class="sub">Record</h3>
+      <p class="hint" id="labResultNote">Run the matchup to see each club's wins, losses and overtime or shootout losses, win and points percentage, and goals, expected goals and shots for and against per game.</p>
       <div id="labResult" class="calib lab"></div>
+
+      <h3 class="sub">Reality check</h3>
+      <p class="hint">The engine grades itself against the real NHL. Each row is a per-game number: the <b>sim</b> columns are what the engine produced, averaged over the last run, or this game so far scaled to 60 minutes when nothing has run; the <b>real</b> columns are what each club actually averaged per game in 2025-26, with the league average alongside. Orange cells are more than 50 percent off. A simulation is only worth trusting if its games look like real games; this table shows where it does and where it still doesn't. The record rows (W-L-OTL and points percentage) compare the session or the run with each club's final 2025-26 record; the sim plays only these two clubs against each other, while the real record came against the whole league.</p>
+      <p class="hint" id="calibNote"></p>
+      <div id="calib" class="calib"></div>
+
       <h3 class="sub">Sweep one choice</h3>
-      <p class="hint">Hold everything else and try every option for one card, the chosen number of games each. The row in bold is the current setting.</p>
+      <p class="hint">Hold everything else and try every option for one card, the chosen number of games each. The row in bold is the current setting. The record shown is for the club whose card is swept.</p>
       <div class="row"><select id="labDim"></select><button id="labSweep" type="button">Sweep</button></div>
       <div id="labSweepResult" class="calib lab"></div>
-      <p class="hint" style="margin-top:10px">What this can and cannot say. The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Treat it as a way to ask a question of the video, not as an answer.</p>
+
+      <h3 class="sub">What this can and cannot say</h3>
+      <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Treat it as a way to ask a question of the video, not as an answer.</p>
     </section>
     <section class="tabpane" data-pane="advanced" hidden>
       <details class="adv" open>
-        <summary>Reality check</summary>
-        <p class="hint">The simulation grades itself against the real NHL. Each row is a per-game number: the <b>sim</b> columns are what this engine produces (this game so far, scaled to 60 minutes, or the average of a batch) and the <b>real</b> columns are what each club actually averaged per game in 2025-26, with the league average alongside. Orange cells are more than 50 percent off. This matters because a simulation is only worth trusting if its games look like real games; this table shows where it does and where it still doesn't. One game is noisy, so run a batch of ten for a stable read.</p>
-        <div class="row"><button id="batch10" type="button">Simulate 10 games</button><span id="batchNote" class="hint" style="align-self:center"></span></div>
-        <p class="hint" id="batchRecord"></p>
-        <div id="calib" class="calib"></div>
-      </details>
-      <details class="adv">
         <summary>Engine settings</summary>
         <p class="hint">Multipliers on skating, passing, the puck, goalies and shooting. Sliders are centered on the build defaults; the NHL tick marks the value calibrated to real tracking data. Changes apply immediately.</p>
         <div class="field" id="admin"></div>
@@ -250,7 +258,7 @@
     <div id="aboutSystems"></div>
 
     <h3>Using it</h3>
-    <p>Game: pause, speed, a new game, Effects and Sticks, with the box score and play-by-play. Effects are skate trails behind anyone moving fast, a streak on hard shots and passes, a ripple on takeaways and blocked shots, a flash on big saves, and the goal light with the scorer picked out. Sticks point at the puck when it is close; turned off, each skater shows a short heading tick. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Hover any choice for what it does. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems. Rosters: who is on the ice, time on ice and current shift, goals and blocks, with each player's real stat line on hover. Advanced holds the reality check, the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone. The Game tab keeps this session's record, wins, losses and overtime or shootout losses for each club. Lab is the matchup lab: it plays the two clubs against each other as many times as you ask with the systems on the cards and reports the record with its margin of error, or sweeps every option for one card so a choice can be judged against what the other bench is running. The version number is at the bottom of the page.</p>
+    <p>Game: pause, speed, a new game, Effects and Sticks, with the box score and play-by-play. Effects are skate trails behind anyone moving fast, a streak on hard shots and passes, a ripple on takeaways and blocked shots, a flash on big saves, and the goal light with the scorer picked out. Sticks point at the puck when it is close; turned off, each skater shows a short heading tick. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Hover any choice for what it does. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems. Rosters: who is on the ice, time on ice and current shift, goals and blocks, with each player's real stat line on hover. Lab is the matchup lab: it shows the systems on both cards side by side, plays the two clubs against each other as many times as you ask and reports the record with its margin of error, grades those games against the real clubs' per-game rates and final records in the reality check, and sweeps every option for one card so a choice can be judged against what the other bench is running. Advanced holds the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone. The Game tab keeps this session's record, wins, losses and overtime or shootout losses for each club. The version number is at the bottom of the page.</p>
 
     <h3>What it is not</h3>
     <p>It is not a replay of real games. Player movement is a decision model, tuned against public aggregates, not tracking data, so the engine can be systematically wrong in ways the calibration table will show. Ratings reflect one season of results and a weak defensive proxy, and systems are drawn from coaching references, not from either club's actual playbook. Everything that drives it, from rosters to formation coordinates to the speed of a rimmed puck, is kept as plain data with its sources, so any of it can be questioned and corrected without touching the engine.</p>
@@ -261,926 +269,7 @@
 </dialog>
 <footer class="version">Bruins vs Canadiens <span id="version"></span></footer>
 
-<script type="application/json" id="data-rosters">{
- "schema": "rink-sim-rosters/1",
- "asOf": "2026-10-12",
- "ratingsSeason": "2025-26 regular season",
- "sources": [
-  {
-   "id": "nhl-bos-roster",
-   "title": "Bruins Announce Opening Day Roster for 2026-27 Season",
-   "url": "https://www.nhl.com/bruins/news/bruins-announce-opening-day-roster-for-2026-27-season",
-   "usedFor": "Boston roster composition, injured list"
-  },
-  {
-   "id": "bhn-lines",
-   "title": "Bruins Lines & Starting Goalie Tonight (PuckPedia projection, Oct 11 2026)",
-   "url": "https://bostonhockeynow.com/boston-bruins-lines/",
-   "usedFor": "Boston line combinations, pairings, jersey numbers"
-  },
-  {
-   "id": "hb-mtl-roster",
-   "title": "Montreal Canadiens Set Opening Night Roster for the 2026-27 NHL Season",
-   "url": "https://www.hockeybuzz.com/2026/09/27/montreal-canadiens-set-opening-night-roster-for-the-2026-27-nhl-season",
-   "usedFor": "Montreal roster composition"
-  },
-  {
-   "id": "nhl-mtl-preview",
-   "title": "Red Wings at Canadiens projected lineups (Oct 10 2026)",
-   "url": "https://www.nhl.com/news/detroit-red-wings-montreal-canadiens-game-preview-october-10-2026",
-   "usedFor": "Montreal line combinations, pairings, goalies, injuries"
-  },
-  {
-   "id": "hr-bos-2026",
-   "title": "2025-26 Boston Bruins statistics (Hockey-Reference)",
-   "url": "https://www.hockey-reference.com/teams/BOS/2026.html",
-   "usedFor": "Skater and goalie stats for players who were on Boston in 2025-26"
-  },
-  {
-   "id": "hr-mtl-2026",
-   "title": "2025-26 Montreal Canadiens statistics (Hockey-Reference)",
-   "url": "https://www.hockey-reference.com/teams/MTL/2026.html",
-   "usedFor": "Skater and goalie stats for players who were on Montreal in 2025-26"
-  },
-  {
-   "id": "hr-peterka",
-   "title": "JJ Peterka player page (Hockey-Reference)",
-   "url": "https://www.hockey-reference.com/players/p/peterjo01.html",
-   "usedFor": "2025-26 stats with Utah"
-  },
-  {
-   "id": "hr-kreider",
-   "title": "Chris Kreider player page (Hockey-Reference)",
-   "url": "https://www.hockey-reference.com/players/k/kreidch01.html",
-   "usedFor": "2025-26 stats with Anaheim"
-  },
-  {
-   "id": "hr-borgen",
-   "title": "Will Borgen player page (Hockey-Reference)",
-   "url": "https://www.hockey-reference.com/players/b/borgewi01.html",
-   "usedFor": "2025-26 stats with NY Rangers"
-  },
-  {
-   "id": "hr-clifton",
-   "title": "Connor Clifton player page (Hockey-Reference)",
-   "url": "https://www.hockey-reference.com/players/c/cliftco01.html",
-   "usedFor": "2025-26 stats with Pittsburgh"
-  }
- ],
- "teams": {
-  "BOS": {
-   "name": "Bruins",
-   "city": "Boston",
-   "abbr": "BOS",
-   "home": true,
-   "colors": {
-    "primary": "#000000",
-    "secondary": "#ffb81c",
-    "ink": "#ffb81c"
-   },
-   "lineup": {
-    "asOf": "2026-10-11",
-    "sources": [
-     "nhl-bos-roster",
-     "bhn-lines"
-    ],
-    "F": [
-     [
-      "geekie",
-      "zacha",
-      "pastrnak"
-     ],
-     [
-      "khusnutdinov",
-      "minten",
-      "peterka"
-     ],
-     [
-      "mittelstadt",
-      "e-lindholm",
-      "hagens"
-     ],
-     [
-      "jeannot",
-      "kuraly",
-      "kastelic"
-     ]
-    ],
-    "D": [
-     [
-      "brunet",
-      "mcavoy"
-     ],
-     [
-      "h-lindholm",
-      "borgen"
-     ],
-     [
-      "zadorov",
-      "clifton"
-     ]
-    ],
-    "G": [
-     "swayman",
-     "dipietro"
-    ],
-    "extras": [
-     "Eyssimont 32",
-     "Lohrei 6",
-     "Aspirot 60"
-    ],
-    "injured": [
-     "Poitras 51 (IR)"
-    ]
-   },
-   "players": {
-    "geekie": {
-     "name": "Geekie",
-     "number": 39,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 81,
-      "g": 39,
-      "a": 29,
-      "pts": 68,
-      "plusMinus": -5,
-      "pim": 22,
-      "sog": 181,
-      "toiMin": 17.4,
-      "source": "hr-bos-2026"
-     }
-    },
-    "zacha": {
-     "name": "Zacha",
-     "number": 18,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 78,
-      "g": 30,
-      "a": 35,
-      "pts": 65,
-      "plusMinus": 4,
-      "pim": 28,
-      "sog": 131,
-      "toiMin": 16.9,
-      "source": "hr-bos-2026"
-     }
-    },
-    "pastrnak": {
-     "name": "Pastrnak",
-     "number": 88,
-     "pos": "RW",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 77,
-      "g": 29,
-      "a": 71,
-      "pts": 100,
-      "plusMinus": 4,
-      "pim": 72,
-      "sog": 261,
-      "toiMin": 20.7,
-      "source": "hr-bos-2026"
-     }
-    },
-    "khusnutdinov": {
-     "name": "Khusnutdinov",
-     "number": 92,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 77,
-      "g": 15,
-      "a": 18,
-      "pts": 33,
-      "plusMinus": 12,
-      "pim": 16,
-      "sog": 78,
-      "toiMin": 14.5,
-      "source": "hr-bos-2026"
-     }
-    },
-    "minten": {
-     "name": "Minten",
-     "number": 93,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 82,
-      "g": 17,
-      "a": 18,
-      "pts": 35,
-      "plusMinus": 21,
-      "pim": 20,
-      "sog": 117,
-      "toiMin": 15.6,
-      "source": "hr-bos-2026"
-     }
-    },
-    "peterka": {
-     "name": "Peterka",
-     "number": 10,
-     "pos": "RW",
-     "stats": {
-      "season": "2025-26",
-      "team": "UTA",
-      "gp": 82,
-      "g": 25,
-      "a": 22,
-      "pts": 47,
-      "plusMinus": 6,
-      "pim": 30,
-      "sog": 159,
-      "toiMin": 16.0,
-      "source": "hr-peterka"
-     },
-     "note": "Stats are from Utah; joined Boston for 2026-27"
-    },
-    "mittelstadt": {
-     "name": "Mittelstadt",
-     "number": 11,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 71,
-      "g": 15,
-      "a": 27,
-      "pts": 42,
-      "plusMinus": 12,
-      "pim": 12,
-      "sog": 79,
-      "toiMin": 15.2,
-      "source": "hr-bos-2026"
-     }
-    },
-    "e-lindholm": {
-     "name": "E. Lindholm",
-     "number": 28,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 69,
-      "g": 17,
-      "a": 31,
-      "pts": 48,
-      "plusMinus": -7,
-      "pim": 38,
-      "sog": 114,
-      "toiMin": 17.9,
-      "source": "hr-bos-2026"
-     }
-    },
-    "hagens": {
-     "name": "Hagens",
-     "number": 44,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 2,
-      "g": 0,
-      "a": 1,
-      "pts": 1,
-      "plusMinus": 1,
-      "pim": 2,
-      "sog": 2,
-      "toiMin": 14.6,
-      "source": "hr-bos-2026"
-     },
-     "note": "Rookie, 2 NHL games; ratings regress toward the 10-game baseline"
-    },
-    "jeannot": {
-     "name": "Jeannot",
-     "number": 84,
-     "pos": "F",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 77,
-      "g": 6,
-      "a": 16,
-      "pts": 22,
-      "plusMinus": -4,
-      "pim": 66,
-      "sog": 78,
-      "toiMin": 12.7,
-      "source": "hr-bos-2026"
-     }
-    },
-    "kuraly": {
-     "name": "Kuraly",
-     "number": 52,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 82,
-      "g": 6,
-      "a": 16,
-      "pts": 22,
-      "plusMinus": 0,
-      "pim": 41,
-      "sog": 110,
-      "toiMin": 13.3,
-      "source": "hr-bos-2026"
-     }
-    },
-    "kastelic": {
-     "name": "Kastelic",
-     "number": 47,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 82,
-      "g": 12,
-      "a": 10,
-      "pts": 22,
-      "plusMinus": 5,
-      "pim": 140,
-      "sog": 100,
-      "toiMin": 12.6,
-      "source": "hr-bos-2026"
-     }
-    },
-    "brunet": {
-     "name": "Brunet",
-     "number": 42,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 20,
-      "g": 1,
-      "a": 5,
-      "pts": 6,
-      "plusMinus": 2,
-      "pim": 8,
-      "sog": 22,
-      "toiMin": 16.0,
-      "source": "hr-bos-2026"
-     },
-     "note": "Line not in the team table scraped; conservative estimate pending verification"
-    },
-    "mcavoy": {
-     "name": "McAvoy",
-     "number": 73,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 69,
-      "g": 11,
-      "a": 50,
-      "pts": 61,
-      "plusMinus": 13,
-      "pim": 62,
-      "sog": 111,
-      "toiMin": 24.4,
-      "source": "hr-bos-2026"
-     }
-    },
-    "h-lindholm": {
-     "name": "H. Lindholm",
-     "number": 27,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 67,
-      "g": 5,
-      "a": 21,
-      "pts": 26,
-      "plusMinus": 3,
-      "pim": 58,
-      "sog": 100,
-      "toiMin": 21.6,
-      "source": "hr-bos-2026"
-     }
-    },
-    "borgen": {
-     "name": "Borgen",
-     "number": 17,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "NYR",
-      "gp": 75,
-      "g": 5,
-      "a": 10,
-      "pts": 15,
-      "plusMinus": 3,
-      "pim": 41,
-      "sog": 69,
-      "toiMin": 18.1,
-      "source": "hr-borgen"
-     },
-     "note": "Stats are from NY Rangers"
-    },
-    "zadorov": {
-     "name": "Zadorov",
-     "number": 91,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "BOS",
-      "gp": 81,
-      "g": 2,
-      "a": 20,
-      "pts": 22,
-      "plusMinus": 18,
-      "pim": 152,
-      "sog": 107,
-      "toiMin": 20.9,
-      "source": "hr-bos-2026"
-     }
-    },
-    "clifton": {
-     "name": "Clifton",
-     "number": 75,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "PIT",
-      "gp": 50,
-      "g": 2,
-      "a": 4,
-      "pts": 6,
-      "plusMinus": 5,
-      "pim": 53,
-      "sog": 35,
-      "toiMin": 16.8,
-      "source": "hr-clifton"
-     },
-     "note": "Stats are from Pittsburgh"
-    },
-    "swayman": {
-     "name": "Swayman",
-     "number": 1,
-     "pos": "G",
-     "stats": {
-      "season": "2025-26",
-      "gp": 55,
-      "w": 31,
-      "l": 18,
-      "svPct": 0.907,
-      "gaa": 2.71,
-      "source": "hr-bos-2026"
-     }
-    },
-    "dipietro": {
-     "name": "DiPietro",
-     "number": 30,
-     "pos": "G",
-     "stats": {
-      "season": "2025-26",
-      "gp": 1,
-      "w": 0,
-      "l": 0,
-      "svPct": 1.0,
-      "gaa": 0.0,
-      "source": "hr-bos-2026",
-      "svPctUsed": 0.9
-     },
-     "note": "1 NHL game; rated at a .900 baseline"
-    }
-   }
-  },
-  "MTL": {
-   "name": "Canadiens",
-   "city": "Montreal",
-   "abbr": "MTL",
-   "home": false,
-   "colors": {
-    "primary": "#af1e2d",
-    "secondary": "#192168",
-    "ink": "#ffffff"
-   },
-   "lineup": {
-    "asOf": "2026-10-10",
-    "sources": [
-     "hb-mtl-roster",
-     "nhl-mtl-preview"
-    ],
-    "F": [
-     [
-      "caufield",
-      "suzuki",
-      "slafkovsky"
-     ],
-     [
-      "kreider",
-      "newhook",
-      "demidov"
-     ],
-     [
-      "bolduc",
-      "danault",
-      "anderson"
-     ],
-     [
-      "texier",
-      "dach",
-      "evans"
-     ]
-    ],
-    "D": [
-     [
-      "hutson",
-      "dobson"
-     ],
-     [
-      "matheson",
-      "carrier"
-     ],
-     [
-      "guhle",
-      "engstrom"
-     ]
-    ],
-    "G": [
-     "dobes",
-     "fowler"
-    ],
-    "extras": [
-     "A. Xhekaj 72",
-     "Struble 47"
-    ],
-    "injured": [
-     "Montembeault 35",
-     "Kapanen 90",
-     "F. Xhekaj 27"
-    ]
-   },
-   "players": {
-    "caufield": {
-     "name": "Caufield",
-     "number": 13,
-     "pos": "RW",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 81,
-      "g": 51,
-      "a": 37,
-      "pts": 88,
-      "plusMinus": 29,
-      "pim": 14,
-      "sog": 258,
-      "toiMin": 18.2,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "suzuki": {
-     "name": "Suzuki",
-     "number": 14,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 82,
-      "g": 29,
-      "a": 72,
-      "pts": 101,
-      "plusMinus": 37,
-      "pim": 28,
-      "sog": 183,
-      "toiMin": 20.8,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "slafkovsky": {
-     "name": "Slafkovsky",
-     "number": 20,
-     "pos": "LW",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 82,
-      "g": 30,
-      "a": 43,
-      "pts": 73,
-      "plusMinus": 9,
-      "pim": 52,
-      "sog": 180,
-      "toiMin": 18.5,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "kreider": {
-     "name": "Kreider",
-     "number": 29,
-     "pos": "LW",
-     "stats": {
-      "season": "2025-26",
-      "team": "ANA",
-      "gp": 75,
-      "g": 22,
-      "a": 28,
-      "pts": 50,
-      "plusMinus": -4,
-      "pim": 34,
-      "sog": 139,
-      "toiMin": 17.1,
-      "source": "hr-kreider"
-     },
-     "note": "Stats are from Anaheim; Montreal jersey number not confirmed in sources, 29 used"
-    },
-    "newhook": {
-     "name": "Newhook",
-     "number": 15,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 42,
-      "g": 13,
-      "a": 12,
-      "pts": 25,
-      "plusMinus": 9,
-      "pim": 10,
-      "sog": 61,
-      "toiMin": 14.5,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "demidov": {
-     "name": "Demidov",
-     "number": 93,
-     "pos": "RW",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 82,
-      "g": 19,
-      "a": 43,
-      "pts": 62,
-      "plusMinus": 3,
-      "pim": 34,
-      "sog": 127,
-      "toiMin": 15.5,
-      "source": "hr-mtl-2026"
-     },
-     "note": "Listed day-to-day (lower body) on Oct 10 2026; dressed in the sim"
-    },
-    "bolduc": {
-     "name": "Bolduc",
-     "number": 76,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 78,
-      "g": 12,
-      "a": 18,
-      "pts": 30,
-      "plusMinus": -6,
-      "pim": 28,
-      "sog": 101,
-      "toiMin": 13.6,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "danault": {
-     "name": "Danault",
-     "number": 24,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 45,
-      "g": 6,
-      "a": 6,
-      "pts": 12,
-      "plusMinus": -6,
-      "pim": 20,
-      "sog": 49,
-      "toiMin": 15.1,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "anderson": {
-     "name": "Anderson",
-     "number": 17,
-     "pos": "RW",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 72,
-      "g": 14,
-      "a": 9,
-      "pts": 23,
-      "plusMinus": -4,
-      "pim": 90,
-      "sog": 89,
-      "toiMin": 14.0,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "texier": {
-     "name": "Texier",
-     "number": 91,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 43,
-      "g": 8,
-      "a": 12,
-      "pts": 20,
-      "plusMinus": 9,
-      "pim": 24,
-      "sog": 67,
-      "toiMin": 14.3,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "dach": {
-     "name": "Dach",
-     "number": 77,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 37,
-      "g": 8,
-      "a": 7,
-      "pts": 15,
-      "plusMinus": -2,
-      "pim": 31,
-      "sog": 47,
-      "toiMin": 13.7,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "evans": {
-     "name": "Evans",
-     "number": 71,
-     "pos": "C",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 68,
-      "g": 12,
-      "a": 12,
-      "pts": 24,
-      "plusMinus": -8,
-      "pim": 28,
-      "sog": 76,
-      "toiMin": 15.4,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "hutson": {
-     "name": "Hutson",
-     "number": 48,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 82,
-      "g": 12,
-      "a": 66,
-      "pts": 78,
-      "plusMinus": 36,
-      "pim": 34,
-      "sog": 124,
-      "toiMin": 23.8,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "dobson": {
-     "name": "Dobson",
-     "number": 53,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 80,
-      "g": 12,
-      "a": 35,
-      "pts": 47,
-      "plusMinus": 5,
-      "pim": 34,
-      "sog": 158,
-      "toiMin": 22.5,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "matheson": {
-     "name": "Matheson",
-     "number": 8,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 78,
-      "g": 7,
-      "a": 30,
-      "pts": 37,
-      "plusMinus": 9,
-      "pim": 34,
-      "sog": 114,
-      "toiMin": 24.2,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "carrier": {
-     "name": "Carrier",
-     "number": 45,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 73,
-      "g": 7,
-      "a": 15,
-      "pts": 22,
-      "plusMinus": 2,
-      "pim": 34,
-      "sog": 56,
-      "toiMin": 19.1,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "guhle": {
-     "name": "Guhle",
-     "number": 21,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 39,
-      "g": 2,
-      "a": 9,
-      "pts": 11,
-      "plusMinus": 5,
-      "pim": 41,
-      "sog": 39,
-      "toiMin": 19.5,
-      "source": "hr-mtl-2026"
-     },
-     "note": "Returned from abdominal surgery Oct 10 2026"
-    },
-    "engstrom": {
-     "name": "Engstrom",
-     "number": 32,
-     "pos": "D",
-     "stats": {
-      "season": "2025-26",
-      "team": "MTL",
-      "gp": 15,
-      "g": 0,
-      "a": 1,
-      "pts": 1,
-      "plusMinus": 2,
-      "pim": 8,
-      "sog": 11,
-      "toiMin": 13.1,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "dobes": {
-     "name": "Dobes",
-     "number": 75,
-     "pos": "G",
-     "stats": {
-      "season": "2025-26",
-      "gp": 43,
-      "w": 29,
-      "l": 10,
-      "svPct": 0.901,
-      "gaa": 2.78,
-      "source": "hr-mtl-2026"
-     }
-    },
-    "fowler": {
-     "name": "Fowler",
-     "number": 70,
-     "pos": "G",
-     "stats": {
-      "season": "2025-26",
-      "gp": 17,
-      "w": 9,
-      "l": 6,
-      "svPct": 0.908,
-      "gaa": 2.43,
-      "source": "hr-mtl-2026"
-     }
-    }
-   }
-  }
- }
-}</script>
+<script type="application/json" id="data-rosters">{"schema":"rink-sim-rosters/1","asOf":"2026-10-12","ratingsSeason":"2025-26 regular season","sources":[{"id":"nhl-bos-roster","title":"Bruins Announce Opening Day Roster for 2026-27 Season","url":"https://www.nhl.com/bruins/news/bruins-announce-opening-day-roster-for-2026-27-season","usedFor":"Boston roster composition, injured list"},{"id":"bhn-lines","title":"Bruins Lines & Starting Goalie Tonight (PuckPedia projection, Oct 11 2026)","url":"https://bostonhockeynow.com/boston-bruins-lines/","usedFor":"Boston line combinations, pairings, jersey numbers"},{"id":"hb-mtl-roster","title":"Montreal Canadiens Set Opening Night Roster for the 2026-27 NHL Season","url":"https://www.hockeybuzz.com/2026/09/27/montreal-canadiens-set-opening-night-roster-for-the-2026-27-nhl-season","usedFor":"Montreal roster composition"},{"id":"nhl-mtl-preview","title":"Red Wings at Canadiens projected lineups (Oct 10 2026)","url":"https://www.nhl.com/news/detroit-red-wings-montreal-canadiens-game-preview-october-10-2026","usedFor":"Montreal line combinations, pairings, goalies, injuries"},{"id":"hr-bos-2026","title":"2025-26 Boston Bruins statistics (Hockey-Reference)","url":"https://www.hockey-reference.com/teams/BOS/2026.html","usedFor":"Skater and goalie stats for players who were on Boston in 2025-26"},{"id":"hr-mtl-2026","title":"2025-26 Montreal Canadiens statistics (Hockey-Reference)","url":"https://www.hockey-reference.com/teams/MTL/2026.html","usedFor":"Skater and goalie stats for players who were on Montreal in 2025-26"},{"id":"hr-peterka","title":"JJ Peterka player page (Hockey-Reference)","url":"https://www.hockey-reference.com/players/p/peterjo01.html","usedFor":"2025-26 stats with Utah"},{"id":"hr-kreider","title":"Chris Kreider player page (Hockey-Reference)","url":"https://www.hockey-reference.com/players/k/kreidch01.html","usedFor":"2025-26 stats with Anaheim"},{"id":"hr-borgen","title":"Will Borgen player page (Hockey-Reference)","url":"https://www.hockey-reference.com/players/b/borgewi01.html","usedFor":"2025-26 stats with NY Rangers"},{"id":"hr-clifton","title":"Connor Clifton player page (Hockey-Reference)","url":"https://www.hockey-reference.com/players/c/cliftco01.html","usedFor":"2025-26 stats with Pittsburgh"},{"id":"nhl-standings-2526","title":"NHL 2025-26 regular season final standings","url":"https://www.nhl.com/standings/2025-26","usedFor":"Each club's final 2025-26 record and points, shown next to the simulated record in the reality check"}],"teams":{"BOS":{"name":"Bruins","city":"Boston","abbr":"BOS","home":true,"colors":{"primary":"#000000","secondary":"#ffb81c","ink":"#ffb81c"},"lineup":{"asOf":"2026-10-11","sources":["nhl-bos-roster","bhn-lines"],"F":[["geekie","zacha","pastrnak"],["khusnutdinov","minten","peterka"],["mittelstadt","e-lindholm","hagens"],["jeannot","kuraly","kastelic"]],"D":[["brunet","mcavoy"],["h-lindholm","borgen"],["zadorov","clifton"]],"G":["swayman","dipietro"],"extras":["Eyssimont 32","Lohrei 6","Aspirot 60"],"injured":["Poitras 51 (IR)"]},"players":{"geekie":{"name":"Geekie","number":39,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":81,"g":39,"a":29,"pts":68,"plusMinus":-5,"pim":22,"sog":181,"toiMin":17.4,"source":"hr-bos-2026"}},"zacha":{"name":"Zacha","number":18,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":78,"g":30,"a":35,"pts":65,"plusMinus":4,"pim":28,"sog":131,"toiMin":16.9,"source":"hr-bos-2026"}},"pastrnak":{"name":"Pastrnak","number":88,"pos":"RW","stats":{"season":"2025-26","team":"BOS","gp":77,"g":29,"a":71,"pts":100,"plusMinus":4,"pim":72,"sog":261,"toiMin":20.7,"source":"hr-bos-2026"}},"khusnutdinov":{"name":"Khusnutdinov","number":92,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":77,"g":15,"a":18,"pts":33,"plusMinus":12,"pim":16,"sog":78,"toiMin":14.5,"source":"hr-bos-2026"}},"minten":{"name":"Minten","number":93,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":82,"g":17,"a":18,"pts":35,"plusMinus":21,"pim":20,"sog":117,"toiMin":15.6,"source":"hr-bos-2026"}},"peterka":{"name":"Peterka","number":10,"pos":"RW","stats":{"season":"2025-26","team":"UTA","gp":82,"g":25,"a":22,"pts":47,"plusMinus":6,"pim":30,"sog":159,"toiMin":16.0,"source":"hr-peterka"},"note":"Stats are from Utah; joined Boston for 2026-27"},"mittelstadt":{"name":"Mittelstadt","number":11,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":71,"g":15,"a":27,"pts":42,"plusMinus":12,"pim":12,"sog":79,"toiMin":15.2,"source":"hr-bos-2026"}},"e-lindholm":{"name":"E. Lindholm","number":28,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":69,"g":17,"a":31,"pts":48,"plusMinus":-7,"pim":38,"sog":114,"toiMin":17.9,"source":"hr-bos-2026"}},"hagens":{"name":"Hagens","number":44,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":2,"g":0,"a":1,"pts":1,"plusMinus":1,"pim":2,"sog":2,"toiMin":14.6,"source":"hr-bos-2026"},"note":"Rookie, 2 NHL games; ratings regress toward the 10-game baseline"},"jeannot":{"name":"Jeannot","number":84,"pos":"F","stats":{"season":"2025-26","team":"BOS","gp":77,"g":6,"a":16,"pts":22,"plusMinus":-4,"pim":66,"sog":78,"toiMin":12.7,"source":"hr-bos-2026"}},"kuraly":{"name":"Kuraly","number":52,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":82,"g":6,"a":16,"pts":22,"plusMinus":0,"pim":41,"sog":110,"toiMin":13.3,"source":"hr-bos-2026"}},"kastelic":{"name":"Kastelic","number":47,"pos":"C","stats":{"season":"2025-26","team":"BOS","gp":82,"g":12,"a":10,"pts":22,"plusMinus":5,"pim":140,"sog":100,"toiMin":12.6,"source":"hr-bos-2026"}},"brunet":{"name":"Brunet","number":42,"pos":"D","stats":{"season":"2025-26","team":"BOS","gp":20,"g":1,"a":5,"pts":6,"plusMinus":2,"pim":8,"sog":22,"toiMin":16.0,"source":"hr-bos-2026"},"note":"Line not in the team table scraped; conservative estimate pending verification"},"mcavoy":{"name":"McAvoy","number":73,"pos":"D","stats":{"season":"2025-26","team":"BOS","gp":69,"g":11,"a":50,"pts":61,"plusMinus":13,"pim":62,"sog":111,"toiMin":24.4,"source":"hr-bos-2026"}},"h-lindholm":{"name":"H. Lindholm","number":27,"pos":"D","stats":{"season":"2025-26","team":"BOS","gp":67,"g":5,"a":21,"pts":26,"plusMinus":3,"pim":58,"sog":100,"toiMin":21.6,"source":"hr-bos-2026"}},"borgen":{"name":"Borgen","number":17,"pos":"D","stats":{"season":"2025-26","team":"NYR","gp":75,"g":5,"a":10,"pts":15,"plusMinus":3,"pim":41,"sog":69,"toiMin":18.1,"source":"hr-borgen"},"note":"Stats are from NY Rangers"},"zadorov":{"name":"Zadorov","number":91,"pos":"D","stats":{"season":"2025-26","team":"BOS","gp":81,"g":2,"a":20,"pts":22,"plusMinus":18,"pim":152,"sog":107,"toiMin":20.9,"source":"hr-bos-2026"}},"clifton":{"name":"Clifton","number":75,"pos":"D","stats":{"season":"2025-26","team":"PIT","gp":50,"g":2,"a":4,"pts":6,"plusMinus":5,"pim":53,"sog":35,"toiMin":16.8,"source":"hr-clifton"},"note":"Stats are from Pittsburgh"},"swayman":{"name":"Swayman","number":1,"pos":"G","stats":{"season":"2025-26","gp":55,"w":31,"l":18,"svPct":0.907,"gaa":2.71,"source":"hr-bos-2026"}},"dipietro":{"name":"DiPietro","number":30,"pos":"G","stats":{"season":"2025-26","gp":1,"w":0,"l":0,"svPct":1.0,"gaa":0.0,"source":"hr-bos-2026","svPctUsed":0.9},"note":"1 NHL game; rated at a .900 baseline"}},"record":{"season":"2025-26","gp":82,"w":45,"l":27,"otl":10,"points":100,"sources":["nhl-standings-2526"],"desc":"Final regular-season record, W-L-OTL. Points % is points over two per game."}},"MTL":{"name":"Canadiens","city":"Montreal","abbr":"MTL","home":false,"colors":{"primary":"#af1e2d","secondary":"#192168","ink":"#ffffff"},"lineup":{"asOf":"2026-10-10","sources":["hb-mtl-roster","nhl-mtl-preview"],"F":[["caufield","suzuki","slafkovsky"],["kreider","newhook","demidov"],["bolduc","danault","anderson"],["texier","dach","evans"]],"D":[["hutson","dobson"],["matheson","carrier"],["guhle","engstrom"]],"G":["dobes","fowler"],"extras":["A. Xhekaj 72","Struble 47"],"injured":["Montembeault 35","Kapanen 90","F. Xhekaj 27"]},"players":{"caufield":{"name":"Caufield","number":13,"pos":"RW","stats":{"season":"2025-26","team":"MTL","gp":81,"g":51,"a":37,"pts":88,"plusMinus":29,"pim":14,"sog":258,"toiMin":18.2,"source":"hr-mtl-2026"}},"suzuki":{"name":"Suzuki","number":14,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":82,"g":29,"a":72,"pts":101,"plusMinus":37,"pim":28,"sog":183,"toiMin":20.8,"source":"hr-mtl-2026"}},"slafkovsky":{"name":"Slafkovsky","number":20,"pos":"LW","stats":{"season":"2025-26","team":"MTL","gp":82,"g":30,"a":43,"pts":73,"plusMinus":9,"pim":52,"sog":180,"toiMin":18.5,"source":"hr-mtl-2026"}},"kreider":{"name":"Kreider","number":29,"pos":"LW","stats":{"season":"2025-26","team":"ANA","gp":75,"g":22,"a":28,"pts":50,"plusMinus":-4,"pim":34,"sog":139,"toiMin":17.1,"source":"hr-kreider"},"note":"Stats are from Anaheim; Montreal jersey number not confirmed in sources, 29 used"},"newhook":{"name":"Newhook","number":15,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":42,"g":13,"a":12,"pts":25,"plusMinus":9,"pim":10,"sog":61,"toiMin":14.5,"source":"hr-mtl-2026"}},"demidov":{"name":"Demidov","number":93,"pos":"RW","stats":{"season":"2025-26","team":"MTL","gp":82,"g":19,"a":43,"pts":62,"plusMinus":3,"pim":34,"sog":127,"toiMin":15.5,"source":"hr-mtl-2026"},"note":"Listed day-to-day (lower body) on Oct 10 2026; dressed in the sim"},"bolduc":{"name":"Bolduc","number":76,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":78,"g":12,"a":18,"pts":30,"plusMinus":-6,"pim":28,"sog":101,"toiMin":13.6,"source":"hr-mtl-2026"}},"danault":{"name":"Danault","number":24,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":45,"g":6,"a":6,"pts":12,"plusMinus":-6,"pim":20,"sog":49,"toiMin":15.1,"source":"hr-mtl-2026"}},"anderson":{"name":"Anderson","number":17,"pos":"RW","stats":{"season":"2025-26","team":"MTL","gp":72,"g":14,"a":9,"pts":23,"plusMinus":-4,"pim":90,"sog":89,"toiMin":14.0,"source":"hr-mtl-2026"}},"texier":{"name":"Texier","number":91,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":43,"g":8,"a":12,"pts":20,"plusMinus":9,"pim":24,"sog":67,"toiMin":14.3,"source":"hr-mtl-2026"}},"dach":{"name":"Dach","number":77,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":37,"g":8,"a":7,"pts":15,"plusMinus":-2,"pim":31,"sog":47,"toiMin":13.7,"source":"hr-mtl-2026"}},"evans":{"name":"Evans","number":71,"pos":"C","stats":{"season":"2025-26","team":"MTL","gp":68,"g":12,"a":12,"pts":24,"plusMinus":-8,"pim":28,"sog":76,"toiMin":15.4,"source":"hr-mtl-2026"}},"hutson":{"name":"Hutson","number":48,"pos":"D","stats":{"season":"2025-26","team":"MTL","gp":82,"g":12,"a":66,"pts":78,"plusMinus":36,"pim":34,"sog":124,"toiMin":23.8,"source":"hr-mtl-2026"}},"dobson":{"name":"Dobson","number":53,"pos":"D","stats":{"season":"2025-26","team":"MTL","gp":80,"g":12,"a":35,"pts":47,"plusMinus":5,"pim":34,"sog":158,"toiMin":22.5,"source":"hr-mtl-2026"}},"matheson":{"name":"Matheson","number":8,"pos":"D","stats":{"season":"2025-26","team":"MTL","gp":78,"g":7,"a":30,"pts":37,"plusMinus":9,"pim":34,"sog":114,"toiMin":24.2,"source":"hr-mtl-2026"}},"carrier":{"name":"Carrier","number":45,"pos":"D","stats":{"season":"2025-26","team":"MTL","gp":73,"g":7,"a":15,"pts":22,"plusMinus":2,"pim":34,"sog":56,"toiMin":19.1,"source":"hr-mtl-2026"}},"guhle":{"name":"Guhle","number":21,"pos":"D","stats":{"season":"2025-26","team":"MTL","gp":39,"g":2,"a":9,"pts":11,"plusMinus":5,"pim":41,"sog":39,"toiMin":19.5,"source":"hr-mtl-2026"},"note":"Returned from abdominal surgery Oct 10 2026"},"engstrom":{"name":"Engstrom","number":32,"pos":"D","stats":{"season":"2025-26","team":"MTL","gp":15,"g":0,"a":1,"pts":1,"plusMinus":2,"pim":8,"sog":11,"toiMin":13.1,"source":"hr-mtl-2026"}},"dobes":{"name":"Dobes","number":75,"pos":"G","stats":{"season":"2025-26","gp":43,"w":29,"l":10,"svPct":0.901,"gaa":2.78,"source":"hr-mtl-2026"}},"fowler":{"name":"Fowler","number":70,"pos":"G","stats":{"season":"2025-26","gp":17,"w":9,"l":6,"svPct":0.908,"gaa":2.43,"source":"hr-mtl-2026"}}},"record":{"season":"2025-26","gp":82,"w":48,"l":24,"otl":10,"points":106,"sources":["nhl-standings-2526"],"desc":"Final regular-season record, W-L-OTL. Points % is points over two per game."}}}}</script>
 <script type="application/json" id="data-ratings">{
  "schema": "rink-sim-ratings/1",
  "description": "How a player's 2025-26 stat line becomes the four skater ratings (0 to 1) and the goalie rating the engine uses. Every rating is a clamp(base + weighted per-game rates). Edit the weights here; the engine recomputes on load.",
@@ -3977,7 +3066,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.31';
+  const VERSION = '0.32';
   $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -4431,6 +3520,7 @@ function startSim(DATA) {
     const w = teams[0].score > teams[1].score ? 0 : 1, l = 1 - w;
     record.w[w]++; if (game.overtime || game.shootout) record.otl[l]++; else record.l[l]++;
     const el = $('record'); if (el) el.textContent = `This session: ${teams[0].abbr} ${record.w[0]}-${record.l[0]}-${record.otl[0]}, ${teams[1].abbr} ${record.w[1]}-${record.l[1]}-${record.otl[1]} (W-L-OTL)`;
+    calibT = 0;
   }
   function newGame() {
     game.overtime = false; game.shootout = false; game.recorded = false;
@@ -5414,14 +4504,20 @@ function startSim(DATA) {
     const opp = teams[1 - t.id];
     return { attempts: t.attempts, shots: t.shots, score: t.score, xg: t.xg, blockedFor: opp.blocked, missed: t.missed, tierHigh: t.tier.high, tierMed: t.tier.medium, tierLow: t.tier.low, pens: t.pim / 2, fo: t.faceoffs ? t.faceoffsWon / t.faceoffs : 0.5, freezes: opp.freezes, offsides: t.offsides, icings: t.icings };
   }
-  let batch = null; // { n, sums: [ {..}, {..} ] }
+  let batch = null; // { n, sums: [ {..}, {..} ], w, l, otl } from the last lab run
+  const addToBatch = () => teams.forEach((t, i) => { const s = teamSample(t); for (const k in s) batch.sums[i][k] = (batch.sums[i][k] || 0) + s[k]; });
   function renderCalib() {
     const el = $('calib'); if (!el || !MP) return;
     const src = batch && batch.n ? batch.sums.map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v / batch.n]))) : teams.map(teamSample);
+    $('calibNote').textContent = batch && batch.n ? `Average of the last run, ${batch.n} games.` : 'This game so far, scaled to 60 minutes. Run the matchup for a stable read.';
     const played = batch && batch.n ? 1 : Math.max(0.05, ((game.period - 1) * 1200 + (1200 - Math.min(game.clock, 1200))) / 3600); // scale this game to 60 minutes
     const fmt = (k, v) => k === 'fo' ? Math.round(v * 100) + '%' : k === 'xg' ? v.toFixed(2) : v.toFixed(1);
     const fmtR = (k, v) => k === 'faceoffWinPct' ? Math.round(v * 100) + '%' : k === 'xGoals' || k === 'goals' ? v.toFixed(2) : v.toFixed(1);
     let html = '<table><tr><th></th><th>BOS sim</th><th>BOS real</th><th>MTL sim</th><th>MTL real</th><th>League</th></tr>';
+    const rec = batch && batch.n ? batch : record; const recN = batch && batch.n ? batch.n : record.w[0] + record.w[1];
+    const realRec = teams.map(t => DATA.rosters.teams[t.key].record);
+    html += '<tr style="white-space:nowrap"><td>Record</td>' + teams.map((t, i) => `<td class="sim">${recN ? `${rec.w[i]}-${rec.l[i]}-${rec.otl[i]}` : '-'}</td><td>${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : '-'}</td>`).join('') + '<td>-</td></tr>';
+    html += '<tr><td>Points %</td>' + teams.map((t, i) => `<td class="sim">${recN ? Math.round(100 * (2 * rec.w[i] + rec.otl[i]) / (2 * recN)) + '%' : '-'}</td><td>${realRec[i] ? Math.round(100 * realRec[i].points / (2 * realRec[i].gp)) + '%' : '-'}</td>`).join('') + '<td>50%</td></tr>';
     for (const [label, sk, rk] of CAL_ROWS) {
       const cells = teams.map((t, i) => {
         const v = sk === 'fo' ? src[i][sk] : src[i][sk] / played; const real = MP.teams[t.abbr][rk] !== undefined ? MP.teams[t.abbr][rk] : PH.rulesBenchmarks[rk];
@@ -5433,29 +4529,18 @@ function startSim(DATA) {
     }
     el.innerHTML = html + '</table>';
   }
-  function runBatch(n) {
-    const note = $('batchNote'); const wasPaused = game.paused; game.paused = true;
-    batch = { n: 0, sums: [{}, {}], w: [0, 0, 0] }; $('batchRecord').textContent = '';
-    const add = () => teams.forEach((t, i) => { const s = teamSample(t); for (const k in s) batch.sums[i][k] = (batch.sums[i][k] || 0) + s[k]; });
-    let done = 0; newGame();
-    const step = () => {
-      let k = 0; while (k++ < 4000 && !game.over) tick(0.03);
-      if (game.over) { add(); batch.n++; done++; const h = teams[0].score, aw = teams[1].score; batch.w = batch.w || [0, 0, 0, 0]; const ot = game.overtime || game.shootout; if (h > aw) { batch.w[0]++; if (ot) batch.w[3]++; } else { batch.w[1]++; if (ot) batch.w[2]++; } $('batchRecord').textContent = `Record: ${teams[0].abbr} ${batch.w[0]}-${batch.w[1] - batch.w[2]}-${batch.w[2]}, ${teams[1].abbr} ${batch.w[1]}-${batch.w[0] - batch.w[3]}-${batch.w[3]} (W-L-OTL)`; note.textContent = `${done} of ${n} games simulated`; renderCalib(); if (done < n) newGame(); }
-      if (done < n) requestAnimationFrame(step); else { note.textContent = `Average of ${n} simulated games`; newGame(); game.paused = wasPaused; }
-    };
-    note.textContent = 'Simulating...'; requestAnimationFrame(step);
-  }
-  $('batch10').addEventListener('click', () => runBatch(10));
 
   // ---------- Matchup lab: many games with the current cards, and one-card sweeps ----------
   const LAB = { running: false, stop: false };
   const LAB_DIMS = [['hFore', 'Bruins forecheck'], ['hBreak', 'Bruins breakout'], ['hEntry', 'Bruins entry'], ['hOz', 'Bruins offensive zone'], ['hDz', 'Bruins defensive zone'], ['hPP', 'Bruins power play'], ['hPK', 'Bruins penalty kill'],
                     ['aFore', 'Canadiens forecheck'], ['aBreak', 'Canadiens breakout'], ['aEntry', 'Canadiens entry'], ['aOz', 'Canadiens offensive zone'], ['aDz', 'Canadiens defensive zone'], ['aPP', 'Canadiens power play'], ['aPK', 'Canadiens penalty kill']];
   $('labDim').innerHTML = LAB_DIMS.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+  setTimeout(() => renderLabCards(), 0);
   // play n games headless; onGame(result) after each, onDone(summary) at the end. Results are per team: w, l, otl, gf, ga, xgf, xga, sog.
-  function playGames(n, note, onGame, onDone) {
+  function playGames(n, note, onGame, onDone, track) {
     const wasPaused = game.paused; game.paused = true; LAB.running = true; LAB.stop = false; $('labStop').hidden = false;
     const sum = { n: 0, w: [0, 0], l: [0, 0], otl: [0, 0], gf: [0, 0], xg: [0, 0], sog: [0, 0] };
+    if (track) batch = { n: 0, sums: [{}, {}], w: sum.w, l: sum.l, otl: sum.otl };
     let done = 0; newGame();
     const step = () => {
       let k = 0; while (k++ < 4000 && !game.over) tick(0.03);
@@ -5463,6 +4548,7 @@ function startSim(DATA) {
         const w = teams[0].score > teams[1].score ? 0 : 1, l = 1 - w, ot = game.overtime || game.shootout;
         sum.n++; sum.w[w]++; if (ot) sum.otl[l]++; else sum.l[l]++;
         teams.forEach((t, i) => { sum.gf[i] += t.score; sum.xg[i] += t.xg; sum.sog[i] += t.shots; });
+        if (track) { addToBatch(); batch.n++; renderCalib(); }
         done++; if (onGame) onGame(sum); if (done < n && !LAB.stop) newGame();
       }
       if (done < n && !LAB.stop) { if (note) note.textContent = `${done} of ${n} games`; requestAnimationFrame(step); }
@@ -5475,26 +4561,37 @@ function startSim(DATA) {
   const pct = v => Math.round(100 * v) + '%';
   function labRow(label, sum, i, cur) {
     const n = sum.n || 1; const [lo, hi] = wilson(sum.w[i], sum.n); const pts = (2 * sum.w[i] + sum.otl[i]) / (2 * n);
-    return `<tr${cur ? ' style="font-weight:700"' : ''}><td>${label}</td><td>${sum.w[i]}-${sum.l[i]}-${sum.otl[i]}</td><td>${pct(sum.w[i] / n)}</td><td class="ci">${pct(lo)}-${pct(hi)}</td><td>${pct(pts)}</td><td>${(sum.gf[i] / n).toFixed(2)}</td><td>${(sum.gf[1 - i] / n).toFixed(2)}</td><td>${(sum.xg[i] / n).toFixed(2)}</td><td>${(sum.xg[1 - i] / n).toFixed(2)}</td><td>${(sum.sog[i] / n).toFixed(1)}</td></tr>`;
+    return `<tr${cur ? ' style="font-weight:700"' : ''}><td>${label}</td><td>${sum.w[i]}-${sum.l[i]}-${sum.otl[i]}</td><td>${pct(sum.w[i] / n)}</td><td class="ci">${pct(lo)}-${pct(hi)}</td><td>${pct(pts)}</td><td>${(sum.gf[i] / n).toFixed(2)}</td><td>${(sum.gf[1 - i] / n).toFixed(2)}</td><td>${(sum.xg[i] / n).toFixed(2)}</td><td>${(sum.xg[1 - i] / n).toFixed(2)}</td></tr>`;
   }
-  const labHead = '<tr><th></th><th>W-L-OTL</th><th>Win</th><th>95%</th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th><th>SOG</th></tr>';
-  function labSummary(label) { return `${label} ${teams[0].abbr}: ${$('hFore').selectedOptions[0].text}, ${$('hBreak').selectedOptions[0].text}, ${$('hEntry').selectedOptions[0].text}, ${$('hOz').selectedOptions[0].text}, ${$('hDz').selectedOptions[0].text}, ${$('hPP').selectedOptions[0].text}, ${$('hPK').selectedOptions[0].text}, aggression ${($('hAgg').value / 100).toFixed(2)}. ${teams[1].abbr}: ${$('aFore').selectedOptions[0].text}, ${$('aBreak').selectedOptions[0].text}, ${$('aEntry').selectedOptions[0].text}, ${$('aOz').selectedOptions[0].text}, ${$('aDz').selectedOptions[0].text}, ${$('aPP').selectedOptions[0].text}, ${$('aPK').selectedOptions[0].text}, aggression ${($('aAgg').value / 100).toFixed(2)}.`; }
+  const labHead = '<tr><th>Club</th><th>W-L-OTL</th><th>Win</th><th>95%</th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
+  const CARD_ROWS = [['Forecheck', 'Fore'], ['Breakout', 'Break'], ['Entry', 'Entry'], ['Offensive zone', 'Oz'], ['Defensive zone', 'Dz'], ['Power play', 'PP'], ['Penalty kill', 'PK'], ['Aggression', 'Agg']];
+  const cardText = (side, key) => key === 'Agg' ? ($(side + key).value / 100).toFixed(2) : $(side + key).selectedOptions[0].text;
+  function renderLabCards() {
+    const el = $('labCards'); if (!el) return;
+    el.innerHTML = `<table><tr><th>Card</th><th>${teams[0].name} (${teams[0].abbr})</th><th>${teams[1].name} (${teams[1].abbr})</th></tr>` + CARD_ROWS.map(([label, key]) => `<tr><td>${label}</td><td class="sim">${cardText('h', key)}</td><td class="sim">${cardText('a', key)}</td></tr>`).join('') + '</table>';
+    if (LAB.ranWith && LAB.ranWith !== cardsKey()) $('labResultNote').textContent = 'The cards have changed since this run. Run again to see the new matchup.';
+  }
+  const cardsKey = () => CARD_ROWS.map(([, key]) => cardText('h', key) + '|' + cardText('a', key)).join(';');
+  document.querySelectorAll('select, input[type=range]').forEach(el => el.addEventListener('input', renderLabCards));
   $('labRun').addEventListener('click', () => {
     if (LAB.running) return; const n = +$('labN').value; const note = $('labNote'); const out = $('labResult');
-    out.innerHTML = ''; note.textContent = 'Simulating...';
-    playGames(n, note, sum => { out.innerHTML = `<table>${labHead}${labRow(teams[0].abbr, sum, 0)}${labRow(teams[1].abbr, sum, 1)}</table>`; }, sum => {
-      note.textContent = `${sum.n} games${LAB.stop ? ', stopped early' : ''}. Win % carries a 95% interval; two settings whose intervals overlap are not separated at this sample size. Goals and shots are per game.`;
-      out.innerHTML = `<table>${labHead}${labRow(teams[0].abbr, sum, 0)}${labRow(teams[1].abbr, sum, 1)}</table><p class="hint">${labSummary('Cards:')}</p>`;
-    });
+    out.innerHTML = ''; note.textContent = 'Simulating...'; LAB.ranWith = cardsKey(); $('labResultNote').textContent = 'Running with the cards above.';
+    const table = sum => `<table>${labHead}${labRow(teams[0].abbr, sum, 0)}${labRow(teams[1].abbr, sum, 1)}</table>`;
+    playGames(n, note, sum => { out.innerHTML = table(sum); }, sum => {
+      note.textContent = `${sum.n} games${LAB.stop ? ', stopped early' : ''}.`;
+      $('labResultNote').textContent = `${sum.n} games with the cards above. Win % carries a 95% interval; two settings whose intervals overlap are not separated at this sample size. Points % counts an overtime or shootout loss as one point. Goals, expected goals and shots are per game.`;
+      out.innerHTML = table(sum);
+    }, true);
   });
   $('labSweep').addEventListener('click', () => {
     if (LAB.running) return; const n = +$('labN').value; const id = $('labDim').value; const sel = $(id); const side = id[0] === 'h' ? 0 : 1;
     const options = Array.from(sel.options).map(o => [o.value, o.text]); const original = sel.value; const note = $('labNote'); const out = $('labSweepResult');
     const rows = []; let i = 0; out.innerHTML = '';
     const next = () => {
-      if (i >= options.length || LAB.stop) { sel.value = original; readTactics(); note.textContent = LAB.stop ? 'Stopped early. Rows shown are complete or marked with the games played.' : `${options.length} options, ${n} games each, for ${LAB_DIMS.find(d => d[0] === id)[1]}. Bold is the current setting. Overlapping intervals are not separated.`; return; }
+      if (i >= options.length || LAB.stop) { sel.value = original; readTactics(); renderLabCards(); note.textContent = LAB.stop ? 'Stopped early. Rows shown are complete or marked with the games played.' : `${options.length} options, ${n} games each, for ${LAB_DIMS.find(d => d[0] === id)[1]}. Bold is the current setting. Overlapping intervals are not separated.`; return; }
       const [val, text] = options[i]; sel.value = val; readTactics();
-      playGames(n, note, sum => { out.innerHTML = `<table>${labHead}${rows.join('')}${labRow(text + ' (running)', sum, side, val === original)}</table>`; }, sum => { if (sum.n) rows.push(labRow(text + (sum.n < n ? ` (${sum.n} games)` : ''), sum, side, val === original)); out.innerHTML = `<table>${labHead}${rows.join('')}</table>`; i++; next(); });
+      const head = labHead.replace('<th>Club</th>', `<th>${LAB_DIMS.find(d => d[0] === id)[1]}</th>`);
+      playGames(n, note, sum => { out.innerHTML = `<table>${head}${rows.join('')}${labRow(text + ' (running)', sum, side, val === original)}</table>`; }, sum => { if (sum.n) rows.push(labRow(text + (sum.n < n ? ` (${sum.n} games)` : ''), sum, side, val === original)); out.innerHTML = `<table>${head}${rows.join('')}</table>`; i++; next(); });
     };
     note.textContent = 'Simulating...'; next();
   });
@@ -5508,7 +4605,7 @@ function startSim(DATA) {
     document.querySelectorAll('.tabpane').forEach(p => { p.hidden = p.dataset.pane !== b.dataset.tab; });
     try { localStorage.setItem('rink.tab', b.dataset.tab); } catch (e) {}
   }));
-  try { let t = location.hash === '#lab' ? 'lab' : localStorage.getItem('rink.tab'); if (t === 'calib' || t === 'admin') t = 'advanced'; if (t === 'systems') t = 'game'; const b = t && document.querySelector(`.tab[data-tab="${t}"]`); if (b) b.click(); } catch (e) {}
+  try { let t = location.hash === '#lab' ? 'lab' : localStorage.getItem('rink.tab'); if (t === 'calib') t = 'lab'; if (t === 'admin') t = 'advanced'; if (t === 'systems') t = 'game'; const b = t && document.querySelector(`.tab[data-tab="${t}"]`); if (b) b.click(); } catch (e) {}
   const aboutDlg = $('about');
   (() => {   // the About dialog's systems list, one line per choice, from the same descriptions the coaching cards show
     const el = $('aboutSystems'); if (!el) return;
