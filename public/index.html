@@ -42,6 +42,12 @@
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
   .card { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; color: inherit; text-decoration: none; transition: transform .15s ease, border-color .15s ease; }
+  .card { position: relative; }
+  .card-links { display: flex; flex-wrap: wrap; gap: 14px; padding-top: 10px; font-size: 0.85rem; font-weight: 500; }
+  .card-links a { color: var(--accent); text-decoration: none; }
+  .card-links a:hover { text-decoration: underline; }
+  .card-links .open::after { content: ""; position: absolute; inset: 0; border-radius: 14px; }
+  .card-links .src { position: relative; z-index: 1; }
   .card:hover { transform: translateY(-2px); border-color: var(--accent); }
   .card .thumb { aspect-ratio: 16 / 9; background: #0f1b2b; display: block; }
   .card .thumb svg { width: 100%; height: 100%; display: block; }
@@ -73,10 +79,10 @@
 
   <section>
     <h2>Simulations and experiments</h2>
-    <p class="intro">Interactive models and side projects, mostly built with AI coding tools. Each one runs in your browser.</p>
+    <p class="intro">Interactive models and side projects, mostly built with AI coding tools. Each one runs in your browser, no install, and the data behind it is open to inspection.</p>
     <div class="grid">
 
-      <a class="card" href="/bruins-vs-canadiens/">
+      <div class="card">
         <span class="thumb" aria-hidden="true">
           <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
             <rect width="320" height="180" fill="#0f1b2b"/>
@@ -109,10 +115,11 @@
         </span>
         <span class="body">
           <h3>Bruins vs Canadiens <span class="ver">v0.26</span></h3>
-          <p>A full 5-on-5 hockey game simulation with real rosters, player ratings built from 2025-26 stats, selectable team systems, line changes and NHL rules. It grades its results against how the real teams played.</p>
-          <span class="tags"><span>Simulation</span><span>Canvas</span><span>NHL data</span><span>JavaScript</span></span>
+          <p>A 5-on-5 hockey engine built on 2025-26 data. Skaters rated from real stat lines, shots graded against MoneyPuck expected goals, goalies at their actual save percentages, skating calibrated to NHL EDGE tracking. Pick each team’s systems mid-game and grade the results against the real teams.</p>
+          <span class="tags"><span>Simulation</span><span>Physics engine</span><span>MoneyPuck</span><span>NHL EDGE</span><span>Canvas</span><span>JavaScript</span></span>
+          <span class="card-links"><a class="open" href="/bruins-vs-canadiens/">Open the sim</a><a class="src" href="https://github.com/pmcdonough/patrick-site/tree/main/public/bruins-vs-canadiens" target="_blank" rel="noopener">Source on GitHub</a></span>
         </span>
-      </a>
+      </div>
 
       <div class="card soon">More coming soon</div>
 
