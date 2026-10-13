@@ -1332,6 +1332,14 @@
      61
     ]
    }
+  },
+  "flow": {
+   "desc": "Breakout timing. Once the team has had the puck for startAfterSec the forwards leave their support spots and burst north, settling ahead of the puck by their ahead distance (capped at maxFx so nobody is offside early) over rampSec. The carrier skates it out with speed instead of cruising.",
+   "startAfterSec": 0.5,
+   "rampSec": 1.2,
+   "wingAheadFt": 34,
+   "centerAheadFt": 22,
+   "maxFx": 110
   }
  },
  "neutralAttack": {
@@ -1372,7 +1380,7 @@
  "offensiveZone": {
   "cycle": {
    "label": "Cycle low",
-   "desc": "Forwards work the strong-side wall and net front; D at the points. Mirrors to the puck side.",
+   "desc": "Forwards work the strong-side wall and net front; D at the points. Mirrors to the puck side. The three forwards rotate corner, half wall and net front every few seconds so the cycle keeps moving.",
    "mirrorToPuckSide": true,
    "spots": {
     "LW": [
@@ -1395,7 +1403,12 @@
      123,
      60
     ]
-   }
+   },
+   "cycleOrder": [
+    "LW",
+    "C",
+    "RW"
+   ]
   },
   "umbrella": {
    "label": "Umbrella",
@@ -1448,6 +1461,11 @@
      60
     ]
    }
+  },
+  "motion": {
+   "desc": "Off-puck motion in the offensive zone: how often the cycle spots rotate between the three forwards, and the size of the drift everyone makes around his spot so nobody stands still.",
+   "cycleEverySec": 3.0,
+   "driftFt": 4
   }
  },
  "powerPlay": {
@@ -1531,22 +1549,22 @@
  "forecheck": {
   "122": {
    "label": "1-2-2 (balanced)",
-   "desc": "F1 pressures, two wingers across the top of the zone, D at the far blue line.",
+   "desc": "F1 pressures the puck, two wingers at the tops of the circles ready to jump a pass up the wall, D just inside the far blue line.",
    "inZone": {
     "LW": [
-     120,
-     14
+     142,
+     16
     ],
     "RW": [
-     120,
-     71
+     142,
+     69
     ],
     "LD": [
-     92,
+     104,
      30
     ],
     "RD": [
-     92,
+     104,
      55
     ],
     "C": null
@@ -4295,7 +4313,7 @@ function startSim(DATA) {
   function setFaceoff(x, y, note, noChangeTeam) {
     game.faceoff = { x, y }; game.faceT = PH.game.faceoffPauseSec; game.note = note;
     if (note !== 'Faceoff') blowWhistle(note);
-    puck.carrier = null; puck.vx = puck.vy = 0; puck.x = x; puck.y = y; puck.shot = false; puck.touched = true; puck.releaseTeam = null; puck.receiver = null; puck.oneTimer = false; puck.holdT = 0; puck.lastHolder = null; puck.rim = false; puck.beaten = false;
+    puck.carrier = null; puck.vx = puck.vy = 0; puck.x = x; puck.y = y; puck.shot = false; puck.touched = true; puck.releaseTeam = null; puck.receiver = null; puck.oneTimer = false; puck.holdT = 0; puck.lastHolder = null; puck.rim = false; puck.beaten = false; teams.forEach(q => { q.possT = 0; });
     // line changes at the stoppage: visitors first, then the home team (which may match lines); the icing team cannot change
     [teams[1], teams[0]].forEach(t => { if (t !== noChangeTeam) stoppageChange(t, false); else { [...t.onF, ...t.onD].forEach(p => { p.leaving = false; p.entering = false; p.subOn = false; p.sub = null; }); rebuildOnIce(t); } });
     if (noChangeTeam !== teams[0]) matchLines(teams[0], teams[1], x);
@@ -4332,6 +4350,15 @@ function startSim(DATA) {
     if (situation === 'offense') {
       if (pz === 'own') {
         [fx, fy] = SYS.breakout[tac.brk].spots[p.role];
+        // Once we have clean possession the forwards go: each one leaves his support spot and skates
+        // north ahead of the puck, timing the burst so he takes the pass in stride.
+        const FL = SYS.breakout.flow; const c = puck.carrier;
+        if (c && c.team === t && !p.isD && p !== c && (t.possT || 0) > FL.startAfterSec) {
+          const k = clamp(((t.possT || 0) - FL.startAfterSec) / FL.rampSec, 0, 1);
+          const ahead = p.role === 'C' ? FL.centerAheadFt : FL.wingAheadFt;
+          const goFx = Math.min(FL.maxFx, pfx + ahead);
+          if (goFx > fx) { fx = fx + (goFx - fx) * k; fy = p.role === 'C' ? 42 : (p.role === 'RW' ? 73 : 12); }
+        }
       } else if (pz === 'neutral') {
         const NA = SYS.neutralAttack; const weak = pfy < 42 ? 'RW' : 'LW';
         const leadFx = Math.min(NA.leadMaxFx, pfx + NA.leadAhead);
@@ -4346,8 +4373,15 @@ function startSim(DATA) {
         const ph = { LW: 0, RW: 2.1, C: 4.2, LD: 1.0, RD: 3.1 }[p.role] || 0; const tt = game.period * 1200 - game.clock;
         if (!window.__noDrift) { fy += 4 * Math.sin(tt * 1.1 + ph); fx += 3 * Math.sin(tt * 0.7 + ph); }
       } else {
-        const OZ = SYS.offensiveZone[tac.oz]; [fx, fy] = OZ.spots[p.role];
+        const OZ = SYS.offensiveZone[tac.oz]; const M = SYS.offensiveZone.motion;
+        let role = p.role;
+        // the cycle rotates: corner, half wall and net front are passed along every few seconds so the puck side keeps moving
+        if (OZ.cycleOrder && !p.isD) { const i = OZ.cycleOrder.indexOf(role); if (i >= 0) role = OZ.cycleOrder[(i + Math.floor((t.possT || 0) / M.cycleEverySec)) % OZ.cycleOrder.length]; }
+        [fx, fy] = OZ.spots[role];
         if (OZ.mirrorToPuckSide && pfy > 42) fy = 85 - fy;
+        // nobody stands still: small drifts along the wall and across the slot so a lane opens
+        const ph = { LW: 0, RW: 2.1, C: 4.2, LD: 1.0, RD: 3.1 }[p.role] || 0; const tt = game.period * 1200 - game.clock;
+        if (!window.__noDrift) { fy += M.driftFt * Math.sin(tt * 1.1 + ph); fx += M.driftFt * 0.75 * Math.sin(tt * 0.7 + ph); }
       }
     } else if (situation === 'defense') {
       if (pz === 'off') {
@@ -4690,13 +4724,17 @@ function startSim(DATA) {
       const tg = p.target || p;
       const dx = tg.x - p.x, dy = tg.y - p.y, d = Math.hypot(dx, dy);
       // effort: full speed only when chasing, rushing or far from the spot; otherwise cruise at ~65% (EDGE: bursts over 20 mph are a handful per shift)
-      const rush = p === puck.carrier && zone(p.team, p.x) === 'neutral' && !p.leaving;
+      const ours = puck.carrier && puck.carrier.team === p.team;
+      const breakingOut = ours && zone(p.team, puck.carrier.x) === 'own' && (p.team.possT || 0) > SYS.breakout.flow.startAfterSec && !p.leaving;
+      const rush = p === puck.carrier && (zone(p.team, p.x) === 'neutral' || breakingOut) && !p.leaving;
+      const onRush = ours && zone(p.team, puck.carrier.x) === 'neutral' && puck.carrier.vx * p.team.dir > 4 && !p.leaving;
+      const burst = (breakingOut || onRush) && !p.isD && p !== puck.carrier;
       // back-check: caught above the puck while the other team has it (or it is loose and heading our way) means sprint
       const theirs = puck.carrier ? puck.carrier.team !== p.team : puck.lastTeam && puck.lastTeam !== p.team;
       const caughtUpIce = theirs && toFx(p.team, p.x) > toFx(p.team, puck.x) - 12 && zone(p.team, puck.x) !== 'off';
       // a rimmed dump: the defending retriever has to turn, read the rim and go; the chasing forward is already flying
       const retrievingRim = puck.rim && !puck.carrier && puck.lastTeam && puck.lastTeam !== p.team && (p.team.rimT || 0) < 1.1;
-      const urgent = !retrievingRim && (rush || p.sprint || p === p.team.pressurer || p === p.team.fronter || caughtUpIce || (puck.carrier && puck.carrier.team !== p.team && zone(p.team, puck.x) === 'own' && d > 12) || (!puck.carrier && d > 40));
+      const urgent = !retrievingRim && (rush || burst || p.sprint || p === p.team.pressurer || p === p.team.fronter || caughtUpIce || (puck.carrier && puck.carrier.team !== p.team && zone(p.team, puck.x) === 'own' && d > 12) || (!puck.carrier && d > 40));
       const max = p.goalie ? p.spd : p.spd * cfg.speed * fatigue(p) * (p === puck.carrier ? PH.skater.effort.carrierFactor : 1) * (urgent ? 1 : Math.min(1, (p === puck.carrier || p.leaving || d > 30 ? PH.skater.effort.withPurpose : PH.skater.effort.cruise) * cfg.cruise));
       const want = d < 0.8 ? 0 : Math.min(max, Math.sqrt(2 * PH.skater.brakingFtPerSec2 * (p.goalie ? 1 : cfg.accel) * d));
       const ax = (d ? dx / d : 0) * want - p.vx, ay = (d ? dy / d : 0) * want - p.vy;
@@ -4941,7 +4979,7 @@ function startSim(DATA) {
     }
     game.clock -= dt;
     for (const t of teams) for (const p of t.all) if (p.box > 0) { p.box -= dt; if (p.box <= 0) releaseFromBox(t, p); }
-    if (puck.carrier) { const t = puck.carrier.team; t.poss += dt; if (zone(t, puck.x) === 'off') t.oz += dt; }
+    if (puck.carrier) { const t = puck.carrier.team; t.poss += dt; if (zone(t, puck.x) === 'off') t.oz += dt; t.possT = (t.possT || 0) + dt; teams[1 - t.id].possT = 0; }
     teams.forEach(t => { manageChanges(t, dt); if (t.dumpT > 0) t.dumpT -= dt; t.rimT = puck.rim && puck.lastTeam !== t ? (t.rimT || 0) + dt : 0; t.players.forEach(p => { p.sprint = false; if (p.rushed > 0) p.rushed -= dt; }); });
     assignTargets(dt); movePlayers(dt); teams.forEach(t => turnGoalie(t.goalie, dt)); movePuck(dt);
     if (!game.faceoff) checkOffside();
@@ -5223,7 +5261,7 @@ function startSim(DATA) {
   }
   requestAnimationFrame(frame);
   // debug and test hook: lets a harness step the engine headlessly
-  window.rinkSim = { tick, teams, game, puck, DATA };
+  window.rinkSim = { tick, teams, game, puck, DATA, cfg };
 }
 // ---------- Data loading: fetch the JSON files next to this page; fall back to the embedded copies (standalone file) ----------
 (async () => {
