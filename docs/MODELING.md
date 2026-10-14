@@ -33,7 +33,7 @@ Inferred and mocked numbers are the engine's or the page's own guesses where no 
 
 ## Provenance rules
 
-The raw inputs (MoneyPuck CSVs, NHL JSON) are not committed; the scripts that turn them into the compact JSON files are (`tools/mp_extract.py`, `tools/xg_fit.py`, `tools/game_load.py`), and the outputs carry a `sources` block with the file names, row counts and terms. Each script reproduces its committed output exactly from the inputs listed in `raw/README.md`. Refitting means re-running the script, never editing the numbers. The expected-goal formula is implemented twice, in the engine and in the review page, and both read the same `xg-model.json`.
+The raw inputs (MoneyPuck CSVs, NHL JSON) are not committed; the scripts that turn them into the compact JSON files are (`tools/mp_extract.py`, `tools/xg_fit.py`, `tools/game_load.py`), and the outputs carry a `sources` block with the file names, row counts and terms. Each script reproduces its committed output exactly from the inputs listed in `docs/RAW-INPUTS.md`. Refitting means re-running the script, never editing the numbers. The expected-goal formula is implemented twice, in the engine and in the review page, and both read the same `xg-model.json`.
 
 ## Known weaknesses, in order of how much they matter
 

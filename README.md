@@ -5,6 +5,7 @@ Personal site for sharing interactive models and side projects, mostly built wit
 ```
 public/
   index.html                       home page: simulations and experiments
+  assets/share.png                 link preview image (Open Graph card)
   bruins-vs-canadiens/
     index.html                     the hockey engine, single file, no build step
     data/                          the data that drives it (see below), including the expected-goal model
@@ -18,7 +19,9 @@ docs/PLAY-REVIEW.md                the play-review page: pipeline, reconstructio
 docs/MODELING.md                   every model in the repo: what it answers, what it is built on, how it was set, where it lives
 docs/ROADMAP.md                    where each project stands and what comes next
 docs/HISTORY.md                    what was built before version numbers, in order
-CLAUDE.md                          project memory for working on this with Claude (chat or Claude Code)
+docs/RAW-INPUTS.md                 the raw input files: what each is, where to download it, the command for each script
+LOCAL-SETUP.md                     one-time setup on a new machine and the checks that prove it works
+CLAUDE.md                          project memory for working on this with Claude Code
 CHANGELOG.md                       version history for the projects
 ```
 
@@ -84,7 +87,7 @@ A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked sh
 
 ### Tools and checks
 
-`tools/mp_extract.py` builds the ratings and benchmark extract from the MoneyPuck season files (skaters, goalies, teams, lines), `tools/xg_fit.py` fits the expected-goal model from the MoneyPuck shot files, and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. The raw inputs are not committed; keep them in `raw/` (ignored) and see `raw/README.md` in the drop zip for the exact files and commands. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once with `cd tools && npm install && npx playwright install chromium`.
+`tools/mp_extract.py` builds the ratings and benchmark extract from the MoneyPuck season files (skaters, goalies, teams, lines), `tools/xg_fit.py` fits the expected-goal model from the MoneyPuck shot files, and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. The raw inputs are not committed; keep them in `raw/` (ignored); `docs/RAW-INPUTS.md` lists every file, where to download it and the command that uses it. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once is in `LOCAL-SETUP.md`.
 
 ### Versioning
 

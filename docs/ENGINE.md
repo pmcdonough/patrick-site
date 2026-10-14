@@ -50,11 +50,11 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 
-## Baselines (v0.29)
+## Baselines (sim 0.33)
 
-At NHL-average multipliers, per team per game, over a ten-game batch: about 21 to 27 shots on goal, 3.5 to 4.3 goals on 3.5 expected, 43 unblocked attempts in a 28 / 13 / 3 low / medium / high split (league 31 / 8 / 3), 3 offsides, 5 icings; mean shift about 49 s, p90 about 73 s.
+At NHL-average multipliers, per team per game, re-measured at sim 0.33 over twenty games (the v0.29 numbers held): about 21 to 28 shots on goal, 3.3 to 4.2 goals on 3.7 to 4.0 expected, 43 unblocked attempts on average (Boston about 35, Montreal about 51) in a 28 / 13 / 3 low / medium / high split (measured at v0.29; league 31 / 8 / 3), 3 offsides (Boston about 1, Montreal about 5), 5 to 6 icings; mean shift about 51 s, p90 about 73 s. In the harness output `blocked` is blocks a team made, so a team's unblocked attempts are its attempts minus the opponent's `blocked`. `nhl-average.js` plays six games, which is noisy; a single team's goals can land outside the range.
 
-At build defaults (speed 1.3x, shot volume 2x): about 26 to 34 shots on goal and 4 goals per team on 4 to 5 expected. Boston's dump-and-chase system produces fewer attempts than Montreal's stretch and umbrella.
+At build defaults (speed 1.3x, shot volume 2x), ten games: about 26 to 34 shots on goal and 4 to 5 goals per team on 4.5 to 5 expected. Boston's dump-and-chase system produces fewer attempts than Montreal's stretch and umbrella.
 
 ## Tuning knobs most likely to matter
 

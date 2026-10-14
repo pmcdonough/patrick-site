@@ -1,8 +1,13 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.40 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.41 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.41
+- Link previews work: the Open Graph tags and share image moved from an unserved root `index.html` into `public/`. The stale root copy and `assets/` are gone.
+- Work moves to Claude Code. `LOCAL-SETUP.md` covers setup on a new machine; `docs/RAW-INPUTS.md` (moved from the ignored `raw/README.md`) lists every raw input, its URL and the command that uses it. CLAUDE.md drops the chat-drop workflow.
+- Engine baselines re-measured at sim 0.33 over twenty games at the NHL-average tick; they held. `xg-model.json` rewritten in the script's own key order so a refit leaves `git status` clean.
 
 ### 0.40
 - Home page card copy rewritten for a general reader.
