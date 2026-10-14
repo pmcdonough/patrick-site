@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. Its tabs are Game, Rosters, Lab (the matchup lab and the reality check) and Advanced (engine settings, data sources). The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.39, sim 0.33, Play Review 0.6.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.40, sim 0.33, Play Review 0.6.
 
 ## Layout
 
@@ -64,6 +64,6 @@ Either way, the context that matters is in this file, `docs/ENGINE.md`, `docs/HI
 
 How the repo was maintained from chat: each drop was a full-repo zip unpacked over the working tree and committed with the message supplied alongside it, so the git history is linear with one commit per site version. From Claude Code, commit directly; keep one commit per site version and the message style in `git log` (what changed and the version numbers in the subject).
 
-## State at handoff (site 0.39)
+## State at handoff (site 0.40)
 
 All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/calibration.js`. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is deciding shots from the expected-goal model.

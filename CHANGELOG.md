@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.39 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.40 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.40
+- Home page card copy rewritten for a general reader.
 
 ### 0.39
 - `tools/mp_extract.py` rebuilds the MoneyPuck ratings extract from the season CSVs and reproduces the committed file exactly (`--check`). The drop zip now carries `raw/` with every input file and a README; `raw/` is git-ignored. `xg_fit.py` pins the on-net share to the latest season so a refit reproduces the committed model.
