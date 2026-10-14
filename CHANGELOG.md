@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.35 = sim 0.32 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.36 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.36
+- Sim 0.33.
 
 ### 0.35
 - Sim 0.32. One card for the sim, leading with the matchup lab; the separate Matchup Lab card is gone.
@@ -45,6 +48,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.33
+- Lab tab compressed: each part is a collapsible section with a one-line summary (the matchup in brief, the record of the last run, how many reality-check cells are off, what was swept). Matchup and Record open by default; the reality check, the sweep and the caveat are collapsed. The record table folds the 95% interval under the win percentage so it fits without scrolling.
 
 ### 0.32
 - Lab tab reorganized: the matchup (both cards side by side), the run, the record, the reality check and the sweep, each under its own heading. The reality check moved here from Advanced and reads the last lab run; the separate ten-game batch is gone. Advanced is the last tab and holds only engine settings and data sources.

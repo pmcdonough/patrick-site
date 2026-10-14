@@ -75,7 +75,7 @@ MoneyPuck 2025-26 skaters, goalies, lines and teams downloads (ratings, danger t
 
 ### Controls
 
-Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks, plus this session's record. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Lab tab: the matchup, a run of 10 to 100 games, the record, the reality check, and a sweep of one card. Advanced tab: engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
+Game tab: pause, 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light) and Sticks, plus this session's record. Rosters tab: who is on the ice, time on ice and current shift, goals and blocks, with each player's stat line on hover. Lab tab: collapsible sections for the matchup, a run of 10 to 100 games, the record, the reality check and a sweep of one card, each with a one-line summary. Advanced tab: engine settings with a tick at the NHL-calibrated value, save and export, and data sources.
 
 ## Play Review
 

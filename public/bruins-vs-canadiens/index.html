@@ -79,7 +79,7 @@
   .calib th:first-child, .calib td:first-child { text-align: left; color: var(--fg-dim); font-weight: 500; }
   .calib th { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
   .calib td.sim { font-weight: 600; } .calib td.off { color: #d9480f; }
-  .calib.lab { overflow-x: auto; } .calib.lab th, .calib.lab td { white-space: nowrap; padding: 3px 3px; font-size: 0.72rem; } .calib.lab th { font-size: 0.62rem; letter-spacing: 0.04em; } .calib.lab td.ci { color: var(--fg-dim); font-size: 0.68rem; }
+  .calib.lab, #calib { overflow-x: auto; } #calib table { font-size: 0.74rem; } #calib th, #calib td { padding: 3px 2px; } #calib th { font-size: 0.6rem; letter-spacing: 0.04em; } .calib.lab th, .calib.lab td { white-space: nowrap; padding: 3px 3px; font-size: 0.72rem; } .calib.lab th { font-size: 0.62rem; letter-spacing: 0.04em; } .calib.lab .ci { color: var(--fg-dim); font-size: 0.66rem; font-weight: 400; } .calib.lab td { vertical-align: top; }
   .datasrc { font-size: 0.8rem; line-height: 1.5; margin-top: 8px; }
   .datasrc p { margin: 0 0 6px; } .datasrc a { color: var(--fg); } .datasrc code { font-size: 0.75rem; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
   #admin label span { color: var(--fg); font-variant-numeric: tabular-nums; }
@@ -100,6 +100,7 @@
   details.adv { border: 1px solid var(--line); border-radius: 10px; padding-block: 10px; padding-inline: 12px; }
   details.adv > summary { font-family: var(--display); font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
   details.adv > *:not(summary) { margin-top: 10px; }
+  details.adv > summary small { font-family: var(--body, inherit); font-weight: 400; font-size: 0.72rem; letter-spacing: 0; text-transform: none; margin-left: 6px; }
   h3.sub { font-family: var(--display); font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 4px 0 0; color: var(--fg-dim); }
   .panel .hint { margin: 0; }
   #exportText { width: 100%; box-sizing: border-box; font: 0.72rem/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
@@ -190,29 +191,32 @@
       <div class="sheet" id="sheetA"></div>
     </section>
     <section class="tabpane" data-pane="lab" hidden>
-      <p class="hint">The matchup lab plays the two clubs against each other many times with the systems on the coaching cards and reports the record with its margin of error, then grades the games against the real NHL. Change a card, run again, compare. Ten games cannot separate two close strategies; the interval says how many can.</p>
-
-      <h3 class="sub">Matchup</h3>
-      <p class="hint">The systems on the cards right now. Change them above either bench.</p>
-      <div id="labCards" class="calib lab"></div>
-      <div class="row" style="margin-top:8px"><label class="hint">Games per run <select id="labN"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
-
-      <h3 class="sub">Record</h3>
-      <p class="hint" id="labResultNote">Run the matchup to see each club's wins, losses and overtime or shootout losses, win and points percentage, and goals, expected goals and shots for and against per game.</p>
-      <div id="labResult" class="calib lab"></div>
-
-      <h3 class="sub">Reality check</h3>
-      <p class="hint">The engine grades itself against the real NHL. Each row is a per-game number: the <b>sim</b> columns are what the engine produced, averaged over the last run, or this game so far scaled to 60 minutes when nothing has run; the <b>real</b> columns are what each club actually averaged per game in 2025-26, with the league average alongside. Orange cells are more than 50 percent off. A simulation is only worth trusting if its games look like real games; this table shows where it does and where it still doesn't. The record rows (W-L-OTL and points percentage) compare the session or the run with each club's final 2025-26 record; the sim plays only these two clubs against each other, while the real record came against the whole league.</p>
-      <p class="hint" id="calibNote"></p>
-      <div id="calib" class="calib"></div>
-
-      <h3 class="sub">Sweep one choice</h3>
-      <p class="hint">Hold everything else and try every option for one card, the chosen number of games each. The row in bold is the current setting. The record shown is for the club whose card is swept.</p>
-      <div class="row"><select id="labDim"></select><button id="labSweep" type="button">Sweep</button></div>
-      <div id="labSweepResult" class="calib lab"></div>
-
-      <h3 class="sub">What this can and cannot say</h3>
-      <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Treat it as a way to ask a question of the video, not as an answer.</p>
+      <p class="hint">Play the two clubs against each other many times with the systems on the cards and judge a strategy against the other bench's by the record. Change a card, run again, compare.</p>
+      <details class="adv" open>
+        <summary>Matchup <small id="labCardsSum" class="hint"></small></summary>
+        <div id="labCards" class="calib lab"></div>
+        <div class="row" style="margin-top:8px"><label class="hint">Games <select id="labN"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
+      </details>
+      <details class="adv" open id="labRecord">
+        <summary>Record <small id="labRecordSum" class="hint"></small></summary>
+        <div id="labResult" class="calib lab"></div>
+        <p class="hint" id="labResultNote">Run the matchup to see each club's wins, losses and overtime or shootout losses, win and points percentage with a 95% interval, and goals and expected goals for and against per game. Two settings whose intervals overlap are not separated at that sample size.</p>
+      </details>
+      <details class="adv" id="labCalib">
+        <summary>Reality check <small id="calibNote" class="hint"></small></summary>
+        <div id="calib" class="calib"></div>
+        <p class="hint">Per-game numbers from the last run (or this game so far, scaled to 60 minutes) next to what each club actually averaged in 2025-26 and the league. Orange cells are more than 50 percent off. The record rows compare with each club's final 2025-26 record; the sim plays only these two clubs against each other, while the real record came against the whole league.</p>
+      </details>
+      <details class="adv" id="labSweepBox">
+        <summary>Sweep one choice <small id="labSweepSum" class="hint"></small></summary>
+        <p class="hint">Hold everything else and try every option for one card, the chosen number of games each. Bold is the current setting; the record is the swept club's.</p>
+        <div class="row"><select id="labDim"></select><button id="labSweep" type="button">Sweep</button></div>
+        <div id="labSweepResult" class="calib lab"></div>
+      </details>
+      <details class="adv">
+        <summary>What this can and cannot say</summary>
+        <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Ten games cannot separate two close strategies; the interval says how many can. Treat it as a way to ask a question of the video, not as an answer.</p>
+      </details>
     </section>
     <section class="tabpane" data-pane="advanced" hidden>
       <details class="adv" open>
@@ -3066,7 +3070,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.32';
+  const VERSION = '0.33';
   $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -4509,7 +4513,7 @@ function startSim(DATA) {
   function renderCalib() {
     const el = $('calib'); if (!el || !MP) return;
     const src = batch && batch.n ? batch.sums.map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v / batch.n]))) : teams.map(teamSample);
-    $('calibNote').textContent = batch && batch.n ? `Average of the last run, ${batch.n} games.` : 'This game so far, scaled to 60 minutes. Run the matchup for a stable read.';
+    let offCount = 0, cellCount = 0;
     const played = batch && batch.n ? 1 : Math.max(0.05, ((game.period - 1) * 1200 + (1200 - Math.min(game.clock, 1200))) / 3600); // scale this game to 60 minutes
     const fmt = (k, v) => k === 'fo' ? Math.round(v * 100) + '%' : k === 'xg' ? v.toFixed(2) : v.toFixed(1);
     const fmtR = (k, v) => k === 'faceoffWinPct' ? Math.round(v * 100) + '%' : k === 'xGoals' || k === 'goals' ? v.toFixed(2) : v.toFixed(1);
@@ -4522,12 +4526,14 @@ function startSim(DATA) {
       const cells = teams.map((t, i) => {
         const v = sk === 'fo' ? src[i][sk] : src[i][sk] / played; const real = MP.teams[t.abbr][rk] !== undefined ? MP.teams[t.abbr][rk] : PH.rulesBenchmarks[rk];
         const off = real > 0 && (v / real > 1.5 || v / real < 0.66) && (batch && batch.n || played > 0.5);
+        cellCount++; if (off) offCount++;
         return `<td class="sim${off ? ' off' : ''}">${fmt(sk, v)}</td><td>${fmtR(rk, real)}</td>`;
       }).join('');
       const lg = MP.league.perGame[rk] !== undefined ? MP.league.perGame[rk] : PH.rulesBenchmarks[rk];
       html += `<tr><td>${label}</td>${cells}<td>${lg !== undefined ? fmtR(rk, lg) : '-'}</td></tr>`;
     }
     el.innerHTML = html + '</table>';
+    $('calibNote').textContent = batch && batch.n ? `last run, ${batch.n} games: ${offCount} of ${cellCount} cells off` : played > 0.5 ? `this game so far: ${offCount} of ${cellCount} cells off` : 'this game so far';
   }
 
   // ---------- Matchup lab: many games with the current cards, and one-card sweeps ----------
@@ -4561,26 +4567,29 @@ function startSim(DATA) {
   const pct = v => Math.round(100 * v) + '%';
   function labRow(label, sum, i, cur) {
     const n = sum.n || 1; const [lo, hi] = wilson(sum.w[i], sum.n); const pts = (2 * sum.w[i] + sum.otl[i]) / (2 * n);
-    return `<tr${cur ? ' style="font-weight:700"' : ''}><td>${label}</td><td>${sum.w[i]}-${sum.l[i]}-${sum.otl[i]}</td><td>${pct(sum.w[i] / n)}</td><td class="ci">${pct(lo)}-${pct(hi)}</td><td>${pct(pts)}</td><td>${(sum.gf[i] / n).toFixed(2)}</td><td>${(sum.gf[1 - i] / n).toFixed(2)}</td><td>${(sum.xg[i] / n).toFixed(2)}</td><td>${(sum.xg[1 - i] / n).toFixed(2)}</td></tr>`;
+    return `<tr${cur ? ' style="font-weight:700"' : ''}><td>${label}</td><td>${sum.w[i]}-${sum.l[i]}-${sum.otl[i]}</td><td>${pct(sum.w[i] / n)}<br><span class="ci">${pct(lo)}-${pct(hi)}</span></td><td>${pct(pts)}</td><td>${(sum.gf[i] / n).toFixed(2)}</td><td>${(sum.gf[1 - i] / n).toFixed(2)}</td><td>${(sum.xg[i] / n).toFixed(2)}</td><td>${(sum.xg[1 - i] / n).toFixed(2)}</td></tr>`;
   }
-  const labHead = '<tr><th>Club</th><th>W-L-OTL</th><th>Win</th><th>95%</th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
+  const labHead = '<tr><th>Club</th><th>W-L-OTL</th><th>Win<br><span class="ci">95%</span></th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
   const CARD_ROWS = [['Forecheck', 'Fore'], ['Breakout', 'Break'], ['Entry', 'Entry'], ['Offensive zone', 'Oz'], ['Defensive zone', 'Dz'], ['Power play', 'PP'], ['Penalty kill', 'PK'], ['Aggression', 'Agg']];
   const cardText = (side, key) => key === 'Agg' ? ($(side + key).value / 100).toFixed(2) : $(side + key).selectedOptions[0].text;
   function renderLabCards() {
     const el = $('labCards'); if (!el) return;
     el.innerHTML = `<table><tr><th>Card</th><th>${teams[0].name} (${teams[0].abbr})</th><th>${teams[1].name} (${teams[1].abbr})</th></tr>` + CARD_ROWS.map(([label, key]) => `<tr><td>${label}</td><td class="sim">${cardText('h', key)}</td><td class="sim">${cardText('a', key)}</td></tr>`).join('') + '</table>';
-    if (LAB.ranWith && LAB.ranWith !== cardsKey()) $('labResultNote').textContent = 'The cards have changed since this run. Run again to see the new matchup.';
+    $('labCardsSum').textContent = `${teams[0].abbr} ${cardText('h', 'Fore')} / ${cardText('h', 'Break')} / ${cardText('h', 'Oz')} vs ${teams[1].abbr} ${cardText('a', 'Fore')} / ${cardText('a', 'Break')} / ${cardText('a', 'Oz')}`;
+    const changed = LAB.ranWith && LAB.ranWith !== cardsKey();
+    if (changed) $('labResultNote').textContent = 'The cards have changed since this run. Run again to see the new matchup.';
+    $('labRecordSum').textContent = (LAB.recordSum || '') + (changed && LAB.recordSum ? ' (cards changed since)' : '');
   }
   const cardsKey = () => CARD_ROWS.map(([, key]) => cardText('h', key) + '|' + cardText('a', key)).join(';');
   document.querySelectorAll('select, input[type=range]').forEach(el => el.addEventListener('input', renderLabCards));
   $('labRun').addEventListener('click', () => {
     if (LAB.running) return; const n = +$('labN').value; const note = $('labNote'); const out = $('labResult');
-    out.innerHTML = ''; note.textContent = 'Simulating...'; LAB.ranWith = cardsKey(); $('labResultNote').textContent = 'Running with the cards above.';
+    out.innerHTML = ''; note.textContent = 'Simulating...'; LAB.ranWith = cardsKey(); $('labResultNote').textContent = 'Running with the cards above.'; LAB.recordSum = ''; $('labRecordSum').textContent = ''; $('labRecord').open = true;
     const table = sum => `<table>${labHead}${labRow(teams[0].abbr, sum, 0)}${labRow(teams[1].abbr, sum, 1)}</table>`;
     playGames(n, note, sum => { out.innerHTML = table(sum); }, sum => {
       note.textContent = `${sum.n} games${LAB.stop ? ', stopped early' : ''}.`;
-      $('labResultNote').textContent = `${sum.n} games with the cards above. Win % carries a 95% interval; two settings whose intervals overlap are not separated at this sample size. Points % counts an overtime or shootout loss as one point. Goals, expected goals and shots are per game.`;
-      out.innerHTML = table(sum);
+      $('labResultNote').textContent = `${sum.n} games with the cards above. Win % carries a 95% interval; two settings whose intervals overlap are not separated at this sample size. Points % counts an overtime or shootout loss as one point. Goals and expected goals are per game.`;
+      out.innerHTML = table(sum); LAB.recordSum = `${teams[0].abbr} ${sum.w[0]}-${sum.l[0]}-${sum.otl[0]}, ${teams[1].abbr} ${sum.w[1]}-${sum.l[1]}-${sum.otl[1]} in ${sum.n} games`; $('labRecordSum').textContent = LAB.recordSum; $('labRecord').open = true;
     }, true);
   });
   $('labSweep').addEventListener('click', () => {
@@ -4588,12 +4597,12 @@ function startSim(DATA) {
     const options = Array.from(sel.options).map(o => [o.value, o.text]); const original = sel.value; const note = $('labNote'); const out = $('labSweepResult');
     const rows = []; let i = 0; out.innerHTML = '';
     const next = () => {
-      if (i >= options.length || LAB.stop) { sel.value = original; readTactics(); renderLabCards(); note.textContent = LAB.stop ? 'Stopped early. Rows shown are complete or marked with the games played.' : `${options.length} options, ${n} games each, for ${LAB_DIMS.find(d => d[0] === id)[1]}. Bold is the current setting. Overlapping intervals are not separated.`; return; }
+      if (i >= options.length || LAB.stop) { sel.value = original; readTactics(); renderLabCards(); $('labSweepSum').textContent = `${LAB_DIMS.find(d => d[0] === id)[1]}, ${rows.length} options, ${n} games each`; note.textContent = LAB.stop ? 'Stopped early. Rows shown are complete or marked with the games played.' : `${options.length} options, ${n} games each, for ${LAB_DIMS.find(d => d[0] === id)[1]}. Bold is the current setting. Overlapping intervals are not separated.`; return; }
       const [val, text] = options[i]; sel.value = val; readTactics();
       const head = labHead.replace('<th>Club</th>', `<th>${LAB_DIMS.find(d => d[0] === id)[1]}</th>`);
       playGames(n, note, sum => { out.innerHTML = `<table>${head}${rows.join('')}${labRow(text + ' (running)', sum, side, val === original)}</table>`; }, sum => { if (sum.n) rows.push(labRow(text + (sum.n < n ? ` (${sum.n} games)` : ''), sum, side, val === original)); out.innerHTML = `<table>${head}${rows.join('')}</table>`; i++; next(); });
     };
-    note.textContent = 'Simulating...'; next();
+    note.textContent = 'Simulating...'; $('labSweepSum').textContent = ''; $('labSweepBox').open = true; next();
   });
   $('labStop').addEventListener('click', () => { LAB.stop = true; });
   let calibT = 0;
