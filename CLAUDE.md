@@ -4,7 +4,9 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 ## What this repo is
 
-A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`.
+A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. Its tabs are Game, Rosters, Lab (the matchup lab and the reality check) and Advanced (engine settings, data sources). The second project is Play Review at `public/play-review/`, built on the same data and models.
+
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.39, sim 0.33, Play Review 0.6.
 
 ## Layout
 
@@ -15,7 +17,8 @@ public/bruins-vs-canadiens/data/*.json    the data that drives it (rosters, rati
 public/play-review/index.html             shot versus pass review of a real game; embeds xg-model, systems and its game file (fetch first, embedded fallback)
 public/play-review/data/game-*.json       one file per game, from tools/game_load.py
 tools/build.py                            re-embeds data/*.json into index.html; --check verifies
-tools/xg_fit.py                           fits data/xg-model.json from MoneyPuck shot CSVs (not in the repo; download from moneypuck.com)
+tools/xg_fit.py                           fits data/xg-model.json from MoneyPuck shot CSVs
+tools/mp_extract.py                       builds data/moneypuck-2025.json from the MoneyPuck season CSVs; --check diffs against the committed file
 tools/game_load.py                        NHL play-by-play + shift chart JSON -> play-review game file
 tools/*.js                                headless Playwright checks (smoke, calibration, nhl-average, shifts, rules)
 docs/ENGINE.md                            how the engine is organized, invariants, tuning knobs, lessons learned
@@ -23,6 +26,7 @@ docs/HISTORY.md                           what was built before version numbers 
 docs/XG-MODEL.md                          the expected-goal model and how the engine scores shots with it
 docs/PLAY-REVIEW.md                       the review page's pipeline, reconstruction, scoring and replay
 docs/MODELING.md                          index of every model: measured, calibrated or inferred, and where it lives
+docs/ROADMAP.md                           where each project stands and what comes next, in priority order
 CHANGELOG.md                              per-version changes
 ```
 
@@ -35,7 +39,7 @@ CHANGELOG.md                              per-version changes
 - Every page must keep working when opened from disk as a single file. Do not add external scripts or stylesheets beyond the Google Fonts link already there.
 - Balance is measured, not eyeballed. Before shipping an engine change, run `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and for anything touching shots or goalies, `node tools/calibration.js`. Compare against the baselines in `docs/ENGINE.md`.
 - Anything inferred or mocked (positions at a real shot, replay movement) is labeled on the page and never feeds a measured or calibrated number. `docs/MODELING.md` keeps the three kinds apart.
-- Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo; the fitted model and the compact game file go in. Re-run the fit script, not the numbers, when the data changes.
+- Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo (`raw/` is ignored); the fitted model, the ratings extract and the compact game file go in. The drop zip carries a `raw/` folder with the exact inputs and a README; `raw/README.md` has the command for each script. Re-run the script, not the numbers, when the data changes. All three scripts reproduce the committed files exactly from those inputs (`mp_extract.py --check` proves it for the ratings file).
 - The expected-goal formula lives in two places, the engine (`xgModel`) and the review page; change both or neither.
 - The matchup lab reuses the game loop (`playGames`); it has no engine logic of its own. Do not add a second way to play a game.
 - The engine is balanced at the NHL-average multipliers (every slider at 1.0, the tick mark). The build defaults in `defaults.json` deliberately run hotter (acceleration 2.3, speed 1.3, cruise 1.15, shot volume 2) because it is more fun to watch. Calibrate at 1.0, then check that the defaults still look right.
@@ -56,4 +60,10 @@ Chat (claude.ai): attach `index.html` and the data files you are changing, or pa
 
 Claude Code (CLI): run it from the repo root so this file loads automatically. Useful first commands: `node tools/smoke.js` to confirm the page runs, `python3 tools/build.py --check` to confirm data and page agree.
 
-Either way, the context that matters is in this file, `docs/ENGINE.md` and `docs/HISTORY.md`. The chat transcript that produced the engine is not needed to continue it.
+Either way, the context that matters is in this file, `docs/ENGINE.md`, `docs/HISTORY.md` and `docs/ROADMAP.md`. The chat transcript that produced the engine is not needed to continue it.
+
+How the repo was maintained from chat: each drop was a full-repo zip unpacked over the working tree and committed with the message supplied alongside it, so the git history is linear with one commit per site version. From Claude Code, commit directly; keep one commit per site version and the message style in `git log` (what changed and the version numbers in the subject).
+
+## State at handoff (site 0.39)
+
+All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/calibration.js`. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is deciding shots from the expected-goal model.

@@ -16,6 +16,7 @@ docs/ENGINE.md                     how the engine is organized, invariants, base
 docs/XG-MODEL.md                   the expected-goal model: data, method, fit, how the engine uses it
 docs/PLAY-REVIEW.md                the play-review page: pipeline, reconstruction, scoring, replay, limits
 docs/MODELING.md                   every model in the repo: what it answers, what it is built on, how it was set, where it lives
+docs/ROADMAP.md                    where each project stands and what comes next
 docs/HISTORY.md                    what was built before version numbers, in order
 CLAUDE.md                          project memory for working on this with Claude (chat or Claude Code)
 CHANGELOG.md                       version history for the projects
@@ -61,7 +62,7 @@ Everything a hockey person might question lives in `public/bruins-vs-canadiens/d
 | `ratings.json` | The formulas that turn a stat line into the skater and goalie ratings, with weights, clamps and the precedence rule between MoneyPuck-derived and stat-line ratings |
 | `systems.json` | Formations as team-relative coordinates for every system, zone-entry and dump parameters, clearing rules, breakout timing, offensive-zone motion, line rotation patterns, shift targets, change windows and the late-game bench-shortening rule, with references |
 | `physics.json` | Skating speed and acceleration (NHL EDGE-calibrated), effort, fatigue, pass and shot speeds and accuracy, puck friction and board restitution, goalie coverage and save model, shot blocking, turnover and penalty rates, officials' speeds, rink geometry, and the offside and icing benchmarks, with references |
-| `moneypuck-2025.json` | Extract of MoneyPuck's 2025-26 skaters, goalies and teams files for the two rosters: per-60 rates, percentiles, derived ratings, goalie save percentage by danger tier, team and league per-game benchmarks used by the reality check |
+| `moneypuck-2025.json` | Extract of MoneyPuck's 2025-26 skaters, goalies and teams files for the two rosters: per-60 rates, percentiles, derived ratings, goalie save percentage by danger tier, team and league per-game benchmarks used by the reality check; produced by `tools/mp_extract.py` |
 | `defaults.json` | Build defaults for the engine multipliers and both teams' systems, in the format the Advanced tab's Export button produces |
 | `xg-model.json` | The expected-goal model: logistic coefficients and recipe, MoneyPuck's danger-tier thresholds, a baseline grid, per-shooter finishing, and the holdout fit statistics; produced by `tools/xg_fit.py` from MoneyPuck shot files (see `docs/XG-MODEL.md`) |
 
@@ -83,7 +84,7 @@ A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked sh
 
 ### Tools and checks
 
-`tools/xg_fit.py` fits the expected-goal model from MoneyPuck shot files and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once with `cd tools && npm install && npx playwright install chromium`.
+`tools/mp_extract.py` builds the ratings and benchmark extract from the MoneyPuck season files (skaters, goalies, teams, lines), `tools/xg_fit.py` fits the expected-goal model from the MoneyPuck shot files, and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. The raw inputs are not committed; keep them in `raw/` (ignored) and see `raw/README.md` in the drop zip for the exact files and commands. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `smoke.js` plays a game and fails on any script error, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once with `cd tools && npm install && npx playwright install chromium`.
 
 ### Versioning
 
