@@ -1,8 +1,14 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.37 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.39 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.39
+- `tools/mp_extract.py` rebuilds the MoneyPuck ratings extract from the season CSVs and reproduces the committed file exactly (`--check`). The drop zip now carries `raw/` with every input file and a README; `raw/` is git-ignored. `xg_fit.py` pins the on-net share to the latest season so a refit reproduces the committed model.
+
+### 0.38
+- Handoff pass: `docs/ROADMAP.md` (state of each project and next steps, with the product brief summarized), CLAUDE.md state-at-handoff and commit conventions, stale references to the old Advanced-tab batch fixed, root `.gitignore`.
 
 ### 0.37
 - Home page: the Bruins vs Canadiens card art is the rink again, a Bruins rush with trails and sticks, with a score strip and a lab record chip above it.

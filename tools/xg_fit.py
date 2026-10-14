@@ -131,7 +131,7 @@ def main(paths):
         'sources': [{'file': pathlib.Path(p).name, 'rows': int(len(f)), 'from': 'https://moneypuck.com/data.htm', 'terms': 'free for non-commercial use with credit to MoneyPuck.com'} for p, f in zip(paths, frames)],
         'rowsUsed': int(len(d)), 'rowsIn': rows_in, 'exclusions': 'empty-net shots and shootout attempts',
         'goalRate': round(float(y.mean()), 4),
-        'onNetShare': round(float(d['shotWasOnGoal'].mean()), 3), 'onNetShareNote': 'share of unblocked shots that hit the net; the engine divides xG by this when it scores a puck that has already reached the goalie',
+        'onNetShare': round(float(d.loc[d['season'] == seasons[-1], 'shotWasOnGoal'].mean()), 3), 'onNetShareNote': f'share of unblocked shots that hit the net in the {seasons[-1]}-{str(seasons[-1] + 1)[2:]} file; the engine divides xG by this when it scores a puck that has already reached the goalie',
         'tiers': {'low': {'maxXg': 0.08}, 'medium': {'maxXg': 0.2}, 'high': {'minXg': 0.2},
                   'note': 'MoneyPuck danger tiers are defined by xG; these thresholds reproduce the league tier goal rates in moneypuck-2025.json'},
         'model': model,

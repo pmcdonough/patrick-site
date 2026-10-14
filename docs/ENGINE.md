@@ -4,7 +4,7 @@ How `public/bruins-vs-canadiens/index.html` is put together, what must stay true
 
 ## File structure
 
-The file is, in order: CSS; page markup (coaching cards, scoreboard, canvas, control row, panel with Game, Rosters and Advanced tabs, About dialog, version footer); six `<script type="application/json" id="data-NAME">` blocks holding copies of `data/*.json`; the engine inside `function startSim(DATA)`; and a small async loader at the end that fetches `data/*.json`, falls back to the embedded blocks, records which copy was used in `window.rinkDataFrom`, and calls `startSim`.
+The file is, in order: CSS; page markup (coaching cards, scoreboard, canvas, control row, panel with Game, Rosters, Lab and Advanced tabs, About dialog, version footer); seven `<script type="application/json" id="data-NAME">` blocks holding copies of `data/*.json`; the engine inside `function startSim(DATA)`; and a small async loader at the end that fetches `data/*.json`, falls back to the embedded blocks, records which copy was used in `window.rinkDataFrom`, and calls `startSim`.
 
 `startSim` exposes `window.rinkSim = { tick, teams, game, puck, DATA, cfg }` for the headless checks. `tick(dt)` advances the game by `dt` seconds (the frame loop uses 0.03 s substeps); the tools drive it directly, thousands of ticks per second, with the drawing loop paused.
 
