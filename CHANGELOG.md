@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.36 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.37 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.37
+- Home page: the Bruins vs Canadiens card art is the rink again, a Bruins rush with trails and sticks, with a score strip and a lab record chip above it.
 
 ### 0.36
 - Sim 0.33.
