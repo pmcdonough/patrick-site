@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. Its tabs are Game, Rosters, Lab (the matchup lab and the reality check) and Advanced (engine settings, data sources). The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.41, sim 0.33, Play Review 0.6.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.42, sim 0.34, Play Review 0.6.
 
 ## Layout
 
@@ -21,6 +21,8 @@ tools/build.py                            re-embeds data/*.json into index.html;
 tools/xg_fit.py                           fits data/xg-model.json from MoneyPuck shot CSVs
 tools/mp_extract.py                       builds data/moneypuck-2025.json from the MoneyPuck season CSVs; --check diffs against the committed file
 tools/game_load.py                        NHL play-by-play + shift chart JSON -> play-review game file
+tools/lab.js                              parallel, seeded headless matchups: report vs league and reference, --compare, --sweep
+tools/baselines.json                      saved reference runs for lab.js (write with --save)
 tools/*.js                                headless Playwright checks (smoke, calibration, nhl-average, shifts, rules)
 docs/ENGINE.md                            how the engine is organized, invariants, tuning knobs, lessons learned
 docs/HISTORY.md                           what was built before version numbers existed, in order
@@ -42,7 +44,7 @@ CHANGELOG.md                              per-version changes
 - Every number a hockey person might question lives in `data/`, not in the script. If you add a threshold to the engine, put it in `physics.json` or `systems.json` with a `desc`, and read it from `PH` or `SYS`.
 - After editing anything in `data/` or a game file, run `python3 tools/build.py` so the embedded copies in both pages match. Pages fetch their data over HTTP and fall back to the embedded copies from `file://`.
 - Every page must keep working when opened from disk as a single file. Do not add external scripts or stylesheets beyond the Google Fonts link already there.
-- Balance is measured, not eyeballed. Before shipping an engine change, run `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and for anything touching shots or goalies, `node tools/calibration.js`. Compare against the baselines in `docs/ENGINE.md`.
+- Balance is measured, not eyeballed. Before shipping an engine change, run `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and `node tools/lab.js` and `node tools/lab.js --nhl` (100 games each, about 35 s). The report compares each club with the league and with the saved reference; a seeded run reproduces exactly, so any change from the reference is the engine's doing. Re-save the reference with `--save` only for an intended change, and say so in the commit. A system or aggression effect is real only when its interval in `--compare` or `--sweep` excludes zero; judge by expected-goal differential first, since records need thousands of games to separate settings.
 - Anything inferred or mocked (positions at a real shot, replay movement) is labeled on the page and never feeds a measured or calibrated number. `docs/MODELING.md` keeps the three kinds apart.
 - Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo (`raw/` is ignored); the fitted model, the ratings extract and the compact game file go in. `docs/RAW-INPUTS.md` lists the exact inputs, where to download each and the command for each script; run `xg_fit.py` with `.venv/bin/python` (pandas, scikit-learn). Re-run the script, not the numbers, when the data changes. All three scripts reproduce the committed files byte for byte from those inputs (`mp_extract.py --check` proves it for the ratings file; for the other two, `git status` stays clean after a run). Do not hand-edit their outputs.
 - The expected-goal formula lives in two places, the engine (`xgModel`) and the review page; change both or neither.
@@ -68,6 +70,6 @@ The sim's script is about 1,500 lines after the embedded data. Its sections are 
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.41)
+## State (site 0.42)
 
-All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. Baselines in `docs/ENGINE.md` were re-measured at sim 0.33. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is deciding shots from the expected-goal model.
+All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels identical to the reference), `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.34, 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is the suspect system effects listed there.

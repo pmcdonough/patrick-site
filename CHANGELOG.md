@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.41 = sim 0.33 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.42 = sim 0.34 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.42
+- Sim 0.34. `tools/lab.js`: parallel, seeded, reproducible headless matchups with confidence intervals, a report against the league and a saved reference (`tools/baselines.json`), and paired comparisons and sweeps. First sweep of every Bruins card recorded in `docs/ENGINE.md`.
 
 ### 0.41
 - Link previews work: the Open Graph tags and share image moved from an unserved root `index.html` into `public/`. The stale root copy and `assets/` are gone.
@@ -65,6 +68,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.34
+- Every game starts from the same state. `newGame` now resets player and goalie positions and momentum, the per-player burst, sprint and rushed flags, the dump and line-change timers and the puck, which used to carry over from the previous game. Play is unchanged; a lab run's games are now independent and a seeded run reproduces exactly.
 
 ### 0.33
 - Lab tab compressed: each part is a collapsible section with a one-line summary (the matchup in brief, the record of the last run, how many reality-check cells are off, what was swept). Matchup and Record open by default; the reality check, the sweep and the caveat are collapsed. The record table folds the 95% interval under the win percentage so it fits without scrolling.

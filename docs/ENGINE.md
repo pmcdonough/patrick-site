@@ -50,11 +50,46 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 
-## Baselines (sim 0.33)
+## Baselines (sim 0.34)
 
-At NHL-average multipliers, per team per game, re-measured at sim 0.33 over twenty games (the v0.29 numbers held): about 21 to 28 shots on goal, 3.3 to 4.2 goals on 3.7 to 4.0 expected, 43 unblocked attempts on average (Boston about 35, Montreal about 51) in a 28 / 13 / 3 low / medium / high split (measured at v0.29; league 31 / 8 / 3), 3 offsides (Boston about 1, Montreal about 5), 5 to 6 icings; mean shift about 51 s, p90 about 73 s. In the harness output `blocked` is blocks a team made, so a team's unblocked attempts are its attempts minus the opponent's `blocked`. `nhl-average.js` plays six games, which is noisy; a single team's goals can land outside the range.
+Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight games at a time. Each game seeds `Math.random`, so a run reproduces exactly and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
 
-At build defaults (speed 1.3x, shot volume 2x), ten games: about 26 to 34 shots on goal and 4 to 5 goals per team on 4.5 to 5 expected. Boston's dump-and-chase system produces fewer attempts than Montreal's stretch and umbrella.
+At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-26):
+
+| | League | BOS | MTL |
+|---|---|---|---|
+| Goals | 3.08 | 4.20 | 3.59 |
+| Expected goals | 3.13 | 3.95 | 4.08 |
+| Shots on goal | 27.8 | 23.8 | 27.9 |
+| Unblocked attempts | 42.7 | 36.8 | 55.6 |
+| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 18.0 / 14.0 / 3.7 | 35.7 / 14.5 / 2.6 |
+| Offsides | 3.0 | 2.4 | 5.5 |
+| Icings | 4.2 | 6.4 | 5.1 |
+
+What is off, in order of how much it matters: both clubs generate about 28% more expected goals than the league, almost all of it from medium-danger looks (75% over); Montreal misses the net about 28 times a game (league 15); Montreal is offside nearly twice the league rate; icings run high. At build defaults (speed 1.3x, shot volume 2x) the clubs score 4.5 to 5.2 a game on 4.8 expected; that level is for watching, not for judging systems.
+
+## System effects (sim 0.34)
+
+The question the lab exists to answer: does changing a card move the result, by more than the noise, in a direction a hockey person would accept? First sweep: every Bruins card against the Canadiens' build cards, NHL-average tick, 100 games per option, the same seeds for every option (`node tools/lab.js --nhl --sweep BOS.<card>`). Differences are against the current Bruins card, with 95% intervals.
+
+| Bruins card | Change | xG for | xG against | Points % |
+|---|---|---|---|---|
+| Defensive zone | zone to man | +0.64 | +2.79 | -26% |
+| Entry | dump to chip | -0.84 | +0.19 | +2% (goals do not fall) |
+| Offensive zone | cycle to crash | -0.94 | -0.25 | -2% |
+| Offensive zone | cycle to umbrella | +0.44 | -0.18 | +4% |
+| Forecheck | 2-1-2 to 1-2-2 or 1-3-1 | 0 to +0.2 | -0.25 to -0.37 | +4% to +9% |
+| Breakout | boards to stretch | +0.16 | -0.15 | +9% |
+| Penalty kill | pressure to diamond | +0.12 | -0.45 | +9% |
+| Power play | any change | within ±0.1 | within ±0.1 | noise |
+| Aggression | 0.55 to 1.0 | +0.28 | -0.28 | +10% |
+
+What it says:
+
+- Records are noise at these sample sizes. A points-percentage difference carries about ±12 points at 100 games; a 50-game record about ±14 on win percentage. Only the man-on-man result separates on points. Expected-goal differential separates at about ±0.35 a game, so read it first. The reality of hockey is the same: an 82-game season does not separate two systems either.
+- The cards do matter. Eight of the nine rows move expected goals by more than their interval.
+- Several directions are suspect and should be fixed before anyone acts on them: man-on-man gives up 68% more expected goals, far beyond any real difference between coverage schemes, and the Canadiens play it by default, which also inflates every Bruins number above; crashing the net lowers expected goals for, the opposite of what it is for; chip-and-chase cuts expected goals by a fifth while goals hold, so pucks are going in that the expected-goal model never saw (worth tracing goals scored with `puck.shot` false); the power-play systems do nothing measurable; aggression has no monotonic effect on points.
+- The pairing by seed barely narrows the intervals: a game diverges within seconds of a changed card. The value of seeds is reproducibility.
 
 ## Tuning knobs most likely to matter
 

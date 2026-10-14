@@ -1,25 +1,28 @@
 # Roadmap
 
-Where each project stands at site 0.41 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.42 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
 A hockey engine whose decisions are tuned to public data is only a toy until it can be checked against what real players did. The path is: real game events in (done, from the NHL play-by-play and shift chart), the model's alternative for each decision out (done for shots versus passes and drives), then validation of those alternatives against a season of real decisions, then tracking data so the positions stop being inferred. Each step makes the matchup lab more believable, because the lab is only as good as the decision model under it.
 
-## Bruins vs Canadiens (sim 0.33)
+## Bruins vs Canadiens (sim 0.34)
 
-1. Decide shots from the expected-goal model instead of the geometric shot quality (`shotDecision` in `physics.json`, `carrierThink` in the engine). `docs/XG-MODEL.md` describes the gap. Recalibrate at the NHL-average tick afterward (`node tools/calibration.js`, `node tools/nhl-average.js`).
-2. Defensive coverage that produces the real danger-tier mix (the sim has too many medium-danger looks; `tierGoalScale` compensates). Fixing coverage, not the scale, is the right move.
-3. Overtime at three-on-three. Overtime is five minutes at full strength now; the lab's OTL counts would shift a little.
-4. Validate system effects. The lab compares strategies inside the model; nothing says a 1-2-2 moves a real game the way it moves a simulated one. The honest first step is a season of real team results against the systems each club is known to run, which needs observed systems per club (item 5 in `docs/MODELING.md`).
-5. Mobile layout and a follow-the-puck camera, discussed and parked early (`docs/HISTORY.md` item 11).
+1. Make the system effects believable before tuning anything else (`docs/ENGINE.md`, System effects): man-on-man coverage gives up 68% more expected goals, crashing the net lowers expected goals, chip-and-chase scores goals the expected-goal model never saw, and the power-play systems do nothing measurable. Each is a measured finding with a `tools/lab.js --sweep` command to re-check it.
+2. Decide shots from the expected-goal model instead of the geometric shot quality (`shotDecision` in `physics.json`, `carrierThink` in the engine). `docs/XG-MODEL.md` describes the gap. Recalibrate at the NHL-average tick afterward (`node tools/calibration.js`, `node tools/nhl-average.js`).
+3. Defensive coverage that produces the real danger-tier mix (the sim has too many medium-danger looks; `tierGoalScale` compensates). Fixing coverage, not the scale, is the right move.
+4. Overtime at three-on-three. Overtime is five minutes at full strength now; the lab's OTL counts would shift a little.
+5. Validate system effects. The lab compares strategies inside the model; nothing says a 1-2-2 moves a real game the way it moves a simulated one. The honest first step is a season of real team results against the systems each club is known to run, which needs observed systems per club (item 5 in `docs/MODELING.md`).
+6. Mobile layout and a follow-the-puck camera, discussed and parked early (`docs/HISTORY.md` item 11).
 
 ## Matchup lab (inside the sim)
 
-1. Two-dimension sweeps (our forecheck against each of their breakouts) as a grid of win percentages.
-2. Save and compare runs: keep the last few results so two card settings can sit side by side without re-running.
-3. A per-game log for a run (score, OT or SO, shots) that can be exported, so a result can be checked outside the page.
-4. Faster runs: 4,000 ticks per animation frame is a compromise between speed and a responsive page; a Web Worker would let a 100-game run finish in the background.
+1. Lead with expected-goal differential and its interval, not the record. At 50 games a win percentage carries about ±14 points and separates almost nothing; expected-goal differential separates at about ±0.35 a game. `tools/lab.js` already reports both; the page should say which settings are separated and which are not.
+2. Run the lab at the NHL-average tick by default (or say clearly that it is using the watching settings). Systems are judged at the calibrated level; the build defaults score 50% more goals than the league.
+3. Two-dimension sweeps (our forecheck against each of their breakouts) as a grid of win percentages.
+4. Save and compare runs: keep the last few results so two card settings can sit side by side without re-running.
+5. A per-game log for a run (score, OT or SO, shots) that can be exported, so a result can be checked outside the page.
+6. Faster runs: 4,000 ticks per animation frame is a compromise between speed and a responsive page; a Web Worker would let a 100-game run finish in the background.
 
 ## Play Review (0.6)
 

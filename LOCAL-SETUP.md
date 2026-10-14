@@ -80,14 +80,16 @@ The live site at pmcdonough.com serves `public/` through Cloudflare.
 
 ## 7. Baselines
 
-`docs/ENGINE.md` has the numbers the engine should hit. Re-measure after any engine change:
+`docs/ENGINE.md` has the numbers the engine hits and how they compare with the league. Re-measure after any engine change:
 
 ```
-node tools/calibration.js       # ten-game matchup at build defaults: record and reality check
-node tools/nhl-average.js       # six games with every multiplier at 1.0 (the calibrated tick)
+node tools/lab.js --nhl         # 100 games at the NHL-average tick: report vs league and the saved reference
+node tools/lab.js               # the same at build defaults
 node tools/shifts.js            # shift-length distribution and change windows
 node tools/rules.js             # offsides and icings per game against league rates
 ```
+
+A seeded `lab.js` run reproduces exactly, so "identical to the reference" means the engine plays the same games as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
 
 ## 8. Working on it from Claude Code
 
@@ -100,7 +102,7 @@ The routine for any change:
 python3 tools/build.py           # re-embed data into both pages after any data edit
 python3 tools/build.py --check
 node tools/smoke.js
-node tools/calibration.js        # for anything touching shots, goalies or decisions
+node tools/lab.js --nhl          # for any engine change; also tools/lab.js at build defaults
 ```
 
 Then follow "Shipping a version" in `CLAUDE.md`: bump the versions, add a changelog section, one commit with the version numbers in the subject, push.

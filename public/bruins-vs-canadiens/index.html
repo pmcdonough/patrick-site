@@ -3070,7 +3070,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.33';
+  const VERSION = '0.34';
   $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -3231,7 +3231,8 @@ function startSim(DATA) {
   const zone = (t, x) => { const fx = toFx(t, x); return fx < 64 ? 'own' : fx > 114 ? 'off' : 'neutral'; };
 
   // ---------- Game state ----------
-  const puck = { x: 100, y: 42.5, vx: 0, vy: 0, carrier: null, lastTeam: null, shot: false, shooter: null, releaseTeam: null, releaseFx: 0, touched: true, sinceSave: 99, xg: undefined };
+  const freshPuck = () => ({ x: 100, y: 42.5, vx: 0, vy: 0, carrier: null, lastTeam: null, shot: false, shooter: null, releaseTeam: null, releaseFx: 0, touched: true, sinceSave: 99, xg: undefined });
+  const puck = freshPuck();
   function release(from) { puck.releaseTeam = from.team; puck.releaseFx = toFx(from.team, from.x); puck.touched = false; puck.raceJudged = false; }
   const endDot = (t, y) => ({ x: ownNet(t).x + t.dir * 20, y: y < 42.5 ? 20.5 : 64.5 });
   const neutralDot = (t, y) => ({ x: t.dir > 0 ? 120 : 80, y: y < 42.5 ? 20.5 : 64.5 });
@@ -3530,11 +3531,15 @@ function startSim(DATA) {
     game.overtime = false; game.shootout = false; game.recorded = false;
     teams.forEach(t => {
       t.score = t.shots = t.attempts = t.blocked = t.missed = t.poss = t.oz = t.take = t.pim = t.changes = t.xg = t.faceoffs = t.faceoffsWon = t.freezes = t.offsides = t.icings = t.clears = 0; t.tier = { low: 0, medium: 0, high: 0 }; t.dir = t.id ? -1 : 1; t.special = false;
+      delete t.dumpSide; delete t.dumpT; delete t.changeJitter; delete t.rimT;
+      // every game starts from the state a freshly built team has, so a game never depends on how the last one ended
+      [...t.all, ...t.goalies].forEach(p => { p.x = 100; p.y = 42; p.vx = 0; p.vy = 0; delete p.burst; delete p.rushed; delete p.sprint; delete p.trail; delete p.target; });
       t.all.forEach(p => { p.box = 0; p.onIce = false; p.leaving = false; p.entering = false; p.subOn = false; p.shift = 0; p.toi = 0; p.sub = null; p.gg = 0; p.dist = 0; p.topSpd = 0; p.bursts = 0; p.blocks = 0; p.breakaway = false; p.oneTimers = 0; }); t.flash = null;
       t.goalies.forEach(g => { g.toi = 0; g.onIce = false; g.ang = undefined; });
       t.rot = { F: -1, D: -1 }; t.onF = []; t.onD = [];
       stoppageChange(t, true);
     });
+    for (const k of Object.keys(puck)) delete puck[k]; Object.assign(puck, freshPuck()); game.whistle = null;
     game.period = 1; game.clock = 1200; game.over = false; $('log').innerHTML = '';
     log('Puck drop at TD Garden. Bruins attack right.');
     setFaceoff(100, 42.5, 'Faceoff');
