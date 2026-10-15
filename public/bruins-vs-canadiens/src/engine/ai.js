@@ -1,8 +1,8 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.45';
-import * as DM from './detmath.js?v=0.45';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.46';
+import * as DM from './detmath.js?v=0.46';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
@@ -298,7 +298,8 @@ export function install(S) {
   function assignTargets(dt) {
     // a pass on its way to a teammate is still that team's puck: both sides keep their structure and the defense
     // plays the receiver, instead of everyone treating it as a loose puck for the length of the pass
-    const inFlight = !puck.carrier && !puck.shot && puck.receiver && puck.receiver.onIce && !puck.receiver.box && !puck.receiver.leaving && puck.lastTeam === puck.receiver.team;
+    const inFlight = !puck.carrier && !puck.shot && puck.receiver && puck.receiver.onIce && !puck.receiver.box && !puck.receiver.leaving && puck.lastTeam === puck.receiver.team
+      && DM.hypot(puck.vx, puck.vy) > PH.pass.inFlightMinFtPerSec;   // a pass that has died is a loose puck
     const carrier = puck.carrier || (inFlight ? puck.receiver : null);
     const loose = !carrier;
     for (const t of teams) {

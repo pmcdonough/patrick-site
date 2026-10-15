@@ -56,7 +56,7 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 - The engine's math is exact or comes from `detmath.js`; never `Math.sin`, `cos`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`, which differ in the last bit between browsers and Node.
 
-## Baselines (sim 0.43 references)
+## Baselines (sim 0.46 references)
 
 Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight at a time in Node. Each game plays its own seed (`newGame(seed)`), and the engine's trigonometry and logarithms come from `detmath.js`, so a run reproduces exactly, in Node and in any browser, and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. Each reference also keeps a fingerprint of every game, and `--order` replays the seeds in reverse order in one process to prove no state leaks between games, and `--pool` plays them in the page's own workers to prove the page and Node agree. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
 
@@ -64,15 +64,15 @@ At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-2
 
 | | League | BOS | MTL |
 |---|---|---|---|
-| Goals | 3.08 | 3.29 | 2.96 |
-| Expected goals | 3.13 | 5.87 | 5.08 |
-| Shots on goal | 27.8 | 34.8 | 33.3 |
-| Unblocked attempts | 42.7 | 51.4 | 62.0 |
-| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 22.9 / 21.6 / 5.5 | 37.8 / 16.2 / 4.5 |
-| Offsides | 3.0 | 2.5 | 5.2 |
-| Icings | 4.2 | 7.8 | 5.8 |
+| Goals | 3.08 | 3.24 | 2.92 |
+| Expected goals | 3.13 | 5.99 | 5.41 |
+| Shots on goal | 27.8 | 35.2 | 34.5 |
+| Unblocked attempts | 42.7 | 51.7 | 63.6 |
+| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 22.5 / 22.0 / 6.0 | 37.6 / 17.5 / 4.9 |
+| Offsides | 3.0 | 2.3 | 5.1 |
+| Icings | 4.2 | 8.0 | 6.3 |
 
-These are the references `tools/lab.js --nhl` compares against (`tools/baselines.json`), saved at sim 0.43 and unchanged through 0.45. The sim 0.35 numbers they replaced were within a fifth of an interval of them.
+These are the references `tools/lab.js --nhl` compares against (`tools/baselines.json`), saved at sim 0.46 when a dead pass became a loose puck (every game changed; no average moved by more than one combined interval). The sim 0.43 and 0.35 references before them were within noise of these.
 
 Goals match the league because `goalie.tierGoalScale` is 0.39. Everything else is honest: since 0.35 a carrier takes every look worth taking, so the sim's chance count shows how many looks its defense gives up, which is 60 to 90% too many, mostly medium-danger looks off passes into the slot (Boston, attacking Montreal's man coverage, gets the most). Montreal misses the net about 28 times a game (league 15) and is offside nearly twice the league rate; icings run high. At build defaults (speed 1.3x, shot volume 2x) goals are 2.9 to 3.5 a game on 5 to 5.7 expected, and Boston ices it about 10 times a game.
 
@@ -133,5 +133,6 @@ Things that were wrong once and the fix, so nobody reintroduces them.
 - The xG model's unmeasured features (puck speed before the shot, off wing) must take their dataset means, or every shot is inflated by about a third. MoneyPuck's rush flag is empty in 2025-26 and must not be used.
 - The old distance-box tiers hid a shot mix that was far too close to the net; the first xG swap tripled goals until the decision rates were retuned against the real tier split.
 - Measuring pace: compare builds with the same harness and the same multipliers; a quick harness that skipped whistle ticks produced misleading averages once.
+- Play frozen for a period (before 0.46): a pass that died just short of the far blue line stayed "in flight" because nothing checked that it was still moving. Its receiver was held onside at fx 106, the defense played him instead of the puck, and a defender standing within 6 ft kept the dead-puck whistle from blowing, so one line stayed out for up to 20 minutes, in about one game in ten at the build defaults. A pass now counts as in flight only above `pass.inFlightMinFtPerSec`. Letting the receiver skate up to the line also unfroze it, but it brought back the blue-line overshoot (offsides up by a goal's worth a game), so that half was dropped. `node --test tools/test` plays the two seeds that froze.
 - Math that differs between engines: before 0.43 the engine used `Math.sin` and friends, and a seeded game played differently in Node than in Chromium (2 of 20 games at first), because browsers may round those in the last bit however they like. `detmath.js` fixed it for every engine.
 - Sample size: ten games cannot separate two close strategies; at 50% the Wilson interval on 10 games is 24 to 76 points wide, on 100 games about 40 to 60. The lab prints the interval for that reason.

@@ -122,6 +122,8 @@
    "ratePerSec": 0.6,
    "powerPlayRatePerSec": 1.4
   },
+  "inFlightMinFtPerSec": 10,
+  "inFlightNote": "A pass counts as on its way to the receiver, with both teams keeping their structure and the defense playing the receiver, only while it moves faster than inFlightMinFtPerSec. Slower than that it has died: it is a loose puck and both teams go for it. Before sim 0.46 a pass that stopped short stayed in flight forever, and a pass that died just short of the far blue line froze play for up to a period (the receiver was held onside and nobody else chased it).",
   "controlSec": 0.35,
   "controlNote": "In the offensive zone a receiver needs controlSec with the puck before he makes a discretionary pass (the expected-goal pass and the open-man pass); shots and the stuck-play passes are not held back. Without it the attacking team moved the puck several times a second. It does not apply in the other zones, where a defenseman who cannot move the puck clears it."
  },

@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.56 = sim 0.45 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.57 = sim 0.46 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.57
+- Sim 0.46. A new unit test plays the two seeds that froze and fails if the puck sits loose and still for more than 5 seconds or a shift runs past 3 minutes.
 
 ### 0.56
 - Play Review 0.9 (restructure step 4). `tools/smoke.js` checks both projects' version stamps, including Play Review's imports from the sim.
@@ -125,6 +128,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.46
+- Fixed play freezing for up to a period, the cause of the long shifts on the roadmap. A pass that died just short of the far blue line counted as still on its way to its receiver, who was held onside 8 ft back; the defense played him instead of the puck, and a defender standing close by kept the dead-puck whistle from blowing. In about one game in ten at the build defaults nobody touched the puck again for minutes, and the line on the ice stayed out the whole time. A pass now counts as on its way only while it moves faster than 10 ft/s (`pass.inFlightMinFtPerSec` in `physics.json`); slower than that it is a loose puck and both teams go for it.
+- In 80 seeded games the longest the puck now sits loose and still is 3 seconds (the dead-puck whistle), against up to 20 minutes before; shifts average 47 seconds with the longest at 140.
+- References re-saved for this change. Every game changes, since dead passes are common, but no average moved by more than one combined interval; offsides, which a second version of the fix pushed up, did not move.
 
 ### 0.45
 - Random numbers are passed in, not patched in. `sim.newGame(seed)` gives the game its own seeded generator (`src/engine/rng.js`) and every draw in the engine goes through it; `newGame()` without a seed uses `Math.random`. The tools, the strategy test's workers and its in-page fallback no longer replace `Math.random` to seed a game.

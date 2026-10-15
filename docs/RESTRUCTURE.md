@@ -13,7 +13,7 @@ Status: done, sites 0.50 to 0.56 (2026-10-15). Written as a plan at site 0.49, s
 | 4, Play Review | Play Review 0.9: its own `style.css` and `src/main.js`, scoring with the sim's `xg.js`, `rink.js` and `detmath.js` | they stayed in the sim's `engine/` folder instead of `public/shared/`, so their own imports carry the sim's stamp |
 | 5, docs | this pass (no site version: nothing under `public/` changed); `tools/browsers.js` added | none |
 
-Every step kept the references identical game for game, except sim 0.43, which changed the engine's math on purpose. A long-shift bug found on the way (a skater out for most of a period in 2 of 40 seeded games, with either math) is roadmap item 0.
+Every step kept the references identical game for game, except sim 0.43, which changed the engine's math on purpose. A long-shift bug found on the way (a skater out for most of a period in 2 of 40 seeded games, with either math) turned out to be play freezing after a dead pass; sim 0.46 fixed it.
 
 The sim is one HTML file of about 5,400 lines: 250 of CSS, 230 of markup, 2,900 of embedded data (the expected-goal model alone is one 93,000-character line) and 2,000 of script, all of it inside one `startSim(DATA)` closure. Play Review is the same shape at 1,300 lines. This plan moves both onto plain ES modules served over HTTP, in steps that each ship on their own and each prove the engine still plays the same hockey.
 

@@ -56,3 +56,20 @@ test('the plan drawer offers only choices the systems data defines', async () =>
   const SECTION = { fore: 'forecheck', brk: 'breakout', entry: 'entry', oz: 'offensiveZone', dz: 'defensiveZone', pp: 'powerPlay', pk: 'penaltyKill' };
   for (const [card, section] of Object.entries(SECTION)) for (const v of E.options('BOS', card)) assert.ok(SYS[section][v], `${card} offers ${v}, which systems.json ${section} does not define`);
 });
+
+test('play never freezes and nobody stays out for a period', async () => {
+  // Seeds 1 and 4 at the build defaults froze before sim 0.46: a pass died just short of the far blue line, stayed
+  // "in flight" with its receiver held onside, nobody else chased it, and one line stayed out for most of a period.
+  const E = await load();
+  const sim = E.create();
+  for (const seed of [1, 4]) {
+    let still = 0, worstStill = 0, worstShift = 0, who = '';
+    E.play(sim, seed, s => {
+      const p = s.puck;
+      still = !s.game.faceoff && !p.carrier && Math.hypot(p.vx, p.vy) < 2 ? still + 0.03 : 0; worstStill = Math.max(worstStill, still);
+      for (const t of s.teams) for (const q of t.all) if (q.onIce && q.shift > worstShift) { worstShift = q.shift; who = `${t.abbr} #${q.num}`; }
+    });
+    assert.ok(worstStill <= 5, `seed ${seed}: the puck sat loose and still for ${worstStill.toFixed(0)} s`);
+    assert.ok(worstShift <= 180, `seed ${seed}: ${who} stayed on for ${worstShift.toFixed(0)} s`);
+  }
+});
