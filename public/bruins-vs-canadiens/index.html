@@ -6,7 +6,7 @@
 <link rel="icon" href="data:,">
 <title>Bruins vs Canadiens</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.50">
+<link rel="stylesheet" href="style.css?v=0.51">
 </head>
 <body>
 
@@ -111,8 +111,8 @@
         <p class="hint explain" id="baseExplain">The baseline plays your plan against theirs, 100 games at the NHL settings. Every test after it plays <button type="button" class="tip" data-term="same" aria-label="What does the same games mean?">the same games</button> with the plans you change, so a difference comes from your changes, not from easier games. These plans are the lab's own; the game you watch keeps its own.</p>
         <div id="baseRecord" class="calib lab"></div>
         <details class="more" id="realBox" hidden>
-          <summary>Compared with the real 2025-26 teams <small id="realScore"></small></summary>
-          <p class="hint">Every number from the baseline games, per team per game, next to what that team really did in 2025-26 and the league average. Goals and faceoffs land on the real numbers. The sim creates too many good chances, mostly medium-danger looks off passes into the slot, and runs high on shots, goalie freezes and icings. Read its chance numbers as a comparison between plans, not as a forecast of a real score.</p>
+          <summary>How the baseline compares with the real 2025-26 teams <small id="realScore"></small></summary>
+          <p class="hint">Every number from the baseline games, per team per game, next to what that team really did in 2025-26 and the league average. It grades the baseline only: tests are compared with the baseline, not with the real teams. Goals and faceoffs land on the real numbers. The sim creates too many good chances, mostly medium-danger looks off passes into the slot, and runs high on shots, goalie freezes and icings. Read its chance numbers as a comparison between plans, not as a forecast of a real score.</p>
           <div id="calib" class="calib real"></div>
           <p class="hint">On target means within 15% of that team's real 2025-26 number; well above or well below means off by more than half. The sim plays only these two teams against each other, while the real numbers came against the whole league. Data: MoneyPuck 2025-26 team and league files, league offside and icing rates.</p>
         </details>
@@ -251,7 +251,7 @@
 </dialog>
 <footer class="version">Bruins vs Canadiens <span id="version"></span></footer>
 
-<script type="module" src="src/main.js?v=0.50"></script>
+<script type="module" src="src/main.js?v=0.51"></script>
 
 </body>
 </html>

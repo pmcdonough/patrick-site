@@ -53,7 +53,7 @@
   article.change h4 small { font: 400 0.85rem var(--body); color: var(--fg-dim); margin-left: 6px; }
   .headline.sm { font-size: 1.15rem; }
   .side .cgrid.lgrid { grid-template-columns: 1fr 1fr; gap: 8px 10px; }
-  .labflow { display: flex; flex-direction: column; gap: 14px; max-width: 1000px; margin-inline: auto; }
+  .labflow { display: flex; flex-direction: column; gap: 14px; max-width: 1000px; width: 100%; margin-inline: auto; }
   .basehead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
   .basehead .vt { margin: 0; }
   .planpair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -279,3 +279,30 @@
   .pl span small { font-size: 0.68rem; margin-left: 3px; }
   .legend { font-size: 0.7rem; color: var(--fg-dim); margin: 6px 0 0; line-height: 1.4; }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* the real-teams table: a Sim and a Real column for each team */
+  .calib.real thead th.tm { text-align: center; border-bottom: 0; padding-bottom: 0; color: var(--fg); }
+  .calib.real thead tr + tr th { padding-top: 2px; }
+  .calib.real td.n { font-weight: 700; }
+  .calib.real td.n .pill { display: block; width: max-content; margin-top: 4px; font-weight: 600; }
+  .calib.real td.r { color: var(--fg-dim); white-space: nowrap; }
+  .calib.real .rec { display: block; font-size: 0.78rem; font-weight: 400; color: var(--fg-dim); }
+  /* records: no wider than they need, and a test's change rows set apart */
+  .calib.lab table { max-width: 720px; }
+  .calib.lab tr.grp td { border-top: 2px solid var(--line); }
+  .calib.lab tr.chg td { font-weight: 700; }
+  .calib.lab tr.chg td:first-child { color: var(--fg); }
+  /* a result still inside the range of luck reads quieter than a clear one */
+  .v.flat .big { color: var(--fg-dim); font-weight: 600; }
+  /* once there is a baseline, Test is the main button and Rerun the quieter one */
+  button.secondary { background: transparent; border: 1.5px solid var(--link); color: var(--link); font: 700 1.05rem var(--display); letter-spacing: 0.03em; padding: 8px 17px; }
+  button.primary:disabled, button.secondary:disabled { opacity: 1; background: transparent; border: 1.5px dashed var(--line); color: var(--fg-dim); }
+  .cgrid label.agg > span { display: flex; justify-content: space-between; gap: 8px; }
+  .aggv { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg); font-size: 0.78rem; }
+  /* focus rings only for the keyboard, not after a click */
+  summary:focus:not(:focus-visible) { outline: none; }
+  summary:focus-visible, button.linkish:focus-visible { outline: 2px solid var(--away); outline-offset: 2px; border-radius: 4px; }
+  /* flex children may shrink below their content, so a wide table scrolls inside its box instead of widening the page */
+  .view > *, .labflow > *, .results > *, .tested > *, article.change > * { min-width: 0; }
+  @media (max-width: 600px) { .calib.real td.m span { display: none; } .calib.real td.m { min-width: 7.5em; } }
+  .calib.real td.r { padding-right: 12px; }

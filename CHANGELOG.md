@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.61 = sim 0.50 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.62 = sim 0.51 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.62
+- Sim 0.51 (the Game plan lab's results read more plainly; every shot attempt is filed). The page no longer scrolls sideways on a phone in the lab. `tools/lab.js` counts a teammate's block in unblocked attempts; both references re-saved for the block counts alone (every goal, shot and expected goal identical).
 
 ### 0.61
 - Documentation sweep, in the apps and in the repo. Home page: the sim's card points to how the models work. Repo: `docs/MODELING.md` gains a technical summary of the engine as a model (state and time, kinematics, the decision policy, the outcome models, calibration, the lab's inference) and a table of what full tracking data would change in each model; `README.md` gains a modeling section; `docs/XG-MODEL.md` and `docs/PLAY-REVIEW.md` gain their own tracking sections; stale details fixed across `README.md`, `MODELING.md` (save scale, file locations, the lab's statistics), `XG-MODEL.md` (file locations, sim 0.29 numbers labeled), `PLAY-REVIEW.md`, `ENGINE.md` (the 0.35 system effects flagged for a re-run), `ROADMAP.md` and `LOCAL-SETUP.md`.
@@ -143,6 +146,15 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.51
+- Every shot attempt is filed as on goal, missed or blocked. A shot a skater caught cleanly in flight was counted as an attempt and nothing else, about 1 a game for the Bruins and 3.5 for the Canadiens at the baseline plans. A defender's catch is now a blocked shot, and so is a teammate's in the lane, as NHL scoring counts it. Only the counts changed: every game plays exactly as before.
+- The real-teams comparison is titled as the baseline's and says tests are not graded against the real teams. Each team gets a Sim and a Real column, the sim number in bold with its verdict, so a match no longer reads as one number.
+- A test's records group each team's baseline and test with a change row between them, the coached team first.
+- Once there is a baseline, Test against the baseline is the main button and Rerun the baseline the outlined one; a disabled button reads Tested or says why on hover, and the hint says a rerun clears the tests. The hint links to the test that ran the current plans.
+- A result still too close to call shows its number dimmed, so the clear one stands out.
+- Each aggression slider shows its level and value, and the baseline's once it moved.
+- Focus rings show for the keyboard only; records tables no wider than they need; on a phone the real-teams table drops the row descriptions and scrolls inside its box.
 
 ### 0.50
 - How it works gains two sections. The models, technically: time and motion, the rule-based decision policy, the expected-goal model and its fit, the save roll and its calibration factor, the ratings, measured against calibrated against assumed numbers, and the Game plan lab's paired statistics. What full tracking data would change: movement, decisions, expected goals, goalies, systems and coverage, validation.

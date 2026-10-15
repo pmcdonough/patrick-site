@@ -78,7 +78,7 @@ async function load() {
     while (!sim.game.over && k++ < 300000) { sim.tick(0.03); if (each) each(sim); }
     const g = sim.game;
     return { seed, end: g.shootout ? 'SO' : g.overtime ? 'OT' : 'REG', teams: sim.teams.map(t => ({
-      abbr: t.abbr, goals: t.score, sog: t.shots, attempts: t.attempts, blocksMade: t.blocked, missed: t.missed, xg: t.xg,
+      abbr: t.abbr, goals: t.score, sog: t.shots, attempts: t.attempts, blocksMade: t.blocked, blockedOwn: t.blockedOwn, missed: t.missed, xg: t.xg,
       low: t.tier.low, medium: t.tier.medium, high: t.tier.high, pim: t.pim, offsides: t.offsides, icings: t.icings,
       takeaways: t.take, faceoffs: t.faceoffs, faceoffsWon: t.faceoffsWon, freezes: t.freezes })) };
   }

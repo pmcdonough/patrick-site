@@ -122,7 +122,7 @@ const wilson = (w, n) => { const z = 1.96, p = w / n, d = 1 + z * z / n, c = p +
 const pc = v => (100 * v).toFixed(0) + '%';
 const f2 = v => v.toFixed(2);
 
-// Per game numbers for team i: own and against, and unblocked attempts (attempts minus the opponent's blocks).
+// Per game numbers for team i: own and against, and unblocked attempts (attempts minus blocks, by the opponent or a teammate in the lane).
 function perTeam(rows, i) {
   const j = 1 - i, g = k => rows.map(r => r.teams[i][k]), a = k => rows.map(r => r.teams[j][k]);
   const win = rows.map(r => r.teams[i].goals > r.teams[j].goals ? 1 : 0);
@@ -131,7 +131,7 @@ function perTeam(rows, i) {
     abbr: rows[0].teams[i].abbr, n: rows.length, win, otl,
     pts: rows.map((_, n) => win[n] ? 2 : otl[n] ? 1 : 0),
     gf: g('goals'), ga: a('goals'), xgf: g('xg'), xga: a('xg'), sog: g('sog'), soga: a('sog'),
-    unblocked: rows.map(r => r.teams[i].attempts - r.teams[j].blocksMade),
+    unblocked: rows.map(r => r.teams[i].attempts - r.teams[j].blocksMade - (r.teams[i].blockedOwn || 0)),
     gd: rows.map(r => r.teams[i].goals - r.teams[j].goals), xgd: rows.map(r => r.teams[i].xg - r.teams[j].xg),
     xgShare: rows.map(r => r.teams[i].xg / Math.max(0.01, r.teams[i].xg + r.teams[j].xg)),
     low: g('low'), medium: g('medium'), high: g('high'), pim: g('pim'), offsides: g('offsides'), icings: g('icings'), takeaways: g('takeaways'),

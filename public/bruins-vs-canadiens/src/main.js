@@ -3,12 +3,12 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.50';
+import { createSim } from './engine/sim.js?v=0.51';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.50';
+  const VERSION = '0.51';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -481,7 +481,7 @@ export function startSim(DATA) {
     ['Medium-danger shots', 'tierMed', 'mediumDangerShots', 'Between 8% and 20%: the slot and the inner circles. The sim makes far too many.', 'md'],
     ['Low-danger shots', 'tierLow', 'lowDangerShots', 'Under 8%: the point, the outside and bad angles.', 'ld'],
     ['Defense'],
-    ['Shots blocked by the other team', 'blockedFor', 'blocked', 'Attempts a defender got in front of.', 'blocked'],
+    ['Shots blocked', 'blockedFor', 'blocked', 'Attempts stopped before the net, nearly always by a defender.', 'blocked'],
     ['Missed the net', 'missed', 'missed', 'Attempts wide or high.'],
     ['Game flow'],
     ['Penalties taken', 'pens', 'penalties', 'Minor penalties per game.'],
@@ -501,15 +501,16 @@ export function startSim(DATA) {
     let on = 0, all = 0;
     const realOf = (t, rk) => MP.teams[t.abbr][rk] !== undefined ? MP.teams[t.abbr][rk] : PH.rulesBenchmarks[rk];
     const realRec = teams.map(t => DATA.rosters.teams[t.key].record);
-    let html = `<table><thead><tr><th>Per team per game</th>${teams.map(t => `<th>${t.name}: sim <span class="vs">vs real</span></th>`).join('')}<th>NHL average</th></tr></thead><tbody>`;
-    let pointsRow = `<tr><td class="m"><b>Points %</b><span>Share of the standings points: two for a win, one for an overtime or shootout loss.</span></td>` + teams.map((t, i) => { const sim = (2 * rec.w[i] + rec.otl[i]) / (2 * n), real = realRec[i] ? realRec[i].points / (2 * realRec[i].gp) : null; return `<td class="n">${Math.round(sim * 100)}% <span class="vs">vs ${real === null ? '-' : Math.round(real * 100) + '%'}</span><br><span class="vs">${rec.w[i]}-${rec.l[i]}-${rec.otl[i]} here, ${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : '-'} real</span></td>`; }).join('') + '<td class="lg">50%</td></tr>';
+    // each team gets two columns, the baseline's number (with its verdict) and the real one, so the two never read as one
+    let html = `<table><thead><tr><th rowspan="2">Per team per game</th>${teams.map(t => `<th colspan="2" class="tm">${t.name}</th>`).join('')}<th rowspan="2" class="lg">NHL average</th></tr><tr>${teams.map(() => '<th class="n">Sim</th><th class="r">Real</th>').join('')}</tr></thead><tbody>`;
+    let pointsRow = `<tr><td class="m"><b>Points %</b><span>Share of the standings points: two for a win, one for an overtime or shootout loss.</span></td>` + teams.map((t, i) => { const sim = (2 * rec.w[i] + rec.otl[i]) / (2 * n), real = realRec[i] ? realRec[i].points / (2 * realRec[i].gp) : null; return `<td class="n">${Math.round(sim * 100)}%<span class="rec">${rec.w[i]}-${rec.l[i]}-${rec.otl[i]}</span></td><td class="r">${real === null ? '-' : Math.round(real * 100) + '%'}<span class="rec">${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : ''}</span></td>`; }).join('') + '<td class="lg">50%</td></tr>';
     for (const row of REAL_ROWS) {
-      if (row.length === 1) { html += `<tr class="sec"><td colspan="${teams.length + 2}">${row[0]}</td></tr>`; if (pointsRow) { html += pointsRow; pointsRow = ''; } continue; }
+      if (row.length === 1) { html += `<tr class="sec"><td colspan="${2 * teams.length + 2}">${row[0]}</td></tr>`; if (pointsRow) { html += pointsRow; pointsRow = ''; } continue; }
       const [label, sk, rk, say, term] = row;
       const cells = teams.map((t, i) => {
         const v = src[i][sk], real = realOf(t, rk), vd = realVerdict(v, real);
         if (vd) { all++; if (vd[0] === 'good') on++; }
-        return `<td class="n">${fmt(sk, v)} <span class="vs">vs ${real !== undefined ? fmt(rk, real) : '-'}</span>${vd ? `<br><span class="pill ${vd[0]}">${vd[1]}</span>` : ''}</td>`;
+        return `<td class="n">${fmt(sk, v)}${vd ? `<span class="pill ${vd[0]}">${vd[1]}</span>` : ''}</td><td class="r">${real !== undefined ? fmt(rk, real) : '-'}</td>`;
       }).join('');
       const lg = MP.league.perGame[rk] !== undefined ? MP.league.perGame[rk] : PH.rulesBenchmarks[rk];
       html += `<tr><td class="m"><b>${label}${term ? ` <button type="button" class="tip" data-term="${term}" aria-label="What is this?">?</button>` : ''}</b><span>${say}</span></td>${cells}<td class="lg">${lg !== undefined ? fmt(rk, lg) : '-'}</td></tr>`;
@@ -612,7 +613,7 @@ export function startSim(DATA) {
   function buildGrid(el, team, tag) {
     const p = LAB.plans[team];
     el.innerHTML = TKEYS.map(([k, label]) => k === 'Agg'
-      ? `<label class="agg" data-k="Agg">${label}<input type="range" id="${tag}Agg" min="0" max="100" value="${p.Agg}"></label>`
+      ? `<label class="agg" data-k="Agg"><span>${label} <b class="aggv" id="${tag}AggV"></b></span><input type="range" id="${tag}Agg" min="0" max="100" value="${p.Agg}"></label>`
       : `<label data-k="${k}">${label}<select id="${tag}${k}">${optionsOf(k).map(([v, t]) => `<option value="${v}"${v === p[k] ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
     // compact: what each choice means is its hover text (the plan drawer on Watch and How it works spell them out)
     const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
@@ -639,20 +640,29 @@ export function startSim(DATA) {
     // test once they changed since the last test and differ from the baseline
     $('labRun').disabled = run || !!b && !offBase && n === b.seeds.length;
     $('testRun').hidden = !b; $('testRun').disabled = run || !edited || !offBase;
+    $('labRun').className = b ? 'secondary' : 'primary';
+    $('testRun').textContent = b && offBase && !edited ? 'Tested' : 'Test against the baseline';
+    $('labRun').title = $('labRun').disabled && !run ? 'These plans are the baseline. Change a choice or the number of games first.' : '';
+    $('testRun').title = $('testRun').disabled && !run ? (offBase ? 'These plans are tested; the result is below. Change a choice to test something else.' : 'These are the baseline plans. Change a choice first.') : '';
     $('rankBox').hidden = !b; $('rankRun').disabled = run;
     $('forWho').innerHTML = `<span class="dot" style="${dotStyle(c)}"></span><span>${b ? `The ${me.name}' plan against the ${op.name}' plan as run, ${b.seeds.length} games at the NHL settings` : `The ${me.name} against the ${op.name}`}</span>`;
     const workers = TEST.poolFailed ? 1 : poolSize(), secs = Math.ceil((b ? b.seeds.length : n) * TEST.secPerGame / workers), time = secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes';
-    const changed = b ? diffs(b.plans, LAB.plans) : [];
+    const changed = b ? diffs(b.plans, LAB.plans) : [], tests = LAB.tested.filter(e => e.kind === 'test');
+    const clears = LAB.tested.length ? ' (that clears the tests below)' : '';
+    const mine = tests.findIndex(e => e.key === key), jump = mine >= 0 ? `<button type="button" class="linkish" data-jump="${mine}">Test ${tests.length - mine}</button>` : 'the result';
     $('actHint').innerHTML = !b ? `Edit either plan if you like, then run the baseline: ${n} games, about ${time} on this computer.`
       : !offBase ? 'These are the baseline plans. Change a choice in either plan to test it against the baseline.'
-      : !edited ? 'These plans are tested; the result is below. Change a choice to test something else, or rerun the baseline to make these plans the new baseline.'
-      : `Changed from the baseline: ${changed.map(d => `<b>${d.team.name}</b> ${d.list.join(', ')}`).join('; ')}. Test it on the baseline's ${b.seeds.length} games (about ${time}), or rerun the baseline to make these plans the new baseline.`;
+      : !edited ? `These plans are tested: see ${jump} below. Change a choice to test something else, or rerun the baseline to make these plans the new baseline${clears}.`
+      : `Changed from the baseline: ${changed.map(d => `<b>${d.team.name}</b> ${d.list.join(', ')}`).join('; ')}. Test it on the baseline's ${b.seeds.length} games (about ${time}), or rerun the baseline to make these plans the new baseline${clears}.`;
     // mark every choice that differs from the baseline
     for (const [grid, team] of [['myGrid', c], ['oppGrid', 1 - c]]) $(grid).querySelectorAll('label[data-k]').forEach(l => l.classList.toggle('changed', !!b && !sameChoice(l.dataset.k, b.plans[team][l.dataset.k], LAB.plans[team][l.dataset.k])));
+    // each aggression slider says where it sits, and where the baseline had it once it moved
+    for (const [tag, team] of [['m', c], ['o', 1 - c]]) { const v = +LAB.plans[team].Agg, was = b && +b.plans[team].Agg; $(tag + 'AggV').textContent = `${aggWord(v / 100)}, ${v} of 100${b && !sameChoice('Agg', was, v) ? `, baseline ${was}` : ''}`; }
   }
   document.querySelectorAll('[data-coach]').forEach(b => b.addEventListener('click', () => { if (TEST.running || LAB.coach === +b.dataset.coach) return; LAB.coach = +b.dataset.coach; saveLab(); buildLab(); }));
   $('labReset').addEventListener('click', () => { if (TEST.running) return; LAB.plans = originalPlans(); saveLab(); buildLab(); });
   $('labN').addEventListener('input', labRefresh);
+  $('actHint').addEventListener('click', e => { const j = e.target.closest('[data-jump]'); if (!j) return; const el = $('tested').querySelectorAll('article.test')[+j.dataset.jump]; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   // copy the lab's plans to the Watch view and start a game there with them
   $('watchPlans').addEventListener('click', () => {
     LAB.plans.forEach((p, i) => TKEYS.forEach(([k]) => { const el = $(pre(i) + k); el.value = p[k]; el.dispatchEvent(new Event('input')); }));
@@ -671,17 +681,30 @@ export function startSim(DATA) {
     const x = v => clamp(50 + (v / scale) * 50, 0, 100), col = m - e > 0 ? '#1f7a4a' : m + e < 0 ? '#a3241b' : 'var(--fg-dim)';
     return `<div class="range" aria-hidden="true"><div class="axis"></div><div class="zero"></div><div class="span" style="left:${x(m - e)}%;width:${x(m + e) - x(m - e)}%;background:${col}"></div><div class="pt" style="left:${x(m)}%;background:${col}"></div></div>`;
   }
-  function recordTable(plans) {
-    const head = '<tr><th></th><th>W-L-OTL</th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
-    const rowsOf = (label, rows) => teams.map((t, i) => { let w = 0, l = 0, o = 0, gf = 0, ga = 0, xf = 0, xa = 0; for (const r of rows) { const me = r.teams[i], op = r.teams[1 - i]; if (me.goals > op.goals) w++; else if (r.end !== 'REG') o++; else l++; gf += me.goals; ga += op.goals; xf += me.xg; xa += op.xg; } const n = rows.length || 1; return `<tr><td>${label} ${t.abbr}</td><td>${w}-${l}-${o}</td><td>${pct((2 * w + o) / (2 * n))}</td><td>${(gf / n).toFixed(2)}</td><td>${(ga / n).toFixed(2)}</td><td>${(xf / n).toFixed(2)}</td><td>${(xa / n).toFixed(2)}</td></tr>`; }).join('');
-    return `<table>${head}${plans.map(([label, rows]) => rowsOf(label, rows)).join('')}</table>`;
+  // a team's record over a set of games, per game
+  function recordOf(rows, i) {
+    let w = 0, l = 0, o = 0, gf = 0, ga = 0, xf = 0, xa = 0;
+    for (const r of rows) { const me = r.teams[i], op = r.teams[1 - i]; if (me.goals > op.goals) w++; else if (r.end !== 'REG') o++; else l++; gf += me.goals; ga += op.goals; xf += me.xg; xa += op.xg; }
+    const n = rows.length || 1; return { w, l, o, pts: (2 * w + o) / (2 * n), gf: gf / n, ga: ga / n, xf: xf / n, xa: xa / n };
+  }
+  const RECORD_HEAD = '<tr><th></th><th>W-L-OTL</th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
+  const recordRow = (label, x, cls = '') => `<tr${cls ? ` class="${cls}"` : ''}><td>${label}</td><td>${x.w}-${x.l}-${x.o}</td><td>${pct(x.pts)}</td><td>${x.gf.toFixed(2)}</td><td>${x.ga.toFixed(2)}</td><td>${x.xf.toFixed(2)}</td><td>${x.xa.toFixed(2)}</td></tr>`;
+  const recordTable = rows => `<table>${RECORD_HEAD}${teams.map((t, i) => recordRow(t.abbr, recordOf(rows, i))).join('')}</table>`;
+  // baseline and test for each team, the coached team first, each with the change between them
+  function changeTable(rowsA, rowsB, c) {
+    const int = v => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v);
+    return `<table>${RECORD_HEAD}${[c, 1 - c].map(i => {
+      const a = recordOf(rowsA, i), b = recordOf(rowsB, i), pp = Math.round(100 * b.pts) - Math.round(100 * a.pts);
+      return recordRow(`${teams[i].abbr} baseline`, a, 'grp') + recordRow(`${teams[i].abbr} test`, b) +
+        `<tr class="chg"><td>Change</td><td>${int(b.w - a.w)} ${int(b.l - a.l)} ${int(b.o - a.o)}</td><td>${int(pp)}</td><td>${sgn(b.gf - a.gf)}</td><td>${sgn(b.ga - a.ga)}</td><td>${sgn(b.xf - a.xf)}</td><td>${sgn(b.xa - a.xa)}</td></tr>`;
+    }).join('')}</table>`;
   }
   function renderBaseline() {
     const b = LAB.base, c = LAB.coach, me = teams[c], op = teams[1 - c];
     const g = b.rows.map(r => perGame(r, c)), pts = mean(g.map(x => x.pts));
     $('baseHeadline').textContent = `The ${me.name} take ${pct(pts)} of the points against this ${op.name} plan, on ${mean(g.map(x => x.xgf)).toFixed(1)} chances a game for and ${mean(g.map(x => x.xga)).toFixed(1)} against.`;
     $('baseExplain').hidden = true;
-    $('baseRecord').innerHTML = recordTable([['', b.rows]]);
+    $('baseRecord').innerHTML = recordTable(b.rows);
     renderCalib(b.rows);
     labRefresh();
   }
@@ -702,11 +725,11 @@ export function startSim(DATA) {
       ['Net chances' + tip('net', 'What are net chances?'), sgn(r.xm), `chances for ${sgn(r.fm)}, against ${sgn(r.am)} a game`, vx, rangeBar(r.xm, r.xe, 2.5)],
       ['Goal difference', sgn(r.gm), 'per game, against the baseline', vg, rangeBar(r.gm, r.ge, 2.5)],
       ['Points' + tip('pts', 'What is points %?'), `${pct(r.pA)} → ${pct(r.pB)}`, 'baseline, then this test', vp, rangeBar(r.pm, r.pe, 0.35)],
-    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v"><div class="k">${k}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
+    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v ${cls}"><div class="k">${k}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
     const explain = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${r.n} games. The points difference is not yet: points swing about ${Math.round(r.pe * 100)} points either way from luck alone${tip('close', 'What does too close to call mean?')}. Chances are the number to trust here.`
       : vx[0] === 'flat' ? `Neither number separates it from the baseline at ${r.n} games${tip('close', 'What does too close to call mean?')}. Run more games, or treat them as even.` : `Both chances and points separate it from the baseline at ${r.n} games.`;
-    return `<article class="change"><span class="tnum">Test ${num}</span><p class="what">${what}</p><p class="headline sm">${head}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
-      <details class="more"><summary>Records</summary><div class="calib lab">${recordTable([['Baseline', rowsA], ['Test', e.rowsB]])}</div><p class="hint">Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details></article>`;
+    return `<article class="change test"><span class="tnum">Test ${num}</span><p class="what">${what}</p><p class="headline sm">${head}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
+      <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details></article>`;
   }
   function rankCard(e) {
     const me = teams[e.c];
@@ -838,7 +861,7 @@ export function startSim(DATA) {
     md: ['Medium-danger shots', 'Shots with an 8% to 20% chance: the slot and the inside of the circles.'],
     ld: ['Low-danger shots', 'Shots with under an 8% chance: the point, the outside and sharp angles.'],
     attempts: ['Shot attempts', 'Every shot a team takes: on goal, blocked or missed. Analysts call the count Corsi.'],
-    blocked: ['Blocked shots', 'Shots a defender got in front of before they reached the net.'],
+    blocked: ['Blocked shots', 'Shots stopped on the way to the net, nearly always by a defender getting in front. One that hits a teammate in the lane counts too, as it does in NHL scoring.'],
     poss: ['Possession', 'Share of the time each team had the puck on a stick.'],
     take: ['Takeaways', 'Times a player stole the puck from the carrier.'],
     pk: ['Penalty kill', 'Playing a man short. There is no icing, so the killers clear the puck the length of the ice whenever they get it.'],

@@ -1,7 +1,7 @@
 // Rosters and ratings: each club's lines, pairs and goalies from data/rosters.json, rated from the stat lines and
 // MoneyPuck (data/ratings.json, moneypuck-2025.json), with skating speed from physics.json. newGame calls buildTeams
 // again for every game, refilling the same two team objects from scratch, so nothing from one game reaches the next.
-import { clamp } from './rink.js?v=0.50';
+import { clamp } from './rink.js?v=0.51';
 
 export function buildTeams(DATA, XGF, teams = [{}, {}]) {
   const RT = DATA.ratings, PH = DATA.physics, MP = DATA['moneypuck-2025'];
@@ -46,7 +46,7 @@ export function buildTeams(DATA, XGF, teams = [{}, {}]) {
   [{ id: 0, key: 'BOS', dir: 1 }, { id: 1, key: 'MTL', dir: -1 }].forEach((start, i) => { const t = teams[i]; for (const k of Object.keys(t)) delete t[k]; Object.assign(t, start); });
   teams.forEach(t => {
     const R = ROSTERS[t.key];
-    Object.assign(t, { name: R.name, abbr: R.abbr, col: R.col, col2: R.col2, ink: R.ink, score: 0, shots: 0, attempts: 0, blocked: 0, missed: 0, xg: 0, offsides: 0, icings: 0, clears: 0, tier: { low: 0, medium: 0, high: 0 }, faceoffs: 0, faceoffsWon: 0, freezes: 0, poss: 0, oz: 0, take: 0, pim: 0, changes: 0, tac: {}, players: [] });
+    Object.assign(t, { name: R.name, abbr: R.abbr, col: R.col, col2: R.col2, ink: R.ink, score: 0, shots: 0, attempts: 0, blocked: 0, blockedOwn: 0, missed: 0, xg: 0, offsides: 0, icings: 0, clears: 0, tier: { low: 0, medium: 0, high: 0 }, faceoffs: 0, faceoffsWon: 0, freezes: 0, poss: 0, oz: 0, take: 0, pim: 0, changes: 0, tac: {}, players: [] });
     t.lines = { F: R.F.map(l => l.map(r => mkSkater(r, t, false))), D: R.D.map(l => l.map(r => mkSkater(r, t, true))) };
     t.lines.F.forEach(l => { l[0].role = 'LW'; l[1].role = 'C'; l[2].role = 'RW'; l.forEach((p, i) => p.slot = i); });
     t.lines.D.forEach(l => { l[0].role = 'LD'; l[1].role = 'RD'; l.forEach((p, i) => p.slot = i); });

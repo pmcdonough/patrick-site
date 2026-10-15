@@ -17,17 +17,17 @@
 // Trigonometry, exp, log and pow come from detmath.js, never from Math, so a seed plays the same game everywhere.
 // Random numbers: every draw goes through random(), one generator per game. newGame(seed) plays the seeded game
 // (rng.js); newGame() uses opts.rng, or Math.random. `drift: false` stops the small idle sway of players on their spots.
-import * as DM from './detmath.js?v=0.50';
-import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.50';
-import { makeXg } from './xg.js?v=0.50';
-import { seeded } from './rng.js?v=0.50';
-import { buildTeams } from './rosters.js?v=0.50';
-import * as officialsModule from './officials.js?v=0.50';
-import * as linesModule from './lines.js?v=0.50';
-import * as formationsModule from './formations.js?v=0.50';
-import * as aiModule from './ai.js?v=0.50';
-import * as physicsModule from './physics.js?v=0.50';
-import * as rulesModule from './rules.js?v=0.50';
+import * as DM from './detmath.js?v=0.51';
+import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.51';
+import { makeXg } from './xg.js?v=0.51';
+import { seeded } from './rng.js?v=0.51';
+import { buildTeams } from './rosters.js?v=0.51';
+import * as officialsModule from './officials.js?v=0.51';
+import * as linesModule from './lines.js?v=0.51';
+import * as formationsModule from './formations.js?v=0.51';
+import * as aiModule from './ai.js?v=0.51';
+import * as physicsModule from './physics.js?v=0.51';
+import * as rulesModule from './rules.js?v=0.51';
 
 export function createSim(DATA, opts = {}) {
   const drift = opts.drift !== false;
@@ -108,7 +108,7 @@ export function createSim(DATA, opts = {}) {
 
   function teamSample(t) {
     const opp = teams[1 - t.id];
-    return { attempts: t.attempts, shots: t.shots, score: t.score, xg: t.xg, blockedFor: opp.blocked, missed: t.missed, tierHigh: t.tier.high, tierMed: t.tier.medium, tierLow: t.tier.low, pens: t.pim / 2, fo: t.faceoffs ? t.faceoffsWon / t.faceoffs : 0.5, freezes: opp.freezes, offsides: t.offsides, icings: t.icings };
+    return { attempts: t.attempts, shots: t.shots, score: t.score, xg: t.xg, blockedFor: opp.blocked + t.blockedOwn, missed: t.missed, tierHigh: t.tier.high, tierMed: t.tier.medium, tierLow: t.tier.low, pens: t.pim / 2, fo: t.faceoffs ? t.faceoffsWon / t.faceoffs : 0.5, freezes: opp.freezes, offsides: t.offsides, icings: t.icings };
   }
   const setTactics = (i, tac) => { teams[i].tac = tac; };
 
