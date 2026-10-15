@@ -37,7 +37,27 @@
   nav.views { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
   nav.views button { border: 0; background: none; padding: 7px 13px; border-radius: 7px; font: 700 1rem var(--display); letter-spacing: 0.03em; color: var(--fg-dim); white-space: nowrap; }
   nav.views button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
-  nav.views .gear { font-size: 1.1rem; padding: 6px 10px; }
+  nav.views .how { font: 500 0.9rem var(--body); letter-spacing: 0; color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+  /* Watch: the way into the Game plan lab */
+  .labpromo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding-block: 10px; padding-inline: 14px; margin-bottom: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .labpromo .lp-t { font: 800 1.1rem var(--display); }
+  .labpromo .steps { grid-column: auto; flex: 1 1 420px; }
+  .labpromo .go { cursor: default; }
+  .labpromo .primary { margin-left: auto; }
+  /* Game plan lab */
+  .stale { margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--raised); border-left: 3px solid var(--link); font-size: 0.9rem; }
+  .isstale > :not(.stale):not(.forwho) { opacity: 0.5; }
+  #tested.isstale { opacity: 0.5; }
+  .tryrow select { width: auto; flex: 1 1 160px; min-width: 0; }
+  .tested { display: flex; flex-direction: column; gap: 12px; }
+  .tested:empty { display: none; }
+  article.change { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  article.change h4 { margin: 0; font: 800 1.1rem var(--display); }
+  article.change h4 small { font: 400 0.85rem var(--body); color: var(--fg-dim); margin-left: 6px; }
+  .headline.sm { font-size: 1.15rem; }
+  .side .cgrid.lgrid { grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+  .lgrid select { background: var(--raised); }
+  @media (max-width: 380px) { .side .cgrid.lgrid { grid-template-columns: 1fr; } }
   .steps { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; font-size: 0.9rem; color: var(--fg-dim); }
   .steps .go { background: none; border: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 6px; font: 400 0.9rem var(--body); color: var(--fg-dim); text-align: left; }
   .steps .go b { color: var(--fg); font-weight: 600; }
@@ -247,3 +267,4 @@
   .pl span.pen b { color: #d9480f; } .pl span.inj { opacity: 0.5; text-decoration: line-through; }
   .pl span small { font-size: 0.68rem; margin-left: 3px; }
   .legend { font-size: 0.7rem; color: var(--fg-dim); margin: 6px 0 0; line-height: 1.4; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }

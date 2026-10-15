@@ -9,8 +9,8 @@ public/
   bruins-vs-canadiens/
     index.html, style.css          the page's markup and styles, no build step
     src/engine/                    the engine, as plain ES modules that never touch the page (they also run in Node)
-    src/main.js                    the page: drawing, controls, game plans, the strategy test and the reality check
-    src/lab/worker.js              the strategy test's background worker
+    src/main.js                    the page: Watch a game, and the Game plan lab
+    src/lab/worker.js              the lab's background worker
     data/                          the data that drives it (see below), including the expected-goal model
   play-review/
     index.html, style.css, src/    shot versus pass review of a real game, scored with the sim's own expected-goal model
@@ -57,9 +57,9 @@ A game is fully determined by its seed: the engine draws every random number fro
 
 **Expected goals.** Every unblocked attempt gets a probability from a logistic model fit on two seasons of MoneyPuck shots (distance, angle, shot type, rebound, strength) times the shooter's finishing; the goalie's save roll scales that by his real tier save rate. See `docs/XG-MODEL.md`.
 
-**Test a strategy.** Pick the team you coach. Plan A is that team as set; plan B is a copy where any choice can change. Run plays both plans against the opponent's plan in the same seeded games, in background workers on every spare core (100 games a plan takes about a minute on an eight-core machine), at the NHL-realistic settings. The result is a sentence and three verdicts, net chances, goal difference and points, each labeled clear edge, too close to call or clear cost from its 95% interval, with the records under Details for analysts. Rank every option for one choice plays each option on the same games and orders them by net chances.
+**Game plan lab.** Separate from the game you watch, with its own plans for both teams, remembered in the browser. Pick the team you coach, set both plans, and run the baseline: your plan against theirs, 100 seeded games in background workers on every spare core (about a minute on an eight-core machine), at the NHL-realistic settings. Then try a change: one choice, another option, played through the same games and judged against the baseline in a sentence and three verdicts, net chances, goal difference and points, each a clear edge, too close to call or a clear cost from its 95% interval. Rank every option plays each option of one choice on the same games and orders them by net chances. Tested changes stay listed under the baseline until a plan changes.
 
-**Reality check.** In the How real is it view, the games from the last run (or the current game, scaled to 60 minutes, when nothing has run) are compared per game with each club's real 2025-26 rates and the league average: shot attempts, shots on goal, goals, expected goals, blocks, misses, danger-tier mix, penalties, faceoff percentage, goalie freezes, offsides, icings, plus the record and points percentage against each club's final 2025-26 record. Each row gets a plain reading and an on target, above or below verdict. That table is the engine's to-do list.
+**Reality check.** Folded under the lab's baseline, its games are compared per game with each club's real 2025-26 rates and the league average: shot attempts, shots on goal, goals, expected goals, blocks, misses, danger-tier mix, penalties, faceoff percentage, goalie freezes, offsides, icings, plus the record and points percentage against each club's final 2025-26 record. Each row gets a plain reading and an on target, above or below verdict. That table is the engine's to-do list.
 
 ### The data that drives it
 
@@ -85,7 +85,7 @@ MoneyPuck 2025-26 skaters, goalies, lines and teams downloads (ratings, danger t
 
 ### Controls
 
-The header says what the page is and links three steps (set each team's plan, simulate the games, see what changes) into the strategy test, with How it works for the long explanation. Watch: the scoreboard with shots, the share of chances and the power-play state; the rink; pause, 0.5x / 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light), Sticks and Sight lines (what the puck carrier sees: his open look at the net, what defenders block, his best pass); each team's game plan as a sentence with Edit plan; and the box score, play by play and rosters folded below. Test a strategy: the matchup, a run of 10 to 100 games, the record and a sweep of one choice. How real is it: every number per team per game against that team's real 2025-26 number and the league, grouped, each with a plain reading and an on target / above / below verdict, and a button that plays 100 games to check. Every term has a ? explainer, and How it works ends with a glossary. The page always opens on Watch. The gear opens the settings: engine sliders with a tick at the NHL-calibrated value, save and export, and data sources.
+The header says what the page is, switches between Watch a game and the Game plan lab, and opens How it works for the long explanation. Watch: a strip that explains the lab in three steps and opens it; the scoreboard with shots, the share of chances and the power-play state; the rink; pause, 0.5x / 1x / 3x / 8x speed, new game, Effects (skate trails, puck streaks, hit and block ripples, save flash, goal light), Sticks and Sight lines (what the puck carrier sees: his open look at the net, what defenders block, his best pass); Settings (the sliders for the game you watch, with a tick at the NHL-calibrated value, save and export, and data sources); each team's game plan as a sentence with Edit plan; and the box score, play by play and rosters folded below. Game plan lab: both plans as compact grids, the baseline, the comparison with the real teams, and the changes tested against it. Every term has a ? explainer, and How it works ends with a glossary. The page opens on Watch; `#lab` in the address opens the lab.
 
 ## Play Review
 

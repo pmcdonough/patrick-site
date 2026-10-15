@@ -2,9 +2,9 @@
 // model saw, with a replay. The scoring uses the sim's own expected-goal model, rink and math (its engine modules), so
 // the two can never disagree. index.html loads this with a version stamp (src/main.js?v=VERSION); imports from the
 // sim's engine carry the sim's version instead. tools/smoke.js checks both.
-import { makeXg } from '../../bruins-vs-canadiens/src/engine/xg.js?v=0.47';
-import { RW, RH, GL, dist, clamp } from '../../bruins-vs-canadiens/src/engine/rink.js?v=0.47';
-import * as DM from '../../bruins-vs-canadiens/src/engine/detmath.js?v=0.47';
+import { makeXg } from '../../bruins-vs-canadiens/src/engine/xg.js?v=0.48';
+import { RW, RH, GL, dist, clamp } from '../../bruins-vs-canadiens/src/engine/rink.js?v=0.48';
+import * as DM from '../../bruins-vs-canadiens/src/engine/detmath.js?v=0.48';
 
 (async () => {
   const VERSION = '0.9';

@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.58 = sim 0.47 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.59 = sim 0.48 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.59
+- Sim 0.48 (the Game plan lab). Home page card describes the lab and links to it. `tools/calibration.js` runs a ten-game baseline in the lab.
 
 ### 0.58
 - Sim 0.47. `tools/bump.js` sets a project's version and every `?v=` stamp that carries it in one command.
@@ -131,6 +134,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.48
+- Two views that share nothing but the engine. **Watch a game** is the game on the rink with its own plans (Edit plan) and its own settings, now a Settings button in the Watch controls, plus the box score, play by play and rosters, and a strip that explains the lab in three steps and opens it. The **Game plan lab** replaces Test a strategy and How real is it.
+- The lab has its own plans for both teams, as compact grids (each choice's meaning is its hover text), remembered in the browser with a link to reset both to the original plans. The workflow reads top to bottom: set both plans, run the baseline (100 games at the NHL settings), then try a change, one choice and another option, or rank every option of one choice. A change plays only its own games, on the baseline's seeds, so it takes half the time a plan A and plan B run did, and each result stays listed under the baseline. Changing either plan marks the baseline out of date and asks for a new one before more tests.
+- The comparison with the real 2025-26 teams (the old How real is it) is folded under the baseline and grades only the baseline's games. It no longer grades the game being watched, which runs at the faster Watch settings.
+- The Watch plans and sliders no longer reach any test: only the plan drawer drives the game on the rink.
 
 ### 0.47
 - The crease at the right-hand net was drawn behind the goal line; it is in front of the net now, like the left one. Drawing only.

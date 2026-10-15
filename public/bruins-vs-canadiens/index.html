@@ -6,7 +6,7 @@
 <link rel="icon" href="data:,">
 <title>Bruins vs Canadiens</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.47">
+<link rel="stylesheet" href="style.css?v=0.48">
 </head>
 <body>
 
@@ -18,21 +18,19 @@
     <p>Test hockey strategies before game day. Set each team's systems, simulate 100 games with real 2025-26 rosters, and see what changes.</p>
   </div>
   <nav class="views" aria-label="Views">
-    <button type="button" data-view="watch" aria-pressed="true">Watch</button>
-    <button type="button" data-view="test" aria-pressed="false">Test a strategy</button>
-    <button type="button" data-view="real" aria-pressed="false">How real is it</button>
-    <button type="button" id="gearBtn" class="gear" aria-label="Settings" title="Settings">&#9881;</button>
+    <button type="button" data-view="watch" aria-pressed="true">Watch a game</button>
+    <button type="button" data-view="lab" aria-pressed="false">Game plan lab</button>
+    <button type="button" id="aboutBtn" class="how" aria-haspopup="dialog">How it works</button>
   </nav>
-  <div class="steps">
-    <button type="button" class="go" data-go="1"><span class="n">1</span><b>Set each team's plan</b> forecheck, breakout, coverage</button>
-    <button type="button" class="go" data-go="2"><span class="n">2</span><b>Simulate the games</b> a minute or two</button>
-    <button type="button" class="go" data-go="3"><span class="n">3</span><b>See what changes</b> record, goals and chances</button>
-    <button type="button" id="aboutBtn" class="go how" aria-haspopup="dialog">How it works</button>
-  </div>
 </header>
 
 <main class="wrap">
   <section class="view" data-view="watch">
+    <div class="labpromo">
+      <span class="lp-t">Test a strategy in the Game plan lab</span>
+      <span class="steps"><span class="go"><span class="n">1</span><b>Set both teams' plans</b></span><span class="go"><span class="n">2</span><b>Run the baseline</b> 100 games, about a minute</span><span class="go"><span class="n">3</span><b>Try a change</b> and see what it is worth</span></span>
+      <button type="button" class="primary" data-go-lab>Open the Game plan lab</button>
+    </div>
     <div class="score">
       <div class="team"><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span><span class="tname">Bruins</span><span class="g" id="sHome">0</span></div>
       <div class="clock"><span id="period">1st</span><b id="clock">20:00</b><span id="note">Faceoff</span></div>
@@ -57,6 +55,7 @@
         <button id="fxBtn" type="button" aria-pressed="true" title="Skate trails, puck streaks, hits, saves and the goal light">Effects</button>
         <button id="stickBtn" type="button" aria-pressed="true" title="Draw sticks on the skaters">Sticks</button>
         <button id="sightBtn" type="button" aria-pressed="true" title="Show what the puck carrier sees: his open look at the net, what the defenders block, and his best pass">Sight lines</button>
+        <button id="gearBtn" type="button" title="Skating, passing and shooting for the game you watch">Settings</button>
       </div>
     </div>
     <p class="sight-legend" id="sightLegend"><b>Sight lines</b> <span><i class="sw lit"></i>Yellow: the part of the net the puck carrier can shoot at</span><span><i class="sw shade"></i>Dark: the part a defender blocks</span><span><i class="sw pass"></i>Blue dash: his best pass, to the ringed teammate</span><span>The tag gives each one's chance to score and what he will do <button type="button" class="tip" data-term="sight" aria-label="How do sight lines work?">?</button></span></p>
@@ -103,66 +102,52 @@
     </div>
   </section>
 
-  <section class="view" data-view="test" hidden>
+  <section class="view" data-view="lab" hidden>
     <div class="test">
       <div class="card setup">
-        <h2 class="vt">Test a strategy</h2>
-        <p class="hint explain">Plan A is your team as it is set now. Plan B is the same team with the changes you want to try. Both plans play the other team through <button type="button" class="tip" data-term="same" aria-label="What does the same games mean?">the same games</button>, so a difference between them comes from your change, not from one plan getting easier games. The verdict says whether that difference is bigger than normal luck.</p>
+        <h2 class="vt">Game plan lab</h2>
+        <p class="hint explain">Set both teams' plans and run the baseline: your plan against theirs, 100 games at the NHL settings. Then try a change to your plan and see what it is worth. Each change plays <button type="button" class="tip" data-term="same" aria-label="What does the same games mean?">the same games</button> as the baseline, so a difference comes from the change, not from easier games. These plans are the lab's own; the game you watch keeps its own.</p>
         <div class="coachas"><span class="hint">You coach</span><div class="seg" role="group" aria-label="Which team you coach"><button type="button" data-coach="0" aria-pressed="true">Bruins</button><button type="button" data-coach="1" aria-pressed="false">Canadiens</button></div></div>
-        <section class="side mtl" id="oppBlock">
-          <div class="who"><span class="dot" id="oppDot"></span><span id="oppName">Canadiens (MTL)</span><small>Opponent</small></div>
-          <button type="button" class="linkish under" id="oppEdit">Edit their plan</button>
-          <p class="hint" id="oppPlan"></p>
+        <section class="side" id="oppBlock">
+          <div class="who"><span class="dot" id="oppDot"></span><span id="oppName">Canadiens</span><small>Their plan</small></div>
+          <div class="cgrid lgrid" id="oppGrid"></div>
         </section>
-        <section class="side bos" id="planBlock">
-          <div class="who"><span class="dot" id="myDot"></span><span id="myName">Bruins (BOS)</span><small>Your plans</small></div>
-          <button type="button" class="linkish under" id="myEdit">Edit plan A</button>
-          <div class="abrow"><span class="tag a">A</span><div><b>Plan A, as the team is set now</b> <button type="button" class="tip" data-term="planA" aria-label="What is plan A?">?</button><p class="hint" id="planAText"></p></div></div>
-          <div class="abrow"><span class="tag b">B</span><div class="bwrap"><div class="bhead"><b>Plan B <button type="button" class="tip" data-term="planB" aria-label="What is plan B?">?</button></b><button type="button" class="linkish" id="bReset">Same as plan A</button></div><p class="hint">Change any choice to test it against plan A. Changed choices are marked.</p><div class="cgrid bgrid" id="bGrid"></div></div></div>
+        <section class="side" id="myBlock">
+          <div class="who"><span class="dot" id="myDot"></span><span id="myName">Bruins</span><small>Your plan</small></div>
+          <div class="cgrid lgrid" id="myGrid"></div>
         </section>
-        <label class="gfield" for="labN">Games for each plan <select id="labN"><option value="10">10, a quick look</option><option value="50">50</option><option value="100" selected>100</option><option value="200">200</option></select></label>
-        <div class="row"><button type="button" id="labRun" class="primary">Run the matchup</button><button type="button" id="labStop" hidden>Stop</button></div>
+        <p class="hint">Hover a choice to see what it means. Both plans are remembered in this browser. <button type="button" class="linkish" id="labReset">Reset both to the original plans</button></p>
+        <label class="gfield" for="labN">Games <select id="labN"><option value="10">10, a quick look</option><option value="50">50</option><option value="100" selected>100</option><option value="200">200</option></select></label>
+        <div class="row"><button type="button" id="labRun" class="primary">Run the baseline</button><button type="button" id="labStop" hidden>Stop</button></div>
         <div class="progress" aria-hidden="true"><i id="labBar"></i></div>
         <p class="hint" id="labNote"></p>
         <p class="hint" id="labEst"></p>
       </div>
-      <div class="card results" id="labRecord" aria-live="polite">
-        <div class="forwho" id="forWho"></div>
-        <p class="headline" id="labHeadline">Change a choice in plan B and run. The answer shows up here, in plain words.</p>
-        <div class="verdicts" id="labVerdicts"></div>
-        <p class="hint" id="labExplain"></p>
-        <details class="more" id="labDetails"><summary>Details for analysts</summary>
-          <div id="labResult" class="calib lab"></div>
-          <p class="hint">Records and per-game numbers for each plan. Differences in the verdicts are plan B minus plan A, game for game: both plans play the same games, with the same bounces until a choice changes what happens. A 95% range that includes zero means the two plans are not separated at this many games.</p>
-        </details>
-        <div class="rankbox">
-          <h3 class="rt">Rank every option for one choice</h3>
-          <div class="row"><select id="labDim" aria-label="Choice to rank"></select><button type="button" id="labSweep">Rank the options</button></div>
-          <p class="hint" id="labSweepNote">Plays every option of that choice in the same games, with everything else as plan A, and ranks them by net chances.</p>
-          <div class="rank" id="labSweepResult"></div>
+      <div class="results">
+        <div class="card results" id="baseCard" aria-live="polite">
+          <div class="forwho" id="forWho"></div>
+          <p class="headline" id="baseHeadline">Run the baseline to see how your plan does against theirs.</p>
+          <p class="stale" id="baseStale" hidden>You changed a plan since this run. Run the baseline again before testing changes.</p>
+          <div id="baseRecord" class="calib lab"></div>
+          <details class="more" id="realBox" hidden>
+            <summary>Compared with the real 2025-26 teams <small id="realScore"></small></summary>
+            <p class="hint">Every number from the baseline games, per team per game, next to what that team really did in 2025-26 and the league average. Goals and faceoffs land on the real numbers. The sim creates too many good chances, mostly medium-danger looks off passes into the slot, and runs high on shots, goalie freezes and icings. Read its chance numbers as a comparison between plans, not as a forecast of a real score.</p>
+            <div id="calib" class="calib real"></div>
+            <p class="hint">On target means within 15% of that team's real 2025-26 number; well above or well below means off by more than half. The sim plays only these two teams against each other, while the real numbers came against the whole league. Data: MoneyPuck 2025-26 team and league files, league offside and icing rates.</p>
+          </details>
         </div>
-        <details class="more">
-        <summary>What this can and cannot say</summary>
-        <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Ten games cannot separate two close strategies; the interval says how many can. Treat it as a way to ask a question of the video, not as an answer.</p>
-      </details>
+        <div class="card results" id="tryCard">
+          <h3 class="rt">Try a change</h3>
+          <p class="hint" id="tryHint">Run the baseline first. Then pick one choice in your plan and another option for it; the change plays the same games as the baseline.</p>
+          <div class="row tryrow"><select id="tryDim" aria-label="Choice to change"></select><select id="tryOpt" aria-label="Option to try"></select><button type="button" id="tryRun" class="primary">Test this change</button></div>
+          <div class="row"><button type="button" id="rankRun">Rank every option for this choice</button></div>
+          <div id="tested" class="tested"></div>
+        </div>
+        <details class="more card">
+          <summary>What this can and cannot say</summary>
+          <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two plans is what this model thinks, with the range showing how sure the model itself is. Ten games cannot separate two close strategies; the range says how many can. Treat it as a way to ask a question of the video, not as an answer.</p>
+        </details>
       </div>
-    </div>
-  </section>
-
-  <section class="view card" data-view="real" hidden>
-    <div class="vhead"><h2 class="vt">How real is it</h2>
-      <p class="hint">Every number the sim produces, per team per game, next to what that team really did in 2025-26 and the league average. Goals and faceoffs land on the real numbers. The sim creates too many good chances, mostly medium-danger looks off passes into the slot, and runs high on shots, goalie freezes and icings. Read its chance numbers as a comparison between plans, not as a forecast of a real score.</p>
-    </div>
-    <div class="realtop">
-      <span class="pill flat" id="realSource">This game so far</span>
-      <span id="realScore" class="realscore"></span>
-      <button type="button" id="realRun">Play 100 games to check</button>
-      <span class="hint" id="realNote"></span>
-    </div>
-    <div id="labCalib">
-      <p class="hint" id="calibNote" hidden></p>
-      <div id="calib" class="calib real"></div>
-      <p class="hint">On target means within 15% of that team's real 2025-26 number; well above or well below means off by more than half. The sim plays only these two teams against each other, while the real numbers came against the whole league. Data: MoneyPuck 2025-26 team and league files, league offside and icing rates.</p>
     </div>
   </section>
 </main>
@@ -170,7 +155,7 @@
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="planDrawer" role="dialog" aria-label="Game plans" hidden>
   <header><h2 class="vt">Game plans</h2><button type="button" class="closeD">Done</button></header>
-  <p class="hint">Changes apply to the game on the ice right away and to the next test run.</p>
+  <p class="hint">Changes apply to the game on the ice right away. The Game plan lab keeps its own plans.</p>
   <section class="side bos" id="sideH">
     <div class="who"><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span>Bruins</div>
     <div class="cgrid"><label>Forecheck<select id="hFore"><option value="122" selected>1-2-2</option><option value="212">2-1-2</option><option value="131">1-3-1 trap</option><option value="lwl">Left wing lock</option></select></label><label>Breakout<select id="hBreak"><option value="boards" selected>Up the boards</option><option value="stretch">Stretch pass</option><option value="reverse">Reverse D-to-D</option></select></label><label>Entry<select id="hEntry"><option value="headman" selected>Headman</option><option value="carry">Carry wide</option><option value="chip">Chip & chase</option><option value="dump">Dump & chase</option></select></label><label>Offensive zone<select id="hOz"><option value="cycle" selected>Cycle low</option><option value="umbrella">Umbrella</option><option value="crash">Crash the net</option></select></label><label>Defensive zone<select id="hDz"><option value="zone" selected>Zone</option><option value="man">Man-on-man</option></select></label><label>Power play<select id="hPP"><option value="131">1-3-1</option><option value="umbrella" selected>Umbrella</option><option value="overload">Overload</option></select></label><label>Penalty kill<select id="hPK"><option value="box">Passive box</option><option value="diamond">Diamond</option><option value="pressure" selected>Aggressive box</option></select></label><label class="agg">Aggression<input id="hAgg" type="range" min="0" max="100" value="55"></label></div>
@@ -183,10 +168,10 @@
   <p id="sysNote" class="hint"></p>
 </aside>
 <aside class="drawer" id="setDrawer" role="dialog" aria-label="Settings" hidden>
-  <header><h2 class="vt">Settings</h2><button type="button" class="closeD">Done</button></header>
+  <header><h2 class="vt">Watch settings</h2><button type="button" class="closeD">Done</button></header>
       <details class="adv" open>
         <summary>Engine settings</summary>
-        <p class="hint">Multipliers on skating, passing, the puck, goalies and shooting. Sliders are centered on the build defaults; the NHL tick marks the value calibrated to real tracking data. Changes apply immediately.</p>
+        <p class="hint">Multipliers on skating, passing, the puck, goalies and shooting for the game you watch. They start faster than the real game because it is more fun to watch; the tick on each slider is the value calibrated to NHL tracking data. The Game plan lab always plays at the tick. Changes apply immediately.</p>
         <div class="field" id="admin"></div>
         <div class="row"><button id="adminSave" type="button">Save as my defaults</button><button id="adminReset" type="button">Reset</button><button id="adminFactory" type="button">NHL average</button><button id="exportBtn" type="button">Export settings</button></div>
         <p class="hint" id="adminNote" style="margin:6px 0 0"></p>
@@ -220,7 +205,7 @@
     <p>Offside with the tag-up rule and a delayed call. Hybrid icing judged at the end-zone dots, waived while shorthanded, and the team that iced cannot change. Minor penalties drawn at each player's real rate, with power plays and the penalty-box clock. Goalie freezes when there is traffic in the crease. Offside and icing calls are tuned to land at league rates per game. Three officials work NHL mechanics: the referee at the goal line in the zone, the lead linesman on the blue line for offside, the trail linesman on the red line for icing. A tie goes to a five-minute sudden-death overtime, played at full strength here, and then a shootout, three shooters each and sudden death after that, with each shooter's chance scaled by his shooting and the goalie's quality in tight.</p>
 
     <h3>Physics and calibration</h3>
-    <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts on rushes, breakouts and chases, cruising otherwise. Wrist shots run 58 to 85 mph and point shots 80 to 100; the dump is about 85 mph around the glass. Every unblocked attempt gets an expected-goal value from a model fit on two seasons of MoneyPuck shot data: distance and angle to the net, shot type, rebound, and the strength on the ice, times the shooter's own finishing over those seasons. The danger tiers follow MoneyPuck's expected-goal thresholds, and a goal is scored against each goalie at that value scaled by his real save rate in the tier. The engine is balanced at the NHL-average settings, the tick mark on each slider; the defaults it ships with run hotter on speed and shot volume because that is more fun to watch. How real is it compares the sim's per-game numbers with each team's real 2025-26 numbers and the league average, from the last test or from the game being played, and gives each one a verdict: on target within 15 percent, above or below, well above or well below past half. That view is the honest statement of where the engine still differs from the real game.</p>
+    <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts on rushes, breakouts and chases, cruising otherwise. Wrist shots run 58 to 85 mph and point shots 80 to 100; the dump is about 85 mph around the glass. Every unblocked attempt gets an expected-goal value from a model fit on two seasons of MoneyPuck shot data: distance and angle to the net, shot type, rebound, and the strength on the ice, times the shooter's own finishing over those seasons. The danger tiers follow MoneyPuck's expected-goal thresholds, and a goal is scored against each goalie at that value scaled by his real save rate in the tier. The engine is balanced at the NHL-average settings, the tick mark on each slider; the defaults it ships with run hotter on speed and shot volume because that is more fun to watch. The Game plan lab compares the baseline's per-game numbers with each team's real 2025-26 numbers and the league average, and gives each one a verdict: on target within 15 percent, above or below, well above or well below past half. That table is the honest statement of where the engine still differs from the real game.</p>
 
     <h3>Glossary</h3>
     <dl class="glossary" id="glossary"></dl>
@@ -231,8 +216,8 @@
     <h3>Using it</h3>
     <p>Watch plays one game on the rink. Pause it, change the speed (0.5x is the one for following sight lines) or start a new game; the scoreboard shows the shots, each team's share of the chances and the power play. Effects draws skate trails, streaks on hard shots and passes, ripples on takeaways and blocked shots, a flash on big saves and the goal light. Sticks draws each skater's stick. Sight lines shows what the puck carrier sees in the offensive zone: his open look at the net, the shadow each defender casts over it, and his best pass, with how likely each one is to score. Below the rink each team's game plan reads as a sentence. Edit plan opens both plans with what every choice means, and a change takes effect on the next play. The box score, the play by play and the rosters fold open underneath.</p>
     <p>Each plan is seven systems and an aggression dial. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems.</p>
-    <p>Test a strategy answers whether a change would help. Pick the team you coach. Plan A is that team as it is set; plan B is a copy where you change what you want to try. Run plays both plans against the other team's plan through the same games, 100 each unless you pick another number, at the NHL-realistic settings, in about a minute on most computers. The same games means each pair of games starts from the same random numbers, so the bounces match until a difference in plan makes play go another way, and a gap between the plans is the plans, not the schedule. The result is a sentence and three verdicts, net chances, goal difference and points, each a clear edge, too close to call or a clear cost. Trust net chances first: points need far more games to separate. Rank every option for one choice tries every option of one system, every forecheck for example, in the same games and orders them.</p>
-    <p>How real is it puts every number the sim produces next to what each team really did in 2025-26 and the league average, with a verdict on each, from the last test or from this game so far. Settings, behind the gear, holds the engine sliders, with a tick at the value calibrated to NHL tracking, and the data sources; settings and plans can be saved in your browser or exported to share. The version number is at the bottom of the page.</p>
+    <p>The Game plan lab answers whether a change would help, apart from the game you watch, with plans of its own for both teams. Pick the team you coach and set both plans; they start from the same plans as the game on the rink, are remembered in your browser, and reset to the originals with one link. Run the baseline: your plan against theirs, 100 games unless you pick another number, at the NHL-realistic settings, in about a minute on most computers. It says how your team does, and folds out a comparison of those games with what the real teams did in 2025-26. Then try a change: pick one choice in your plan and another option for it, and it plays the same games as the baseline. The same games means each game starts from the same random numbers, so the bounces match until the change makes play go another way, and a gap between them is the change, not the schedule. Each change gets a sentence and three verdicts, net chances, goal difference and points, each a clear edge, too close to call or a clear cost. Trust net chances first: points need far more games to separate. Rank every option tries every option of one choice, every forecheck for example, and orders them. Tested changes stay listed under the baseline; changing either plan asks for a new baseline first.</p>
+    <p>Settings, in the Watch controls, holds the sliders for the game you watch, with a tick at the value calibrated to NHL tracking; the lab always plays at the tick. Settings and the Watch plans can be saved in your browser or exported to share, and the data sources are listed there too. The version number is at the bottom of the page.</p>
 
     <h3>What it is not</h3>
     <p>It is not a replay of real games. Player movement is a decision model, tuned against public aggregates, not tracking data, so the engine can be systematically wrong in ways the calibration table will show. Ratings reflect one season of results and a weak defensive proxy, and systems are drawn from coaching references, not from either club's actual playbook. Everything that drives it, from rosters to formation coordinates to the speed of a rimmed puck, is kept as plain data with its sources, so any of it can be questioned and corrected without touching the engine.</p>
@@ -243,7 +228,7 @@
 </dialog>
 <footer class="version">Bruins vs Canadiens <span id="version"></span></footer>
 
-<script type="module" src="src/main.js?v=0.47"></script>
+<script type="module" src="src/main.js?v=0.48"></script>
 
 </body>
 </html>

@@ -1,4 +1,4 @@
-// Every browser plays a seed the same way: the same seeded games at the NHL tick, in Node and in the strategy test's
+// Every browser plays a seed the same way: the same seeded games at the NHL tick, in Node and in the Game plan lab's
 // background workers in Chromium, Firefox and WebKit (Safari's engine). Browsers that are not installed are skipped;
 // install them with  cd tools && npx playwright install firefox webkit
 //

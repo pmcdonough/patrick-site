@@ -4,9 +4,9 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 ## What this repo is
 
-A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (plan A against plan B on the same seeded games) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
+A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. It has two views that share nothing but the engine: Watch a game (scoreboard, rink, each team's game plan as a sentence with its drawer, the Watch settings drawer with the sliders, box score, play by play and rosters, and a strip that explains the lab and links to it) and the Game plan lab (its own plans for both teams, remembered in the browser; a baseline of 100 games at the NHL settings with the comparison with the real 2025-26 teams folded under it; then changes, or every option of one choice, played through the same games and judged against the baseline). The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.58, sim 0.47, Play Review 0.9.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.59, sim 0.48, Play Review 0.9.
 
 ## Layout
 
@@ -17,8 +17,8 @@ public/bruins-vs-canadiens/
   index.html                       the page's markup; loads style.css and src/main.js with a ?v= version stamp
   style.css                        its styles
   data/*.json                      rosters, ratings, systems, physics, moneypuck-2025, defaults, xg-model
-  src/main.js                      the page: drawing, controls, game plans, Test a strategy, How real is it
-  src/lab/worker.js                Test a strategy's background worker: imports the engine, plays seeded games
+  src/main.js                      the page: Watch (drawing, controls, its plans and settings) and the Game plan lab
+  src/lab/worker.js                the lab's background worker: imports the engine, plays seeded games
   src/engine/                      the engine; never touches the page (the page reads its state and listens to its events)
     sim.js                         createSim(DATA): game state, newGame(seed), tick; installs and links the modules below
     rink.js, xg.js, rosters.js     geometry, expected goals, ratings: plain functions
@@ -37,7 +37,7 @@ tools/
   shifts.js, rules.js, nhl-average.js   shift lengths, offsides and icings, six games at the NHL tick (Node)
   test/*.test.js                   unit tests: node --test tools/test
   smoke.js                         loads all three pages over HTTP, plays a game, checks the version stamps (Chromium)
-  calibration.js                   a ten-game strategy test through the page's own controls (Chromium)
+  calibration.js                   a ten-game baseline in the Game plan lab through the page's own controls (Chromium)
   review.js                        fingerprint of every shot Play Review scores, against the reference (Chromium)
   browsers.js                      the same seeded games in Node and in Chromium, Firefox and WebKit
   baselines.json                   saved references for lab.js and review.js, a fingerprint per game and per shot
@@ -80,7 +80,8 @@ Engine:
 - Every game starts from freshly built teams, players, puck and clock (`buildTeams` refills the same two team objects in `newGame`); only the game plans carry over. Put a new field's starting value in `rosters.js`, not in a reset list.
 - The engine never calls `Math.sin`, `cos`, `tan`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`: browsers and Node compute those differently in the last bit, which changes how seeded games end. Use `detmath.js` (add a function there if you need one). `Math.abs`, `min`, `max`, `floor`, `round`, `sign` and `sqrt` are exact everywhere and fine.
 - The expected-goal formula lives in one place, `src/engine/xg.js`. Play Review imports it with the sim's rink and math, so the two pages cannot disagree.
-- Test a strategy plays the engine's own `tick` and `newGame`, in background workers that import the engine (`runJobs`, `src/lab/worker.js`) or, when a browser cannot start workers, on an engine instance of its own on the page (`runInPage`); it has no engine logic of its own. Do not add a second way to play a game. A seeded game plays identically in a worker, on the page, in `tools/lab.js` (Node) and in every browser.
+- Watch and the Game plan lab are separate: the Watch plans and sliders drive only the game on the rink (only `#planDrawer` controls feed `readTactics`), and the lab keeps its own plans (`LAB`, saved as `rink.lab`) and always plays at the NHL settings.
+- The Game plan lab plays the engine's own `tick` and `newGame`, in background workers that import the engine (`runJobs`, `src/lab/worker.js`) or, when a browser cannot start workers, on an engine instance of its own on the page (`runInPage`); it has no engine logic of its own. Do not add a second way to play a game. A seeded game plays identically in a worker, on the page, in `tools/lab.js` (Node) and in every browser.
 - The engine is balanced at the NHL-average multipliers (every slider at 1.0, the tick mark). The build defaults in `defaults.json` deliberately run hotter (acceleration 2.3, speed 1.3, cruise 1.15, shot volume 2) because it is more fun to watch. Calibrate at 1.0, then check that the defaults still look right.
 - Balance is measured, not eyeballed. A seeded run reproduces exactly, so any change from the saved reference is the code's doing. Re-save a reference with `--save` only for an intended change, and say so in the commit. A system or aggression effect is real only when its interval in `--compare` or `--sweep` excludes zero; judge by expected-goal differential first, since records need thousands of games to separate settings.
 
@@ -93,10 +94,10 @@ The engine checks run in Node; the page checks start their own server and load t
 | `node tools/smoke.js` | every change; first command of a session | `ERRORS: []` |
 | `node --test tools/test` | any engine change (about 20 s) | `fail 0` |
 | `node tools/lab.js` and `node tools/lab.js --nhl` | any engine change (about 40 s each) | "Identical to the reference: all 100 games", or a change you intended and re-save |
-| `node tools/lab.js --games 20 --order --pool` | a change to how games start or reset, to the worker or to the strategy test | "Order check" and "Pool check" lines, no FAILED |
+| `node tools/lab.js --games 20 --order --pool` | a change to how games start or reset, to the worker or to the Game plan lab | "Order check" and "Pool check" lines, no FAILED |
 | `node tools/shifts.js`, `node tools/rules.js` | a change to lines, changes, offside or icing | numbers against the targets in their headers |
 | `node tools/review.js` | a change to Play Review, the expected-goal model or the rink | "Identical to the reference" |
-| `node tools/calibration.js` | a change to Test a strategy or How real is it | the two tables print, `ERRORS []` |
+| `node tools/calibration.js` | a change to the Game plan lab | the two tables print, `ERRORS []` |
 | `node tools/browsers.js` | a change to `detmath.js` or anything the engine computes with | every installed browser "identical to Node" |
 
 ## Shipping a version
@@ -118,6 +119,6 @@ The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`,
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.58)
+## State (site 0.59)
 
 All checks pass. References in `tools/baselines.json` are from sim 0.46 (re-saved when a dead pass became a loose puck, which fixed play freezing for up to a period; no average moved by more than one combined interval), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`).

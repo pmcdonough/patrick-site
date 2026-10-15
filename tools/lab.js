@@ -8,7 +8,7 @@
 //   node tools/lab.js --json out.json                   also write every game's numbers
 //   node tools/lab.js --save                            make this run the reference in tools/baselines.json
 //   node tools/lab.js --games 20 --order                also replay the seeds in one worker in reverse order: every game must match
-//   node tools/lab.js --games 20 --pool                 also play the seeds in the page's own background workers (Test a strategy): every game must match
+//   node tools/lab.js --games 20 --pool                 also play the seeds in the page's own background workers (the Game plan lab): every game must match
 //   node tools/lab.js --param shotDecision.xgChoice.minXg=0.1   try a physics.json value without editing the file
 //
 // The report compares each club's per-game numbers with the league (MoneyPuck 2025-26 and the rules
@@ -84,7 +84,7 @@ async function run(pool, o, set, reverse, nWorkers = pool.workers.length) {
   return { rows, tac: done[0].tac, cfg: done[0].cfg };
 }
 
-// The page's own background workers (Test a strategy) play the same seeds; compare what they report for each game.
+// The page's own background workers (the Game plan lab) play the same seeds; compare what they report for each game.
 async function poolCheck(A) {
   const { chromium } = require('playwright');
   const { serve } = require('./serve');

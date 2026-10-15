@@ -1,4 +1,4 @@
-// Test a strategy's background worker: plays one seeded game per job and posts the row back.
+// The Game plan lab's background worker: plays one seeded game per job and posts the row back.
 // It imports the engine directly (it never touches the page), with this file's version stamp so both come
 // from the same deploy. A game seeded with s plays exactly as tools/lab.js plays seed s.
 const engine = import('../engine/sim.js' + self.location.search);

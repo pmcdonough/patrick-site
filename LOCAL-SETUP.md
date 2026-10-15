@@ -71,12 +71,12 @@ Served (the pages fetch their data over HTTP):
 
 ```
 node tools/serve.js                   # or: python3 -m http.server --directory public 8000
-# open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#test  http://localhost:8000/play-review/
+# open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#lab  http://localhost:8000/play-review/
 ```
 
 The pages need a server: opened straight from disk they cannot load their data or modules.
 
-Things to click once: each of the three steps in the header; Edit plan and change a choice; Sight lines on and off; Test a strategy, Games 10, change a plan B choice, Run plan A and plan B, then How real is it; Rank the options for one choice; Play Review, pick a shot, play the replay. The browser console should stay clean.
+Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, test a change, rank every option for one choice, change a plan and see the baseline go out of date; Play Review, pick a shot, play the replay. The browser console should stay clean.
 
 The live site at pmcdonough.com serves `public/` through Cloudflare.
 
@@ -93,7 +93,7 @@ node tools/lab.js --games 20 --order --pool   # every game identical replayed in
 node tools/shifts.js            # shift-length distribution and change windows
 node tools/rules.js             # offsides and icings per game against league rates
 node tools/review.js            # every shot Play Review scores, against its reference
-node tools/calibration.js       # a ten-game strategy test through the page's controls
+node tools/calibration.js       # a ten-game baseline in the Game plan lab through the page's controls
 node tools/browsers.js          # the same seeded games in Chromium, Firefox and WebKit as in Node
 ```
 

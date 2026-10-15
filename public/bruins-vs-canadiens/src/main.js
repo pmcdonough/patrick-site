@@ -1,13 +1,14 @@
 // Bruins vs Canadiens: the page. The engine is in engine/sim.js and never touches the page; this file draws it,
-// runs the controls, the game plans, Test a strategy and How real is it.
+// runs the controls and the Watch view's game plans, and the Game plan lab (its own plans, a baseline, changes tested
+// against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.47';
+import { createSim } from './engine/sim.js?v=0.48';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.47';
+  const VERSION = '0.48';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -23,7 +24,8 @@ export function startSim(DATA) {
     const read = k => ({ fore: $(k + 'Fore').value, brk: $(k + 'Break').value, entry: $(k + 'Entry').value, oz: $(k + 'Oz').value, dz: $(k + 'Dz').value, pp: $(k + 'PP').value, pk: $(k + 'PK').value, agg: $(k + 'Agg').value / 100 });
     teams[0].tac = read('h'); teams[1].tac = read('a');
   }
-  document.querySelectorAll('select, input[type=range]').forEach(el => el.addEventListener('input', readTactics));
+  // only the plan drawer drives the game being watched; the Game plan lab's controls never do
+  document.querySelectorAll('#planDrawer select, #planDrawer input[type=range]').forEach(el => el.addEventListener('input', readTactics));
   readTactics();
   // Hover text on the game-plan choices, read from the systems data: every option explains itself, the select shows the
   // current choice's explanation, and the aggression dial says what it changes.
@@ -107,7 +109,6 @@ export function startSim(DATA) {
     const w = teams[0].score > teams[1].score ? 0 : 1, l = 1 - w;
     record.w[w]++; if (game.overtime || game.shootout) record.otl[l]++; else record.l[l]++;
     const el = $('record'); if (el) el.textContent = `This session: ${teams[0].abbr} ${record.w[0]}-${record.l[0]}-${record.otl[0]}, ${teams[1].abbr} ${record.w[1]}-${record.l[1]}-${record.otl[1]} (W-L-OTL)`;
-    calibT = 0;
   }
 
 
@@ -464,12 +465,11 @@ export function startSim(DATA) {
     $('chH').textContent = teams[0].changes; $('chA').textContent = teams[1].changes;
   }
 
-  // ---------- Calibration: sim per-game rates vs MoneyPuck 2025-26 ----------
-  const CAL_ROWS = [['Shot attempts', 'attempts', 'shotAttempts'], ['Shots on goal', 'shots', 'shotsOnGoal'], ['Goals', 'score', 'goals'], ['Expected goals', 'xg', 'xGoals'], ['Blocked (by opp.)', 'blockedFor', 'blocked'], ['Missed net', 'missed', 'missed'], ['High-danger shots', 'tierHigh', 'highDangerShots'], ['Medium-danger', 'tierMed', 'mediumDangerShots'], ['Low-danger', 'tierLow', 'lowDangerShots'], ['Penalties taken', 'pens', 'penalties'], ['Faceoff win %', 'fo', 'faceoffWinPct'], ['Goalie freezes', 'freezes', 'freezes'], ['Offsides', 'offsides', 'offsidesPerTeamGame'], ['Icings', 'icings', 'icingsPerTeamGame']];
-  let batch = null; // { n, sums: [ {..}, {..} ], w, l, otl } from the last lab run
-  const addToBatch = () => teams.forEach((t, i) => { const s = teamSample(t); for (const k in s) batch.sums[i][k] = (batch.sums[i][k] || 0) + s[k]; });
-  // How real is it: each sim number per team per game next to that team's real 2025-26 number and the league, in groups,
-  // with a one-line reading and an on target / above / below verdict. Reads the last test run, or this game scaled to 60 minutes.
+  // ---------- The Game plan lab: its own plans for both teams, a baseline, and changes tested against it ----------
+  // Everything here plays at the NHL settings (every multiplier 1.0) in background workers that import the engine
+  // (src/lab/worker.js), or on an engine of its own on the page when a browser cannot start them. It never touches the
+  // game being watched: the lab's plans live here and in this browser's storage, not in the Watch view's plan drawer.
+  // A game seeded with s plays exactly as tools/lab.js plays seed s.
   const REAL_ROWS = [
     ['Results'],
     ['Goals', 'score', 'goals', 'Goals scored per game.'],
@@ -491,24 +491,23 @@ export function startSim(DATA) {
     ['Icings', 'icings', 'icingsPerTeamGame', 'Icings called against the team; there is no icing on the penalty kill.'],
   ];
   const realVerdict = (v, real) => { if (!(real > 0)) return null; const d = (v - real) / real; return Math.abs(d) <= 0.15 ? ['good', 'On target'] : d > 0.5 ? ['bad', 'Well above'] : d < -0.5 ? ['bad', 'Well below'] : d > 0 ? ['warn', 'Above'] : ['warn', 'Below']; };
-  function renderCalib() {
-    const el = $('calib'); if (!el || !MP) return;
-    const fromRun = batch && batch.n;
-    const src = fromRun ? batch.sums.map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v / batch.n]))) : teams.map(teamSample);
-    const played = fromRun ? 1 : Math.max(0.05, ((game.period - 1) * 1200 + (1200 - Math.min(game.clock, 1200))) / 3600); // scale this game to 60 minutes
-    const judge = fromRun || played > 0.5;
+  // the baseline's games next to each team's real 2025-26 numbers and the league, with a verdict on each
+  function renderCalib(rows) {
+    const el = $('calib'); if (!el || !MP || !rows || !rows.length) { $('realBox').hidden = true; return; }
+    const n = rows.length, sums = [{}, {}], rec = { w: [0, 0], l: [0, 0], otl: [0, 0] };
+    for (const r of rows) { r.teams.forEach((t, i) => { for (const k in t.sample) sums[i][k] = (sums[i][k] || 0) + t.sample[k]; }); const w = r.teams[0].goals > r.teams[1].goals ? 0 : 1; rec.w[w]++; if (r.end !== 'REG') rec.otl[1 - w]++; else rec.l[1 - w]++; }
+    const src = sums.map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v / n])));
     const fmt = (k, v) => k === 'fo' || k === 'faceoffWinPct' ? Math.round(v * 100) + '%' : (k === 'xg' || k === 'score' || k === 'goals' || k === 'xGoals') ? v.toFixed(2) : v.toFixed(1);
     let on = 0, all = 0;
     const realOf = (t, rk) => MP.teams[t.abbr][rk] !== undefined ? MP.teams[t.abbr][rk] : PH.rulesBenchmarks[rk];
-    const rec = fromRun ? batch : record, recN = fromRun ? batch.n : record.w[0] + record.w[1];
     const realRec = teams.map(t => DATA.rosters.teams[t.key].record);
     let html = `<table><thead><tr><th>Per team per game</th>${teams.map(t => `<th>${t.name}: sim <span class="vs">vs real</span></th>`).join('')}<th>NHL average</th></tr></thead><tbody>`;
-    let pointsRow = `<tr><td class="m"><b>Points %</b><span>Share of the standings points: two for a win, one for an overtime or shootout loss.</span></td>` + teams.map((t, i) => { const sim = recN ? (2 * rec.w[i] + rec.otl[i]) / (2 * recN) : null, real = realRec[i] ? realRec[i].points / (2 * realRec[i].gp) : null; return `<td class="n">${sim === null ? '-' : Math.round(sim * 100) + '%'} <span class="vs">vs ${real === null ? '-' : Math.round(real * 100) + '%'}</span>${recN ? `<br><span class="vs">${rec.w[i]}-${rec.l[i]}-${rec.otl[i]} here, ${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : '-'} real</span>` : ''}</td>`; }).join('') + '<td class="lg">50%</td></tr>';
+    let pointsRow = `<tr><td class="m"><b>Points %</b><span>Share of the standings points: two for a win, one for an overtime or shootout loss.</span></td>` + teams.map((t, i) => { const sim = (2 * rec.w[i] + rec.otl[i]) / (2 * n), real = realRec[i] ? realRec[i].points / (2 * realRec[i].gp) : null; return `<td class="n">${Math.round(sim * 100)}% <span class="vs">vs ${real === null ? '-' : Math.round(real * 100) + '%'}</span><br><span class="vs">${rec.w[i]}-${rec.l[i]}-${rec.otl[i]} here, ${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : '-'} real</span></td>`; }).join('') + '<td class="lg">50%</td></tr>';
     for (const row of REAL_ROWS) {
       if (row.length === 1) { html += `<tr class="sec"><td colspan="${teams.length + 2}">${row[0]}</td></tr>`; if (pointsRow) { html += pointsRow; pointsRow = ''; } continue; }
       const [label, sk, rk, say, term] = row;
       const cells = teams.map((t, i) => {
-        const v = sk === 'fo' ? src[i][sk] : src[i][sk] / played, real = realOf(t, rk), vd = judge ? realVerdict(v, real) : null;
+        const v = src[i][sk], real = realOf(t, rk), vd = realVerdict(v, real);
         if (vd) { all++; if (vd[0] === 'good') on++; }
         return `<td class="n">${fmt(sk, v)} <span class="vs">vs ${real !== undefined ? fmt(rk, real) : '-'}</span>${vd ? `<br><span class="pill ${vd[0]}">${vd[1]}</span>` : ''}</td>`;
       }).join('');
@@ -516,24 +515,15 @@ export function startSim(DATA) {
       html += `<tr><td class="m"><b>${label}${term ? ` <button type="button" class="tip" data-term="${term}" aria-label="What is this?">?</button>` : ''}</b><span>${say}</span></td>${cells}<td class="lg">${lg !== undefined ? fmt(rk, lg) : '-'}</td></tr>`;
     }
     el.innerHTML = html + '</tbody></table>';
-    $('realSource').textContent = fromRun ? `${batch.n} test games` : `This game so far${played < 0.98 ? ', scaled to 60 minutes' : ''}`;
-    $('realScore').textContent = judge ? `${on} of ${all} numbers on target` : 'Too early in this game to judge; play 100 games to check.';
-    $('calibNote').textContent = fromRun ? `last run, ${batch.n} games: ${all - on} of ${all} cells off` : 'this game so far';
+    $('realScore').textContent = `${on} of ${all} numbers on target`;
+    $('realBox').hidden = false;
   }
 
-  // ---------- Test a strategy: plan A against plan B, the same seeded games for both, played in background workers ----------
-  // Each job is one game: a seed, both teams' tactics and the engine multipliers. A game seeded with s plays exactly as
-  // tools/lab.js plays seed s. Workers import the engine module directly (src/lab/worker.js); when a
-  // browser cannot start them the games run on the page, much slower.
   const TKEYS = [['Fore', 'Forecheck', 'fore'], ['Break', 'Breakout', 'brk'], ['Entry', 'Entry', 'entry'], ['Oz', 'Offensive zone', 'oz'], ['Dz', 'Defensive zone', 'dz'], ['PP', 'Power play', 'pp'], ['PK', 'Penalty kill', 'pk'], ['Agg', 'Aggression', 'agg']];
-  const TEST = { coach: 0, running: false, stop: false, pool: null, poolFailed: false, secPerGame: 2.4 };
-  try { const c = +localStorage.getItem('rink.coach'); if (c === 1) TEST.coach = 1; } catch (e) {}
+  const TEST = { running: false, stop: false, pool: null, poolFailed: false, secPerGame: 2.4 };
   const pre = i => i ? 'a' : 'h';
   const NHL_CFG = () => Object.fromEntries(Object.keys(cfg).map(k => [k, 1]));
-  const tacOf = (prefix, over) => Object.fromEntries(TKEYS.map(([k, , t]) => { const v = over && over[k] !== undefined ? over[k] : $(prefix + k).value; return [t, k === 'Agg' ? v / 100 : v]; }));
-  const bVals = () => Object.fromEntries(TKEYS.map(([k]) => [k, $('b' + k).value]));
-  const optLabel = (k, v) => { if (k === 'Agg') return `${aggWord(v / 100).toLowerCase()} aggression`; const o = [...$(pre(TEST.coach) + k).options].find(x => x.value === v); const t = o ? o.text : v; return `${TKEYS.find(x => x[0] === k)[1].toLowerCase()}: ${t.toLowerCase()}`; };
-  const bChanges = () => TKEYS.filter(([k]) => $('b' + k).value !== $(pre(TEST.coach) + k).value).map(([k]) => k);
+  const AGG_STEPS = ['0', '25', '50', '75', '100'];
 
   const poolSize = () => clamp((navigator.hardwareConcurrency || 4) - 1, 1, 8);
   function makePool() {
@@ -581,52 +571,71 @@ export function startSim(DATA) {
     requestAnimationFrame(step);
   }
 
-  // ---------- the setup panel ----------
-  function planSentence(side) {
-    const txt = k => { const el = $(side + k); return el.selectedOptions ? el.selectedOptions[0].text : ''; };
-    const lc = v => v.charAt(0).toLowerCase() + v.slice(1);
-    return `${txt('Fore')} forecheck, ${lc(txt('Break'))} breakout, ${lc(txt('Entry'))} to get in. ${txt('Oz')} in the offensive zone, ${lc(txt('Dz'))} coverage in their own end. Power play ${txt('PP')}, penalty kill ${lc(txt('PK'))}, ${lc(aggWord($(side + 'Agg').value / 100))} aggression.`;
+  // ---------- the lab's plans: one per team, as control values (option values; aggression 0 to 100) ----------
+  // The originals are the build plans (data/defaults.json), the same ones a fresh Watch game starts from.
+  const optionsOf = k => [...$('h' + k).options].map(o => [o.value, o.text]);
+  const originalPlans = () => teams.map((t, i) => Object.fromEntries(TKEYS.map(([k]) => {
+    const v = DATA.defaults && DATA.defaults.systems && DATA.defaults.systems[t.abbr] && DATA.defaults.systems[t.abbr][k];
+    const el = $(pre(i) + k), dflt = el.tagName === 'SELECT' ? ([...el.options].find(o => o.defaultSelected) || el.options[0]).value : el.defaultValue;
+    return [k, v === undefined ? String(dflt) : k === 'Agg' ? String(Math.round(v * 100)) : String(v)];
+  })));
+  const LAB = { coach: 0, plans: originalPlans(), base: null, tested: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem('rink.lab') || 'null');
+    if (saved) {
+      if (saved.coach === 1) LAB.coach = 1;
+      if (Array.isArray(saved.plans)) saved.plans.forEach((p, i) => TKEYS.forEach(([k]) => { const v = p && p[k]; if (v !== undefined && (k === 'Agg' ? +v >= 0 && +v <= 100 : optionsOf(k).some(([o]) => o === v))) LAB.plans[i][k] = String(v); }));
+    }
+  } catch (e) {}
+  const saveLab = () => { try { localStorage.setItem('rink.lab', JSON.stringify({ coach: LAB.coach, plans: LAB.plans })); } catch (e) {} };
+  const tacOfPlan = p => Object.fromEntries(TKEYS.map(([k, , t]) => [t, k === 'Agg' ? +p[k] / 100 : p[k]]));
+  const planKey = () => JSON.stringify(LAB.plans);
+  const optText = (k, v) => k === 'Agg' ? `${aggWord(+v / 100).toLowerCase()} (${(+v / 100).toFixed(2)})` : (optionsOf(k).find(([o]) => o === v) || [v, v])[1];
+  const choiceName = k => TKEYS.find(x => x[0] === k)[1];
+  const lc = v => v.charAt(0).toLowerCase() + v.slice(1);
+  const dotStyle = i => i ? 'background:var(--away);border-color:var(--away-3)' : 'background:var(--home);border-color:var(--home-2)';
+  // one team's plan as a grid of choices; `tag` keeps the ids apart (o for theirs, m for yours)
+  function buildGrid(el, team, tag) {
+    const p = LAB.plans[team];
+    el.innerHTML = TKEYS.map(([k, label]) => k === 'Agg'
+      ? `<label class="agg">${label}<input type="range" id="${tag}Agg" min="0" max="100" value="${p.Agg}"></label>`
+      : `<label>${label}<select id="${tag}${k}">${optionsOf(k).map(([v, t]) => `<option value="${v}"${v === p[k] ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
+    // compact: what each choice means is its hover text (the plan drawer on Watch and How it works spell them out)
+    const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
+    const describe = k => { const el = $(tag + k); if (k === 'Agg') { el.title = `${aggWord(el.value / 100)} aggression. ${SYS.coaching ? SYS.coaching.aggression.desc : ''}`; return; } const d = SYS[SECTION[k]][el.value]; el.title = d && d.desc ? d.desc : ''; for (const o of el.options) { const od = SYS[SECTION[k]][o.value]; if (od && od.desc) o.title = od.desc; } };
+    TKEYS.forEach(([k]) => { describe(k); $(tag + k).addEventListener('input', e => { LAB.plans[team][k] = String(e.target.value); describe(k); saveLab(); labRefresh(); }); });
   }
-  function buildB() {
-    const p = pre(TEST.coach);
-    $('bGrid').innerHTML = TKEYS.map(([k, label]) => k === 'Agg'
-      ? `<label class="agg" data-k="Agg">${label}<input type="range" id="bAgg" min="0" max="100" value="${$(p + 'Agg').value}"></label>`
-      : `<label data-k="${k}">${label}<select id="b${k}">${$(p + k).innerHTML}</select></label>`).join('');
-    TKEYS.forEach(([k]) => { if (k !== 'Agg') $('b' + k).value = $(p + k).value; $('b' + k).addEventListener('input', testRefresh); });
-    document.querySelectorAll('#bGrid label').forEach(describeChoice);
-    $('labDim').innerHTML = TKEYS.map(([k, label]) => `<option value="${k}">${label}</option>`).join('');
-  }
-  function testRefresh() {
-    const c = TEST.coach, me = teams[c], op = teams[1 - c], p = pre(c);
+  function buildLab() {
+    const c = LAB.coach, me = teams[c], op = teams[1 - c];
     document.querySelectorAll('[data-coach]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.coach === c));
-    const dotStyle = i => i ? 'background:var(--away);border-color:var(--away-3)' : 'background:var(--home);border-color:var(--home-2)';
-    $('myName').textContent = `${me.name} (${me.abbr})`; $('oppName').textContent = `${op.name} (${op.abbr})`;
+    $('myName').textContent = me.name; $('oppName').textContent = op.name;
     $('myDot').style.cssText = dotStyle(c); $('oppDot').style.cssText = dotStyle(1 - c);
-    $('planBlock').className = 'side ' + (c ? 'mtl' : 'bos'); $('oppBlock').className = 'side ' + (c ? 'bos' : 'mtl');
-    $('planAText').textContent = planSentence(p); $('oppPlan').textContent = `As set now: ${planSentence(pre(1 - c))}`;
-    const ch = bChanges();
-    document.querySelectorAll('#bGrid label').forEach(l => l.classList.toggle('changed', ch.includes(l.dataset.k)));
-    const n = +$('labN').value, games = n * (ch.length ? 2 : 1), workers = TEST.poolFailed ? 1 : poolSize();
-    const secs = Math.ceil(games * TEST.secPerGame / workers);
-    $('labRun').textContent = ch.length ? `Run plan A and plan B` : 'Run the matchup';
-    $('labEst').textContent = `${games} games, about ${secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes'} on this computer. Runs use the NHL-realistic settings, the ones the engine is calibrated to, and the game on the Watch view keeps playing.`;
-    $('forWho').innerHTML = `<span class="dot" style="${dotStyle(c)}"></span><span>Result for the ${me.name}${ch.length ? ': plan B against plan A' : ''}, both against the ${op.name}' plan as set now</span>`;
+    $('myBlock').className = 'side ' + (c ? 'mtl' : 'bos'); $('oppBlock').className = 'side ' + (c ? 'bos' : 'mtl');
+    buildGrid($('oppGrid'), 1 - c, 'o'); buildGrid($('myGrid'), c, 'm');
+    $('tryDim').innerHTML = TKEYS.map(([k, label]) => `<option value="${k}">${label}</option>`).join('');
+    labRefresh();
   }
-  document.querySelectorAll('[data-coach]').forEach(b => b.addEventListener('click', () => { TEST.coach = +b.dataset.coach; try { localStorage.setItem('rink.coach', TEST.coach); } catch (e) {} buildB(); testRefresh(); }));
-  $('bReset').addEventListener('click', () => { buildB(); testRefresh(); });
-  $('labN').addEventListener('input', testRefresh);
-  $('myEdit').addEventListener('click', () => openDrawer('planDrawer', $(TEST.coach ? 'sideA' : 'sideH').querySelector('select')));
-  $('oppEdit').addEventListener('click', () => openDrawer('planDrawer', $(TEST.coach ? 'sideH' : 'sideA').querySelector('select')));
-  // plan A is the team as set: when it changes, keep plan B's changes and follow plan A everywhere else
-  let lastA = null;
-  const snapA = () => Object.fromEntries(TKEYS.map(([k]) => [k, $(pre(TEST.coach) + k).value]));
-  document.querySelectorAll('.side select, .side input[type=range]').forEach(el => el.addEventListener('input', () => {
-    if (!$('bGrid').children.length) return;
-    const now = snapA(); if (lastA) TKEYS.forEach(([k]) => { if ($('b' + k).value === lastA[k]) $('b' + k).value = now[k]; }); lastA = now; testRefresh();
-  }));
-  buildB(); lastA = snapA(); testRefresh();
+  const tryOptions = () => { const k = $('tryDim').value, cur = LAB.plans[LAB.coach][k]; return (k === 'Agg' ? AGG_STEPS.map(v => [v, optText('Agg', v)]) : optionsOf(k)).filter(([v]) => k === 'Agg' ? Math.abs(+v - +cur) >= 13 : v !== cur); };
+  function labRefresh() {
+    const c = LAB.coach, me = teams[c], op = teams[1 - c], b = LAB.base, stale = !!b && b.key !== planKey();
+    const n = +$('labN').value, workers = TEST.poolFailed ? 1 : poolSize(), secs = Math.ceil(n * TEST.secPerGame / workers);
+    $('labEst').textContent = `${n} games, about ${secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes'} on this computer, at the NHL settings: skating, passing and shooting at the values calibrated to real tracking data.`;
+    $('forWho').innerHTML = `<span class="dot" style="${dotStyle(c)}"></span><span>Baseline: the ${me.name}' plan against the ${op.name}' plan${b ? `, ${b.rows.length} games` : ''}</span>`;
+    $('baseStale').hidden = !stale; $('baseCard').classList.toggle('isstale', stale); $('tested').classList.toggle('isstale', stale);
+    const ready = !!b && !stale && !TEST.running;
+    $('tryHint').textContent = !b ? 'Run the baseline first. Then pick one choice in your plan and another option for it; the change plays the same games as the baseline.'
+      : stale ? 'Run the baseline again first: these results are for the plans as they were.'
+      : `Pick one choice in the ${me.name}' plan and another option for it. It plays the same ${b.rows.length} games as the baseline.`;
+    const keep = $('tryOpt').value; $('tryOpt').innerHTML = tryOptions().map(([v, t]) => `<option value="${v}">${t}</option>`).join(''); if ([...$('tryOpt').options].some(o => o.value === keep)) $('tryOpt').value = keep;
+    $('tryRun').disabled = !ready; $('rankRun').disabled = !ready; $('labRun').disabled = TEST.running;
+    $('rankRun').textContent = `Rank every option for ${lc(choiceName($('tryDim').value))}`;
+  }
+  document.querySelectorAll('[data-coach]').forEach(b => b.addEventListener('click', () => { if (TEST.running || LAB.coach === +b.dataset.coach) return; LAB.coach = +b.dataset.coach; LAB.tested = []; renderTested(); saveLab(); buildLab(); if (LAB.base) renderBaseline(); }));
+  $('labReset').addEventListener('click', () => { if (TEST.running) return; LAB.plans = originalPlans(); saveLab(); buildLab(); });
+  $('labN').addEventListener('input', labRefresh);
+  $('tryDim').addEventListener('input', labRefresh);
 
-  // ---------- statistics and the result ----------
+  // ---------- statistics and the results ----------
   const mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
   const ci95 = a => a.length > 1 ? 1.96 * Math.sqrt(a.reduce((x, y) => x + (y - mean(a)) ** 2, 0) / (a.length - 1)) / Math.sqrt(a.length) : 0;
   const pct = v => Math.round(100 * v) + '%';
@@ -642,113 +651,108 @@ export function startSim(DATA) {
     const rowsOf = (label, rows) => teams.map((t, i) => { let w = 0, l = 0, o = 0, gf = 0, ga = 0, xf = 0, xa = 0; for (const r of rows) { const me = r.teams[i], op = r.teams[1 - i]; if (me.goals > op.goals) w++; else if (r.end !== 'REG') o++; else l++; gf += me.goals; ga += op.goals; xf += me.xg; xa += op.xg; } const n = rows.length || 1; return `<tr><td>${label} ${t.abbr}</td><td>${w}-${l}-${o}</td><td>${pct((2 * w + o) / (2 * n))}</td><td>${(gf / n).toFixed(2)}</td><td>${(ga / n).toFixed(2)}</td><td>${(xf / n).toFixed(2)}</td><td>${(xa / n).toFixed(2)}</td></tr>`; }).join('');
     return `<table>${head}${plans.map(([label, rows]) => rowsOf(label, rows)).join('')}</table>`;
   }
-  function feedRealityCheck(rows) {
-    batch = { n: 0, sums: [{}, {}], w: [0, 0], l: [0, 0], otl: [0, 0] };
-    for (const r of rows) { r.teams.forEach((t, i) => { for (const k in t.sample) batch.sums[i][k] = (batch.sums[i][k] || 0) + t.sample[k]; }); const w = r.teams[0].goals > r.teams[1].goals ? 0 : 1; batch.w[w]++; if (r.end !== 'REG') batch.otl[1 - w]++; else batch.l[1 - w]++; batch.n++; }
-    renderCalib();
+  function renderBaseline() {
+    const b = LAB.base, c = LAB.coach, me = teams[c], op = teams[1 - c];
+    const g = b.rows.map(r => perGame(r, c)), pts = mean(g.map(x => x.pts));
+    $('baseHeadline').textContent = `The ${me.name} take ${pct(pts)} of the points against this ${op.name} plan, on ${mean(g.map(x => x.xgf)).toFixed(1)} chances a game for and ${mean(g.map(x => x.xga)).toFixed(1)} against.`;
+    $('baseRecord').innerHTML = recordTable([['', b.rows]]);
+    renderCalib(b.rows);
+    labRefresh();
   }
-  function showResult(rowsA, rowsB, c, changes) {
-    const me = teams[c], op = teams[1 - c];
-    $('labResult').innerHTML = recordTable(rowsB ? [['Plan A', rowsA], ['Plan B', rowsB]] : [['', rowsA]]);
-    if (!rowsB) {
-      const g = rowsA.map(r => perGame(r, c)), pts = mean(g.map(x => x.pts));
-      $('labHeadline').textContent = `${me.name} take ${pct(pts)} of the points against this ${op.name} plan, on ${mean(g.map(x => x.xgf)).toFixed(1)} chances a game for and ${mean(g.map(x => x.xga)).toFixed(1)} against.`;
-      $('labVerdicts').innerHTML = ''; $('labExplain').textContent = `${rowsA.length} games. Change a choice in plan B to test it against this. The records are in Details for analysts; How real is it compares these games with the real teams.`;
-      $('labDetails').open = true; return;
-    }
+  // a tested change against the baseline, game for game on the same seeds
+  function compare(rowsA, rowsB, c) {
     const d = rowsA.map((ra, i) => { const a = perGame(ra, c), b = perGame(rowsB[i], c); return { xg: b.xgd - a.xgd, xgf: b.xgf - a.xgf, xga: b.xga - a.xga, gd: b.gd - a.gd, pts: b.pts - a.pts }; });
     const S = k => [mean(d.map(x => x[k])), ci95(d.map(x => x[k]))];
     const [xm, xe] = S('xg'), [gm, ge] = S('gd'), [pm, pe] = S('pts'), [fm] = S('xgf'), [am] = S('xga');
-    const pA = mean(rowsA.map(r => perGame(r, c).pts)), pB = mean(rowsB.map(r => perGame(r, c).pts));
-    const vx = verdict(xm, xe), vg = verdict(gm, ge), vp = verdict(pm, pe);
-    const what = `Plan B (${changes.map(k => optLabel(k, $('b' + k).value)).join(', ')})`;
-    $('labHeadline').textContent = vx[0] === 'good' ? `${what} is better: about ${Math.abs(xm).toFixed(1)} more net chances a game.` : vx[0] === 'bad' ? `${what} is worse: about ${Math.abs(xm).toFixed(1)} fewer net chances a game.` : `${what} and plan A play about the same against this opponent.`;
-    $('labVerdicts').innerHTML = [
-      ['Net chances', sgn(xm), `chances for ${sgn(fm)}, against ${sgn(am)} a game`, vx, rangeBar(xm, xe, 2.5)],
-      ['Goal difference', sgn(gm), 'per game, plan B minus plan A', vg, rangeBar(gm, ge, 2.5)],
-      ['Points', `${pct(pA)} → ${pct(pB)}`, `plan A then plan B, ${rowsA.length} games each`, vp, rangeBar(pm, pe, 0.35)],
-    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v"><div class="k">${k}${{ 'Net chances': 'net', Points: 'pts' }[k] ? ` <button type="button" class="tip" data-term="${{ 'Net chances': 'net', Points: 'pts' }[k]}" aria-label="What does this mean?">?</button>` : ''}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
-    $('labExplain').innerHTML = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${rowsA.length} games. The points difference is not yet: points swing about ${Math.round(pe * 100)} points either way from luck alone <button type="button" class="tip" data-term="close" aria-label="What does too close to call mean?">?</button>. Chances are the number to trust here.`
-      : vx[0] === 'flat' ? `Neither number separates the two plans at ${rowsA.length} games <button type="button" class="tip" data-term="close" aria-label="What does too close to call mean?">?</button>. Run more games, or treat them as even.` : `Both chances and points separate the two plans at ${rowsA.length} games.`;
+    return { xm, xe, gm, ge, pm, pe, fm, am, pA: mean(rowsA.map(r => perGame(r, c).pts)), pB: mean(rowsB.map(r => perGame(r, c).pts)), n: rowsA.length };
   }
-  const seedsFor = n => Array.from({ length: n }, (_, i) => i + 1);
+  const tip = (term, what) => ` <button type="button" class="tip" data-term="${term}" aria-label="${what}">?</button>`;
+  function changeCard(e) {
+    const r = e.res, me = teams[e.c], vx = verdict(r.xm, r.xe), vg = verdict(r.gm, r.ge), vp = verdict(r.pm, r.pe);
+    const what = `${choiceName(e.k)}: ${lc(optText(e.k, e.v))}`, was = lc(optText(e.k, e.from));
+    const head = vx[0] === 'good' ? `Better: about ${Math.abs(r.xm).toFixed(1)} more net chances a game.` : vx[0] === 'bad' ? `Worse: about ${Math.abs(r.xm).toFixed(1)} fewer net chances a game.` : 'About the same as the baseline.';
+    const tiles = [
+      ['Net chances' + tip('net', 'What are net chances?'), sgn(r.xm), `chances for ${sgn(r.fm)}, against ${sgn(r.am)} a game`, vx, rangeBar(r.xm, r.xe, 2.5)],
+      ['Goal difference', sgn(r.gm), 'per game, against the baseline', vg, rangeBar(r.gm, r.ge, 2.5)],
+      ['Points' + tip('pts', 'What is points %?'), `${pct(r.pA)} → ${pct(r.pB)}`, `baseline, then with the change`, vp, rangeBar(r.pm, r.pe, 0.35)],
+    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v"><div class="k">${k}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
+    const explain = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${r.n} games. The points difference is not yet: points swing about ${Math.round(r.pe * 100)} points either way from luck alone${tip('close', 'What does too close to call mean?')}. Chances are the number to trust here.`
+      : vx[0] === 'flat' ? `Neither number separates it from the baseline at ${r.n} games${tip('close', 'What does too close to call mean?')}. Run more games, or treat them as even.` : `Both chances and points separate it from the baseline at ${r.n} games.`;
+    return `<article class="change"><h4>${what} <small>instead of ${was}, for the ${me.name}</small></h4><p class="headline sm">${head}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
+      <details class="more"><summary>Records</summary><div class="calib lab">${recordTable([['Baseline', e.rowsA], ['Change', e.rowsB]])}</div><p class="hint">Differences are the change minus the baseline, game for game: both play the same games, with the same bounces until the change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details></article>`;
+  }
+  function rankCard(e) {
+    const me = teams[e.c];
+    const rows = e.list.map(r => { const [cls, txt] = r.cur ? ['cur', 'Baseline'] : verdict(r.m, r.e); return `<div class="r"><div class="name">${optText(e.k, r.v)}${r.cur ? ' (your plan)' : ''}<small>${r.cur ? 'the baseline' : sgn(r.m) + ' net chances a game'}</small></div>${rangeBar(r.m, r.e, 2.5)}<span class="pill ${cls}">${txt}</span></div>`; }).join('');
+    return `<article class="change"><h4>Every option for ${lc(choiceName(e.k))} <small>for the ${me.name}, ${e.n} games each</small></h4><div class="rank">${rows}</div><p class="hint">The dot is the best estimate and the band the 95% range; right of the line is better for the ${me.name}.</p></article>`;
+  }
+  function renderTested() { $('tested').innerHTML = LAB.tested.map(e => e.kind === 'rank' ? rankCard(e) : changeCard(e)).join(''); }
+
+  // ---------- running ----------
   function setRunning(on) {
-    TEST.running = on; TEST.stop = false; $('labRun').disabled = on; $('labSweep').disabled = on; $('labStop').hidden = !on;
-    if (!on) { $('labBar').style.width = '0%'; }
+    TEST.running = on; TEST.stop = false; $('labStop').hidden = !on;
+    if (!on) $('labBar').style.width = '0%';
+    labRefresh();
   }
   const progress = (done, total, what) => { $('labBar').style.width = (100 * done / total) + '%'; $('labNote').textContent = `${what}: game ${done} of ${total}`; };
+  const timed = async (jobs, what) => {
+    setRunning(true); const t0 = performance.now();
+    const rows = await runJobs(jobs, (d, tot) => progress(d, tot, what));
+    const secs = (performance.now() - t0) / 1000; if (rows.size) TEST.secPerGame = secs * (TEST.pool ? poolSize() : 1) / rows.size;
+    setRunning(false); return { rows, secs };
+  };
   $('labRun').addEventListener('click', async () => {
     if (TEST.running) return;
-    const c = TEST.coach, n = +$('labN').value, changes = bChanges(), seeds = seedsFor(n), cfgNHL = NHL_CFG();
-    const tA = [tacOf('h'), tacOf('a')], tB = [...tA]; tB[c] = tacOf(pre(c), bVals());
-    const jobs = seeds.map(sd => ({ id: 'A' + sd, seed: sd, tacs: tA, cfg: cfgNHL })).concat(changes.length ? seeds.map(sd => ({ id: 'B' + sd, seed: sd, tacs: tB, cfg: cfgNHL })) : []);
-    setRunning(true); const t0 = performance.now();
-    const rows = await runJobs(jobs, (d, tot) => progress(d, tot, 'Playing'));
-    const secs = (performance.now() - t0) / 1000; if (rows.size) TEST.secPerGame = secs * (TEST.pool ? poolSize() : 1) / rows.size;
-    const both = seeds.filter(sd => rows.has('A' + sd) && (!changes.length || rows.has('B' + sd)));
-    const rowsA = both.map(sd => rows.get('A' + sd)), rowsB = changes.length ? both.map(sd => rows.get('B' + sd)) : null;
-    setRunning(false);
-    $('labNote').textContent = `${both.length} games for each plan${TEST.stop ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`;
-    if (both.length) { feedRealityCheck(rowsA); showResult(rowsA, rowsB, c, changes); } testRefresh();
+    const n = +$('labN').value, seeds = Array.from({ length: n }, (_, i) => i + 1), tacs = LAB.plans.map(tacOfPlan), key = planKey();
+    const { rows, secs } = await timed(seeds.map(sd => ({ id: sd, seed: sd, tacs, cfg: NHL_CFG() })), 'Baseline');
+    const done = seeds.filter(sd => rows.has(sd));
+    $('labNote').textContent = `${done.length} games${TEST.stop ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`;
+    if (!done.length) return;
+    LAB.base = { key, seeds: done, rows: done.map(sd => rows.get(sd)) }; LAB.tested = []; renderTested(); renderBaseline();
   });
-  $('labSweep').addEventListener('click', async () => {
-    if (TEST.running) return;
-    const c = TEST.coach, k = $('labDim').value, p = pre(c), n = +$('labN').value, seeds = seedsFor(n), cfgNHL = NHL_CFG(), cur = $(p + k).value;
-    const opts = k === 'Agg' ? ['0', '25', '50', '75', '100'] : [...$(p + k).options].map(o => o.value);
-    const tA = [tacOf('h'), tacOf('a')];
-    const jobs = [];
-    for (const v of opts) { const t = [...tA]; t[c] = tacOf(p, { [k]: v }); seeds.forEach(sd => jobs.push({ id: v + '|' + sd, seed: sd, tacs: t, cfg: cfgNHL })); }
-    if (!opts.includes(cur)) seeds.forEach(sd => jobs.push({ id: cur + '|' + sd, seed: sd, tacs: tA, cfg: cfgNHL }));
-    setRunning(true); $('labSweepResult').innerHTML = ''; const t0 = performance.now();
-    const rows = await runJobs(jobs, (d, tot) => progress(d, tot, 'Ranking'));
-    const secs = (performance.now() - t0) / 1000; setRunning(false);
-    const label = v => k === 'Agg' ? `${aggWord(v / 100)} (${(v / 100).toFixed(2)})` : [...$(p + k).options].find(o => o.value === v).text;
-    const base = seeds.filter(sd => rows.has(cur + '|' + sd));
-    const list = opts.map(v => {
-      const sd = base.filter(x => rows.has(v + '|' + x)); if (!sd.length) return null;
-      const d = sd.map(x => perGame(rows.get(v + '|' + x), c).xgd - perGame(rows.get(cur + '|' + x), c).xgd);
-      return { v, m: mean(d), e: ci95(d), n: sd.length };
-    }).filter(Boolean).sort((a, b) => b.m - a.m);
-    const isCur = v => v === cur || (k === 'Agg' && Math.abs(+v - +cur) < 13);
-    $('labSweepResult').innerHTML = list.map(r => { const [cls, txt] = r.v === cur ? ['cur', 'Plan A now'] : verdict(r.m, r.e); return `<div class="r"><div class="name">${label(r.v)}${r.v === cur ? ' (plan A)' : ''}<small>${r.v === cur ? 'the baseline' : sgn(r.m) + ' net chances a game'}</small></div>${rangeBar(r.m, r.e, 2.5)}<span class="pill ${cls}">${txt}</span></div>`; }).join('');
-    $('labSweepNote').textContent = `${TKEYS.find(x => x[0] === k)[1]} for the ${teams[c].name}, ${n} games per option, ${Math.round(secs)} seconds. The dot is the best estimate and the band the 95% range; right of the line is better for the ${teams[c].name}.`;
+  // plays one plan for the coached team against the baseline's games; returns rows in the baseline's seed order
+  async function playVariant(planMine, what) {
+    const b = LAB.base, c = LAB.coach, tacs = LAB.plans.map(tacOfPlan); tacs[c] = tacOfPlan(planMine);
+    const { rows } = await timed(b.seeds.map(sd => ({ id: sd, seed: sd, tacs, cfg: NHL_CFG() })), what);
+    const keep = b.seeds.map((sd, i) => rows.has(sd) ? i : -1).filter(i => i >= 0);
+    return { rowsA: keep.map(i => b.rows[i]), rowsB: keep.map(i => rows.get(b.seeds[i])) };
+  }
+  $('tryRun').addEventListener('click', async () => {
+    if (TEST.running || !LAB.base) return;
+    const c = LAB.coach, k = $('tryDim').value, v = $('tryOpt').value, from = LAB.plans[c][k];
+    const { rowsA, rowsB } = await playVariant({ ...LAB.plans[c], [k]: v }, `${choiceName(k)}: ${lc(optText(k, v))}`);
     $('labNote').textContent = TEST.stop ? 'Stopped early.' : '';
+    if (!rowsA.length) return;
+    LAB.tested.unshift({ kind: 'change', c, k, v, from, rowsA, rowsB, res: compare(rowsA, rowsB, c) }); renderTested();
+  });
+  $('rankRun').addEventListener('click', async () => {
+    if (TEST.running || !LAB.base) return;
+    const c = LAB.coach, k = $('tryDim').value, cur = LAB.plans[c][k], b = LAB.base;
+    const opts = k === 'Agg' ? AGG_STEPS : optionsOf(k).map(([v]) => v), others = opts.filter(v => k === 'Agg' ? Math.abs(+v - +cur) >= 13 : v !== cur);
+    const tacsFor = v => { const t = LAB.plans.map(tacOfPlan); t[c] = tacOfPlan({ ...LAB.plans[c], [k]: v }); return t; };
+    const jobs = others.flatMap(v => { const tacs = tacsFor(v); return b.seeds.map(sd => ({ id: v + '|' + sd, seed: sd, tacs, cfg: NHL_CFG() })); });
+    const { rows } = await timed(jobs, `Ranking ${lc(choiceName(k))}`);
+    $('labNote').textContent = TEST.stop ? 'Stopped early.' : '';
+    const list = [{ v: cur, m: 0, e: 0, cur: true }, ...others.map(v => {
+      const idx = b.seeds.map((sd, i) => rows.has(v + '|' + sd) ? i : -1).filter(i => i >= 0); if (!idx.length) return null;
+      const d = idx.map(i => perGame(rows.get(v + '|' + b.seeds[i]), c).xgd - perGame(b.rows[i], c).xgd);
+      return { v, m: mean(d), e: ci95(d) };
+    }).filter(Boolean)].sort((x, y) => y.m - x.m);
+    LAB.tested.unshift({ kind: 'rank', c, k, n: b.seeds.length, list }); renderTested();
   });
   $('labStop').addEventListener('click', () => { TEST.stop = true; if (TEST.finish) TEST.finish(); });
-  // How real is it: play 100 games with both teams as set, at the NHL-realistic settings, and read them
-  $('realRun').addEventListener('click', async () => {
-    if (TEST.running) return; const tA = [tacOf('h'), tacOf('a')], cfgNHL = NHL_CFG();
-    const jobs = seedsFor(100).map(sd => ({ id: 'R' + sd, seed: sd, tacs: tA, cfg: cfgNHL }));
-    setRunning(true); $('realRun').disabled = true;
-    const rows = await runJobs(jobs, (d, tot) => { $('realNote').textContent = `Playing game ${d} of ${tot}`; });
-    setRunning(false); $('realRun').disabled = false; $('realNote').textContent = '';
-    if (rows.size) feedRealityCheck([...rows.values()]);
-  });
-  let calibT = 0;
-  function updateCalib(now) { if (batch && batch.n) return; if (now - calibT < 1000) return; calibT = now; renderCalib(); }
 
   // ---------- Views, steps, drawers and game plans ----------
-  const VIEWS = ['watch', 'test', 'real'];
+  const VIEWS = ['watch', 'lab'];
   function showView(v) {
     if (!VIEWS.includes(v)) v = 'watch';
     document.querySelectorAll('nav.views [data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
     document.querySelectorAll('section.view').forEach(sec => { sec.hidden = sec.dataset.view !== v; });
   }
   document.querySelectorAll('nav.views [data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-  // the page always opens on Watch; a link can ask for another view (#test, or the old #lab, and #real)
-  { const h = location.hash.slice(1); showView(h === 'lab' || h === 'test' ? 'test' : h === 'real' ? 'real' : 'watch'); }
-  // the three steps jump into the strategy test and point at the part that does that step
-  const flash = el => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); };
-  const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.querySelectorAll('.steps [data-go]').forEach(b => b.addEventListener('click', () => {
-    showView('test');
-    const box = { 1: $('planBlock'), 2: $('labRun'), 3: $('labRecord') }[b.dataset.go];
-    if (box.tagName === 'DETAILS') box.open = true;
-    box.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'center' }); flash(box);
-    const focus = b.dataset.go === '1' ? $('bGrid').querySelector('select') : b.dataset.go === '2' ? box : null;
-    if (b.dataset.go === '1') flash($('oppBlock'));
-    if (focus) focus.focus({ preventScroll: true });
-  }));
+  // the page opens on Watch; a link can ask for the lab (#lab, or the old #test and #real)
+  { const h = location.hash.slice(1); showView(['lab', 'test', 'real'].includes(h) ? 'lab' : 'watch'); }
+  document.querySelectorAll('[data-go-lab]').forEach(b => b.addEventListener('click', () => { showView('lab'); window.scrollTo(0, 0); $('myGrid').querySelector('select').focus({ preventScroll: true }); }));
   // drawers: the game plans (both teams) and the settings
   let drawerOpen = null, drawerFrom = null;
   function openDrawer(id, focusEl) {
@@ -765,7 +769,7 @@ export function startSim(DATA) {
   // each choice in the plan drawer shows what it means under it
   document.querySelectorAll('#planDrawer .side .cgrid label').forEach(describeChoice);
   function aggWord(v) { return v < 0.34 ? 'Low' : v < 0.67 ? 'Medium' : 'High'; }
-  // a choice's meaning, written under its select (the plan drawer shows all of them, plan B only the ones it changes)
+  // a choice's meaning, written under its select in the plan drawer (the lab's compact grids use hover text instead)
   function describeChoice(l) {
     const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
     const el = l.querySelector('select, input'); if (!el) return;
@@ -783,15 +787,15 @@ export function startSim(DATA) {
       $(side === 'h' ? 'chipsH' : 'chipsA').innerHTML = [`Power play: ${txt(side, 'PP')}`, `Penalty kill: ${txt(side, 'PK')}`, `Aggression: ${lc(aggWord($(side + 'Agg').value / 100))}`].map(c => `<span class="chip">${c}</span>`).join('');
     }
   }
-  document.querySelectorAll('.side select, .side input[type=range]').forEach(el => el.addEventListener('input', renderPlans));
+  document.querySelectorAll('#planDrawer select, #planDrawer input[type=range]').forEach(el => el.addEventListener('input', renderPlans));
   renderPlans();
+  buildLab();
   // short explainers for the numbers a newcomer will not know
   const TERMS = {
     chances: ['Chances (expected goals)', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."],
     sight: ['Sight lines', `What the player with the puck sees in the offensive zone. The yellow wedge runs from him to the two posts: the open part of the net he can shoot at. A defender in front of him casts a dark shadow over the part he blocks. The blue dash goes to his best pass, the ringed teammate. The tag gives the chance each one has of becoming a goal and his read: he shoots a look worth at least ${Math.round(PH.shotDecision.xgChoice.minXg * 100)}% unless a pass is clearly better, passes when a teammate has a clearly better look, and otherwise holds the puck for a better play. Slow the game to 0.5x to follow it.`],
-    planA: ['Plan A', 'Your team as it is set now, the plan on the Watch view. It is the baseline every test compares against.'],
-    planB: ['Plan B', 'A copy of plan A with the changes you want to try. Change one choice to learn what that choice is worth, or several to test a whole new plan.'],
-    same: ['The same games', 'Both plans play games that start from the same random numbers, so the bounces are the same until a difference in plan makes play go another way. A gap between the plans comes from the plans, not from one of them getting easier games.'],
+    baseline: ['Baseline', "Your plan against theirs in the Game plan lab, 100 games at the NHL settings. Every change you try plays the same games and is compared with it."],
+    same: ['The same games', 'A change plays games that start from the same random numbers as the baseline, so the bounces are the same until the change makes play go another way. A gap between them comes from the change, not from easier games.'],
     net: ['Net chances', 'Chances for minus chances against, per game. The best single number for whether a plan is working.'],
     close: ['Too close to call', 'The difference is smaller than the normal swing from luck at this many games. Run more games, or treat the two plans as even.'],
     edge: ['Clear edge, clear cost', 'The whole 95% range of the difference is on one side of zero, so luck alone is unlikely to explain it at this many games.'],
@@ -804,7 +808,7 @@ export function startSim(DATA) {
     poss: ['Possession', 'Share of the time each team had the puck on a stick.'],
     take: ['Takeaways', 'Times a player stole the puck from the carrier.'],
     pk: ['Penalty kill', 'Playing a man short. There is no icing, so the killers clear the puck the length of the ice whenever they get it.'],
-    nhl: ['NHL-realistic settings', 'Skating, passing and shooting at the values calibrated to real NHL tracking data. Strategy tests always use them; the watching settings in Settings run faster.'],
+    nhl: ['NHL settings', 'Skating, passing and shooting at the values calibrated to real NHL tracking data. The Game plan lab always uses them; the Watch settings start faster because it is more fun to watch.'],
   };
   { const g = $('glossary'); if (g) g.innerHTML = Object.values(TERMS).map(([h, d]) => `<dt>${h}</dt><dd>${d}</dd>`).join(''); }
   let pop = null;
@@ -834,12 +838,12 @@ export function startSim(DATA) {
     const real = Math.min(0.05, (now - last) / 1000); last = now;
     if (!game.paused) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); g -= d; } moveOfficials(real * game.speed); }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawRink(); drawBenches(); drawOfficials(); drawPlayers(); drawWhistle(); updateHud(); updateSheets(now); updateCalib(now);
+    drawRink(); drawBenches(); drawOfficials(); drawPlayers(); drawWhistle(); updateHud(); updateSheets(now);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
   // debug and test hook: lets a harness step the engine headlessly
-  window.rinkSim = { sim, tick, teams, game, puck, DATA, cfg, newGame, teamSample, runJobs, TEST };
+  window.rinkSim = { sim, tick, teams, game, puck, DATA, cfg, newGame, teamSample, runJobs, TEST, LAB };
 }
 // ---------- Data loading: the JSON files next to this page ----------
 (async () => {
