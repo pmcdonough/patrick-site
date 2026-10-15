@@ -37,11 +37,10 @@ The pages and checks run without them. To rebuild the data, put the source files
 ## 4. Does it work?
 
 ```
-python3 tools/build.py --check        # "stale embedded copies: sim none; play review none"
 node tools/smoke.js                   # ends with "ERRORS: []"
 ```
 
-`build.py --check` proves the data files and the copies embedded in both pages agree. `smoke.js` plays a full game headless and fails on any script error.
+`smoke.js` serves `public/`, plays a full game headless, loads the home page and Play Review, and fails on any script error or any data file that does not load. It also checks that the sim's `?v=` stamps match its version.
 
 The version numbers should agree with the top of `CHANGELOG.md`:
 
@@ -69,10 +68,10 @@ Served (the pages fetch their data over HTTP):
 
 ```
 node tools/serve.js                   # or: python3 -m http.server --directory public 8000
-# open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#lab  http://localhost:8000/play-review/
+# open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#test  http://localhost:8000/play-review/
 ```
 
-From disk (the pages fall back to embedded data): open `public/bruins-vs-canadiens/index.html` and `public/play-review/index.html` directly. The sim's Settings drawer (the gear), Data sources, says which copy is in use.
+The pages need a server: opened straight from disk they cannot load their data or modules.
 
 Things to click once: each of the three steps in the header; Edit plan and change a choice; Sight lines on and off; Test a strategy, Games 10, change a plan B choice, Run plan A and plan B, then How real is it; Rank the options for one choice; Play Review, pick a shot, play the replay. The browser console should stay clean.
 
@@ -95,14 +94,12 @@ The checks serve `public/` themselves and load the pages over HTTP, so no server
 
 ## 8. Working on it from Claude Code
 
-Start Claude Code from the repo root so `CLAUDE.md` loads automatically. It has the rules (visible copy never mentions internals, every number lives in data, every page works from disk, balance is measured not eyeballed) and the shipping checklist.
+Start Claude Code from the repo root so `CLAUDE.md` loads automatically. It has the rules (visible copy never mentions internals, every number lives in data, every page is served over HTTP, balance is measured not eyeballed) and the shipping checklist.
 
 The routine for any change:
 
 ```
-# edit public/bruins-vs-canadiens/index.html and/or data/*.json
-python3 tools/build.py           # re-embed data into both pages after any data edit
-python3 tools/build.py --check
+# edit public/bruins-vs-canadiens/src/main.js, style.css, index.html and/or data/*.json
 node tools/smoke.js
 node tools/lab.js --nhl          # for any engine change; also tools/lab.js at build defaults
 ```

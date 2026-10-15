@@ -11,7 +11,7 @@ Montreal 3 at Boston 4, January 24, 2026, TD Garden, NHL game 2025020812. For ea
 1. `play-by-play.json` from `https://api-web.nhle.com/v1/gamecenter/2025020812/play-by-play` (public, no key). 316 events with coordinates in the NHL frame (x from -100 to 100, y from -42.5 to 42.5), the players involved, the strength code and which end the home team defends.
 2. `shiftcharts.json` from `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2025020812`. 748 shifts with start and end times by period.
 3. `python3 tools/game_load.py play-by-play.json shiftcharts.json` writes `public/play-review/data/game-2025020812.json`: the 40 dressed players, 108 shot attempts (38 on goal, 37 missed, 26 blocked, 7 goals) each with its coordinates converted to an attacking frame (feet from the goal line the shooter is attacking, feet off the midline), the event before it, the strength, and the skaters on the ice for both teams from the shift chart.
-4. The page loads that file plus the sim's `xg-model.json` and `systems.json` over HTTP when served, and falls back to copies embedded in the page when opened from disk, the same way the sim does. `tools/build.py` keeps the embedded copies current.
+4. The page loads that file plus the sim's `xg-model.json` and `systems.json` over HTTP. `node tools/review.js` checks that it scores every shot as in its saved reference.
 
 ## Reconstruction
 

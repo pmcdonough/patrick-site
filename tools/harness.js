@@ -18,7 +18,8 @@ async function openPage(browser, srv, rel = SIM, ready = () => !!window.rinkSim,
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)/.test(m.text())) errors.push(m.text()); });
   page.on('requestfailed', r => { if (!/fonts\.(googleapis|gstatic)/.test(r.url())) errors.push('request failed: ' + r.url()); });
   await page.goto(srv.url + rel, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(ready, null, { timeout: 15000 });
+  try { await page.waitForFunction(ready, null, { timeout: 15000 }); }
+  catch (e) { throw new Error(`${rel || 'home page'} did not start within 15 s. Page errors: ${JSON.stringify(errors)}`); }
   return { page, errors };
 }
 
@@ -30,7 +31,7 @@ async function open(opts = {}) {
   await page.waitForTimeout(300);
   await page.click('#pause');
   const close = async () => { await browser.close(); await srv.close(); };
-  return { browser, page, errors, url: srv.url + SIM, close };
+  return { browser, srv, page, errors, url: srv.url + SIM, close };
 }
 
 // Runs N full games inside the page and returns per-team totals. `setup` runs once before the games.

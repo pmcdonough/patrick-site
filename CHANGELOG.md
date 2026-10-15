@@ -1,8 +1,13 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.50 = sim 0.40 + Play Review 0.7. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.51 = sim 0.41 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.51
+- Restructure step 1 (`docs/RESTRUCTURE.md`): the pages are served over HTTP only and no longer carry copies of their data. Sim 0.41, Play Review 0.8.
+- `tools/build.py` is retired: there is nothing left to embed. `tools/smoke.js` now also loads the home page and Play Review and fails on any data file that does not load or parse, and checks the sim's version stamps.
+- `tools/lab.js --pool` plays the seeds in the page's own background workers and fails unless every game matches.
 
 ### 0.50
 - Restructure step 0, the safety net (plan in `docs/RESTRUCTURE.md`). The checks now load the pages over HTTP, the way a visitor does, from a small server inside each tool (`tools/serve.js`; `node tools/serve.js` also serves `public/` for a browser). The saved references keep a fingerprint of every game, so `tools/lab.js` says "identical" only when all 100 games finish exactly as before, and names the seeds that changed otherwise. `--order` replays the seeds in reverse order on one page and fails if any game changes. `tools/review.js` fingerprints every shot Play Review scores. Both levels were re-saved with fingerprints; the averages were identical before the re-save, so no game changed.
@@ -72,6 +77,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 
 ## Play Review
 
+### 0.8
+- Fetches its data only; the embedded copies of the expected-goal model, the systems and the game file are gone (the page is 461 lines, from 1,276). Every shot scores exactly as before (`tools/review.js`).
+
 ### 0.7
 - A test hook for `tools/review.js` (the scored shots, read-only). Nothing visible changes.
 
@@ -96,6 +104,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.41
+- The single file is split: `index.html` (markup, 249 lines, from 5,421), `style.css`, and the script as one ES module, `src/main.js`, with the `startSim` closure unchanged. Both load with a `?v=0.41` stamp so a visitor never mixes files from two deploys.
+- The seven embedded data copies are gone; the page fetches `data/*.json` and says so plainly if it cannot.
+- Test a strategy's workers are module workers (`src/lab/worker.js`): the same stand-in for the page as before, now in its own file, importing `main.js` with the same stamp instead of rebuilding the page's script from its text.
+- No game changes: both references identical game for game, the order check and the new worker cross-check pass for 20 seeds.
 
 ### 0.40
 - Sight lines explain themselves. The tag carries the same marks as the drawing (a yellow wedge for the shot, a blue dash for the pass), names the teammate the pass goes to, and says what the carrier will do by the rule he decides with: shooting, passing, or holding for a better play. The wedge is outlined to the two posts and the pass target is ringed. The legend under the rink says what each color means, and Sight lines has a glossary entry.

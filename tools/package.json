@@ -1,18 +1,17 @@
 {
   "name": "patrick-site-tools",
   "private": true,
-  "description": "Headless checks and the data-embedding build for the hockey engine",
+  "description": "Headless checks for the hockey engine and Play Review",
   "scripts": {
     "smoke": "node smoke.js",
     "calibration": "node calibration.js",
     "nhl": "node nhl-average.js",
     "shifts": "node shifts.js",
     "rules": "node rules.js",
-    "build": "python3 build.py",
     "mp": "python3 mp_extract.py ../raw --check",
     "xg": "python3 xg_fit.py ../raw/shots_2024.csv ../raw/shots_2025.csv",
     "game": "python3 game_load.py ../raw/play-by-play-2025020812.json ../raw/shiftcharts-2025020812.json",
-    "check": "python3 build.py --check && node smoke.js",
+    "check": "node smoke.js",
     "lab": "node lab.js",
     "review": "node review.js",
     "serve": "node serve.js"

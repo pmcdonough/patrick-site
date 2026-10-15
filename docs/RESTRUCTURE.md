@@ -1,6 +1,6 @@
 # Restructure plan: the sim and Play Review as modules
 
-Status: step 0 done (site 0.50); step 1 next. Written at site 0.49, sim 0.40, Play Review 0.6.
+Status: steps 0 (site 0.50) and 1 (site 0.51) done; step 2 next. Written at site 0.49, sim 0.40, Play Review 0.6.
 
 The sim is one HTML file of about 5,400 lines: 250 of CSS, 230 of markup, 2,900 of embedded data (the expected-goal model alone is one 93,000-character line) and 2,000 of script, all of it inside one `startSim(DATA)` closure. Play Review is the same shape at 1,300 lines. This plan moves both onto plain ES modules served over HTTP, in steps that each ship on their own and each prove the engine still plays the same hockey.
 
@@ -150,5 +150,5 @@ Step 0 and step 1 are small, a session together. Step 2 is the bulk of the work,
 
 ## Open questions
 
-- **Which Cloudflare product serves the site.** Answered 2026-10-15: a Cloudflare Worker named `patrick-site` with static assets only (no script, no bindings), deployed from `pmcdonough/patrick-site` on every push, with `pmcdonough.com` as a custom domain and `patrick-site.patrickmcdonough.workers.dev` as its default address. Workers static assets read a `_headers` file at the root of the assets directory, so step 1 can add `public/_headers` with short cache times as a second guard on top of stamped imports. The repo has no Wrangler config file, so the build settings (the assets directory) live in the dashboard under the Worker's Settings, Build; check them there before moving files.
-- **`tools/build.py` after step 1.** Keep it as a data validator, or retire it and let `node --test` check the data files. Either is fine; decide at step 1.
+- **Which Cloudflare product serves the site.** Answered 2026-10-15: a Cloudflare Worker named `patrick-site` with static assets only (no script, no bindings), deployed from `pmcdonough/patrick-site` on every push, with `pmcdonough.com` as a custom domain and `patrick-site.patrickmcdonough.workers.dev` as its default address. Workers static assets read a `_headers` file at the root of the assets directory, so step 1 could add `public/_headers` with short cache times as a second guard on top of stamped imports. It turned out not to be needed: the Worker already serves every file, scripts and data included, with `Cache-Control: public, max-age=0, must-revalidate`, so browsers check for a new copy on every load. The stamps cover the moment of a deploy itself. The repo has no Wrangler config file, so the build settings (the assets directory) live in the dashboard under the Worker's Settings, Build; the new files are all under `public/`, so nothing there needed to change.
+- **`tools/build.py` after step 1.** Retired at step 1. `tools/smoke.js` loads every page over HTTP and fails on a data file that does not load or parse; step 3's `node --test` can check the data's shape.

@@ -63,4 +63,4 @@ The same formula, copied into `public/play-review/index.html`, scores the real s
 
 ## Refitting
 
-Download newer shot files from MoneyPuck, run `python3 tools/xg_fit.py shots_2025.csv shots_2026.csv`, then `python3 tools/build.py` to re-embed the model in the sim page, and `node tools/calibration.js` to see what moved.
+Download newer shot files from MoneyPuck, run `python3 tools/xg_fit.py shots_2025.csv shots_2026.csv`, then `node tools/smoke.js`, `node tools/review.js` and `node tools/calibration.js` to see what moved.

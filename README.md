@@ -7,12 +7,14 @@ public/
   index.html                       home page: simulations and experiments
   assets/share.png                 link preview image (Open Graph card)
   bruins-vs-canadiens/
-    index.html                     the hockey engine, single file, no build step
+    index.html                     the hockey engine's page: markup only, no build step
+    style.css                      its styles
+    src/main.js                    the sim (an ES module), and src/lab/worker.js for the strategy test's background games
     data/                          the data that drives it (see below), including the expected-goal model
   play-review/
-    index.html                     shot versus pass review of a real game, single file like the sim
+    index.html                     shot versus pass review of a real game
     data/game-2025020812.json      the game, built from the NHL play-by-play and shift chart
-tools/                             build script, data fits (xg_fit.py, game_load.py) and headless checks
+tools/                             data fits (xg_fit.py, mp_extract.py, game_load.py), a local server and headless checks
 docs/ENGINE.md                     how the engine is organized, invariants, baselines, lessons learned
 docs/XG-MODEL.md                   the expected-goal model: data, method, fit, how the engine uses it
 docs/PLAY-REVIEW.md                the play-review page: pipeline, reconstruction, scoring, replay, limits
@@ -25,7 +27,7 @@ CLAUDE.md                          project memory for working on this with Claud
 CHANGELOG.md                       version history for the projects
 ```
 
-To run locally, serve `public/` with any static server, for example `npx serve public` or `python3 -m http.server --directory public 8000`. The hockey page also works when opened straight from disk; see the note on data loading below.
+To run locally, serve `public/` with any static server, for example `node tools/serve.js` or `python3 -m http.server --directory public 8000`, and open http://localhost:8000/. The pages load their data over HTTP, so opening them straight from disk does not work.
 
 ## Bruins vs Canadiens
 
@@ -69,7 +71,7 @@ Everything a hockey person might question lives in `public/bruins-vs-canadiens/d
 | `defaults.json` | Build defaults for the engine multipliers and both teams' systems, in the format the Settings drawer's Export button produces |
 | `xg-model.json` | The expected-goal model: logistic coefficients and recipe, MoneyPuck's danger-tier thresholds, a baseline grid, per-shooter finishing, and the holdout fit statistics; produced by `tools/xg_fit.py` from MoneyPuck shot files (see `docs/XG-MODEL.md`) |
 
-When the page is served over HTTP it fetches these files, so edits take effect on reload. When it is opened directly from disk, browsers block `fetch`, so the page falls back to copies embedded in the HTML. The Data sources panel in the Advanced tab says which copy is in use. To change the build defaults, adjust the sliders and systems, click Export, and overwrite `defaults.json` and the embedded copy.
+The page fetches these files, so edits take effect on reload. To change the build defaults, adjust the sliders and systems, click Export, and overwrite `defaults.json`.
 
 Formation coordinates are in feet and team-relative: `fx` runs from the team's own goal line (0) up ice (64 own blue line, 89 red line, 114 far blue line, 178 far goal line); `fy` runs across the ice 0 to 85 with 42.5 at center. The engine mirrors them for whichever end the team is attacking.
 
@@ -83,12 +85,12 @@ The header says what the page is and links three steps (set each team's plan, si
 
 ## Play Review
 
-A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked shot scored by expected goals against the best pass the model saw from the same spot, and a replay of the seconds around each shot (configurable lead-in, 3 seconds after, real result on the left, the pass on the right). Built from the public NHL play-by-play and shift chart by `tools/game_load.py`; the page infers the other skaters' positions from the clubs' systems and says so. It is the first slice of the counterfactual play-review idea and is documented in `docs/PLAY-REVIEW.md`. Like the sim, it fetches its data when served and falls back to embedded copies when opened from disk.
+A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked shot scored by expected goals against the best pass the model saw from the same spot, and a replay of the seconds around each shot (configurable lead-in, 3 seconds after, real result on the left, the pass on the right). Built from the public NHL play-by-play and shift chart by `tools/game_load.py`; the page infers the other skaters' positions from the clubs' systems and says so. It is the first slice of the counterfactual play-review idea and is documented in `docs/PLAY-REVIEW.md`. Like the sim, it fetches its data over HTTP.
 
 ### Tools and checks
 
-`tools/mp_extract.py` builds the ratings and benchmark extract from the MoneyPuck season files (skaters, goalies, teams, lines), `tools/xg_fit.py` fits the expected-goal model from the MoneyPuck shot files, and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. The raw inputs are not committed; keep them in `raw/` (ignored); `docs/RAW-INPUTS.md` lists every file, where to download it and the command that uses it. `tools/build.py` re-embeds `data/*.json` into the page (run it after any data edit; `--check` verifies). The Playwright scripts in `tools/` drive the engine headless: `lab.js` plays seeded matchups eight at a time and reports each club against the league and a saved reference, compares two settings or sweeps one card with 95% intervals, `smoke.js` plays a game and fails on any script error, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once is in `LOCAL-SETUP.md`.
+`tools/mp_extract.py` builds the ratings and benchmark extract from the MoneyPuck season files (skaters, goalies, teams, lines), `tools/xg_fit.py` fits the expected-goal model from the MoneyPuck shot files, and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. The raw inputs are not committed; keep them in `raw/` (ignored); `docs/RAW-INPUTS.md` lists every file, where to download it and the command that uses it. `tools/serve.js` serves `public/` locally; the checks start it themselves and load the pages over HTTP. The Playwright scripts in `tools/` drive the engine headless: `lab.js` plays seeded matchups eight at a time and reports each club against the league and a saved reference, compares two settings or sweeps one card with 95% intervals, `smoke.js` plays a game, loads the other pages and fails on any script or data error, `review.js` checks every shot Play Review scores against its reference, `calibration.js` runs a ten-game matchup and prints the record and the reality check, `nhl-average.js` plays six games with every multiplier at 1.0, `shifts.js` reports the shift-length distribution and change windows, `rules.js` reports offsides and icings per game. Setup once is in `LOCAL-SETUP.md`.
 
 ### Versioning
 
-Bump `VERSION` in the script, add a section to `CHANGELOG.md`, update the version badge on the home page card, and run `python3 tools/build.py --check` and `node tools/smoke.js`. See `CLAUDE.md` for the full checklist.
+Bump `VERSION` in the script and the `?v=` stamps in the page, add a section to `CHANGELOG.md`, update the version badge on the home page card, and run `node tools/smoke.js`. See `CLAUDE.md` for the full checklist.

@@ -30,8 +30,8 @@ python3 tools/mp_extract.py raw              # writes the file
 # play-review game file -> public/play-review/data/game-2025020812.json
 python3 tools/game_load.py raw/play-by-play-2025020812.json raw/shiftcharts-2025020812.json
 
-# then re-embed the data into both pages and verify
-python3 tools/build.py && python3 tools/build.py --check
+# then check that both pages load it
+node tools/smoke.js
 ```
 
 ## Refreshing for a new season

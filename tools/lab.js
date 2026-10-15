@@ -8,6 +8,7 @@
 //   node tools/lab.js --json out.json                   also write every game's numbers
 //   node tools/lab.js --save                            make this run the reference in tools/baselines.json
 //   node tools/lab.js --games 20 --order                also replay the seeds on one page in reverse order: every game must match
+//   node tools/lab.js --games 20 --pool                 also play the seeds in the page's own background workers (Test a strategy): every game must match
 //   node tools/lab.js --param shotDecision.xgChoice.minXg=0.1   try a physics.json value without editing the file
 //
 // The report compares each club's per-game numbers with the league (MoneyPuck 2025-26 and the rules
@@ -35,10 +36,10 @@ const BASELINES = fs.existsSync(BASELINE_FILE) ? JSON.parse(fs.readFileSync(BASE
 const CARD_IDS = { fore: 'Fore', brk: 'Break', entry: 'Entry', oz: 'Oz', dz: 'Dz', pp: 'PP', pk: 'PK', agg: 'Agg' };
 
 function args() {
-  const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false, param: '', order: false };
+  const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false, param: '', order: false, pool: false };
   for (let i = 0; i < a.length; i++) {
     const k = a[i].replace(/^--/, '');
-    if (k === 'nhl' || k === 'save' || k === 'order') o[k] = true;
+    if (k === 'nhl' || k === 'save' || k === 'order' || k === 'pool') o[k] = true;
     else if (k in o) o[k] = typeof o[k] === 'number' ? +a[++i] : a[++i];
     else { console.error(`unknown option ${a[i]}`); process.exit(2); }
   }
@@ -208,6 +209,20 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
       console.log(differ.length ? `ORDER CHECK FAILED: ${differ.length} of ${A.rows.length} games changed when played in reverse order on one page (seeds ${differ.join(', ')}). State is leaking from one game to the next.\n`
         : `Order check: all ${A.rows.length} games are identical played in reverse order on one page.\n`);
       if (differ.length) process.exitCode = 1;
+    }
+    if (o.pool) {
+      // Test a strategy's workers return goals, expected goals and shots per club; compare those for every seed.
+      const jobs = A.rows.map(r => ({ id: r.seed, seed: r.seed, tacs: A.tac.map(({ abbr, ...t }) => t), cfg: A.cfg }));
+      const res = await pages[0].page.evaluate(async jobs => {
+        const r = window.rinkSim; const rows = await r.runJobs(jobs, () => {});
+        return { usedWorkers: !r.TEST.poolFailed, rows: jobs.map(j => { const x = rows.get(j.id); return { end: x.end, teams: x.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) }; }) };
+      }, jobs);
+      const key = r => JSON.stringify({ end: r.end, teams: r.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) });
+      const differ = A.rows.filter((r, n) => key(r) !== JSON.stringify(res.rows[n])).map(r => r.seed);
+      console.log(!res.usedWorkers ? 'POOL CHECK FAILED: the page could not start its workers and fell back to playing on the page.\n'
+        : differ.length ? `POOL CHECK FAILED: ${differ.length} of ${A.rows.length} games played differently in the page's workers (seeds ${differ.join(', ')}).\n`
+        : `Pool check: all ${A.rows.length} games are identical in the page's background workers.\n`);
+      if (!res.usedWorkers || differ.length) process.exitCode = 1;
     }
     if (o.save) {
       if (o.set || o.compare || o.sweep || o.param) throw new Error('--save takes the build as it is; drop --set, --compare, --sweep and --param');
