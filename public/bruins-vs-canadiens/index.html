@@ -103,6 +103,60 @@
   h2.vt { font-size: 1.6rem; letter-spacing: 0.02em; text-transform: none; }
   .vhead .hint { margin: 0; max-width: 75ch; }
 
+  .test { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .test { grid-template-columns: 1fr; } }
+  .setup, .results { display: flex; flex-direction: column; gap: 12px; }
+  .coachas { display: flex; align-items: center; gap: 10px; }
+  .coachas .hint { margin: 0; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--raised); padding: 5px 12px; }
+  .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  .side .who small { font: 500 0.78rem var(--body); color: var(--fg-dim); margin-left: auto; letter-spacing: 0.08em; text-transform: uppercase; }
+  button.linkish.under { align-self: flex-start; margin-top: -6px; font-size: 0.9rem; }
+  .side .hint { margin: 0; }
+  .abrow { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; }
+  .tag { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; font: 800 1rem var(--display); }
+  .tag.a { background: var(--raised); border: 1px solid var(--line); } .tag.b { background: var(--link); color: #fff; }
+  .bhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .bgrid { margin-top: 8px; gap: 8px 10px; }
+  .bgrid label.changed select, .bgrid label.changed input { outline: 2px solid var(--link); outline-offset: 1px; }
+  .bgrid label.changed::after { content: 'changed'; color: var(--link); font-size: 0.66rem; letter-spacing: 0.08em; }
+  .bgrid select { background: var(--raised); }
+  .bgrid small.desc { display: none; } .bgrid label.changed small.desc { display: block; }
+  .gfield { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+  .gfield select { width: auto; }
+  button.primary { background: var(--link); border-color: var(--link); color: #fff; font: 700 1.05rem var(--display); letter-spacing: 0.03em; padding: 9px 18px; }
+  button.primary:disabled { opacity: 0.55; cursor: default; }
+  .progress { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--link); transition: width 0.2s linear; }
+  #labNote, #labEst { margin: 0; }
+  .forwho { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .forwho .dot { width: 15px; height: 15px; border-radius: 50%; border: 4px solid; box-sizing: border-box; flex: none; }
+  .headline { font: 700 1.4rem/1.15 var(--display); margin: 0; text-wrap: balance; }
+  .verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .verdicts:empty { display: none; }
+  @media (max-width: 700px) { .verdicts { grid-template-columns: 1fr; } }
+  .v { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding-block: 10px 12px; padding-inline: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .v .k { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .v .big { font: 800 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+  .v .sub { color: var(--fg-dim); font-size: 0.82rem; }
+  .pill { align-self: flex-start; border-radius: 999px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; }
+  .pill.good { background: #e2f2e9; color: #1f7a4a; } .pill.bad { background: #f8e1df; color: #a3241b; } .pill.flat { background: var(--line); color: var(--fg-dim); } .pill.cur { background: var(--bos-tint); color: var(--fg); border: 1px solid var(--bos-edge); }
+  .range { position: relative; height: 20px; }
+  .range .axis { position: absolute; left: 0; right: 0; top: 9px; height: 2px; background: var(--line); }
+  .range .zero { position: absolute; top: 2px; left: calc(50% - 1px); width: 2px; height: 16px; background: var(--fg-dim); }
+  .range .span { position: absolute; top: 6px; height: 8px; border-radius: 4px; opacity: 0.35; }
+  .range .pt { position: absolute; top: 4px; width: 12px; height: 12px; border-radius: 50%; margin-left: -6px; }
+  .rankbox { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  h3.rt { font: 700 1.2rem var(--display); margin: 0; }
+  .rankbox .row select { width: auto; }
+  .rank { display: grid; gap: 8px; }
+  .rank .r { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr) 130px; gap: 12px; align-items: center; }
+  @media (max-width: 600px) { .rank .r { grid-template-columns: 1fr; gap: 4px; } }
+  .rank .name { font-weight: 600; } .rank .name small { display: block; color: var(--fg-dim); font-weight: 400; }
+  .results .hint { margin: 0; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill.good { background: #16322a; color: #6fd19b; } :root:not([data-theme="light"]) .pill.bad { background: #3a1c1a; color: #f08a80; } }
+  :root[data-theme="dark"] .pill.good { background: #16322a; color: #6fd19b; } :root[data-theme="dark"] .pill.bad { background: #3a1c1a; color: #f08a80; }
   .scrim { position: fixed; inset: 0; background: rgb(10 14 20 / 0.4); z-index: 20; }
   .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); box-sizing: border-box; background: var(--panel); border-left: 1px solid var(--line); z-index: 21; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)); padding-inline: 18px max(18px, env(safe-area-inset-right, 0px)); }
   .drawer > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -202,7 +256,7 @@
   </nav>
   <div class="steps">
     <button type="button" class="go" data-go="1"><span class="n">1</span><b>Set each team's plan</b> forecheck, breakout, coverage</button>
-    <button type="button" class="go" data-go="2"><span class="n">2</span><b>Simulate the games</b> 100 take about a minute</button>
+    <button type="button" class="go" data-go="2"><span class="n">2</span><b>Simulate the games</b> a minute or two</button>
     <button type="button" class="go" data-go="3"><span class="n">3</span><b>See what changes</b> record, goals and chances</button>
     <button type="button" id="aboutBtn" class="go how" aria-haspopup="dialog">How it works</button>
   </div>
@@ -279,29 +333,49 @@
     </div>
   </section>
 
-  <section class="view card" data-view="test" hidden>
-    <div class="vhead"><h2 class="vt">Test a strategy</h2><p class="hint">Play the two teams against each other many times with the plans below and compare. Change one plan, run again, and see whether the difference is bigger than the luck in a run of games.</p></div>
-      <details class="adv" open id="labCardsBox">
-        <summary>Matchup <small id="labCardsSum" class="hint"></small></summary>
-        <div id="labCards" class="calib lab"></div>
-        <div class="row" style="margin-top:8px"><button type="button" class="linkish" data-edit="h">Edit Bruins plan</button><button type="button" class="linkish" data-edit="a">Edit Canadiens plan</button></div>
-        <div class="row" style="margin-top:8px"><label class="hint">Games <select id="labN"><option>10</option><option>25</option><option>50</option><option selected>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
-      </details>
-      <details class="adv" open id="labRecord">
-        <summary>Record <small id="labRecordSum" class="hint"></small></summary>
-        <div id="labResult" class="calib lab"></div>
-        <p class="hint" id="labResultNote">Run the matchup to see each club's wins, losses and overtime or shootout losses, win and points percentage with a 95% interval, and goals and expected goals for and against per game. Two settings whose intervals overlap are not separated at that sample size.</p>
-      </details>
-      <details class="adv" id="labSweepBox">
-        <summary>Sweep one choice <small id="labSweepSum" class="hint"></small></summary>
-        <p class="hint">Hold everything else and try every option for one card, the chosen number of games each. Bold is the current setting; the record is the swept club's.</p>
-        <div class="row"><select id="labDim"></select><button id="labSweep" type="button">Sweep</button></div>
-        <div id="labSweepResult" class="calib lab"></div>
-      </details>
-      <details class="adv">
+  <section class="view" data-view="test" hidden>
+    <div class="test">
+      <div class="card setup">
+        <h2 class="vt">Test a strategy</h2>
+        <div class="coachas"><span class="hint">You coach</span><div class="seg" role="group" aria-label="Which team you coach"><button type="button" data-coach="0" aria-pressed="true">Bruins</button><button type="button" data-coach="1" aria-pressed="false">Canadiens</button></div></div>
+        <section class="side mtl" id="oppBlock">
+          <div class="who"><span class="dot" id="oppDot"></span><span id="oppName">Canadiens (MTL)</span><small>Opponent</small></div>
+          <button type="button" class="linkish under" id="oppEdit">Edit their plan</button>
+          <p class="hint" id="oppPlan"></p>
+        </section>
+        <section class="side bos" id="planBlock">
+          <div class="who"><span class="dot" id="myDot"></span><span id="myName">Bruins (BOS)</span><small>Your plans</small></div>
+          <button type="button" class="linkish under" id="myEdit">Edit plan A</button>
+          <div class="abrow"><span class="tag a">A</span><div><b>Plan A, as the team is set now</b><p class="hint" id="planAText"></p></div></div>
+          <div class="abrow"><span class="tag b">B</span><div class="bwrap"><div class="bhead"><b>Plan B</b><button type="button" class="linkish" id="bReset">Same as plan A</button></div><p class="hint">Change any choice to test it against plan A. Changed choices are marked.</p><div class="cgrid bgrid" id="bGrid"></div></div></div>
+        </section>
+        <label class="gfield" for="labN">Games for each plan <select id="labN"><option value="10">10, a quick look</option><option value="50">50</option><option value="100" selected>100</option><option value="200">200</option></select></label>
+        <div class="row"><button type="button" id="labRun" class="primary">Run the matchup</button><button type="button" id="labStop" hidden>Stop</button></div>
+        <div class="progress" aria-hidden="true"><i id="labBar"></i></div>
+        <p class="hint" id="labNote"></p>
+        <p class="hint" id="labEst"></p>
+      </div>
+      <div class="card results" id="labRecord" aria-live="polite">
+        <div class="forwho" id="forWho"></div>
+        <p class="headline" id="labHeadline">Change a choice in plan B and run. The answer shows up here, in plain words.</p>
+        <div class="verdicts" id="labVerdicts"></div>
+        <p class="hint" id="labExplain"></p>
+        <details class="more" id="labDetails"><summary>Details for analysts</summary>
+          <div id="labResult" class="calib lab"></div>
+          <p class="hint">Records and per-game numbers for each plan. Differences in the verdicts are plan B minus plan A, game for game: both plans play the same games, with the same bounces until a choice changes what happens. A 95% range that includes zero means the two plans are not separated at this many games.</p>
+        </details>
+        <div class="rankbox">
+          <h3 class="rt">Rank every option for one choice</h3>
+          <div class="row"><select id="labDim" aria-label="Choice to rank"></select><button type="button" id="labSweep">Rank the options</button></div>
+          <p class="hint" id="labSweepNote">Plays every option of that choice in the same games, with everything else as plan A, and ranks them by net chances.</p>
+          <div class="rank" id="labSweepResult"></div>
+        </div>
+        <details class="more">
         <summary>What this can and cannot say</summary>
         <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Ten games cannot separate two close strategies; the interval says how many can. Treat it as a way to ask a question of the video, not as an answer.</p>
       </details>
+      </div>
+    </div>
   </section>
 
   <section class="view card" data-view="real" hidden>
@@ -3219,7 +3293,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.36';
+  const VERSION = '0.37';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -3680,16 +3754,18 @@ function startSim(DATA) {
     game.overtime = false; game.shootout = false; game.recorded = false;
     teams.forEach(t => {
       t.score = t.shots = t.attempts = t.blocked = t.missed = t.poss = t.oz = t.take = t.pim = t.changes = t.xg = t.faceoffs = t.faceoffsWon = t.freezes = t.offsides = t.icings = t.clears = 0; t.tier = { low: 0, medium: 0, high: 0 }; t.dir = t.id ? -1 : 1; t.special = false;
-      delete t.dumpSide; delete t.dumpT; delete t.changeJitter; delete t.rimT;
+      delete t.dumpSide; delete t.dumpT; delete t.changeJitter; delete t.rimT; t.lineF = 0; t.lineD = 0;
+      for (const k of ['marks', 'slotCover', 'pressurer', 'fronter', 'sinceEntry', 'wasOff', 'possT', 'delayed', 'chips']) delete t[k];
       // every game starts from the state a freshly built team has, so a game never depends on how the last one ended
-      [...t.all, ...t.goalies].forEach(p => { p.x = 100; p.y = 42; p.vx = 0; p.vy = 0; delete p.burst; delete p.rushed; delete p.sprint; delete p.trail; delete p.target; });
+      [...t.all, ...t.goalies].forEach(p => { p.x = 100; p.y = 42; p.vx = 0; p.vy = 0; delete p.burst; delete p.rushed; delete p.sprint; delete p.trail; delete p.target; delete p.lookingToShoot; });
       t.all.forEach(p => { p.box = 0; p.onIce = false; p.leaving = false; p.entering = false; p.subOn = false; p.shift = 0; p.toi = 0; p.sub = null; p.gg = 0; p.dist = 0; p.topSpd = 0; p.bursts = 0; p.blocks = 0; p.breakaway = false; p.oneTimers = 0; }); t.flash = null;
-      t.goalies.forEach(g => { g.toi = 0; g.onIce = false; g.ang = undefined; });
+      t.goalies.forEach(g => { g.toi = 0; g.dist = 0; g.onIce = false; g.ang = undefined; });
       t.rot = { F: -1, D: -1 }; t.onF = []; t.onD = [];
-      stoppageChange(t, true);
     });
     for (const k of Object.keys(puck)) delete puck[k]; Object.assign(puck, freshPuck()); game.whistle = null;
     game.period = 1; game.clock = 1200; game.over = false; $('log').innerHTML = '';
+    // opening lines only after the clock, the period, the score and both penalty boxes are reset: the rotation reads all of them
+    teams.forEach(t => stoppageChange(t, true));
     log('Puck drop at TD Garden. Bruins attack right.');
     setFaceoff(100, 42.5, 'Faceoff');
   }
@@ -4830,75 +4906,211 @@ function startSim(DATA) {
     $('calibNote').textContent = batch && batch.n ? `last run, ${batch.n} games: ${offCount} of ${cellCount} cells off` : played > 0.5 ? `this game so far: ${offCount} of ${cellCount} cells off` : 'this game so far';
   }
 
-  // ---------- Matchup lab: many games with the current cards, and one-card sweeps ----------
-  const LAB = { running: false, stop: false };
-  const LAB_DIMS = [['hFore', 'Bruins forecheck'], ['hBreak', 'Bruins breakout'], ['hEntry', 'Bruins entry'], ['hOz', 'Bruins offensive zone'], ['hDz', 'Bruins defensive zone'], ['hPP', 'Bruins power play'], ['hPK', 'Bruins penalty kill'],
-                    ['aFore', 'Canadiens forecheck'], ['aBreak', 'Canadiens breakout'], ['aEntry', 'Canadiens entry'], ['aOz', 'Canadiens offensive zone'], ['aDz', 'Canadiens defensive zone'], ['aPP', 'Canadiens power play'], ['aPK', 'Canadiens penalty kill']];
-  $('labDim').innerHTML = LAB_DIMS.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
-  setTimeout(() => renderLabCards(), 0);
-  // play n games headless; onGame(result) after each, onDone(summary) at the end. Results are per team: w, l, otl, gf, ga, xgf, xga, sog.
-  function playGames(n, note, onGame, onDone, track) {
-    const wasPaused = game.paused; game.paused = true; LAB.running = true; LAB.stop = false; $('labStop').hidden = false;
-    const sum = { n: 0, w: [0, 0], l: [0, 0], otl: [0, 0], gf: [0, 0], xg: [0, 0], sog: [0, 0] };
-    if (track) batch = { n: 0, sums: [{}, {}], w: sum.w, l: sum.l, otl: sum.otl };
-    let done = 0; newGame();
+  // ---------- Test a strategy: plan A against plan B, the same seeded games for both, played in background workers ----------
+  // Each job is one game: a seed, both teams' tactics and the engine multipliers. A game seeded with s plays exactly as
+  // tools/lab.js plays seed s. Workers run this same script behind a stand-in for the page (see WORKER_PRELUDE); when a
+  // browser cannot start them the games run on the page, much slower.
+  const TKEYS = [['Fore', 'Forecheck', 'fore'], ['Break', 'Breakout', 'brk'], ['Entry', 'Entry', 'entry'], ['Oz', 'Offensive zone', 'oz'], ['Dz', 'Defensive zone', 'dz'], ['PP', 'Power play', 'pp'], ['PK', 'Penalty kill', 'pk'], ['Agg', 'Aggression', 'agg']];
+  const TEST = { coach: 0, running: false, stop: false, pool: null, poolFailed: false, secPerGame: 2.4 };
+  try { const c = +localStorage.getItem('rink.coach'); if (c === 1) TEST.coach = 1; } catch (e) {}
+  const pre = i => i ? 'a' : 'h';
+  const NHL_CFG = () => Object.fromEntries(Object.keys(cfg).map(k => [k, 1]));
+  const tacOf = (prefix, over) => Object.fromEntries(TKEYS.map(([k, , t]) => { const v = over && over[k] !== undefined ? over[k] : $(prefix + k).value; return [t, k === 'Agg' ? v / 100 : v]; }));
+  const bVals = () => Object.fromEntries(TKEYS.map(([k]) => [k, $('b' + k).value]));
+  const optLabel = (k, v) => { if (k === 'Agg') return `${aggWord(v / 100).toLowerCase()} aggression`; const o = [...$(pre(TEST.coach) + k).options].find(x => x.value === v); const t = o ? o.text : v; return `${TKEYS.find(x => x[0] === k)[1].toLowerCase()}: ${t.toLowerCase()}`; };
+  const bChanges = () => TKEYS.filter(([k]) => $('b' + k).value !== $(pre(TEST.coach) + k).value).map(([k]) => k);
+
+  const WORKER_PRELUDE = `self.__RINK_WORKER = true; self.window = self;
+const __stub = (() => { const f = function () { return p; }; const p = new Proxy(f, { get(t, k) { if (k === Symbol.toPrimitive) return h => (h === 'number' ? 0 : ''); if (k === Symbol.iterator) return function* () {}; if (k === 'length') return 0; if (k === 'then') return undefined; return p; }, set() { return true; }, apply() { return p; }, construct() { return p; } }); return p; })();
+self.document = __stub; self.localStorage = { getItem: () => null, setItem() {}, removeItem() {} }; self.requestAnimationFrame = () => 0; self.matchMedia = () => ({ matches: false }); self.getComputedStyle = () => __stub;
+`;
+  const WORKER_DRIVER = `
+self.onmessage = e => { const m = e.data;
+  if (m.type === 'init') { startSim(m.DATA); self.postMessage({ type: 'ready' }); return; }
+  const r = self.rinkSim; Object.assign(r.cfg, m.cfg); r.teams[0].tac = m.tacs[0]; r.teams[1].tac = m.tacs[1];
+  let a = m.seed * 2654435761; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.newGame(); let k = 0; while (!r.game.over && k++ < 300000) r.tick(0.03);
+  self.postMessage({ type: 'row', id: m.id, row: { end: r.game.shootout ? 'SO' : r.game.overtime ? 'OT' : 'REG', teams: r.teams.map(t => ({ goals: t.score, xg: t.xg, sog: t.shots, sample: r.teamSample(t) })) } });
+};`;
+  const poolSize = () => clamp((navigator.hardwareConcurrency || 4) - 1, 1, 8);
+  function makePool() {
+    if (TEST.poolFailed) return null;
+    try {
+      const main = [...document.scripts].find(x => !x.type && x.textContent.includes('function startSim('));
+      const url = URL.createObjectURL(new Blob([WORKER_PRELUDE + main.textContent + WORKER_DRIVER], { type: 'text/javascript' }));
+      const data = JSON.parse(JSON.stringify(DATA));
+      return Array.from({ length: poolSize() }, () => { const w = new Worker(url); w.postMessage({ type: 'init', DATA: data }); return w; });
+    } catch (e) { TEST.poolFailed = true; return null; }
+  }
+  function runJobs(jobs, onRow) {
+    return new Promise(resolve => {
+      const rows = new Map(); let next = 0, done = 0;
+      const finish = () => { TEST.finish = null; resolve(rows); };
+      if (!TEST.pool) TEST.pool = makePool();
+      if (!TEST.pool) return runInPage(jobs, rows, onRow, finish);
+      TEST.finish = () => { TEST.pool.forEach(w => w.terminate()); TEST.pool = null; finish(); };
+      const feed = w => { if (TEST.stop) return; if (next < jobs.length) { const j = jobs[next++]; w.postMessage({ type: 'job', id: j.id, seed: j.seed, tacs: j.tacs, cfg: j.cfg }); } };
+      TEST.pool.forEach(w => {
+        w.onmessage = e => { const m = e.data; if (m.type === 'row') { rows.set(m.id, m.row); done++; onRow(done, jobs.length); if (done >= jobs.length) { TEST.finish = null; resolve(rows); return; } } feed(w); };
+        w.onerror = ev => { ev.preventDefault(); TEST.pool.forEach(x => x.terminate()); TEST.pool = null; TEST.poolFailed = true; runInPage(jobs.filter(j => !rows.has(j.id)), rows, onRow, finish, done, jobs.length); };
+        feed(w);
+      });
+      if (TEST.pool) TEST.pool.forEach(w => { /* workers that were idle before ready get fed on 'ready' too */ });
+    });
+  }
+  // the slow path: the same seeded games, one after another on the page, 4,000 ticks per frame
+  function runInPage(jobs, rows, onRow, finish, done0 = 0, total = jobs.length) {
+    const wasPaused = game.paused, saveRandom = Math.random, saveCfg = { ...cfg }; game.paused = true;
+    let i = 0, done = done0, cur = null;
+    const end = () => { Math.random = saveRandom; Object.assign(cfg, saveCfg); readTactics(); newGame(); game.paused = wasPaused; finish(); };
+    TEST.finish = end;
+    // the seeded generator is switched on only while this game ticks, so drawing between frames cannot use up its numbers
+    let rng = null;
+    const start = j => { Object.assign(cfg, j.cfg); teams[0].tac = j.tacs[0]; teams[1].tac = j.tacs[1]; let a = j.seed * 2654435761; rng = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; Math.random = rng; newGame(); Math.random = saveRandom; cur = j; };
     const step = () => {
-      let k = 0; while (k++ < 4000 && !game.over) tick(0.03);
-      if (game.over) {
-        const w = teams[0].score > teams[1].score ? 0 : 1, l = 1 - w, ot = game.overtime || game.shootout;
-        sum.n++; sum.w[w]++; if (ot) sum.otl[l]++; else sum.l[l]++;
-        teams.forEach((t, i) => { sum.gf[i] += t.score; sum.xg[i] += t.xg; sum.sog[i] += t.shots; });
-        if (track) { addToBatch(); batch.n++; renderCalib(); }
-        done++; if (onGame) onGame(sum); if (done < n && !LAB.stop) newGame();
-      }
-      if (done < n && !LAB.stop) { if (note) note.textContent = `${done} of ${n} games`; requestAnimationFrame(step); }
-      else { LAB.running = false; $('labStop').hidden = true; newGame(); game.paused = wasPaused; onDone(sum); }
+      if (TEST.stop) return end();
+      if (!cur) { if (i >= jobs.length) return end(); start(jobs[i++]); }
+      Math.random = rng; let k = 0; while (k++ < 4000 && !game.over) tick(0.03); Math.random = saveRandom;
+      if (game.over) { rows.set(cur.id, { end: game.shootout ? 'SO' : game.overtime ? 'OT' : 'REG', teams: teams.map(t => ({ goals: t.score, xg: t.xg, sog: t.shots, sample: teamSample(t) })) }); done++; onRow(done, total); cur = null; }
+      requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
   }
-  // Wilson 95% interval on a win rate
-  const wilson = (w, n) => { if (!n) return [0, 0]; const z = 1.96, p = w / n, d = 1 + z * z / n, c = p + z * z / (2 * n), h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)); return [(c - h) / d, (c + h) / d]; };
+
+  // ---------- the setup panel ----------
+  function planSentence(side) {
+    const txt = k => { const el = $(side + k); return el.selectedOptions ? el.selectedOptions[0].text : ''; };
+    const lc = v => v.charAt(0).toLowerCase() + v.slice(1);
+    return `${txt('Fore')} forecheck, ${lc(txt('Break'))} breakout, ${lc(txt('Entry'))} to get in. ${txt('Oz')} in the offensive zone, ${lc(txt('Dz'))} coverage in their own end. Power play ${txt('PP')}, penalty kill ${lc(txt('PK'))}, ${lc(aggWord($(side + 'Agg').value / 100))} aggression.`;
+  }
+  function buildB() {
+    const p = pre(TEST.coach);
+    $('bGrid').innerHTML = TKEYS.map(([k, label]) => k === 'Agg'
+      ? `<label class="agg" data-k="Agg">${label}<input type="range" id="bAgg" min="0" max="100" value="${$(p + 'Agg').value}"></label>`
+      : `<label data-k="${k}">${label}<select id="b${k}">${$(p + k).innerHTML}</select></label>`).join('');
+    TKEYS.forEach(([k]) => { if (k !== 'Agg') $('b' + k).value = $(p + k).value; $('b' + k).addEventListener('input', testRefresh); });
+    document.querySelectorAll('#bGrid label').forEach(describeChoice);
+    $('labDim').innerHTML = TKEYS.map(([k, label]) => `<option value="${k}">${label}</option>`).join('');
+  }
+  function testRefresh() {
+    const c = TEST.coach, me = teams[c], op = teams[1 - c], p = pre(c);
+    document.querySelectorAll('[data-coach]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.coach === c));
+    const dotStyle = i => i ? 'background:var(--away);border-color:var(--away-3)' : 'background:var(--home);border-color:var(--home-2)';
+    $('myName').textContent = `${me.name} (${me.abbr})`; $('oppName').textContent = `${op.name} (${op.abbr})`;
+    $('myDot').style.cssText = dotStyle(c); $('oppDot').style.cssText = dotStyle(1 - c);
+    $('planBlock').className = 'side ' + (c ? 'mtl' : 'bos'); $('oppBlock').className = 'side ' + (c ? 'bos' : 'mtl');
+    $('planAText').textContent = planSentence(p); $('oppPlan').textContent = `As set now: ${planSentence(pre(1 - c))}`;
+    const ch = bChanges();
+    document.querySelectorAll('#bGrid label').forEach(l => l.classList.toggle('changed', ch.includes(l.dataset.k)));
+    const n = +$('labN').value, games = n * (ch.length ? 2 : 1), workers = TEST.poolFailed ? 1 : poolSize();
+    const secs = Math.ceil(games * TEST.secPerGame / workers);
+    $('labRun').textContent = ch.length ? `Run plan A and plan B` : 'Run the matchup';
+    $('labEst').textContent = `${games} games, about ${secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes'} on this computer. Runs use the NHL-realistic settings, the ones the engine is calibrated to, and the game on the Watch view keeps playing.`;
+    $('forWho').innerHTML = `<span class="dot" style="${dotStyle(c)}"></span><span>Result for the ${me.name}${ch.length ? ': plan B against plan A' : ''}, both against the ${op.name}' plan as set now</span>`;
+  }
+  document.querySelectorAll('[data-coach]').forEach(b => b.addEventListener('click', () => { TEST.coach = +b.dataset.coach; try { localStorage.setItem('rink.coach', TEST.coach); } catch (e) {} buildB(); testRefresh(); }));
+  $('bReset').addEventListener('click', () => { buildB(); testRefresh(); });
+  $('labN').addEventListener('input', testRefresh);
+  $('myEdit').addEventListener('click', () => openDrawer('planDrawer', $(TEST.coach ? 'sideA' : 'sideH').querySelector('select')));
+  $('oppEdit').addEventListener('click', () => openDrawer('planDrawer', $(TEST.coach ? 'sideH' : 'sideA').querySelector('select')));
+  // plan A is the team as set: when it changes, keep plan B's changes and follow plan A everywhere else
+  let lastA = null;
+  const snapA = () => Object.fromEntries(TKEYS.map(([k]) => [k, $(pre(TEST.coach) + k).value]));
+  document.querySelectorAll('.side select, .side input[type=range]').forEach(el => el.addEventListener('input', () => {
+    if (!$('bGrid').children.length) return;
+    const now = snapA(); if (lastA) TKEYS.forEach(([k]) => { if ($('b' + k).value === lastA[k]) $('b' + k).value = now[k]; }); lastA = now; testRefresh();
+  }));
+  buildB(); lastA = snapA(); testRefresh();
+
+  // ---------- statistics and the result ----------
+  const mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
+  const ci95 = a => a.length > 1 ? 1.96 * Math.sqrt(a.reduce((x, y) => x + (y - mean(a)) ** 2, 0) / (a.length - 1)) / Math.sqrt(a.length) : 0;
   const pct = v => Math.round(100 * v) + '%';
-  function labRow(label, sum, i, cur) {
-    const n = sum.n || 1; const [lo, hi] = wilson(sum.w[i], sum.n); const pts = (2 * sum.w[i] + sum.otl[i]) / (2 * n);
-    return `<tr${cur ? ' style="font-weight:700"' : ''}><td>${label}</td><td>${sum.w[i]}-${sum.l[i]}-${sum.otl[i]}</td><td>${pct(sum.w[i] / n)}<br><span class="ci">${pct(lo)}-${pct(hi)}</span></td><td>${pct(pts)}</td><td>${(sum.gf[i] / n).toFixed(2)}</td><td>${(sum.gf[1 - i] / n).toFixed(2)}</td><td>${(sum.xg[i] / n).toFixed(2)}</td><td>${(sum.xg[1 - i] / n).toFixed(2)}</td></tr>`;
+  const sgn = (v, d = 2) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d);
+  const perGame = (row, c) => { const me = row.teams[c], op = row.teams[1 - c], win = me.goals > op.goals; return { xgd: me.xg - op.xg, gd: me.goals - op.goals, xgf: me.xg, xga: op.xg, pts: win ? 1 : row.end !== 'REG' ? 0.5 : 0 }; };
+  const verdict = (m, e) => m - e > 0 ? ['good', 'Clear edge'] : m + e < 0 ? ['bad', 'Clear cost'] : ['flat', 'Too close to call'];
+  function rangeBar(m, e, scale) {
+    const x = v => clamp(50 + (v / scale) * 50, 0, 100), col = m - e > 0 ? '#1f7a4a' : m + e < 0 ? '#a3241b' : 'var(--fg-dim)';
+    return `<div class="range" aria-hidden="true"><div class="axis"></div><div class="zero"></div><div class="span" style="left:${x(m - e)}%;width:${x(m + e) - x(m - e)}%;background:${col}"></div><div class="pt" style="left:${x(m)}%;background:${col}"></div></div>`;
   }
-  const labHead = '<tr><th>Club</th><th>W-L-OTL</th><th>Win<br><span class="ci">95%</span></th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
-  const CARD_ROWS = [['Forecheck', 'Fore'], ['Breakout', 'Break'], ['Entry', 'Entry'], ['Offensive zone', 'Oz'], ['Defensive zone', 'Dz'], ['Power play', 'PP'], ['Penalty kill', 'PK'], ['Aggression', 'Agg']];
-  const cardText = (side, key) => key === 'Agg' ? ($(side + key).value / 100).toFixed(2) : $(side + key).selectedOptions[0].text;
-  function renderLabCards() {
-    const el = $('labCards'); if (!el) return;
-    el.innerHTML = `<table><tr><th>Card</th><th>${teams[0].name} (${teams[0].abbr})</th><th>${teams[1].name} (${teams[1].abbr})</th></tr>` + CARD_ROWS.map(([label, key]) => `<tr><td>${label}</td><td class="sim">${cardText('h', key)}</td><td class="sim">${cardText('a', key)}</td></tr>`).join('') + '</table>';
-    $('labCardsSum').textContent = `${teams[0].abbr} ${cardText('h', 'Fore')} / ${cardText('h', 'Break')} / ${cardText('h', 'Oz')} vs ${teams[1].abbr} ${cardText('a', 'Fore')} / ${cardText('a', 'Break')} / ${cardText('a', 'Oz')}`;
-    const changed = LAB.ranWith && LAB.ranWith !== cardsKey();
-    if (changed) $('labResultNote').textContent = 'The cards have changed since this run. Run again to see the new matchup.';
-    $('labRecordSum').textContent = (LAB.recordSum || '') + (changed && LAB.recordSum ? ' (cards changed since)' : '');
+  function recordTable(plans) {
+    const head = '<tr><th></th><th>W-L-OTL</th><th>Pts</th><th>GF</th><th>GA</th><th>xGF</th><th>xGA</th></tr>';
+    const rowsOf = (label, rows) => teams.map((t, i) => { let w = 0, l = 0, o = 0, gf = 0, ga = 0, xf = 0, xa = 0; for (const r of rows) { const me = r.teams[i], op = r.teams[1 - i]; if (me.goals > op.goals) w++; else if (r.end !== 'REG') o++; else l++; gf += me.goals; ga += op.goals; xf += me.xg; xa += op.xg; } const n = rows.length || 1; return `<tr><td>${label} ${t.abbr}</td><td>${w}-${l}-${o}</td><td>${pct((2 * w + o) / (2 * n))}</td><td>${(gf / n).toFixed(2)}</td><td>${(ga / n).toFixed(2)}</td><td>${(xf / n).toFixed(2)}</td><td>${(xa / n).toFixed(2)}</td></tr>`; }).join('');
+    return `<table>${head}${plans.map(([label, rows]) => rowsOf(label, rows)).join('')}</table>`;
   }
-  const cardsKey = () => CARD_ROWS.map(([, key]) => cardText('h', key) + '|' + cardText('a', key)).join(';');
-  document.querySelectorAll('select, input[type=range]').forEach(el => el.addEventListener('input', renderLabCards));
-  $('labRun').addEventListener('click', () => {
-    if (LAB.running) return; const n = +$('labN').value; const note = $('labNote'); const out = $('labResult');
-    out.innerHTML = ''; note.textContent = 'Simulating...'; LAB.ranWith = cardsKey(); $('labResultNote').textContent = 'Running with the cards above.'; LAB.recordSum = ''; $('labRecordSum').textContent = ''; $('labRecord').open = true;
-    const table = sum => `<table>${labHead}${labRow(teams[0].abbr, sum, 0)}${labRow(teams[1].abbr, sum, 1)}</table>`;
-    playGames(n, note, sum => { out.innerHTML = table(sum); }, sum => {
-      note.textContent = `${sum.n} games${LAB.stop ? ', stopped early' : ''}.`;
-      $('labResultNote').textContent = `${sum.n} games with the cards above. Win % carries a 95% interval; two settings whose intervals overlap are not separated at this sample size. Points % counts an overtime or shootout loss as one point. Goals and expected goals are per game.`;
-      out.innerHTML = table(sum); LAB.recordSum = `${teams[0].abbr} ${sum.w[0]}-${sum.l[0]}-${sum.otl[0]}, ${teams[1].abbr} ${sum.w[1]}-${sum.l[1]}-${sum.otl[1]} in ${sum.n} games`; $('labRecordSum').textContent = LAB.recordSum; $('labRecord').open = true;
-    }, true);
+  function feedRealityCheck(rows) {
+    batch = { n: 0, sums: [{}, {}], w: [0, 0], l: [0, 0], otl: [0, 0] };
+    for (const r of rows) { r.teams.forEach((t, i) => { for (const k in t.sample) batch.sums[i][k] = (batch.sums[i][k] || 0) + t.sample[k]; }); const w = r.teams[0].goals > r.teams[1].goals ? 0 : 1; batch.w[w]++; if (r.end !== 'REG') batch.otl[1 - w]++; else batch.l[1 - w]++; batch.n++; }
+    renderCalib();
+  }
+  function showResult(rowsA, rowsB, c, changes) {
+    const me = teams[c], op = teams[1 - c];
+    $('labResult').innerHTML = recordTable(rowsB ? [['Plan A', rowsA], ['Plan B', rowsB]] : [['', rowsA]]);
+    if (!rowsB) {
+      const g = rowsA.map(r => perGame(r, c)), pts = mean(g.map(x => x.pts));
+      $('labHeadline').textContent = `${me.name} take ${pct(pts)} of the points against this ${op.name} plan, on ${mean(g.map(x => x.xgf)).toFixed(1)} chances a game for and ${mean(g.map(x => x.xga)).toFixed(1)} against.`;
+      $('labVerdicts').innerHTML = ''; $('labExplain').textContent = `${rowsA.length} games. Change a choice in plan B to test it against this. The records are in Details for analysts; How real is it compares these games with the real teams.`;
+      $('labDetails').open = true; return;
+    }
+    const d = rowsA.map((ra, i) => { const a = perGame(ra, c), b = perGame(rowsB[i], c); return { xg: b.xgd - a.xgd, xgf: b.xgf - a.xgf, xga: b.xga - a.xga, gd: b.gd - a.gd, pts: b.pts - a.pts }; });
+    const S = k => [mean(d.map(x => x[k])), ci95(d.map(x => x[k]))];
+    const [xm, xe] = S('xg'), [gm, ge] = S('gd'), [pm, pe] = S('pts'), [fm] = S('xgf'), [am] = S('xga');
+    const pA = mean(rowsA.map(r => perGame(r, c).pts)), pB = mean(rowsB.map(r => perGame(r, c).pts));
+    const vx = verdict(xm, xe), vg = verdict(gm, ge), vp = verdict(pm, pe);
+    const what = `Plan B (${changes.map(k => optLabel(k, $('b' + k).value)).join(', ')})`;
+    $('labHeadline').textContent = vx[0] === 'good' ? `${what} is better: about ${Math.abs(xm).toFixed(1)} more net chances a game.` : vx[0] === 'bad' ? `${what} is worse: about ${Math.abs(xm).toFixed(1)} fewer net chances a game.` : `${what} and plan A play about the same against this opponent.`;
+    $('labVerdicts').innerHTML = [
+      ['Net chances', sgn(xm), `chances for ${sgn(fm)}, against ${sgn(am)} a game`, vx, rangeBar(xm, xe, 2.5)],
+      ['Goal difference', sgn(gm), 'per game, plan B minus plan A', vg, rangeBar(gm, ge, 2.5)],
+      ['Points', `${pct(pA)} → ${pct(pB)}`, `plan A then plan B, ${rowsA.length} games each`, vp, rangeBar(pm, pe, 0.35)],
+    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v"><div class="k">${k}${k === 'Net chances' ? ' <button type="button" class="tip" data-term="chances" aria-label="What are chances?">?</button>' : ''}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
+    $('labExplain').innerHTML = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${rowsA.length} games. The points difference is not yet: points swing about ${Math.round(pe * 100)} points either way from luck alone <button type="button" class="tip" data-term="close" aria-label="What does too close to call mean?">?</button>. Chances are the number to trust here.`
+      : vx[0] === 'flat' ? `Neither number separates the two plans at ${rowsA.length} games <button type="button" class="tip" data-term="close" aria-label="What does too close to call mean?">?</button>. Run more games, or treat them as even.` : `Both chances and points separate the two plans at ${rowsA.length} games.`;
+  }
+  const seedsFor = n => Array.from({ length: n }, (_, i) => i + 1);
+  function setRunning(on) {
+    TEST.running = on; TEST.stop = false; $('labRun').disabled = on; $('labSweep').disabled = on; $('labStop').hidden = !on;
+    if (!on) { $('labBar').style.width = '0%'; }
+  }
+  const progress = (done, total, what) => { $('labBar').style.width = (100 * done / total) + '%'; $('labNote').textContent = `${what}: game ${done} of ${total}`; };
+  $('labRun').addEventListener('click', async () => {
+    if (TEST.running) return;
+    const c = TEST.coach, n = +$('labN').value, changes = bChanges(), seeds = seedsFor(n), cfgNHL = NHL_CFG();
+    const tA = [tacOf('h'), tacOf('a')], tB = [...tA]; tB[c] = tacOf(pre(c), bVals());
+    const jobs = seeds.map(sd => ({ id: 'A' + sd, seed: sd, tacs: tA, cfg: cfgNHL })).concat(changes.length ? seeds.map(sd => ({ id: 'B' + sd, seed: sd, tacs: tB, cfg: cfgNHL })) : []);
+    setRunning(true); const t0 = performance.now();
+    const rows = await runJobs(jobs, (d, tot) => progress(d, tot, 'Playing'));
+    const secs = (performance.now() - t0) / 1000; if (rows.size) TEST.secPerGame = secs * (TEST.pool ? poolSize() : 1) / rows.size;
+    const both = seeds.filter(sd => rows.has('A' + sd) && (!changes.length || rows.has('B' + sd)));
+    const rowsA = both.map(sd => rows.get('A' + sd)), rowsB = changes.length ? both.map(sd => rows.get('B' + sd)) : null;
+    setRunning(false);
+    $('labNote').textContent = `${both.length} games for each plan${TEST.stop ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`;
+    if (both.length) { feedRealityCheck(rowsA); showResult(rowsA, rowsB, c, changes); } testRefresh();
   });
-  $('labSweep').addEventListener('click', () => {
-    if (LAB.running) return; const n = +$('labN').value; const id = $('labDim').value; const sel = $(id); const side = id[0] === 'h' ? 0 : 1;
-    const options = Array.from(sel.options).map(o => [o.value, o.text]); const original = sel.value; const note = $('labNote'); const out = $('labSweepResult');
-    const rows = []; let i = 0; out.innerHTML = '';
-    const next = () => {
-      if (i >= options.length || LAB.stop) { sel.value = original; readTactics(); renderLabCards(); $('labSweepSum').textContent = `${LAB_DIMS.find(d => d[0] === id)[1]}, ${rows.length} options, ${n} games each`; note.textContent = LAB.stop ? 'Stopped early. Rows shown are complete or marked with the games played.' : `${options.length} options, ${n} games each, for ${LAB_DIMS.find(d => d[0] === id)[1]}. Bold is the current setting. Overlapping intervals are not separated.`; return; }
-      const [val, text] = options[i]; sel.value = val; readTactics();
-      const head = labHead.replace('<th>Club</th>', `<th>${LAB_DIMS.find(d => d[0] === id)[1]}</th>`);
-      playGames(n, note, sum => { out.innerHTML = `<table>${head}${rows.join('')}${labRow(text + ' (running)', sum, side, val === original)}</table>`; }, sum => { if (sum.n) rows.push(labRow(text + (sum.n < n ? ` (${sum.n} games)` : ''), sum, side, val === original)); out.innerHTML = `<table>${head}${rows.join('')}</table>`; i++; next(); });
-    };
-    note.textContent = 'Simulating...'; $('labSweepSum').textContent = ''; $('labSweepBox').open = true; next();
+  $('labSweep').addEventListener('click', async () => {
+    if (TEST.running) return;
+    const c = TEST.coach, k = $('labDim').value, p = pre(c), n = +$('labN').value, seeds = seedsFor(n), cfgNHL = NHL_CFG(), cur = $(p + k).value;
+    const opts = k === 'Agg' ? ['0', '25', '50', '75', '100'] : [...$(p + k).options].map(o => o.value);
+    const tA = [tacOf('h'), tacOf('a')];
+    const jobs = [];
+    for (const v of opts) { const t = [...tA]; t[c] = tacOf(p, { [k]: v }); seeds.forEach(sd => jobs.push({ id: v + '|' + sd, seed: sd, tacs: t, cfg: cfgNHL })); }
+    if (!opts.includes(cur)) seeds.forEach(sd => jobs.push({ id: cur + '|' + sd, seed: sd, tacs: tA, cfg: cfgNHL }));
+    setRunning(true); $('labSweepResult').innerHTML = ''; const t0 = performance.now();
+    const rows = await runJobs(jobs, (d, tot) => progress(d, tot, 'Ranking'));
+    const secs = (performance.now() - t0) / 1000; setRunning(false);
+    const label = v => k === 'Agg' ? `${aggWord(v / 100)} (${(v / 100).toFixed(2)})` : [...$(p + k).options].find(o => o.value === v).text;
+    const base = seeds.filter(sd => rows.has(cur + '|' + sd));
+    const list = opts.map(v => {
+      const sd = base.filter(x => rows.has(v + '|' + x)); if (!sd.length) return null;
+      const d = sd.map(x => perGame(rows.get(v + '|' + x), c).xgd - perGame(rows.get(cur + '|' + x), c).xgd);
+      return { v, m: mean(d), e: ci95(d), n: sd.length };
+    }).filter(Boolean).sort((a, b) => b.m - a.m);
+    const isCur = v => v === cur || (k === 'Agg' && Math.abs(+v - +cur) < 13);
+    $('labSweepResult').innerHTML = list.map(r => { const [cls, txt] = r.v === cur ? ['cur', 'Plan A now'] : verdict(r.m, r.e); return `<div class="r"><div class="name">${label(r.v)}${r.v === cur ? ' (plan A)' : ''}<small>${r.v === cur ? 'the baseline' : sgn(r.m) + ' net chances a game'}</small></div>${rangeBar(r.m, r.e, 2.5)}<span class="pill ${cls}">${txt}</span></div>`; }).join('');
+    $('labSweepNote').textContent = `${TKEYS.find(x => x[0] === k)[1]} for the ${teams[c].name}, ${n} games per option, ${Math.round(secs)} seconds. The dot is the best estimate and the band the 95% range; right of the line is better for the ${teams[c].name}.`;
+    $('labNote').textContent = TEST.stop ? 'Stopped early.' : '';
   });
-  $('labStop').addEventListener('click', () => { LAB.stop = true; });
+  $('labStop').addEventListener('click', () => { TEST.stop = true; if (TEST.finish) TEST.finish(); });
   let calibT = 0;
   function updateCalib(now) { if (batch && batch.n) return; if (now - calibT < 1000) return; calibT = now; renderCalib(); }
 
@@ -4920,10 +5132,11 @@ function startSim(DATA) {
   const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.querySelectorAll('.steps [data-go]').forEach(b => b.addEventListener('click', () => {
     showView('test');
-    const box = { 1: $('labCardsBox'), 2: $('labRun'), 3: $('labRecord') }[b.dataset.go];
+    const box = { 1: $('planBlock'), 2: $('labRun'), 3: $('labRecord') }[b.dataset.go];
     if (box.tagName === 'DETAILS') box.open = true;
     box.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'center' }); flash(box);
-    const focus = b.dataset.go === '1' ? box.querySelector('[data-edit]') : b.dataset.go === '2' ? box : null;
+    const focus = b.dataset.go === '1' ? $('bGrid').querySelector('select') : b.dataset.go === '2' ? box : null;
+    if (b.dataset.go === '1') flash($('oppBlock'));
     if (focus) focus.focus({ preventScroll: true });
   }));
   // drawers: the game plans (both teams) and the settings
@@ -4940,17 +5153,17 @@ function startSim(DATA) {
   document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openDrawer('planDrawer', $(b.dataset.edit === 'h' ? 'sideH' : 'sideA').querySelector('select'))));
   $('gearBtn').addEventListener('click', () => openDrawer('setDrawer'));
   // each choice in the plan drawer shows what it means under it
-  (() => {
-    const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
-    document.querySelectorAll('.side .cgrid label').forEach(l => {
-      const el = l.querySelector('select, input'); if (!el) return;
-      const small = document.createElement('small'); small.className = 'desc'; l.append(small);
-      const key = el.id.slice(1);
-      const say = () => { if (key === 'Agg') { small.textContent = `${aggWord(el.value / 100)}. ${SYS.coaching ? SYS.coaching.aggression.desc : ''}`; return; } const d = SYS[SECTION[key]] && SYS[SECTION[key]][el.value]; small.textContent = d && d.desc ? d.desc : ''; };
-      el.addEventListener('input', say); say();
-    });
-  })();
+  document.querySelectorAll('#planDrawer .side .cgrid label').forEach(describeChoice);
   function aggWord(v) { return v < 0.34 ? 'Low' : v < 0.67 ? 'Medium' : 'High'; }
+  // a choice's meaning, written under its select (the plan drawer shows all of them, plan B only the ones it changes)
+  function describeChoice(l) {
+    const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
+    const el = l.querySelector('select, input'); if (!el) return;
+    const small = document.createElement('small'); small.className = 'desc'; l.append(small);
+    const key = el.id.slice(1);
+    const say = () => { if (key === 'Agg') { small.textContent = `${aggWord(el.value / 100)}. ${SYS.coaching ? SYS.coaching.aggression.desc : ''}`; return; } const d = SYS[SECTION[key]] && SYS[SECTION[key]][el.value]; small.textContent = d && d.desc ? d.desc : ''; };
+    el.addEventListener('input', say); say();
+  }
   // each team's plan as a sentence on the Watch view
   function renderPlans() {
     const txt = (side, k) => { const el = $(side + k); return el.selectedOptions ? el.selectedOptions[0].text : ''; };
@@ -4963,7 +5176,7 @@ function startSim(DATA) {
   document.querySelectorAll('.side select, .side input[type=range]').forEach(el => el.addEventListener('input', renderPlans));
   renderPlans();
   // short explainers for the numbers a newcomer will not know
-  const TERMS = { chances: ['Chances', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."] };
+  const TERMS = { close: ['Too close to call', 'The difference is smaller than the normal swing from luck at this many games. Run more games, or treat the two plans as even.'], chances: ['Chances', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."] };
   let pop = null;
   document.addEventListener('click', e => {
     const t = e.target.closest('button.tip'); if (pop) { pop.remove(); pop = null; } if (!t || !TERMS[t.dataset.term]) return;
@@ -4996,10 +5209,10 @@ function startSim(DATA) {
   }
   requestAnimationFrame(frame);
   // debug and test hook: lets a harness step the engine headlessly
-  window.rinkSim = { tick, teams, game, puck, DATA, cfg };
+  window.rinkSim = { tick, teams, game, puck, DATA, cfg, newGame, teamSample, runJobs, TEST };
 }
 // ---------- Data loading: fetch the JSON files next to this page; fall back to the embedded copies (standalone file) ----------
-(async () => {
+if (!self.__RINK_WORKER) (async () => {
   const names = ['rosters', 'ratings', 'systems', 'physics', 'moneypuck-2025', 'defaults', 'xg-model'];
   const embedded = Object.fromEntries(names.map(n => { try { return [n, JSON.parse(document.getElementById('data-' + n).textContent)]; } catch (e) { return [n, null]; } }));
   const DATA = {}; const from = {};

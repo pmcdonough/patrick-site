@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (the matchup lab) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.44, sim 0.36, Play Review 0.6.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.45, sim 0.37, Play Review 0.6.
 
 ## Layout
 
@@ -48,7 +48,7 @@ CHANGELOG.md                              per-version changes
 - Anything inferred or mocked (positions at a real shot, replay movement) is labeled on the page and never feeds a measured or calibrated number. `docs/MODELING.md` keeps the three kinds apart.
 - Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo (`raw/` is ignored); the fitted model, the ratings extract and the compact game file go in. `docs/RAW-INPUTS.md` lists the exact inputs, where to download each and the command for each script; run `xg_fit.py` with `.venv/bin/python` (pandas, scikit-learn). Re-run the script, not the numbers, when the data changes. All three scripts reproduce the committed files byte for byte from those inputs (`mp_extract.py --check` proves it for the ratings file; for the other two, `git status` stays clean after a run). Do not hand-edit their outputs.
 - The expected-goal formula lives in two places, the engine (`xgModel`) and the review page; change both or neither.
-- The matchup lab reuses the game loop (`playGames`); it has no engine logic of its own. Do not add a second way to play a game.
+- Test a strategy plays the engine's own `tick` and `newGame`, in background workers running this same script (`runJobs`) or on the page when workers are unavailable (`runInPage`); it has no engine logic of its own. Do not add a second way to play a game. A seeded game must play identically in a worker, on the page and in `tools/lab.js`.
 - The engine is balanced at the NHL-average multipliers (every slider at 1.0, the tick mark). The build defaults in `defaults.json` deliberately run hotter (acceleration 2.3, speed 1.3, cruise 1.15, shot volume 2) because it is more fun to watch. Calibrate at 1.0, then check that the defaults still look right.
 
 ## Shipping a version
@@ -70,6 +70,6 @@ The sim's script is about 1,500 lines after the embedded data. Its sections are 
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.44)
+## State (site 0.45)
 
-All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels identical to the reference), `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.35, 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.
+All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels identical to the reference), `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.37, 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.

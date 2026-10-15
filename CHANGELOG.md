@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.44 = sim 0.36 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.45 = sim 0.37 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.45
+- Sim 0.37 (the redesign, phase 2: Test a strategy).
 
 ### 0.44
 - Sim 0.36 (the redesign, phase 1). The home page card opens Test a strategy.
@@ -74,6 +77,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.37
+- Test a strategy, redesigned. Pick the team you coach; plan A is that team as set, plan B a copy where any choice can change. Both plans play the opponent's plan in the same seeded games, and the result is a sentence and three verdicts (net chances, goal difference, points), each clear edge, too close to call or clear cost from its 95% interval. Rank every option for one choice on the same games. Edit links sit under each team's name.
+- Runs play in background workers on every spare core: 100 games a plan in about a minute on an eight-core machine, where the page alone took about 4 minutes for 100. Runs always use the NHL-realistic settings, and the game on the Watch view keeps playing. If a browser cannot start workers, the games run on the page.
+- Every game now depends only on its seed. `newGame` picked the opening lines before resetting the clock, period, score and penalty boxes, so a game opened with whatever line the end of the last one called for; the line indexes, man-coverage marks, slot assignments and a shot flag also carried over. Since 0.34 seeded runs had reproduced only when played in the same order; now a seed plays the same game in any order, in a worker, on the page and in `tools/lab.js`. References re-saved; the numbers barely moved.
+- The step 2 copy said 100 games take about a minute, which was only true from 0.37 on; it now says a minute or two.
 
 ### 0.36
 - Redesign, phase 1. A header says what this is in one line and links three steps (set each team's plan, simulate the games, see what changes) into the strategy test, with How it works for the long explanation. Three views replace the four tabs: Watch, Test a strategy and How real is it, with the settings behind a gear.
