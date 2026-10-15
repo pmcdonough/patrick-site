@@ -157,6 +157,23 @@
   .results .hint { margin: 0; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill.good { background: #16322a; color: #6fd19b; } :root:not([data-theme="light"]) .pill.bad { background: #3a1c1a; color: #f08a80; } }
   :root[data-theme="dark"] .pill.good { background: #16322a; color: #6fd19b; } :root[data-theme="dark"] .pill.bad { background: #3a1c1a; color: #f08a80; }
+  .realtop { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .realscore { font-weight: 600; }
+  .calib.real table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+  .calib.real th, .calib.real td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .calib.real th { font: 700 0.78rem var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-dim); white-space: nowrap; }
+  .calib.real tr.sec td { font: 800 0.95rem var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-dim); padding-top: 14px; border-bottom: 2px solid var(--line); }
+  .calib.real td.m b { display: block; font-weight: 600; } .calib.real td.m span { color: var(--fg-dim); font-size: 0.82rem; }
+  .calib.real td.n { white-space: nowrap; } .calib.real td.n .vs { color: var(--fg-dim); font-size: 0.82rem; }
+  .calib.real td.n .pill { display: inline-block; margin-top: 3px; }
+  .calib.real td.lg { color: var(--fg-dim); white-space: nowrap; }
+  .pill.warn { background: #fbefd6; color: #8a5a00; }
+  :root[data-theme="dark"] .pill.warn { background: #3a2e14; color: #f0c36a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill.warn { background: #3a2e14; color: #f0c36a; } }
+  dl.glossary { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 6px 14px; margin: 0 0 10px; }
+  dl.glossary dt { font-weight: 600; } dl.glossary dd { margin: 0; }
+  @media (max-width: 600px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: 6px; } }
+  .stats .k button.tip { width: 16px; height: 16px; font-size: 0.6rem; vertical-align: 1px; }
   .scrim { position: fixed; inset: 0; background: rgb(10 14 20 / 0.4); z-index: 20; }
   .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); box-sizing: border-box; background: var(--panel); border-left: 1px solid var(--line); z-index: 21; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)); padding-inline: 18px max(18px, env(safe-area-inset-right, 0px)); }
   .drawer > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -307,16 +324,16 @@
         <summary>Box score <small>shots, chances, faceoffs, possession, penalties</small></summary>
       <div class="stats">
         <span class="h" id="shH">0</span><span class="k">Shots on goal</span><span class="a" id="shA">0</span>
-        <span class="h" id="atH">0</span><span class="k">Attempts</span><span class="a" id="atA">0</span>
-        <span class="h" id="blH">0</span><span class="k">Blocked shots</span><span class="a" id="blA">0</span>
+        <span class="h" id="atH">0</span><span class="k">Shot attempts <button type="button" class="tip" data-term="attempts" aria-label="What are shot attempts?">?</button></span><span class="a" id="atA">0</span>
+        <span class="h" id="blH">0</span><span class="k">Blocked shots <button type="button" class="tip" data-term="blocked" aria-label="What counts as a blocked shot?">?</button></span><span class="a" id="blA">0</span>
         <span class="h" id="msH">0</span><span class="k">Missed net</span><span class="a" id="msA">0</span>
-        <span class="h" id="xgH">0.00</span><span class="k">Expected goals</span><span class="a" id="xgA">0.00</span>
-        <span class="h" id="hdH">0</span><span class="k">High-danger shots</span><span class="a" id="hdA">0</span>
+        <span class="h" id="xgH">0.00</span><span class="k">Chances <button type="button" class="tip" data-term="chances" aria-label="What are chances?">?</button></span><span class="a" id="xgA">0.00</span>
+        <span class="h" id="hdH">0</span><span class="k">High-danger shots <button type="button" class="tip" data-term="hd" aria-label="What are high-danger shots?">?</button></span><span class="a" id="hdA">0</span>
         <span class="h" id="foH">0%</span><span class="k">Faceoffs</span><span class="a" id="foA">0%</span>
-        <span class="h" id="posH">50%</span><span class="k">Possession</span><span class="a" id="posA">50%</span>
-        <span class="h" id="ozH">0:00</span><span class="k">O-zone time</span><span class="a" id="ozA">0:00</span>
-        <span class="h" id="tkH">0</span><span class="k">Takeaways</span><span class="a" id="tkA">0</span>
-        <span class="h" id="pimH">0</span><span class="k">Penalty min</span><span class="a" id="pimA">0</span>
+        <span class="h" id="posH">50%</span><span class="k">Possession <button type="button" class="tip" data-term="poss" aria-label="What is possession?">?</button></span><span class="a" id="posA">50%</span>
+        <span class="h" id="ozH">0:00</span><span class="k">Offensive-zone time</span><span class="a" id="ozA">0:00</span>
+        <span class="h" id="tkH">0</span><span class="k">Takeaways <button type="button" class="tip" data-term="take" aria-label="What are takeaways?">?</button></span><span class="a" id="tkA">0</span>
+        <span class="h" id="pimH">0</span><span class="k">Penalty minutes</span><span class="a" id="pimA">0</span>
         <span class="h" id="chH">0</span><span class="k">Line changes</span><span class="a" id="chA">0</span>
       </div>
         <p class="hint" id="record">This session: no games finished yet (W-L-OTL).</p>
@@ -379,12 +396,20 @@
   </section>
 
   <section class="view card" data-view="real" hidden>
-    <div class="vhead"><h2 class="vt">How real is it</h2><p class="hint">The sim next to what each team actually did in 2025-26 and the league average. It reads the last test run, or this game so far scaled to 60 minutes.</p></div>
-      <div id="labCalib">
-        <p class="hint" id="calibNote"></p>
-        <div id="calib" class="calib"></div>
-        <p class="hint">Per-game numbers from the last run (or this game so far, scaled to 60 minutes) next to what each club actually averaged in 2025-26 and the league. Orange cells are more than 50 percent off. The record rows compare with each club's final 2025-26 record; the sim plays only these two clubs against each other, while the real record came against the whole league.</p>
-      </div>
+    <div class="vhead"><h2 class="vt">How real is it</h2>
+      <p class="hint">Every number the sim produces, per team per game, next to what that team really did in 2025-26 and the league average. Goals and faceoffs land on the real numbers. The sim creates too many good chances, mostly medium-danger looks off passes into the slot, and runs high on shots, goalie freezes and icings. Read its chance numbers as a comparison between plans, not as a forecast of a real score.</p>
+    </div>
+    <div class="realtop">
+      <span class="pill flat" id="realSource">This game so far</span>
+      <span id="realScore" class="realscore"></span>
+      <button type="button" id="realRun">Play 100 games to check</button>
+      <span class="hint" id="realNote"></span>
+    </div>
+    <div id="labCalib">
+      <p class="hint" id="calibNote" hidden></p>
+      <div id="calib" class="calib real"></div>
+      <p class="hint">On target means within 15% of that team's real 2025-26 number; well above or well below means off by more than half. The sim plays only these two teams against each other, while the real numbers came against the whole league. Data: MoneyPuck 2025-26 team and league files, league offside and icing rates.</p>
+    </div>
   </section>
 </main>
 
@@ -442,6 +467,9 @@
 
     <h3>Physics and calibration</h3>
     <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts on rushes, breakouts and chases, cruising otherwise. Wrist shots run 58 to 85 mph and point shots 80 to 100; the dump is about 85 mph around the glass. Every unblocked attempt gets an expected-goal value from a model fit on two seasons of MoneyPuck shot data: distance and angle to the net, shot type, rebound, and the strength on the ice, times the shooter's own finishing over those seasons. The danger tiers follow MoneyPuck's expected-goal thresholds, and a goal is scored against each goalie at that value scaled by his real save rate in the tier. The engine is balanced at the NHL-average settings, the tick mark on each slider; the defaults it ships with run hotter on speed and shot volume because that is more fun to watch. The reality check under Advanced compares the sim's per-game rates with each club's real 2025-26 rates and the league average, live or over a ten-game batch with the win record, and flags anything more than 50 percent off. That table is the honest statement of where the engine still differs from the real game.</p>
+
+    <h3>Glossary</h3>
+    <dl class="glossary" id="glossary"></dl>
 
     <h3>The systems</h3>
     <div id="aboutSystems"></div>
@@ -1141,6 +1169,71 @@
    ],
    "pressure": true,
    "desc": "A box that pressures: the nearest killer attacks the puck carrier, clears at the first sign of pressure, and the box collapses behind him."
+  },
+  "clear": {
+   "desc": "On the penalty kill there is no icing, so the first job with the puck in our end or the neutral zone is to send it the length of the ice and make the power play go back for it. The carrier clears within a beat of getting it (ratePerSec), down the open lane closest to straight ahead (laneYs, a lane is open when no opponent is within laneWidthFt of it), aimed at aimFx, past the far goal line. With every lane covered he lifts it over the sticks: nobody can touch it for liftSec. He keeps it only on a shorthanded rush: a breakaway, or in the neutral zone skating up ice faster than rushMinSpeedFtPerSec with more teammates level or ahead (within rushTrailFt) than opponents back.",
+   "ratePerSec": 5,
+   "aimFx": 176,
+   "laneYs": [
+    6,
+    24,
+    42.5,
+    61,
+    79
+   ],
+   "laneWidthFt": 3,
+   "aimSpreadRad": 0.05,
+   "speedFtPerSec": 100,
+   "liftSec": 0.45,
+   "rushMinSpeedFtPerSec": 12,
+   "rushTrailFt": 10
+  },
+  "forecheck": {
+   "desc": "The penalty kill's forecheck replaces the team's even-strength one while shorthanded. In the power play's end the nearest killer pressures alone; the other forward waits high in the neutral zone and the defensemen at our blue line, so the breakout runs into four men rather than past two. In the neutral zone it is a passive 1-3: one forward pressures, the other forward and both defensemen stand across our blue line. Spots follow the forecheck convention: inZone in feet from our goal line, neutral relative to the puck.",
+   "inZone": {
+    "LW": [
+     110,
+     42
+    ],
+    "C": [
+     110,
+     42
+    ],
+    "RW": [
+     110,
+     42
+    ],
+    "LD": [
+     70,
+     30
+    ],
+    "RD": [
+     70,
+     55
+    ]
+   },
+   "neutral": {
+    "LW": [
+     -10,
+     42
+    ],
+    "C": [
+     -10,
+     42
+    ],
+    "RW": [
+     -10,
+     42
+    ],
+    "LD": [
+     -22,
+     27
+    ],
+    "RD": [
+     -22,
+     58
+    ]
+   }
   }
  },
  "deployment": {
@@ -3293,7 +3386,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.37';
+  const VERSION = '0.38';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -3812,10 +3905,12 @@ function startSim(DATA) {
         if (!window.__noDrift) { fy += M.driftFt * Math.sin(tt * 1.1 + ph); fx += M.driftFt * 0.75 * Math.sin(tt * 0.7 + ph); }
       }
     } else if (situation === 'defense') {
+      // shorthanded, the forecheck is the penalty kill's: one man pressures, the rest hold the middle and the blue line
+      const FC = shorthanded(t) && !onPP(t) ? SYS.penaltyKill.forecheck : SYS.forecheck[tac.fore];
       if (pz === 'off') {
-        const s = SYS.forecheck[tac.fore].inZone[p.role]; if (!s) return null; [fx, fy] = s;
+        const s = FC.inZone[p.role]; if (!s) return null; [fx, fy] = s;
       } else if (pz === 'neutral') {
-        const s = SYS.forecheck[tac.fore].neutral[p.role]; if (!s) return null; [fx, fy] = [pfx + s[0], s[1]];
+        const s = FC.neutral[p.role]; if (!s) return null; [fx, fy] = [pfx + s[0], s[1]];
       } else if (shorthanded(t) && !onPP(t)) {
         const s = pkSlot(t, p, SYS.penaltyKill[tac.pk].slots); [fx, fy] = s;
       } else if (tac.dz === 'man') {
@@ -3924,6 +4019,17 @@ function startSim(DATA) {
     puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.cool = 0.25; release(from);
     puck.rim = true; puck.raceJudged = false; t.clears = (t.clears || 0) + 1;
   }
+  // A penalty-kill clear down the ice: down the open lane closest to straight ahead, past the far goal line; with every
+  // lane covered he lifts it over the sticks (nobody can touch it while it is in the air).
+  function pkClear(from, opp) {
+    const t = from.team, K = SYS.penaltyKill.clear;
+    const lanes = K.laneYs.map(y => toRink(t, K.aimFx, y)).filter(g => laneClear(from, g, opp, K.laneWidthFt)).sort((a, b) => Math.abs(a.y - from.y) - Math.abs(b.y - from.y));
+    const lift = !lanes.length, target = lift ? toRink(t, K.aimFx, 42.5) : lanes[0];
+    const a = Math.atan2(target.y - from.y, target.x - from.x) + rnd(-K.aimSpreadRad, K.aimSpreadRad);
+    const sp = K.speedFtPerSec * (0.9 + from.pass * 0.2);
+    puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.receiver = null; puck.cool = lift ? K.liftSec : 0.25; release(from);
+    puck.rim = Math.abs(target.y - 42.5) > 25; puck.raceJudged = false; t.clears = (t.clears || 0) + 1;
+  }
   function laneClear(from, to, opp, width = 4) {
     const dx = to.x - from.x, dy = to.y - from.y, L = Math.hypot(dx, dy) || 1;
     for (const o of opp) {
@@ -3987,6 +4093,14 @@ function startSim(DATA) {
       return { x: n.x - t.dir * 5, y: n.y + (p.y < 42 ? -2 : 2) };
     }
     p.breakaway = false;
+    // the penalty kill: there is no icing while shorthanded, so the first job with the puck in our end or the neutral zone
+    // is to send it the length of the ice and make the power play go back for it. Only a real shorthanded rush keeps it.
+    if (shorthanded(t) && !pp && pz !== 'off') {
+      const K = SYS.penaltyKill.clear;
+      const back = opp.filter(o => toFx(t, o.x) > pfx).length, up = 1 + mates.filter(m => toFx(t, m.x) > pfx - K.rushTrailFt).length;
+      const rush = pz === 'neutral' && p.vx * t.dir > K.rushMinSpeedFtPerSec && up > back;
+      if (!rush) { if (Math.random() < dt * K.ratePerSec) { pkClear(p, opp); return null; } return { x: p.x, y: p.y }; }
+    }
     // a teammate with a step on the last defender: spring him
     if (pz !== 'off') {
       const lastD = Math.max(...opp.map(o => 178 - toFx(teams[1 - t.id], o.x)), 0);
@@ -4880,30 +4994,57 @@ function startSim(DATA) {
   }
   let batch = null; // { n, sums: [ {..}, {..} ], w, l, otl } from the last lab run
   const addToBatch = () => teams.forEach((t, i) => { const s = teamSample(t); for (const k in s) batch.sums[i][k] = (batch.sums[i][k] || 0) + s[k]; });
+  // How real is it: each sim number per team per game next to that team's real 2025-26 number and the league, in groups,
+  // with a one-line reading and an on target / above / below verdict. Reads the last test run, or this game scaled to 60 minutes.
+  const REAL_ROWS = [
+    ['Results'],
+    ['Goals', 'score', 'goals', 'Goals scored per game.'],
+    ['Chances (expected goals)', 'xg', 'xGoals', 'What the shots were worth by where and how they were taken.', 'chances'],
+    ['Shots on goal', 'shots', 'shotsOnGoal', 'Shots the goalie had to stop, goals included.'],
+    ['Shot attempts', 'attempts', 'shotAttempts', 'Every shot, including blocked and missed ones.', 'attempts'],
+    ['Shot quality'],
+    ['High-danger shots', 'tierHigh', 'highDangerShots', 'At least a 20% chance to score, nearly all from close in.', 'hd'],
+    ['Medium-danger shots', 'tierMed', 'mediumDangerShots', 'Between 8% and 20%: the slot and the inner circles. The sim makes far too many.', 'md'],
+    ['Low-danger shots', 'tierLow', 'lowDangerShots', 'Under 8%: the point, the outside and bad angles.', 'ld'],
+    ['Defense'],
+    ['Shots blocked by the other team', 'blockedFor', 'blocked', 'Attempts a defender got in front of.', 'blocked'],
+    ['Missed the net', 'missed', 'missed', 'Attempts wide or high.'],
+    ['Game flow'],
+    ['Penalties taken', 'pens', 'penalties', 'Minor penalties per game.'],
+    ['Faceoffs won', 'fo', 'faceoffWinPct', 'Share of draws won.'],
+    ['Goalie freezes', 'freezes', 'freezes', 'Times the other goalie covered the puck.'],
+    ['Offsides', 'offsides', 'offsidesPerTeamGame', 'Offside calls against the team.'],
+    ['Icings', 'icings', 'icingsPerTeamGame', 'Icings called against the team; there is no icing on the penalty kill.'],
+  ];
+  const realVerdict = (v, real) => { if (!(real > 0)) return null; const d = (v - real) / real; return Math.abs(d) <= 0.15 ? ['good', 'On target'] : d > 0.5 ? ['bad', 'Well above'] : d < -0.5 ? ['bad', 'Well below'] : d > 0 ? ['warn', 'Above'] : ['warn', 'Below']; };
   function renderCalib() {
     const el = $('calib'); if (!el || !MP) return;
-    const src = batch && batch.n ? batch.sums.map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v / batch.n]))) : teams.map(teamSample);
-    let offCount = 0, cellCount = 0;
-    const played = batch && batch.n ? 1 : Math.max(0.05, ((game.period - 1) * 1200 + (1200 - Math.min(game.clock, 1200))) / 3600); // scale this game to 60 minutes
-    const fmt = (k, v) => k === 'fo' ? Math.round(v * 100) + '%' : k === 'xg' ? v.toFixed(2) : v.toFixed(1);
-    const fmtR = (k, v) => k === 'faceoffWinPct' ? Math.round(v * 100) + '%' : k === 'xGoals' || k === 'goals' ? v.toFixed(2) : v.toFixed(1);
-    let html = '<table><tr><th></th><th>BOS sim</th><th>BOS real</th><th>MTL sim</th><th>MTL real</th><th>League</th></tr>';
-    const rec = batch && batch.n ? batch : record; const recN = batch && batch.n ? batch.n : record.w[0] + record.w[1];
+    const fromRun = batch && batch.n;
+    const src = fromRun ? batch.sums.map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v / batch.n]))) : teams.map(teamSample);
+    const played = fromRun ? 1 : Math.max(0.05, ((game.period - 1) * 1200 + (1200 - Math.min(game.clock, 1200))) / 3600); // scale this game to 60 minutes
+    const judge = fromRun || played > 0.5;
+    const fmt = (k, v) => k === 'fo' || k === 'faceoffWinPct' ? Math.round(v * 100) + '%' : (k === 'xg' || k === 'score' || k === 'goals' || k === 'xGoals') ? v.toFixed(2) : v.toFixed(1);
+    let on = 0, all = 0;
+    const realOf = (t, rk) => MP.teams[t.abbr][rk] !== undefined ? MP.teams[t.abbr][rk] : PH.rulesBenchmarks[rk];
+    const rec = fromRun ? batch : record, recN = fromRun ? batch.n : record.w[0] + record.w[1];
     const realRec = teams.map(t => DATA.rosters.teams[t.key].record);
-    html += '<tr style="white-space:nowrap"><td>Record</td>' + teams.map((t, i) => `<td class="sim">${recN ? `${rec.w[i]}-${rec.l[i]}-${rec.otl[i]}` : '-'}</td><td>${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : '-'}</td>`).join('') + '<td>-</td></tr>';
-    html += '<tr><td>Points %</td>' + teams.map((t, i) => `<td class="sim">${recN ? Math.round(100 * (2 * rec.w[i] + rec.otl[i]) / (2 * recN)) + '%' : '-'}</td><td>${realRec[i] ? Math.round(100 * realRec[i].points / (2 * realRec[i].gp)) + '%' : '-'}</td>`).join('') + '<td>50%</td></tr>';
-    for (const [label, sk, rk] of CAL_ROWS) {
+    let html = `<table><thead><tr><th>Per team per game</th>${teams.map(t => `<th>${t.name}: sim <span class="vs">vs real</span></th>`).join('')}<th>NHL average</th></tr></thead><tbody>`;
+    let pointsRow = `<tr><td class="m"><b>Points %</b><span>Share of the standings points: two for a win, one for an overtime or shootout loss.</span></td>` + teams.map((t, i) => { const sim = recN ? (2 * rec.w[i] + rec.otl[i]) / (2 * recN) : null, real = realRec[i] ? realRec[i].points / (2 * realRec[i].gp) : null; return `<td class="n">${sim === null ? '-' : Math.round(sim * 100) + '%'} <span class="vs">vs ${real === null ? '-' : Math.round(real * 100) + '%'}</span>${recN ? `<br><span class="vs">${rec.w[i]}-${rec.l[i]}-${rec.otl[i]} here, ${realRec[i] ? `${realRec[i].w}-${realRec[i].l}-${realRec[i].otl}` : '-'} real</span>` : ''}</td>`; }).join('') + '<td class="lg">50%</td></tr>';
+    for (const row of REAL_ROWS) {
+      if (row.length === 1) { html += `<tr class="sec"><td colspan="${teams.length + 2}">${row[0]}</td></tr>`; if (pointsRow) { html += pointsRow; pointsRow = ''; } continue; }
+      const [label, sk, rk, say, term] = row;
       const cells = teams.map((t, i) => {
-        const v = sk === 'fo' ? src[i][sk] : src[i][sk] / played; const real = MP.teams[t.abbr][rk] !== undefined ? MP.teams[t.abbr][rk] : PH.rulesBenchmarks[rk];
-        const off = real > 0 && (v / real > 1.5 || v / real < 0.66) && (batch && batch.n || played > 0.5);
-        cellCount++; if (off) offCount++;
-        return `<td class="sim${off ? ' off' : ''}">${fmt(sk, v)}</td><td>${fmtR(rk, real)}</td>`;
+        const v = sk === 'fo' ? src[i][sk] : src[i][sk] / played, real = realOf(t, rk), vd = judge ? realVerdict(v, real) : null;
+        if (vd) { all++; if (vd[0] === 'good') on++; }
+        return `<td class="n">${fmt(sk, v)} <span class="vs">vs ${real !== undefined ? fmt(rk, real) : '-'}</span>${vd ? `<br><span class="pill ${vd[0]}">${vd[1]}</span>` : ''}</td>`;
       }).join('');
       const lg = MP.league.perGame[rk] !== undefined ? MP.league.perGame[rk] : PH.rulesBenchmarks[rk];
-      html += `<tr><td>${label}</td>${cells}<td>${lg !== undefined ? fmtR(rk, lg) : '-'}</td></tr>`;
+      html += `<tr><td class="m"><b>${label}${term ? ` <button type="button" class="tip" data-term="${term}" aria-label="What is this?">?</button>` : ''}</b><span>${say}</span></td>${cells}<td class="lg">${lg !== undefined ? fmt(rk, lg) : '-'}</td></tr>`;
     }
-    el.innerHTML = html + '</table>';
-    $('calibNote').textContent = batch && batch.n ? `last run, ${batch.n} games: ${offCount} of ${cellCount} cells off` : played > 0.5 ? `this game so far: ${offCount} of ${cellCount} cells off` : 'this game so far';
+    el.innerHTML = html + '</tbody></table>';
+    $('realSource').textContent = fromRun ? `${batch.n} test games` : `This game so far${played < 0.98 ? ', scaled to 60 minutes' : ''}`;
+    $('realScore').textContent = judge ? `${on} of ${all} numbers on target` : 'Too early in this game to judge; play 100 games to check.';
+    $('calibNote').textContent = fromRun ? `last run, ${batch.n} games: ${all - on} of ${all} cells off` : 'this game so far';
   }
 
   // ---------- Test a strategy: plan A against plan B, the same seeded games for both, played in background workers ----------
@@ -5063,7 +5204,7 @@ self.onmessage = e => { const m = e.data;
       ['Net chances', sgn(xm), `chances for ${sgn(fm)}, against ${sgn(am)} a game`, vx, rangeBar(xm, xe, 2.5)],
       ['Goal difference', sgn(gm), 'per game, plan B minus plan A', vg, rangeBar(gm, ge, 2.5)],
       ['Points', `${pct(pA)} → ${pct(pB)}`, `plan A then plan B, ${rowsA.length} games each`, vp, rangeBar(pm, pe, 0.35)],
-    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v"><div class="k">${k}${k === 'Net chances' ? ' <button type="button" class="tip" data-term="chances" aria-label="What are chances?">?</button>' : ''}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
+    ].map(([k, big, sub, [cls, label], bar]) => `<div class="v"><div class="k">${k}${{ 'Net chances': 'net', Points: 'pts' }[k] ? ` <button type="button" class="tip" data-term="${{ 'Net chances': 'net', Points: 'pts' }[k]}" aria-label="What does this mean?">?</button>` : ''}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
     $('labExplain').innerHTML = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${rowsA.length} games. The points difference is not yet: points swing about ${Math.round(pe * 100)} points either way from luck alone <button type="button" class="tip" data-term="close" aria-label="What does too close to call mean?">?</button>. Chances are the number to trust here.`
       : vx[0] === 'flat' ? `Neither number separates the two plans at ${rowsA.length} games <button type="button" class="tip" data-term="close" aria-label="What does too close to call mean?">?</button>. Run more games, or treat them as even.` : `Both chances and points separate the two plans at ${rowsA.length} games.`;
   }
@@ -5111,6 +5252,15 @@ self.onmessage = e => { const m = e.data;
     $('labNote').textContent = TEST.stop ? 'Stopped early.' : '';
   });
   $('labStop').addEventListener('click', () => { TEST.stop = true; if (TEST.finish) TEST.finish(); });
+  // How real is it: play 100 games with both teams as set, at the NHL-realistic settings, and read them
+  $('realRun').addEventListener('click', async () => {
+    if (TEST.running) return; const tA = [tacOf('h'), tacOf('a')], cfgNHL = NHL_CFG();
+    const jobs = seedsFor(100).map(sd => ({ id: 'R' + sd, seed: sd, tacs: tA, cfg: cfgNHL }));
+    setRunning(true); $('realRun').disabled = true;
+    const rows = await runJobs(jobs, (d, tot) => { $('realNote').textContent = `Playing game ${d} of ${tot}`; });
+    setRunning(false); $('realRun').disabled = false; $('realNote').textContent = '';
+    if (rows.size) feedRealityCheck([...rows.values()]);
+  });
   let calibT = 0;
   function updateCalib(now) { if (batch && batch.n) return; if (now - calibT < 1000) return; calibT = now; renderCalib(); }
 
@@ -5120,13 +5270,10 @@ self.onmessage = e => { const m = e.data;
     if (!VIEWS.includes(v)) v = 'watch';
     document.querySelectorAll('nav.views [data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
     document.querySelectorAll('section.view').forEach(sec => { sec.hidden = sec.dataset.view !== v; });
-    try { localStorage.setItem('rink.view', v); } catch (e) {}
   }
   document.querySelectorAll('nav.views [data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-  try {
-    const h = location.hash.slice(1), old = { game: 'watch', rosters: 'watch', advanced: 'watch', lab: 'test', calib: 'real' };
-    showView(h === 'lab' || h === 'test' ? 'test' : h === 'real' ? 'real' : h === 'watch' ? 'watch' : localStorage.getItem('rink.view') || old[localStorage.getItem('rink.tab')] || 'watch');
-  } catch (e) { showView('watch'); }
+  // the page always opens on Watch; a link can ask for another view (#test, or the old #lab, and #real)
+  { const h = location.hash.slice(1); showView(h === 'lab' || h === 'test' ? 'test' : h === 'real' ? 'real' : 'watch'); }
   // the three steps jump into the strategy test and point at the part that does that step
   const flash = el => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); };
   const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5176,7 +5323,23 @@ self.onmessage = e => { const m = e.data;
   document.querySelectorAll('.side select, .side input[type=range]').forEach(el => el.addEventListener('input', renderPlans));
   renderPlans();
   // short explainers for the numbers a newcomer will not know
-  const TERMS = { close: ['Too close to call', 'The difference is smaller than the normal swing from luck at this many games. Run more games, or treat the two plans as even.'], chances: ['Chances', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."] };
+  const TERMS = {
+    chances: ['Chances (expected goals)', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."],
+    net: ['Net chances', 'Chances for minus chances against, per game. The best single number for whether a plan is working.'],
+    close: ['Too close to call', 'The difference is smaller than the normal swing from luck at this many games. Run more games, or treat the two plans as even.'],
+    edge: ['Clear edge, clear cost', 'The whole 95% range of the difference is on one side of zero, so luck alone is unlikely to explain it at this many games.'],
+    pts: ['Points %', 'Share of the available standings points: two for a win, one for an overtime or shootout loss.'],
+    hd: ['High-danger shots', 'Shots with at least a 20% chance of going in, almost all from close to the net.'],
+    md: ['Medium-danger shots', 'Shots with an 8% to 20% chance: the slot and the inside of the circles.'],
+    ld: ['Low-danger shots', 'Shots with under an 8% chance: the point, the outside and sharp angles.'],
+    attempts: ['Shot attempts', 'Every shot a team takes: on goal, blocked or missed. Analysts call the count Corsi.'],
+    blocked: ['Blocked shots', 'Shots a defender got in front of before they reached the net.'],
+    poss: ['Possession', 'Share of the time each team had the puck on a stick.'],
+    take: ['Takeaways', 'Times a player stole the puck from the carrier.'],
+    pk: ['Penalty kill', 'Playing a man short. There is no icing, so the killers clear the puck the length of the ice whenever they get it.'],
+    nhl: ['NHL-realistic settings', 'Skating, passing and shooting at the values calibrated to real NHL tracking data. Strategy tests always use them; the watching settings in Settings run faster.'],
+  };
+  { const g = $('glossary'); if (g) g.innerHTML = Object.values(TERMS).map(([h, d]) => `<dt>${h}</dt><dd>${d}</dd>`).join(''); }
   let pop = null;
   document.addEventListener('click', e => {
     const t = e.target.closest('button.tip'); if (pop) { pop.remove(); pop = null; } if (!t || !TERMS[t.dataset.term]) return;

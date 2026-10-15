@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.45 = sim 0.37 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.46 = sim 0.38 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.46
+- Sim 0.38 (penalty kill, redesign phase 3). The home page card opens the sim on Watch, with Test a strategy as the second link.
 
 ### 0.45
 - Sim 0.37 (the redesign, phase 2: Test a strategy).
@@ -77,6 +80,14 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.38
+- Penalty kill: there is no icing while shorthanded, so a killer with the puck in his own end or the neutral zone clears it the length of the ice within a beat, down the open lane closest to straight ahead, and lifts it over the sticks when every lane is covered. Only a breakaway or an odd-man rush up the neutral zone keeps it. Before, killers cleared only under pressure and only to just past the far blue line, so almost half the clears stopped short. Now about nine in ten reach past the far dots, and killers hold the puck under a second per power-play minute, down from about six.
+- The penalty kill forechecks like one: in the power play's end one man pressures, the other forward waits high and the defensemen at our blue line; in the neutral zone a passive 1-3. It used to run the team's even-strength forecheck with four men.
+- Power play converts about 20% over 30 games (league about 20%); even-strength numbers unchanged.
+- The page always opens on Watch; a link with #test or #real opens those views.
+- How real is it, redesigned: grouped rows (results, scoring, shot quality, defense, game flow), each with a plain reading, the sim's number next to that team's real one with an on target / above / below verdict, the league average, a count of numbers on target, and a button that plays 100 games to check.
+- Glossary: every term has a ? explainer (chances, net chances, points %, too close to call, clear edge, danger tiers, attempts, blocks, possession, takeaways, penalty kill, NHL-realistic settings), and How it works lists them all. Box score labels in plain words.
 
 ### 0.37
 - Test a strategy, redesigned. Pick the team you coach; plan A is that team as set, plan B a copy where any choice can change. Both plans play the opponent's plan in the same seeded games, and the result is a sentence and three verdicts (net chances, goal difference, points), each clear edge, too close to call or clear cost from its 95% interval. Rank every option for one choice on the same games. Edit links sit under each team's name.
