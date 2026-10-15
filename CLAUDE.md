@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (plan A against plan B on the same seeded games) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.57, sim 0.46, Play Review 0.9.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.58, sim 0.47, Play Review 0.9.
 
 ## Layout
 
@@ -42,6 +42,7 @@ tools/
   browsers.js                      the same seeded games in Node and in Chromium, Firefox and WebKit
   baselines.json                   saved references for lab.js and review.js, a fingerprint per game and per shot
   serve.js, harness.js             the static server each page check starts, and the Playwright loader
+  bump.js                          sets a project's VERSION and every ?v= stamp that carries it
   xg_fit.py, mp_extract.py,        the data scripts: fit xg-model.json, extract moneypuck-2025.json, build a game file
   game_load.py
 docs/ENGINE.md                     how the engine is organized, where each function lives, invariants, baselines, lessons
@@ -102,7 +103,7 @@ The engine checks run in Node; the page checks start their own server and load t
 
 The site has its own version (the home page footer and the Site section of the changelog); each project keeps its own number. Bump the site version on every commit that changes anything under `public/` or ships a set of changes, and the project version only when that project changed. A repo-only change with nothing under `public/` (a tool, a doc) can go in without a version.
 
-1. If the sim changed, bump `const VERSION = '0.xx'` near the top of `public/bruins-vs-canadiens/src/main.js` and every stamp with the sim's version (`grep -rn '?v=' public`: two in its `index.html`, one per import in its `src/`, and Play Review's three imports from the sim's engine). If Play Review changed, bump its `VERSION` in `public/play-review/src/main.js` and the two stamps in its `index.html`.
+1. Bump the version of each project that changed with `node tools/bump.js sim 0.xx` or `node tools/bump.js review 0.x`: it sets `VERSION` in the project's `src/main.js` and every `?v=` stamp that carries it (for the sim, also Play Review's imports from the sim's engine).
 2. Add a section to `CHANGELOG.md` and update the summary line at its top (`Site 0.xx = sim 0.yy + Play Review 0.z`).
 3. Update `public/index.html`: the card badge of any project that changed (`<span class="ver">v0.xx</span>`) and the footer's site version.
 4. Update the version in "What this repo is" above, the "State" section below and the first line of `docs/ROADMAP.md`.
@@ -117,6 +118,6 @@ The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`,
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.57)
+## State (site 0.58)
 
 All checks pass. References in `tools/baselines.json` are from sim 0.46 (re-saved when a dead pass became a loose puck, which fixed play freezing for up to a period; no average moved by more than one combined interval), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`).

@@ -1,7 +1,7 @@
 // The rules: shot tallies, penalties and the box, offside, goals, the shootout and the end of a period.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { RH, clamp, endDot, neutralDot, ownNet, toFx } from './rink.js?v=0.46';
+import { RH, clamp, endDot, neutralDot, ownNet, toFx } from './rink.js?v=0.47';
 
 export function install(S) {
   const { active, emit, game, log, MP, onPP, PH, puck, random, teams } = S;

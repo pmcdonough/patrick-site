@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.57 = sim 0.46 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.58 = sim 0.47 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.58
+- Sim 0.47. `tools/bump.js` sets a project's version and every `?v=` stamp that carries it in one command.
 
 ### 0.57
 - Sim 0.46. A new unit test plays the two seeds that froze and fails if the puck sits loose and still for more than 5 seconds or a shift runs past 3 minutes.
@@ -128,6 +131,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.47
+- The crease at the right-hand net was drawn behind the goal line; it is in front of the net now, like the left one. Drawing only.
 
 ### 0.46
 - Fixed play freezing for up to a period, the cause of the long shifts on the roadmap. A pass that died just short of the far blue line counted as still on its way to its receiver, who was held onside 8 ft back; the defense played him instead of the puck, and a defender standing close by kept the dead-puck whistle from blowing. In about one game in ten at the build defaults nobody touched the puck again for minutes, and the line on the ice stayed out the whole time. A pass now counts as on its way only while it moves faster than 10 ft/s (`pass.inFlightMinFtPerSec` in `physics.json`); slower than that it is a loose puck and both teams go for it.

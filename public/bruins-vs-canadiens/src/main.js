@@ -2,12 +2,12 @@
 // runs the controls, the game plans, Test a strategy and How real is it.
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.46';
+import { createSim } from './engine/sim.js?v=0.47';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.46';
+  const VERSION = '0.47';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -199,7 +199,8 @@ export function startSim(DATA) {
     [[80, 20.5], [80, 64.5], [120, 20.5], [120, 64.5]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI * 2); ctx.fill(); });
     ctx.fillStyle = 'rgba(100,170,230,0.35)';
     [[GL, 1], [RW - GL, -1]].forEach(([x, d]) => {
-      ctx.beginPath(); ctx.moveTo(x, RH / 2 - 4); ctx.arc(x, RH / 2, 6, -Math.PI / 2 * d, Math.PI / 2 * d, d < 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // the crease is the half circle in front of the goal line, toward center ice: the right half at the left net, the left half at the right net
+      ctx.beginPath(); ctx.moveTo(x, RH / 2 - 6); ctx.arc(x, RH / 2, 6, d > 0 ? -Math.PI / 2 : Math.PI / 2, d > 0 ? Math.PI / 2 : Math.PI * 1.5); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = 'rgba(200,16,46,0.35)'; ctx.fillRect(d > 0 ? x - NETD : x, RH / 2 - NETW / 2, NETD, NETW); ctx.strokeRect(d > 0 ? x - NETD : x, RH / 2 - NETW / 2, NETD, NETW);
       ctx.fillStyle = 'rgba(100,170,230,0.35)';
     });
