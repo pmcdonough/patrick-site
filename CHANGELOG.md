@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.51 = sim 0.41 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.52 = sim 0.42 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.52
+- Sim 0.42 (restructure step 2, first part: the engine in its own module). `tools/smoke.js` checks the version stamp on every import as well as on the page.
 
 ### 0.51
 - Restructure step 1 (`docs/RESTRUCTURE.md`): the pages are served over HTTP only and no longer carry copies of their data. Sim 0.41, Play Review 0.8.
@@ -104,6 +107,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.42
+- The engine moves out of the page's script into its own module, `src/engine/sim.js` (`createSim(DATA, opts)`, about 1,200 lines), which never touches the page. The page listens to it: the play by play, the end of a game and the visual effects (hits, hard saves, the goal light) come out as events, and the effects' timers run in the page's drawing loop instead of inside the engine's tick. `src/main.js` keeps the drawing, the controls and the two views, about 840 lines.
+- Test a strategy's workers import the engine directly. The stand-in for the page that the workers used to run the whole page script behind is gone.
+- When a browser cannot start workers, the strategy test's games now play on an engine of their own instead of borrowing the watched game's, so the game on the rink is paused and picks up where it was rather than restarting. `tools/lab.js --pool` checks this path too.
+- No game changes: both references identical game for game; the order check and the worker cross-check pass for 20 seeds.
 
 ### 0.41
 - The single file is split: `index.html` (markup, 249 lines, from 5,421), `style.css`, and the script as one ES module, `src/main.js`, with the `startSim` closure unchanged. Both load with a `?v=0.41` stamp so a visitor never mixes files from two deploys.

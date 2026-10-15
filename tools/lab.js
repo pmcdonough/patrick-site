@@ -213,15 +213,19 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
     if (o.pool) {
       // Test a strategy's workers return goals, expected goals and shots per club; compare those for every seed.
       const jobs = A.rows.map(r => ({ id: r.seed, seed: r.seed, tacs: A.tac.map(({ abbr, ...t }) => t), cfg: A.cfg }));
+      // then the first three again on the slow path the page falls back to when it cannot start workers
       const res = await pages[0].page.evaluate(async jobs => {
-        const r = window.rinkSim; const rows = await r.runJobs(jobs, () => {});
-        return { usedWorkers: !r.TEST.poolFailed, rows: jobs.map(j => { const x = rows.get(j.id); return { end: x.end, teams: x.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) }; }) };
+        const r = window.rinkSim, pack = (rows, js) => js.map(j => { const x = rows.get(j.id); return { end: x.end, teams: x.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) }; });
+        const rows = pack(await r.runJobs(jobs, () => {}), jobs), usedWorkers = !r.TEST.poolFailed;
+        r.TEST.poolFailed = true; const slow = jobs.slice(0, 3); const inPage = pack(await r.runJobs(slow, () => {}), slow); r.TEST.poolFailed = false;
+        return { usedWorkers, rows, inPage };
       }, jobs);
       const key = r => JSON.stringify({ end: r.end, teams: r.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) });
-      const differ = A.rows.filter((r, n) => key(r) !== JSON.stringify(res.rows[n])).map(r => r.seed);
+      const differ = [...A.rows.filter((r, n) => key(r) !== JSON.stringify(res.rows[n])).map(r => r.seed),
+        ...res.inPage.filter((x, n) => key(A.rows[n]) !== JSON.stringify(x)).map((x, n) => `${A.rows[n].seed} on the page`)];
       console.log(!res.usedWorkers ? 'POOL CHECK FAILED: the page could not start its workers and fell back to playing on the page.\n'
         : differ.length ? `POOL CHECK FAILED: ${differ.length} of ${A.rows.length} games played differently in the page's workers (seeds ${differ.join(', ')}).\n`
-        : `Pool check: all ${A.rows.length} games are identical in the page's background workers.\n`);
+        : `Pool check: all ${A.rows.length} games are identical in the page's background workers, and the first 3 on its fallback path.\n`);
       if (!res.usedWorkers || differ.length) process.exitCode = 1;
     }
     if (o.save) {

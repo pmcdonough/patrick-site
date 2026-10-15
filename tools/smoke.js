@@ -15,7 +15,15 @@ const { open, openPage } = require('./harness');
   const stamps = await page.evaluate(() => ({ version: document.getElementById('version').textContent.replace(/^v/, ''),
     stamps: [...document.querySelectorAll('link[rel=stylesheet][href^="style.css"], script[type=module]')].map(e => (e.getAttribute('href') || e.getAttribute('src')).split('?v=')[1]) }));
   if (stamps.stamps.length !== 2 || stamps.stamps.some(v => v !== stamps.version)) errors.push(`version stamps ${JSON.stringify(stamps.stamps)} do not match the sim version ${stamps.version}`);
-  else console.log(`Version stamps match the sim version ${stamps.version}.`);
+  else {
+    // every stamp written in the source too: index.html and each import in src/ (a module imported without one is cached forever)
+    const fs = require('fs'), path = require('path'), root = path.join(__dirname, '..', 'public', 'bruins-vs-canadiens');
+    const files = ['index.html', ...fs.readdirSync(path.join(root, 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join('src', f))];
+    const bad = files.flatMap(f => [...fs.readFileSync(path.join(root, f), 'utf8').matchAll(/\?v=([0-9.]+)/g)].filter(m => m[1] !== stamps.version).map(m => `${f}: ?v=${m[1]}`));
+    const unstamped = files.filter(f => f.endsWith('.js')).flatMap(f => [...fs.readFileSync(path.join(root, f), 'utf8').matchAll(/^\s*import\s[^'"]*['"]([^'"]+)['"]/gm)].filter(m => !/\?v=/.test(m[1])).map(m => `${f}: ${m[1]}`));
+    if (bad.length || unstamped.length) errors.push(`version stamps: ${[...bad, ...unstamped.map(u => 'no stamp on ' + u)].join(', ')} (the sim is ${stamps.version})`);
+    else console.log(`Version stamps match the sim version ${stamps.version} on the page and in every import.`);
+  }
   for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview]]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
