@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: a page, a stylesheet and a plain JavaScript module (`src/main.js`) on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (the matchup lab) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.53, sim 0.43, Play Review 0.8.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.54, sim 0.44, Play Review 0.8.
 
 ## Layout
 
@@ -16,8 +16,12 @@ public/assets/share.png                   the 1200x630 link preview image
 public/bruins-vs-canadiens/index.html     the sim's page: markup, plus style.css and src/main.js with a ?v= version stamp
 public/bruins-vs-canadiens/style.css      its styles
 public/bruins-vs-canadiens/src/main.js    the page: drawing, controls, game plans, Test a strategy, How real is it
-public/bruins-vs-canadiens/src/engine/sim.js  the engine, createSim(DATA): never touches the page; the page reads its state and listens to its events
-public/bruins-vs-canadiens/src/engine/detmath.js  sin, cos, atan2, exp, log, pow, hypot from exact arithmetic: the same bits in every browser and in Node
+public/bruins-vs-canadiens/src/engine/      the engine: never touches the page; the page reads its state and listens to its events
+  sim.js                                  createSim(DATA): game state, newGame, tick; installs and links the modules below
+  rink.js, xg.js, rosters.js              geometry, expected goals, ratings (plain functions)
+  officials.js, lines.js, formations.js,  each install(S): adds its functions to the shared object S and links to the others'
+  ai.js, physics.js, rules.js
+  detmath.js                              sin, cos, atan2, exp, log, pow, hypot from exact arithmetic: the same bits in every browser and in Node
 public/bruins-vs-canadiens/src/lab/worker.js  Test a strategy's background worker: imports the engine and plays seeded games
 public/bruins-vs-canadiens/data/*.json    the data that drives it (rosters, ratings, systems, physics, moneypuck-2025, defaults, xg-model)
 public/play-review/index.html             shot versus pass review of a real game; fetches xg-model, systems and its game file
@@ -77,10 +81,10 @@ The site has its own version (the home page footer and the Site section of the c
 
 Run Claude Code from the repo root so this file loads automatically. `LOCAL-SETUP.md` has the one-time setup; the first command of a session is `node tools/smoke.js` (the pages load their data and the sim runs).
 
-The engine, `src/engine/sim.js`, is about 1,200 lines and the page, `src/main.js`, about 840. Their sections are marked with `// ---------- Name ----------` comments and `docs/ENGINE.md` names the functions, so search for those rather than reading the whole file. The data lives only in `data/*.json`; the pages no longer carry copies of it.
+The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`, under 400) and the page, `src/main.js`, about 840. `docs/ENGINE.md` (Where things live) names the file for each function, and sections inside a file are marked with `// ---------- Name ----------` comments, so search for those rather than reading the whole file. The data lives only in `data/*.json`; the pages no longer carry copies of it.
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.53)
+## State (site 0.54)
 
-All checks pass, all over HTTP: `node tools/smoke.js`, `node tools/lab.js` (both levels: all 100 games identical to the reference), `node tools/lab.js --games 20 --order --pool`, `node tools/review.js`, `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.43 (re-saved for the engine's own math; the averages are within a fifth of an interval of the sim 0.38 references they replace), 100 games at each level, saved from Node; the page's workers play all 200 identically; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. The restructure in `docs/RESTRUCTURE.md` is under way: steps 0 (the safety net) and 1 (CSS, script and data out of the single file) are done, and step 2 is under way: the engine is its own module, plays the same game for a seed in Node and every browser, and the engine tools run in Node. Next in step 2: split `engine/sim.js` into modules. Roadmap item 0 is a long-shift bug found along the way. The next engine work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.
+All checks pass, all over HTTP: `node tools/smoke.js`, `node tools/lab.js` (both levels: all 100 games identical to the reference), `node tools/lab.js --games 20 --order --pool`, `node tools/review.js`, `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.43 (re-saved for the engine's own math; the averages are within a fifth of an interval of the sim 0.38 references they replace), 100 games at each level, saved from Node; the page's workers play all 200 identically; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. The restructure in `docs/RESTRUCTURE.md` is under way: steps 0 (the safety net) and 1 (CSS, script and data out of the single file) are done, and step 2 is done: the engine is split into modules, plays the same game for a seed in Node and every browser, and the engine tools run in Node. Next is step 3 (a seeded generator passed in, fresh state per game, unit tests). Roadmap item 0 is a long-shift bug found along the way. The next engine work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.

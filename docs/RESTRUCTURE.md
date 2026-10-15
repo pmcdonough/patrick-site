@@ -1,6 +1,6 @@
 # Restructure plan: the sim and Play Review as modules
 
-Status: steps 0 (site 0.50) and 1 (site 0.51) done; step 2 under way: the engine is its own module (site 0.52), plays the same in Node and every browser, and the engine tools run in Node (site 0.53). Next in step 2: split `engine/sim.js` into the modules below. Written at site 0.49, sim 0.40, Play Review 0.6.
+Status: steps 0 (site 0.50), 1 (site 0.51) and 2 (sites 0.52 to 0.54) done; step 3 next. Step 2 landed a little differently from the layout below: the game state stayed in `engine/sim.js` (no `state.js`), the officials got their own module, the engine's math is `engine/detmath.js`, and `rink.js` and `xg.js` sit in `engine/` until step 4 decides how Play Review shares them. Written at site 0.49, sim 0.40, Play Review 0.6.
 
 The sim is one HTML file of about 5,400 lines: 250 of CSS, 230 of markup, 2,900 of embedded data (the expected-goal model alone is one 93,000-character line) and 2,000 of script, all of it inside one `startSim(DATA)` closure. Play Review is the same shape at 1,300 lines. This plan moves both onto plain ES modules served over HTTP, in steps that each ship on their own and each prove the engine still plays the same hockey.
 
