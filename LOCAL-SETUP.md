@@ -19,7 +19,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r tools/requirements.txt
 ```
 
-Node and Playwright for the headless checks:
+Node (version 22 or later) for the engine checks, and Playwright for the checks that load the pages:
 
 ```
 cd tools
@@ -86,11 +86,11 @@ node tools/lab.js --nhl         # 100 games at the NHL-average tick: report vs l
 node tools/lab.js               # the same at build defaults
 node tools/shifts.js            # shift-length distribution and change windows
 node tools/rules.js             # offsides and icings per game against league rates
-node tools/lab.js --games 20 --order   # every game identical when replayed in reverse order on one page
+node tools/lab.js --games 20 --order --pool   # every game identical replayed in reverse order, and in the page's own workers
 node tools/review.js            # every shot Play Review scores, against its reference
 ```
 
-The checks serve `public/` themselves and load the pages over HTTP, so no server needs to be running. A seeded `lab.js` run reproduces exactly, and the reference keeps a fingerprint of every game, so "identical to the reference" means all 100 games finished exactly as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
+`lab.js`, `shifts.js`, `rules.js` and `nhl-average.js` run the engine in Node; `smoke.js`, `calibration.js`, `review.js` and `lab.js --pool` load the pages in Chromium, serving `public/` themselves, so no server needs to be running. A seeded `lab.js` run reproduces exactly, and the reference keeps a fingerprint of every game, so "identical to the reference" means all 100 games finished exactly as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
 
 ## 8. Working on it from Claude Code
 

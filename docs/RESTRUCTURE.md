@@ -1,6 +1,6 @@
 # Restructure plan: the sim and Play Review as modules
 
-Status: steps 0 (site 0.50) and 1 (site 0.51) done; step 2 under way: the engine is its own module (site 0.52). Written at site 0.49, sim 0.40, Play Review 0.6.
+Status: steps 0 (site 0.50) and 1 (site 0.51) done; step 2 under way: the engine is its own module (site 0.52), plays the same in Node and every browser, and the engine tools run in Node (site 0.53). Next in step 2: split `engine/sim.js` into the modules below. Written at site 0.49, sim 0.40, Play Review 0.6.
 
 The sim is one HTML file of about 5,400 lines: 250 of CSS, 230 of markup, 2,900 of embedded data (the expected-goal model alone is one 93,000-character line) and 2,000 of script, all of it inside one `startSim(DATA)` closure. Play Review is the same shape at 1,300 lines. This plan moves both onto plain ES modules served over HTTP, in steps that each ship on their own and each prove the engine still plays the same hockey.
 
@@ -127,6 +127,11 @@ This is the big step, about 1,300 lines of engine. Done in this order, each a se
 - LOCAL-SETUP.md: a local server is required; the new checks (`node --test`, the Node tools).
 - README, ENGINE.md (file structure, the seam, where each function lives), MODELING.md (xG in one place), XG-MODEL.md, RAW-INPUTS.md (no re-embed step).
 - Checks: a fresh clone follows LOCAL-SETUP.md to a passing run.
+
+## Found along the way
+
+- **Math differs between JavaScript engines.** At step 2 the first Node run differed from Chromium in 2 of 20 games. Chromium 156 and Node 26 return different last bits from `Math.sin`, `cos`, `atan2`, `exp` and `log` for a fifth of all inputs, and other browsers use other libraries. Sim 0.43 gives the engine its own versions (`engine/detmath.js`), built from exact arithmetic; the references were re-saved once for it. Only `+ - * /`, `Math.sqrt` and the rounding and comparison functions are exact by the language's rules.
+- **Worker threads are slower than processes here.** Eight Node worker threads in one process ran at about half speed each; eight child processes do not. `tools/lab.js` uses child processes.
 
 ## Risks and how each is caught
 

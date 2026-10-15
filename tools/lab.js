@@ -7,7 +7,7 @@
 //   node tools/lab.js --sweep BOS.fore                  every option of one card, same seeds for each
 //   node tools/lab.js --json out.json                   also write every game's numbers
 //   node tools/lab.js --save                            make this run the reference in tools/baselines.json
-//   node tools/lab.js --games 20 --order                also replay the seeds on one page in reverse order: every game must match
+//   node tools/lab.js --games 20 --order                also replay the seeds in one worker in reverse order: every game must match
 //   node tools/lab.js --games 20 --pool                 also play the seeds in the page's own background workers (Test a strategy): every game must match
 //   node tools/lab.js --param shotDecision.xgChoice.minXg=0.1   try a physics.json value without editing the file
 //
@@ -17,23 +17,27 @@
 // The reference also keeps a fingerprint of every game (a hash of its final numbers), so the report
 // says "identical" only when every game finished exactly as before, not just the averages.
 //
-// Cards: fore brk entry oz dz pp pk (option values as in systems.json) and agg (0 to 1), per club abbr.
+// The engine runs in Node (tools/engine.js), set up as a fresh visit to the page sets it up, in child processes
+// (faster than worker threads here: eight threads in one process slow each other down by about half).
+// --pool is the one part that needs a browser: it loads the page and plays the same seeds in its own workers.
+//
+// Cards: fore brk entry oz dz pp pk (the options the plan drawer offers) and agg (0 to 1), per club abbr.
 // Each game g plays with Math.random seeded from (--seed + g), so a run is reproducible and two
 // settings compared with --compare or --sweep face the same random stream game for game. The
 // game diverges as soon as the change matters, so the pairing helps a little; the intervals
 // below are what to trust.
-const { chromium } = require('playwright');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { fork } = require('child_process');
+const isChild = process.argv[2] === '--child';
 
-const { serve, writeBaselines } = require('./serve');
-const { openPage: openServed } = require('./harness');
+const { writeBaselines } = require('./serve');
+const { load, CARDS: CARD_IDS } = require('./engine');
 const DATA = path.join(__dirname, '..', 'public', 'bruins-vs-canadiens', 'data');
 const BASELINE_FILE = path.join(__dirname, 'baselines.json');
 const BASELINES = fs.existsSync(BASELINE_FILE) ? JSON.parse(fs.readFileSync(BASELINE_FILE, 'utf8')) : {};
-const CARD_IDS = { fore: 'Fore', brk: 'Break', entry: 'Entry', oz: 'Oz', dz: 'Dz', pp: 'PP', pk: 'PK', agg: 'Agg' };
 
 function args() {
   const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false, param: '', order: false, pool: false };
@@ -47,52 +51,63 @@ function args() {
 }
 const parseSet = s => (s ? s.split(',') : []).map(x => { const [k, v] = x.split('='); const [club, card] = k.split('.'); if (!CARD_IDS[card]) throw new Error(`unknown card ${card}`); return { club, card, v }; });
 
-// ---------- browser side ----------
-async function openPage(browser, srv) {
-  const { page, errors } = await openServed(browser, srv);
-  await page.waitForTimeout(300);
-  await page.click('#pause');
-  await page.evaluate(() => { document.getElementById('log').prepend = () => {}; });
-  return { page, errors };
+// ---------- worker processes: each builds the sim and plays its share of the seeds ----------
+if (isChild) {
+  const ready = load();
+  process.on('message', async ({ id, seeds, nhl, set, params }) => {
+    try {
+      const E = await ready;
+      const sim = E.create({ nhl, params });
+      for (const { club, card, v } of set) E.setCard(sim, club, card, v);
+      const rows = seeds.map(seed => E.play(sim, seed));
+      process.send({ id, rows, tac: sim.teams.map(t => ({ abbr: t.abbr, ...t.tac })), cfg: { ...sim.cfg } });
+    } catch (e) { process.send({ id, error: e.stack || String(e) }); }
+  });
 }
 
-// Applies multipliers and cards, then plays the given seeds and returns one row per game.
-function playSeeds(page, seeds, nhl, set, param) {
-  return page.evaluate(([seeds, nhl, set, CARD_IDS, param]) => {
-    const r = window.rinkSim, $ = id => document.getElementById(id);
-    for (const { key, v } of param) { const ks = key.split('.'), last = ks.pop(); let o = r.DATA.physics; for (const k of ks) { o = o[k]; if (!o) throw new Error(`no physics key ${key}`); } if (!(last in o)) throw new Error(`no physics key ${key}`); o[last] = typeof o[last] === 'number' ? +v : v; }
-    const side = abbr => { const i = r.teams.findIndex(t => t.abbr === abbr); if (i < 0) throw new Error(`no club ${abbr}`); return i ? 'a' : 'h'; };
-    if (nhl) for (const k of Object.keys(r.cfg)) r.cfg[k] = 1;
-    for (const { club, card, v } of set) {
-      const el = $(side(club) + CARD_IDS[card]);
-      if (card === 'agg') el.value = Math.round(+v * 100);
-      else { if (![...el.options].some(o => o.value === v)) throw new Error(`${club}.${card} has no option ${v}`); el.value = v; }
-      el.dispatchEvent(new Event('input'));
-    }
-    const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-    const rows = [];
-    for (const s of seeds) {
-      Math.random = mulberry(s * 2654435761);
-      $('newgame').click(); let k = 0;
-      while (!r.game.over && k++ < 300000) r.tick(0.03);
-      rows.push({ seed: s, end: r.game.shootout ? 'SO' : r.game.overtime ? 'OT' : 'REG', teams: r.teams.map(t => ({
-        abbr: t.abbr, goals: t.score, sog: t.shots, attempts: t.attempts, blocksMade: t.blocked, missed: t.missed, xg: t.xg,
-        low: t.tier.low, medium: t.tier.medium, high: t.tier.high, pim: t.pim, offsides: t.offsides, icings: t.icings,
-        takeaways: t.take, faceoffs: t.faceoffs, faceoffsWon: t.faceoffsWon, freezes: t.freezes })) });
-    }
-    const tac = r.teams.map(t => ({ abbr: t.abbr, ...t.tac }));
-    return { rows, tac, cfg: { ...r.cfg } };
-  }, [seeds, nhl, set, CARD_IDS, param]);
+function makePool(n) {
+  const workers = Array.from({ length: n }, () => fork(__filename, ['--child'], { serialization: 'advanced' }));
+  let next = 0; const waiting = new Map();
+  for (const w of workers) w.on('message', m => { const r = waiting.get(m.id); waiting.delete(m.id); m.error ? r.reject(new Error(m.error)) : r.resolve(m); });
+  const ask = (w, msg) => new Promise((resolve, reject) => { const id = next++; waiting.set(id, { resolve, reject }); w.send({ ...msg, id }); });
+  return { workers, ask, close: () => workers.forEach(w => w.kill()) };
 }
 
-// Plays seeds first..first+n-1 across the worker pages (each page in reverse order with `reverse`).
-async function run(pages, o, set, reverse) {
+// Plays seeds first..first+n-1 across the workers (each worker in reverse order with `reverse`).
+async function run(pool, o, set, reverse, nWorkers = pool.workers.length) {
   const seeds = Array.from({ length: o.games }, (_, i) => o.seed + i);
-  const chunks = pages.map((_, w) => seeds.filter((_, i) => i % pages.length === w)).map(c => reverse ? c.reverse() : c);
-  const parts = await Promise.all(pages.map((p, w) => chunks[w].length ? playSeeds(p.page, chunks[w], o.nhl, set, o.params) : null));
+  const ws = pool.workers.slice(0, nWorkers);
+  const chunks = ws.map((_, w) => seeds.filter((_, i) => i % ws.length === w)).map(c => reverse ? c.reverse() : c);
+  const parts = await Promise.all(ws.map((w, k) => chunks[k].length ? pool.ask(w, { seeds: chunks[k], nhl: o.nhl, set, params: o.params }) : null));
   const done = parts.filter(Boolean);
   const rows = done.flatMap(p => p.rows).sort((a, b) => a.seed - b.seed);
   return { rows, tac: done[0].tac, cfg: done[0].cfg };
+}
+
+// The page's own background workers (Test a strategy) play the same seeds; compare what they report for each game.
+async function poolCheck(A) {
+  const { chromium } = require('playwright');
+  const { serve } = require('./serve');
+  const { openPage } = require('./harness');
+  const srv = await serve(), browser = await chromium.launch();
+  try {
+    const { page, errors } = await openPage(browser, srv);
+    const jobs = A.rows.map(r => ({ id: r.seed, seed: r.seed, tacs: A.tac.map(({ abbr, ...t }) => t), cfg: A.cfg }));
+    // then the first three again on the slow path the page falls back to when it cannot start workers
+    const res = await page.evaluate(async jobs => {
+      const r = window.rinkSim, pack = (rows, js) => js.map(j => { const x = rows.get(j.id); return { end: x.end, teams: x.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) }; });
+      const rows = pack(await r.runJobs(jobs, () => {}), jobs), usedWorkers = !r.TEST.poolFailed;
+      r.TEST.poolFailed = true; const slow = jobs.slice(0, 3); const inPage = pack(await r.runJobs(slow, () => {}), slow); r.TEST.poolFailed = false;
+      return { usedWorkers, rows, inPage };
+    }, jobs);
+    const key = r => JSON.stringify({ end: r.end, teams: r.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) });
+    const differ = [...A.rows.filter((r, n) => key(r) !== JSON.stringify(res.rows[n])).map(r => r.seed),
+      ...res.inPage.filter((x, n) => key(A.rows[n]) !== JSON.stringify(x)).map((x, n) => `${A.rows[n].seed} on the page`)];
+    return { errors, ok: res.usedWorkers && !differ.length && !errors.length,
+      text: errors.length ? `POOL CHECK FAILED: page errors ${JSON.stringify(errors)}\n` : !res.usedWorkers ? 'POOL CHECK FAILED: the page could not start its workers and fell back to playing on the page.\n'
+        : differ.length ? `POOL CHECK FAILED: ${differ.length} of ${A.rows.length} games played differently in the page's workers (seeds ${differ.join(', ')}).\n`
+        : `Pool check: all ${A.rows.length} games are identical in the page's background workers, and the first 3 on its fallback path.\n` };
+  } finally { await browser.close(); await srv.close(); }
 }
 
 // One game's fingerprint: a short hash of everything the row records. Expected goals are rounded to
@@ -184,19 +199,18 @@ const diffHead = (abbr, what) => [`${abbr}: ${what} (paired by seed, 95% interva
 
 const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${t.oz}/${t.dz}/${t.pp}/${t.pk} agg ${(+t.agg).toFixed(2)}`).join('   ');
 
-(async () => {
+if (!isChild) (async () => {
   const o = args();
   const base = parseSet(o.set);
   o.params = (o.param ? o.param.split(',') : []).map(x => { const [key, v] = x.split('='); return { key, v }; });
   if (o.params.length) console.log(`Physics overrides: ${o.param}`);
-  const srv = await serve();
-  const browsers = await Promise.all(Array.from({ length: o.workers }, () => chromium.launch()));
-  const pages = await Promise.all(browsers.map(b => openPage(b, srv)));
+  const pool = makePool(o.workers);
+  const errors = [];
   const t0 = Date.now();
   const level = o.nhl ? 'nhl' : 'defaults';
   const out = { options: o, runs: [] };
   try {
-    const A = await run(pages, o, base);
+    const A = await run(pool, o, base);
     out.runs.push({ label: 'as set', ...A });
     console.log(`Cards: ${cardLine(A.tac)}`);
     console.log(`Multipliers: ${Object.entries(A.cfg).map(([k, v]) => `${k} ${v}`).join(', ')}\n`);
@@ -204,29 +218,16 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
     console.log(text + '\n');
     if (!o.compare && !o.sweep) console.log(baselineTable(T, level, { ...o, rows: A.rows }) + '\n');
     if (o.order) {
-      const R = await run(pages.slice(0, 1), o, base, true);
+      const R = await run(pool, o, base, true, 1);
       const differ = A.rows.filter((r, n) => fingerprint(r) !== fingerprint(R.rows[n])).map(r => r.seed);
-      console.log(differ.length ? `ORDER CHECK FAILED: ${differ.length} of ${A.rows.length} games changed when played in reverse order on one page (seeds ${differ.join(', ')}). State is leaking from one game to the next.\n`
-        : `Order check: all ${A.rows.length} games are identical played in reverse order on one page.\n`);
+      console.log(differ.length ? `ORDER CHECK FAILED: ${differ.length} of ${A.rows.length} games changed when played in reverse order in one worker (seeds ${differ.join(', ')}). State is leaking from one game to the next.\n`
+        : `Order check: all ${A.rows.length} games are identical played in reverse order in one worker.\n`);
       if (differ.length) process.exitCode = 1;
     }
     if (o.pool) {
-      // Test a strategy's workers return goals, expected goals and shots per club; compare those for every seed.
-      const jobs = A.rows.map(r => ({ id: r.seed, seed: r.seed, tacs: A.tac.map(({ abbr, ...t }) => t), cfg: A.cfg }));
-      // then the first three again on the slow path the page falls back to when it cannot start workers
-      const res = await pages[0].page.evaluate(async jobs => {
-        const r = window.rinkSim, pack = (rows, js) => js.map(j => { const x = rows.get(j.id); return { end: x.end, teams: x.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) }; });
-        const rows = pack(await r.runJobs(jobs, () => {}), jobs), usedWorkers = !r.TEST.poolFailed;
-        r.TEST.poolFailed = true; const slow = jobs.slice(0, 3); const inPage = pack(await r.runJobs(slow, () => {}), slow); r.TEST.poolFailed = false;
-        return { usedWorkers, rows, inPage };
-      }, jobs);
-      const key = r => JSON.stringify({ end: r.end, teams: r.teams.map(t => [t.goals, +t.xg.toFixed(9), t.sog]) });
-      const differ = [...A.rows.filter((r, n) => key(r) !== JSON.stringify(res.rows[n])).map(r => r.seed),
-        ...res.inPage.filter((x, n) => key(A.rows[n]) !== JSON.stringify(x)).map((x, n) => `${A.rows[n].seed} on the page`)];
-      console.log(!res.usedWorkers ? 'POOL CHECK FAILED: the page could not start its workers and fell back to playing on the page.\n'
-        : differ.length ? `POOL CHECK FAILED: ${differ.length} of ${A.rows.length} games played differently in the page's workers (seeds ${differ.join(', ')}).\n`
-        : `Pool check: all ${A.rows.length} games are identical in the page's background workers, and the first 3 on its fallback path.\n`);
-      if (!res.usedWorkers || differ.length) process.exitCode = 1;
+      const P = await poolCheck(A);
+      console.log(P.text); errors.push(...P.errors);
+      if (!P.ok) process.exitCode = 1;
     }
     if (o.save) {
       if (o.set || o.compare || o.sweep || o.param) throw new Error('--save takes the build as it is; drop --set, --compare, --sweep and --param');
@@ -236,20 +237,20 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
     }
     if (o.compare) {
       const change = parseSet(o.compare);
-      const B = await run(pages, o, [...base, ...change]);
+      const B = await run(pool, o, [...base, ...change]);
       out.runs.push({ label: o.compare, ...B });
       console.log(`With ${o.compare}:\n\n${matchupTable(B.rows).text}\n`);
       for (const i of [0, 1]) console.log([...diffHead(A.rows[0].teams[i].abbr, `${o.compare} minus as set`), diffLine(o.compare, A.rows, B.rows, i)].join('\n') + '\n');
     }
     if (o.sweep) {
       const [club, card] = o.sweep.split('.');
-      const opts = await pages[0].page.evaluate(([id, card]) => card === 'agg' ? ['0', '0.25', '0.5', '0.75', '1'] : [...document.getElementById(id).options].map(x => x.value),
-        [(A.tac[0].abbr === club ? 'h' : 'a') + CARD_IDS[card], card]);
+      if (!CARD_IDS[card]) throw new Error(`unknown card ${card}`);
+      const opts = (await load()).options(club, card);
       const i = A.tac.findIndex(t => t.abbr === club);
       const ref = String(A.tac[i][card]);
       const res = [];
       for (const v of opts) {
-        const R = String(v) === ref || (card === 'agg' && +v === +ref) ? A : await run(pages, o, [...base, { club, card, v }]);
+        const R = String(v) === ref || (card === 'agg' && +v === +ref) ? A : await run(pool, o, [...base, { club, card, v }]);
         out.runs.push({ label: `${club}.${card}=${v}`, ...R });
         res.push([v, R]);
       }
@@ -257,12 +258,10 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
       console.log(['Absolute, per game:', '', `${card} | Pts% | GF | GA | xGF | xGA | xG share`, '--- | --- | --- | --- | --- | --- | ---',
         ...res.map(([v, R]) => { const t = perTeam(R.rows, i); return `${v} | ${pc(mean(t.pts) / 2)} | ${f2(mean(t.gf))} | ${f2(mean(t.ga))} | ${f2(mean(t.xgf))} | ${f2(mean(t.xga))} | ${pc(mean(t.xgShare))} ±${(100 * ci(t.xgShare)).toFixed(0)}`; })].join('\n') + '\n');
     }
-  } finally {
-    const errors = pages.flatMap(p => p.errors);
+  } catch (e) { errors.push(e.message); throw e; } finally {
     console.log(`${out.runs.reduce((s, r) => s + r.rows.length, 0)} games in ${((Date.now() - t0) / 1000).toFixed(0)} s on ${o.workers} workers. ERRORS: ${JSON.stringify(errors)}`);
     if (o.json) fs.writeFileSync(o.json, JSON.stringify(out));
-    await Promise.all(browsers.map(b => b.close()));
-    await srv.close();
+    await pool.close();
     if (errors.length) process.exitCode = 1;
   }
 })();

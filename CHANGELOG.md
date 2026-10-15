@@ -1,8 +1,12 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.52 = sim 0.42 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.53 = sim 0.43 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.53
+- Sim 0.43. The engine's checks run in Node with no browser: `tools/engine.js` sets the engine up the way a fresh visit to the page does, and `lab.js` (in child processes, 100 games in about 40 s), `shifts.js`, `rules.js` and `nhl-average.js` use it. `shifts.js`, `rules.js` and `nhl-average.js` are seeded now, so their output reproduces. Playwright is needed only for `smoke.js`, `calibration.js`, `review.js` and `lab.js --pool`, which checks that the page's workers play every seed exactly as Node does.
+- References in `tools/baselines.json` re-saved for sim 0.43 (see the sim entry): 93 of 100 games at the build defaults and 87 of 100 at the NHL tick are unchanged; the largest move in any average is a fifth of its interval.
 
 ### 0.52
 - Sim 0.42 (restructure step 2, first part: the engine in its own module). `tools/smoke.js` checks the version stamp on every import as well as on the page.
@@ -107,6 +111,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.43
+- The engine does its own trigonometry, exponentials and logarithms (`src/engine/detmath.js`, ports of fdlibm built from exact arithmetic) instead of `Math.sin`, `cos`, `atan2`, `exp`, `log`, `pow` and `hypot`. Browsers are free to compute those differently in the last bit, and they do: Chromium 156 and Node 26 disagree on a fifth of all inputs, so a seeded game could end differently in Node, in each browser and after a browser update. Now the same seed plays the same game everywhere. Each function is within one unit in the last place of the built-in.
+- Every game shifts by a hair, so a few seeded games end differently: 7 of 100 at the build defaults and 13 of 100 at the NHL tick. No average moved by more than a fifth of its interval; the engine plays the same hockey.
 
 ### 0.42
 - The engine moves out of the page's script into its own module, `src/engine/sim.js` (`createSim(DATA, opts)`, about 1,200 lines), which never touches the page. The page listens to it: the play by play, the end of a game and the visual effects (hits, hard saves, the goal light) come out as events, and the effects' timers run in the page's drawing loop instead of inside the engine's tick. `src/main.js` keeps the drawing, the controls and the two views, about 840 lines.

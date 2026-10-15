@@ -52,10 +52,11 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 - A player is never in two places: `onIce`, `leaving`, `entering`, `box` are mutually consistent; `rebuildOnIce` recomputes `t.players` after any change.
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
+- The engine's math is exact or comes from `detmath.js`; never `Math.sin`, `cos`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`, which differ in the last bit between browsers and Node.
 
 ## Baselines (sim 0.35)
 
-Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight games at a time. Each game seeds `Math.random`, so a run reproduces exactly and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. Each reference also keeps a fingerprint of every game, and `--order` replays the seeds in reverse order on one page to prove no state leaks between games. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
+Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight at a time in Node. Each game seeds `Math.random`, and the engine's trigonometry and logarithms come from `detmath.js`, so a run reproduces exactly, in Node and in any browser, and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. Each reference also keeps a fingerprint of every game, and `--order` replays the seeds in reverse order in one process to prove no state leaks between games, and `--pool` plays them in the page's own workers to prove the page and Node agree. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
 
 At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-26):
 
@@ -128,4 +129,5 @@ Things that were wrong once and the fix, so nobody reintroduces them.
 - The xG model's unmeasured features (puck speed before the shot, off wing) must take their dataset means, or every shot is inflated by about a third. MoneyPuck's rush flag is empty in 2025-26 and must not be used.
 - The old distance-box tiers hid a shot mix that was far too close to the net; the first xG swap tripled goals until the decision rates were retuned against the real tier split.
 - Measuring pace: compare builds with the same harness and the same multipliers; a quick harness that skipped whistle ticks produced misleading averages once.
+- Math that differs between engines: before 0.43 the engine used `Math.sin` and friends, and a seeded game played differently in Node than in Chromium (2 of 20 games at first), because browsers may round those in the last bit however they like. `detmath.js` fixed it for every engine.
 - Sample size: ten games cannot separate two close strategies; at 50% the Wilson interval on 10 games is 24 to 76 points wide, on 100 games about 40 to 60. The lab prints the interval for that reason.

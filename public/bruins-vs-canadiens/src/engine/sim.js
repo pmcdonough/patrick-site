@@ -11,8 +11,11 @@
 //   sim.cfg                                engine multipliers (the sliders); every one at 1 is the NHL-average calibration
 //   sim.newGame(); while (!sim.game.over) sim.tick(0.03);
 //
+// Trigonometry, exp, log and pow come from detmath.js, never from Math, so a seed plays the same game everywhere.
 // Random numbers come from Math.random; the tools and the strategy test seed it per game (docs/RESTRUCTURE.md step 3
 // passes a generator in instead). `drift: false` stops the small idle sway of players on their spots.
+import * as DM from './detmath.js?v=0.43';   // sin, cos, atan2, hypot, exp, log, pow: the same bits in every browser and in Node
+
 export function createSim(DATA, opts = {}) {
   const drift = opts.drift !== false;
   const listeners = {};
@@ -27,7 +30,7 @@ export function createSim(DATA, opts = {}) {
 
   const rnd = (a, b) => a + Math.random() * (b - a);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const dist = (a, b) => DM.hypot(a.x - b.x, a.y - b.y);
 
   // ---------- Data-driven rosters: see data/rosters.json (lineups, stats, sources) ----------
   function buildRosters(R) {
@@ -51,9 +54,9 @@ export function createSim(DATA, opts = {}) {
     if (!XG) return null;
     const c = XG.model.coef, d = Math.max(0, distFt), a = Math.min(90, Math.abs(angleDeg));
     const df = XG.model.defaults || {};
-    let z = XG.model.intercept + c.speed * (ctx && ctx.speed !== undefined ? ctx.speed : df.speed || 0) + c.offWing * (ctx && ctx.offWing !== undefined ? ctx.offWing : df.offWing || 0) + c.dist * d + c.logDist * Math.log(d + 1) + c.dist2 * d * d / 100 + c.angle * a + c.angle2 * a * a / 100 + c.distAngle * d * a / 100;
+    let z = XG.model.intercept + c.speed * (ctx && ctx.speed !== undefined ? ctx.speed : df.speed || 0) + c.offWing * (ctx && ctx.offWing !== undefined ? ctx.offWing : df.offWing || 0) + c.dist * d + c.logDist * DM.log(d + 1) + c.dist2 * d * d / 100 + c.angle * a + c.angle2 * a * a / 100 + c.distAngle * d * a / 100;
     if (ctx) { if (ctx.rebound) z += c.rebound; if (ctx.rush && c.rush !== undefined) z += c.rush; if (ctx.pp) z += c.pp; if (ctx.sh) z += c.sh; if (ctx.type && c['type_' + ctx.type] !== undefined) z += c['type_' + ctx.type]; }
-    return 1 / (1 + Math.exp(-z));
+    return 1 / (1 + DM.exp(-z));
   }
   const xgTier = p => p >= XG.tiers.high.minXg ? 'high' : p >= XG.tiers.low.maxXg ? 'medium' : 'low';
 
@@ -178,7 +181,7 @@ export function createSim(DATA, opts = {}) {
           ty = o.side;
         }
       }
-      const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
+      const dx = tx - o.x, dy = ty - o.y, d = DM.hypot(dx, dy);
       const sp = Math.min(top * cfg.speed, Math.sqrt(2 * PH.officials.accelFtPerSec2 * d));
       if (d > 0.3) { o.x += dx / d * sp * dt; o.y += dy / d * sp * dt; }
       keepOnIce(o, 1.2); keepOffNets(o, 1.4);
@@ -438,7 +441,7 @@ export function createSim(DATA, opts = {}) {
         if (PPF.mirrorToPuckSide && pfy > 42) fy = 85 - fy;
         // keep moving off the puck: small drifts along the wall and across the slot so a lane opens
         const ph = { LW: 0, RW: 2.1, C: 4.2, LD: 1.0, RD: 3.1 }[p.role] || 0; const tt = game.period * 1200 - game.clock;
-        if (drift) { fy += 4 * Math.sin(tt * 1.1 + ph); fx += 3 * Math.sin(tt * 0.7 + ph); }
+        if (drift) { fy += 4 * DM.sin(tt * 1.1 + ph); fx += 3 * DM.sin(tt * 0.7 + ph); }
       } else {
         const OZ = SYS.offensiveZone[tac.oz]; const M = SYS.offensiveZone.motion;
         let role = p.role;
@@ -448,7 +451,7 @@ export function createSim(DATA, opts = {}) {
         if (OZ.mirrorToPuckSide && pfy > 42) fy = 85 - fy;
         // nobody stands still: small drifts along the wall and across the slot so a lane opens
         const ph = { LW: 0, RW: 2.1, C: 4.2, LD: 1.0, RD: 3.1 }[p.role] || 0; const tt = game.period * 1200 - game.clock;
-        if (drift) { fy += M.driftFt * Math.sin(tt * 1.1 + ph); fx += M.driftFt * 0.75 * Math.sin(tt * 0.7 + ph); }
+        if (drift) { fy += M.driftFt * DM.sin(tt * 1.1 + ph); fx += M.driftFt * 0.75 * DM.sin(tt * 0.7 + ph); }
       }
     } else if (situation === 'defense') {
       // shorthanded, the forecheck is the penalty kill's: one man pressures, the rest hold the middle and the blue line
@@ -551,18 +554,18 @@ export function createSim(DATA, opts = {}) {
     const t = from.team; const E = SYS.entry;
     // a dump is rimmed hard into the near corner so it wraps behind the net to the far side; a chip is a soft flip past the defender
     const target = toRink(t, soft ? E.chip.chipToFx : E.dump.dumpToFx, from.y < 42 ? (soft ? 10 : 2.5) : (soft ? 75 : 82.5));
-    const a = Math.atan2(target.y - from.y, target.x - from.x) + rnd(-0.05, 0.05);
+    const a = DM.atan2(target.y - from.y, target.x - from.x) + rnd(-0.05, 0.05);
     const sp = soft ? E.chip.chipSpeedFtPerSec : E.dump.dumpSpeedFtPerSec;
     if (!soft) { t.dumpSide = from.y < 42 ? 'top' : 'bottom'; t.dumpT = 6; puck.rim = true; }
-    puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.cool = 0.25; release(from);
+    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.cool = 0.25; release(from);
   }
   // clear: under pressure in your own end, bang it off the boards up the near wall (or just flip it out on the kill)
   function clearPuck(from) {
     const t = from.team; const C = SYS.clearing;
     const target = toRink(t, C.aimFx, from.y < 42 ? 1.5 : 83.5);
-    const a = Math.atan2(target.y - from.y, target.x - from.x) + rnd(-0.06, 0.06);
+    const a = DM.atan2(target.y - from.y, target.x - from.x) + rnd(-0.06, 0.06);
     const sp = C.speedFtPerSec * (0.85 + from.pass * 0.3);
-    puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.cool = 0.25; release(from);
+    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.cool = 0.25; release(from);
     puck.rim = true; puck.raceJudged = false; t.clears = (t.clears || 0) + 1;
   }
   // A penalty-kill clear down the ice: down the open lane closest to straight ahead, past the far goal line; with every
@@ -571,22 +574,22 @@ export function createSim(DATA, opts = {}) {
     const t = from.team, K = SYS.penaltyKill.clear;
     const lanes = K.laneYs.map(y => toRink(t, K.aimFx, y)).filter(g => laneClear(from, g, opp, K.laneWidthFt)).sort((a, b) => Math.abs(a.y - from.y) - Math.abs(b.y - from.y));
     const lift = !lanes.length, target = lift ? toRink(t, K.aimFx, 42.5) : lanes[0];
-    const a = Math.atan2(target.y - from.y, target.x - from.x) + rnd(-K.aimSpreadRad, K.aimSpreadRad);
+    const a = DM.atan2(target.y - from.y, target.x - from.x) + rnd(-K.aimSpreadRad, K.aimSpreadRad);
     const sp = K.speedFtPerSec * (0.9 + from.pass * 0.2);
-    puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.receiver = null; puck.cool = lift ? K.liftSec : 0.25; release(from);
+    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = t; puck.shot = false; puck.receiver = null; puck.cool = lift ? K.liftSec : 0.25; release(from);
     puck.rim = Math.abs(target.y - 42.5) > 25; puck.raceJudged = false; t.clears = (t.clears || 0) + 1;
   }
   function laneClear(from, to, opp, width = 4) {
-    const dx = to.x - from.x, dy = to.y - from.y, L = Math.hypot(dx, dy) || 1;
+    const dx = to.x - from.x, dy = to.y - from.y, L = DM.hypot(dx, dy) || 1;
     for (const o of opp) {
       const t = clamp(((o.x - from.x) * dx + (o.y - from.y) * dy) / (L * L), 0, 1);
       const px = from.x + dx * t, py = from.y + dy * t;
-      if (Math.hypot(o.x - px, o.y - py) < width && t > 0.08) return false;
+      if (DM.hypot(o.x - px, o.y - py) < width && t > 0.08) return false;
     }
     return true;
   }
   function shotQuality(p, t) {
-    const n = oppNet(t); const d = dist(p, n); const ang = Math.abs(Math.atan2(p.y - n.y, (n.x - p.x) * t.dir));
+    const n = oppNet(t); const d = dist(p, n); const ang = Math.abs(DM.atan2(p.y - n.y, (n.x - p.x) * t.dir));
     if (toFx(t, p.x) > 178 || ang > 1.3) return 0;
     return clamp(1 - d / 75, 0, 1) * (1 - ang / 1.7);
   }
@@ -619,7 +622,7 @@ export function createSim(DATA, opts = {}) {
       if (throughTraffic && dNet >= PE.minDistFt && dNet <= PE.maxDistFt && q > 0.05 && Math.random() < dt * PE.ratePerSec * cfg.shots) { shoot(p); return null; }
       const PR = SD.probabilistic, PS = SD.pointShot;
       const pointShot = p.isD || toFx(t, p.x) < 135;
-      const rate = cfg.shots * PR.baseRate * (Math.pow(q, PR.qualityPower) * (0.9 + agg * PR.aggressionWeight) * (0.6 + p.shoot * PR.shooterWeight) + (open && q > PR.openLookMinQuality ? PR.openLookBonus : 0) + (pressure < PR.pressureWithinFt ? PR.pressureBonus * q : 0)) + (pointShot && q > PS.minQuality ? PS.baseRate + (open ? PS.openBonus : 0) : 0);
+      const rate = cfg.shots * PR.baseRate * (DM.pow(q, PR.qualityPower) * (0.9 + agg * PR.aggressionWeight) * (0.6 + p.shoot * PR.shooterWeight) + (open && q > PR.openLookMinQuality ? PR.openLookBonus : 0) + (pressure < PR.pressureWithinFt ? PR.pressureBonus * q : 0)) + (pointShot && q > PS.minQuality ? PS.baseRate + (open ? PS.openBonus : 0) : 0);
       if (Math.random() < dt * rate) { shoot(p); return null; }
     }
     // a skater heading for a change gets the puck deep and goes: dump and change
@@ -723,8 +726,8 @@ export function createSim(DATA, opts = {}) {
     for (let i = 0; i < 3; i++) { const tArr = dist(from, lead) / sp; lead = { x: to.x + to.vx * tArr * 0.9, y: to.y + to.vy * tArr * 0.9 }; }
     const d = dist(from, lead) || 1;
     const err = ((1 - from.pass) * PH.pass.errorPerPassDeficit + d * PH.pass.errorPerFt) * (from.rushed > 0 ? 2.2 : 1) * hands(from) / cfg.passAcc; // long passes are harder to hit; a hurried one is worse
-    const a = Math.atan2(lead.y - from.y, lead.x - from.x) + rnd(-err, err);
-    puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = from.team; puck.shot = false; puck.cool = 0.25; release(from);
+    const a = DM.atan2(lead.y - from.y, lead.x - from.x) + rnd(-err, err);
+    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = from.team; puck.shot = false; puck.cool = 0.25; release(from);
     puck.receiver = to; puck.reached = new Set();
     // a pass into the slot is a one-timer if the receiver has a look
     // one-timer: a cross-ice pass to an open man in the slot
@@ -737,7 +740,7 @@ export function createSim(DATA, opts = {}) {
     const n = oppNet(t), dN = dist(p, n);
     if (toFx(t, p.x) > 178) return 0;
     const slap = p.isD || dN > 45;
-    const angleDeg = Math.abs(Math.atan2(p.y - n.y, (n.x - p.x) * t.dir)) * 180 / Math.PI;
+    const angleDeg = Math.abs(DM.atan2(p.y - n.y, (n.x - p.x) * t.dir)) * 180 / Math.PI;
     const ctx = { type: slap ? 'SLAP' : (oneTimer ? 'SNAP' : 'WRIST'), rebound: puck.sinceSave < PH.shot.xg.reboundWithinSec, pp: onPP(t), sh: shorthanded(t) && !onPP(t) };
     const base = xgModel(dN, angleDeg, ctx);
     return base === null ? null : { base, xg: clamp(base * p.finishing, 0.005, 0.9) };
@@ -764,9 +767,9 @@ export function createSim(DATA, opts = {}) {
     const aimY = n.y + rnd(-PH.shot.aimSpreadFt, PH.shot.aimSpreadFt);
     const slap = from.isD || dist(from, n) > 45; // point shots are slap or heavy wrist shots: faster, less accurate
     const err = ((oneTimer ? PH.shot.oneTimerExtraError : 0) + (1 - from.shoot) * PH.shot.errorPerShootDeficit + dist(from, n) * PH.shot.errorPerFt + (slap ? PH.shot.slap.extraError : 0)) * hands(from);
-    const a = Math.atan2(aimY - from.y, n.x - from.x) + rnd(-err, err);
+    const a = DM.atan2(aimY - from.y, n.x - from.x) + rnd(-err, err);
     const sp = slap ? PH.shot.slap.baseFtPerSec + from.shoot * PH.shot.slap.perShootRating : PH.shot.wrist.baseFtPerSec + from.shoot * PH.shot.wrist.perShootRating;
-    puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = t; puck.shot = true; puck.shooter = from; puck.cool = 0.25; puck.beaten = false; release(from);
+    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = t; puck.shot = true; puck.shooter = from; puck.cool = 0.25; puck.beaten = false; release(from);
     const tGoal = (n.x - from.x) / (puck.vx || 1e-6); puck.onNet = tGoal > 0 && Math.abs(from.y + puck.vy * tGoal - n.y) < NETW / 2; // would it hit the net if nothing touched it?
     t.attempts++;
     // expected goals from the shot's geometry and context (rebound, rush, strength, shot type), then the shooter's finishing;
@@ -778,7 +781,7 @@ export function createSim(DATA, opts = {}) {
     puck.tierCounted = false;
     // shot block: a defender in the lane, close to the shooter, gets in front of it
     const ot = teams[1 - t.id];
-    const dx = Math.cos(a), dy = Math.sin(a); const L = dist(from, n);
+    const dx = DM.cos(a), dy = DM.sin(a); const L = dist(from, n);
         for (const o of active(ot)) {
       const along = (o.x - from.x) * dx + (o.y - from.y) * dy;
       if (along < 2 || along > L * PH.shotBlock.laneFraction) continue;
@@ -787,8 +790,8 @@ export function createSim(DATA, opts = {}) {
       if (off < reach && Math.random() < PH.shotBlock.probBase + o.def * PH.shotBlock.probPerDef) {
         ot.blocked++; puck.shot = false; puck.touched = true; puck.lastTeam = ot; puck.cool = 0.2; emit('fx', 'ring', { x: o.x, y: o.y, col: '#222', big: false });
         puck.x = o.x + dx * 1.5; puck.y = o.y + dy * 1.5;
-        const ra = Math.atan2(-dy, -dx) + rnd(-1.1, 1.1); const rs = rnd(12, 28);
-        puck.vx = Math.cos(ra) * rs; puck.vy = Math.sin(ra) * rs;
+        const ra = DM.atan2(-dy, -dx) + rnd(-1.1, 1.1); const rs = rnd(12, 28);
+        puck.vx = DM.cos(ra) * rs; puck.vy = DM.sin(ra) * rs;
         o.blocks = (o.blocks || 0) + 1;
         break;
       }
@@ -871,9 +874,9 @@ export function createSim(DATA, opts = {}) {
         p.target = onside(f);
       }
       const g = t.goalie, n = ownNet(t);
-      const ang = Math.atan2(puck.y - n.y, (puck.x - n.x) * t.dir);
+      const ang = DM.atan2(puck.y - n.y, (puck.x - n.x) * t.dir);
       const depth = puck.carrier && puck.carrier.team === t ? 1.5 : clamp(4 - Math.abs(ang) * 2.5, 1, 4);
-      g.target = { x: n.x + t.dir * depth, y: clamp(n.y + Math.sin(ang) * depth * 1.4, n.y - 4.5, n.y + 4.5) };
+      g.target = { x: n.x + t.dir * depth, y: clamp(n.y + DM.sin(ang) * depth * 1.4, n.y - 4.5, n.y + 4.5) };
     }
   }
 
@@ -885,7 +888,7 @@ export function createSim(DATA, opts = {}) {
     const all = teams.flatMap(t => t.players).filter(p => !p.box);
     for (const p of all) {
       const tg = p.target || p;
-      const dx = tg.x - p.x, dy = tg.y - p.y, d = Math.hypot(dx, dy);
+      const dx = tg.x - p.x, dy = tg.y - p.y, d = DM.hypot(dx, dy);
       // effort: full speed only when chasing, rushing or far from the spot; otherwise cruise at ~65% (EDGE: bursts over 20 mph are a handful per shift)
       const ours = puck.carrier && puck.carrier.team === p.team;
       const breakingOut = ours && zone(p.team, puck.carrier.x) === 'own' && (p.team.possT || 0) > SYS.breakout.flow.startAfterSec && !p.leaving;
@@ -904,10 +907,10 @@ export function createSim(DATA, opts = {}) {
       const max = p.goalie ? p.spd : p.spd * cfg.speed * fatigue(p) * (p === puck.carrier ? PH.skater.effort.carrierFactor : 1) * (urgent ? 1 : Math.min(1, (p === puck.carrier || p.leaving || d > 30 ? PH.skater.effort.withPurpose : PH.skater.effort.cruise) * cfg.cruise));
       const want = d < 0.8 ? 0 : Math.min(max, Math.sqrt(2 * PH.skater.brakingFtPerSec2 * (p.goalie ? 1 : cfg.accel) * d));
       const ax = (d ? dx / d : 0) * want - p.vx, ay = (d ? dy / d : 0) * want - p.vy;
-      const am = Math.hypot(ax, ay), acc = (p.goalie ? PH.goalie.accelFtPerSec2 : PH.skater.accelFtPerSec2 * cfg.accel * (1 - PH.skater.fatigue.accelSlowdown * fatigueLevel(p))) * dt;
+      const am = DM.hypot(ax, ay), acc = (p.goalie ? PH.goalie.accelFtPerSec2 : PH.skater.accelFtPerSec2 * cfg.accel * (1 - PH.skater.fatigue.accelSlowdown * fatigueLevel(p))) * dt;
       if (am > acc) { p.vx += ax / am * acc; p.vy += ay / am * acc; } else { p.vx += ax; p.vy += ay; }
       for (const o of all) if (o !== p && !o.goalie && !p.goalie) { const dd = dist(p, o); if (dd < 3 && dd > 0) { p.vx += (p.x - o.x) / dd * 8 * dt; p.vy += (p.y - o.y) / dd * 8 * dt; } }
-      p.x += p.vx * dt; p.y += p.vy * dt; p.dist = (p.dist || 0) + Math.hypot(p.vx, p.vy) * dt; const spd = Math.hypot(p.vx, p.vy); if (spd > p.topSpd) p.topSpd = spd; if (spd > 29.3 && !p.burst) { p.bursts = (p.bursts || 0) + 1; p.burst = true; } if (spd < 26) p.burst = false;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.dist = (p.dist || 0) + DM.hypot(p.vx, p.vy) * dt; const spd = DM.hypot(p.vx, p.vy); if (spd > p.topSpd) p.topSpd = spd; if (spd > 29.3 && !p.burst) { p.bursts = (p.bursts || 0) + 1; p.burst = true; } if (spd < 26) p.burst = false;
       keepOnIce(p, p.leaving ? 1.0 : 1.5); if (!p.goalie) keepOffNets(p, 1.6);
     }
   }
@@ -926,16 +929,16 @@ export function createSim(DATA, opts = {}) {
     o.x = clamp(o.x, r, RW - r); o.y = clamp(o.y, r, RH - r);
     for (const [cx, cy] of [[CORNER, CORNER], [RW - CORNER, CORNER], [CORNER, RH - CORNER], [RW - CORNER, RH - CORNER]]) {
       const inX = (cx === CORNER ? o.x < cx : o.x > cx), inY = (cy === CORNER ? o.y < cy : o.y > cy);
-      if (inX && inY) { const d = Math.hypot(o.x - cx, o.y - cy); if (d > CORNER - r) { const nx = (o.x - cx) / d, ny = (o.y - cy) / d; o.x = cx + nx * (CORNER - r); o.y = cy + ny * (CORNER - r); const dot = o.vx * nx + o.vy * ny; if (dot > 0) { o.vx -= (1 + rest) * dot * nx; o.vy -= (1 + rest) * dot * ny; } } }
+      if (inX && inY) { const d = DM.hypot(o.x - cx, o.y - cy); if (d > CORNER - r) { const nx = (o.x - cx) / d, ny = (o.y - cy) / d; o.x = cx + nx * (CORNER - r); o.y = cy + ny * (CORNER - r); const dot = o.vx * nx + o.vy * ny; if (dot > 0) { o.vx -= (1 + rest) * dot * nx; o.vy -= (1 + rest) * dot * ny; } } }
     }
   }
 
   // Goalie coverage: a line centered on the goalie, perpendicular to the puck, as wide as his butterfly
   function goalieTargetAngle(g, qx, qy) {
     // square to the shot: face the puck's direction of travel when it is a shot coming his way, otherwise face the puck from the net
-    const n = ownNet(g.team); const sp = Math.hypot(puck.vx, puck.vy);
+    const n = ownNet(g.team); const sp = DM.hypot(puck.vx, puck.vy);
     const incoming = sp > 40 && !puck.carrier && (puck.vx * g.team.dir < 0);
-    return incoming ? Math.atan2(-puck.vy, -puck.vx) : Math.atan2(qy - n.y, (qx - n.x) * g.team.dir > 0 ? (qx - n.x) : g.team.dir * 0.5);
+    return incoming ? DM.atan2(-puck.vy, -puck.vx) : DM.atan2(qy - n.y, (qx - n.x) * g.team.dir > 0 ? (qx - n.x) : g.team.dir * 0.5);
   }
   function turnGoalie(g, dt) {
     const want = goalieTargetAngle(g, puck.x, puck.y);
@@ -947,13 +950,13 @@ export function createSim(DATA, opts = {}) {
   function goalieLine(g) {
     const a = g.ang === undefined ? goalieTargetAngle(g, puck.x, puck.y) : g.ang;
     const w = (PH.goalie.lineHalfWidthBaseFt + g.skill * PH.goalie.lineHalfWidthPerRating) * cfg.goalie;
-    const nx = -Math.sin(a), ny = Math.cos(a);
+    const nx = -DM.sin(a), ny = DM.cos(a);
     return [g.x - nx * w, g.y - ny * w, g.x + nx * w, g.y + ny * w];
   }
   function pointToSegment(qx, qy, ax, ay, bx, by) {
     const dx = bx - ax, dy = by - ay; const L2 = dx * dx + dy * dy || 1;
     const t = clamp(((qx - ax) * dx + (qy - ay) * dy) / L2, 0, 1);
-    return Math.hypot(qx - (ax + dx * t), qy - (ay + dy * t));
+    return DM.hypot(qx - (ax + dx * t), qy - (ay + dy * t));
   }
   function segmentsCross(ax, ay, bx, by, cx, cy, dx, dy) {
     const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
@@ -966,8 +969,8 @@ export function createSim(DATA, opts = {}) {
     puck.cool = Math.max(0, (puck.cool || 0) - dt);
     if (puck.carrier) {
       puck.holdT = puck.carrier === puck.lastHolder ? (puck.holdT || 0) + dt : 0; puck.lastHolder = puck.carrier;
-      const c = puck.carrier; const a = Math.atan2(c.vy, c.vx) || 0; const m = Math.hypot(c.vx, c.vy);
-      puck.x = c.x + (m > 1 ? Math.cos(a) * 2.2 : 0); puck.y = c.y + (m > 1 ? Math.sin(a) * 2.2 : 0);
+      const c = puck.carrier; const a = DM.atan2(c.vy, c.vx) || 0; const m = DM.hypot(c.vx, c.vy);
+      puck.x = c.x + (m > 1 ? DM.cos(a) * 2.2 : 0); puck.y = c.y + (m > 1 ? DM.sin(a) * 2.2 : 0);
       puck.vx = c.vx; puck.vy = c.vy;
       const t = c.team; const ot = teams[1 - t.id]; const opp = active(ot);
       for (const o of opp) {
@@ -978,8 +981,8 @@ export function createSim(DATA, opts = {}) {
       }
       return;
     }
-    const sp = Math.hypot(puck.vx, puck.vy);
-    const fr = (1 - PH.puck.frictionPerFrameAt60Hz / cfg.glide) ** (dt * 60); puck.vx *= fr; puck.vy *= fr;
+    const sp = DM.hypot(puck.vx, puck.vy);
+    const fr = DM.pow(1 - PH.puck.frictionPerFrameAt60Hz / cfg.glide, dt * 60); puck.vx *= fr; puck.vy *= fr;
     if (sp < 0.5) { puck.vx = puck.vy = 0; }
     const px = puck.x, py = puck.y;
     puck.x += puck.vx * dt; puck.y += puck.vy * dt;
@@ -1015,8 +1018,8 @@ export function createSim(DATA, opts = {}) {
           const fzScale = g.freezeRate && MP ? clamp(g.freezeRate / 0.21, 0.6, 1.6) : 1; // each goalie's own freeze tendency (freezes per shot on goal, league ~0.21)
           const freezeP = ((attackers ? FZ.probWithPressure : FZ.probNoPressure) + (hard ? FZ.hardShotBonus : 0)) * fzScale;
           if (sp > 25 && Math.random() < freezeP) { t.freezes++; setFaceoff(front > 0 ? 31 : 169, puck.y < 42 ? 20.5 : 64.5, 'Goalie freezes it'); log(`${g.name} covers it up${attackers ? ' with traffic in the crease' : ''}.`); return; }
-          const a = Math.atan2(puck.y < 42 ? -1.6 : 1.6, front) + rnd(-0.4, 0.4); // steer the rebound to the corner
-          puck.vx = Math.cos(a) * 45; puck.vy = Math.sin(a) * 45; puck.shot = false; puck.cool = PH.goalie.reboundCoolSec; puck.sinceSave = 0; // nobody gets it until it has traveled
+          const a = DM.atan2(puck.y < 42 ? -1.6 : 1.6, front) + rnd(-0.4, 0.4); // steer the rebound to the corner
+          puck.vx = DM.cos(a) * 45; puck.vy = DM.sin(a) * 45; puck.shot = false; puck.cool = PH.goalie.reboundCoolSec; puck.sinceSave = 0; // nobody gets it until it has traveled
           puck.x = g.x + front * 2.5; puck.y = g.y + (puck.y < g.y ? -1.5 : 1.5); // rebound off the pads, kicked away
           continue;
         }
@@ -1059,8 +1062,8 @@ export function createSim(DATA, opts = {}) {
         if (puck.reached.has(d) || dist(d, puck) > R.stickReachFt) continue;
         puck.reached.add(d);
         if (Math.random() < R.stickDeflectBase + d.def * R.stickDeflectPerDef) {
-          const a = Math.atan2(puck.vy, puck.vx) + rnd(-R.deflectAngleRad, R.deflectAngleRad), k = rnd(R.deflectSpeedMin, R.deflectSpeedMax);
-          puck.vx = Math.cos(a) * sp * k; puck.vy = Math.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = d.team; puck.cool = 0.15; puck.touched = true;
+          const a = DM.atan2(puck.vy, puck.vx) + rnd(-R.deflectAngleRad, R.deflectAngleRad), k = rnd(R.deflectSpeedMin, R.deflectSpeedMax);
+          puck.vx = DM.cos(a) * sp * k; puck.vy = DM.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = d.team; puck.cool = 0.15; puck.touched = true;
           return;
         }
       }
@@ -1075,8 +1078,8 @@ export function createSim(DATA, opts = {}) {
         if (puck.shot && best.team !== puck.shooter.team) { best.team.blocked++; puck.shot = false; puck.lastTeam = best.team; return; }
         // a stick on a pass he cannot control still knocks it off line: slower, a new direction, and nobody's puck
         if (!puck.shot && Math.random() < PH.pass.deflectOnTouch) {
-          const a = Math.atan2(puck.vy, puck.vx) + rnd(-PH.pass.deflectAngleRad, PH.pass.deflectAngleRad), k = rnd(PH.pass.deflectSpeedMin, PH.pass.deflectSpeedMax);
-          puck.vx = Math.cos(a) * sp * k; puck.vy = Math.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = best.team; puck.cool = 0.15;
+          const a = DM.atan2(puck.vy, puck.vx) + rnd(-PH.pass.deflectAngleRad, PH.pass.deflectAngleRad), k = rnd(PH.pass.deflectSpeedMin, PH.pass.deflectSpeedMax);
+          puck.vx = DM.cos(a) * sp * k; puck.vy = DM.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = best.team; puck.cool = 0.15;
         }
         return;
       }
@@ -1186,7 +1189,7 @@ export function createSim(DATA, opts = {}) {
         const win = Math.random() < fh / (fh + fa) ? teams[0] : teams[1];
         teams[0].faceoffs++; teams[1].faceoffs++; win.faceoffsWon++;
         const d = win.onD[Math.floor(Math.random() * win.onD.length)] || win.onF[0];
-        const a = Math.atan2(d.y - puck.y, d.x - puck.x); puck.vx = Math.cos(a) * 30; puck.vy = Math.sin(a) * 30; puck.lastTeam = win; puck.cool = 0.1;
+        const a = DM.atan2(d.y - puck.y, d.x - puck.x); puck.vx = DM.cos(a) * 30; puck.vy = DM.sin(a) * 30; puck.lastTeam = win; puck.cool = 0.1;
         game.faceoff = null; game.note = `${win.name} win the draw`;
       }
       return;
@@ -1198,7 +1201,7 @@ export function createSim(DATA, opts = {}) {
     teams.forEach(t => { manageChanges(t, dt); if (t.dumpT > 0) t.dumpT -= dt; t.rimT = puck.rim && puck.lastTeam !== t ? (t.rimT || 0) + dt : 0; t.players.forEach(p => { p.sprint = false; if (p.rushed > 0) p.rushed -= dt; }); });
     assignTargets(dt); movePlayers(dt); teams.forEach(t => turnGoalie(t.goalie, dt)); movePuck(dt);
     if (!game.faceoff) checkOffside();
-    if (!game.faceoff && !puck.carrier) { const sp0 = Math.hypot(puck.vx, puck.vy); puck.deadT = sp0 < 2 && !skaters().some(p => dist(p, puck) < 6) ? (puck.deadT || 0) + dt : 0; if (puck.deadT > 3) { log('Whistle: dead puck.'); setFaceoff(puck.x < 100 ? (puck.x < 75 ? 31 : 80) : (puck.x > 125 ? 169 : 120), puck.y < 42.5 ? 20.5 : 64.5, 'Dead puck'); } }
+    if (!game.faceoff && !puck.carrier) { const sp0 = DM.hypot(puck.vx, puck.vy); puck.deadT = sp0 < 2 && !skaters().some(p => dist(p, puck) < 6) ? (puck.deadT || 0) + dt : 0; if (puck.deadT > 3) { log('Whistle: dead puck.'); setFaceoff(puck.x < 100 ? (puck.x < 75 ? 31 : 80) : (puck.x > 125 ? 169 : 120), puck.y < 42.5 ? 20.5 : 64.5, 'Dead puck'); } }
     if (game.clock <= 0) { game.clock = 0; endPeriod(); }
   }
 
