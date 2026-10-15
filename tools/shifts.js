@@ -2,7 +2,7 @@
 // Expect a mean near 45-50 s, p90 near 70-75 s, and no change windows in our own zone (no "-own" keys).
 const { open } = require('./harness');
 (async () => {
-  const { browser, page, errors } = await open();
+  const { page, errors, close } = await open();
   const res = await page.evaluate(() => {
     const r = window.rinkSim; document.getElementById('log').prepend = () => {};
     const ends = []; const windows = {};
@@ -24,5 +24,5 @@ const { open } = require('./harness');
     return { shifts: ends.length, meanSec: Math.round(ends.reduce((a, b) => a + b, 0) / ends.length), p50: pct(.5), p90: pct(.9), maxSec: Math.round(ends[ends.length - 1]), buckets, changeWindows: windows };
   });
   console.log(res); console.log('ERRORS', errors);
-  await browser.close();
+  await close();
 })();

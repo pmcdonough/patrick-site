@@ -917,7 +917,7 @@
 
 <script>
 (async () => {
-  const VERSION = '0.6';
+  const VERSION = '0.7';
   document.getElementById('version').textContent = 'Play review v' + VERSION;
   const $ = id => document.getElementById(id);
   const get = async u => { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
@@ -1024,6 +1024,7 @@
 
   const shots = GAME.shots.filter(s => s.result !== 'block' && s.attack.fromGoalLine <= 75 && s.onIce[s.team].length >= 3);
   const scored = shots.map(score);
+  window.playReview = { scored };   // test hook for tools/review.js
   const better = scored.filter(x => x.gapPass > 0.02); const betterDrive = scored.filter(x => x.gapDrive > 0.02); const right = scored.filter(x => x.gapRight > 0);
 
   // ---------- header and stats ----------

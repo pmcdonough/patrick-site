@@ -1,27 +1,36 @@
-// Shared loader for the headless checks. Opens the sim page in headless Chromium with the
-// embedded data, pauses the animation, and returns a page whose window.rinkSim exposes
-// { tick, teams, game, puck, DATA, cfg } for driving games far faster than real time.
+// Shared loader for the headless checks. Serves public/ from inside this process (tools/serve.js),
+// opens the sim page over HTTP in headless Chromium the way a visitor loads it, pauses the
+// animation, and returns a page whose window.rinkSim exposes { tick, teams, game, puck, DATA, cfg }
+// for driving games far faster than real time.
 //
-//   npm install playwright && npx playwright install chromium   (once)
-//   node tools/smoke.js [path/to/index.html]
+//   npm install && npx playwright install chromium   (once, in tools/)
+//   node tools/smoke.js
 const { chromium } = require('playwright');
-const fs = require('fs');
-const path = require('path');
+const { serve } = require('./serve');
 
-const DEFAULT_PAGE = path.join(__dirname, '..', 'public', 'bruins-vs-canadiens', 'index.html');
+const SIM = 'bruins-vs-canadiens/';
 
-async function open(opts = {}) {
-  const file = process.argv[2] || DEFAULT_PAGE;
-  const browser = await chromium.launch();
+// Loads a page under public/ (default the sim) and waits for `ready` to be true in the page.
+async function openPage(browser, srv, rel = SIM, ready = () => !!window.rinkSim, opts = {}) {
   const page = await browser.newPage({ viewport: { width: 1400, height: 1100 }, ...opts });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  let html = fs.readFileSync(file, 'utf8');
-  if (!/^<!doctype/i.test(html.trim())) html = '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + '</body></html>';
-  await page.setContent(html, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(400);
+  page.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)/.test(m.text())) errors.push(m.text()); });
+  page.on('requestfailed', r => { if (!/fonts\.(googleapis|gstatic)/.test(r.url())) errors.push('request failed: ' + r.url()); });
+  await page.goto(srv.url + rel, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(ready, null, { timeout: 15000 });
+  return { page, errors };
+}
+
+// The sim, served and paused. close() shuts the browser and the server.
+async function open(opts = {}) {
+  const srv = await serve();
+  const browser = await chromium.launch();
+  const { page, errors } = await openPage(browser, srv, SIM, undefined, opts);
+  await page.waitForTimeout(300);
   await page.click('#pause');
-  return { browser, page, errors, file };
+  const close = async () => { await browser.close(); await srv.close(); };
+  return { browser, page, errors, url: srv.url + SIM, close };
 }
 
 // Runs N full games inside the page and returns per-team totals. `setup` runs once before the games.
@@ -42,4 +51,4 @@ async function playGames(page, n, setup) {
   }, [n, setup || '']);
 }
 
-module.exports = { open, playGames };
+module.exports = { open, openPage, playGames, SIM };

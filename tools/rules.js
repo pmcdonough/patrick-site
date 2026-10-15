@@ -2,7 +2,7 @@
 // NHL reference: about 3 offsides and 4 icings per team per game (see physics.json rulesBenchmarks).
 const { open } = require('./harness');
 (async () => {
-  const { browser, page, errors } = await open();
+  const { page, errors, close } = await open();
   for (const mode of ['build defaults', 'nhl average']) {
     const res = await page.evaluate((mode) => {
       const r = window.rinkSim; if (mode === 'nhl average') document.getElementById('adminFactory').click(); else document.getElementById('adminReset').click();
@@ -13,5 +13,5 @@ const { open } = require('./harness');
     console.log(res);
   }
   console.log('ERRORS', errors);
-  await browser.close();
+  await close();
 })();

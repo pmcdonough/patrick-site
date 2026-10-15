@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (the matchup lab) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.49, sim 0.40, Play Review 0.6.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.50, sim 0.40, Play Review 0.7.
 
 ## Layout
 
@@ -21,8 +21,11 @@ tools/build.py                            re-embeds data/*.json into index.html;
 tools/xg_fit.py                           fits data/xg-model.json from MoneyPuck shot CSVs
 tools/mp_extract.py                       builds data/moneypuck-2025.json from the MoneyPuck season CSVs; --check diffs against the committed file
 tools/game_load.py                        NHL play-by-play + shift chart JSON -> play-review game file
-tools/lab.js                              parallel, seeded headless matchups: report vs league and reference, --compare, --sweep
-tools/baselines.json                      saved reference runs for lab.js (write with --save)
+tools/lab.js                              parallel, seeded headless matchups: report vs league and reference, --compare, --sweep, --order
+tools/review.js                           fingerprint of every shot Play Review scores, against the reference
+tools/baselines.json                      saved references for lab.js and review.js, with a fingerprint per game and per shot (write with --save)
+tools/serve.js                            static server for public/, run inside each check (node tools/serve.js serves it for a browser)
+tools/harness.js                          loads pages over HTTP in headless Chromium for the checks
 tools/*.js                                headless Playwright checks (smoke, calibration, nhl-average, shifts, rules)
 docs/ENGINE.md                            how the engine is organized, invariants, tuning knobs, lessons learned
 docs/HISTORY.md                           what was built before version numbers existed, in order
@@ -31,6 +34,7 @@ docs/PLAY-REVIEW.md                       the review page's pipeline, reconstruc
 docs/MODELING.md                          index of every model: measured, calibrated or inferred, and where it lives
 docs/ROADMAP.md                           where each project stands and what comes next, in priority order
 docs/RAW-INPUTS.md                        every raw input file: what it is, its URL, retrieval date, the command that uses it
+docs/RESTRUCTURE.md                       the plan to move both pages onto ES modules, step by step; where it stands
 LOCAL-SETUP.md                            one-time setup on a new machine and the checks that prove it works
 raw/                                      the raw inputs (git-ignored)
 .venv/                                    Python environment for the fit scripts (git-ignored)
@@ -44,7 +48,7 @@ CHANGELOG.md                              per-version changes
 - Every number a hockey person might question lives in `data/`, not in the script. If you add a threshold to the engine, put it in `physics.json` or `systems.json` with a `desc`, and read it from `PH` or `SYS`.
 - After editing anything in `data/` or a game file, run `python3 tools/build.py` so the embedded copies in both pages match. Pages fetch their data over HTTP and fall back to the embedded copies from `file://`.
 - Every page must keep working when opened from disk as a single file. Do not add external scripts or stylesheets beyond the Google Fonts link already there.
-- Balance is measured, not eyeballed. Before shipping an engine change, run `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and `node tools/lab.js` and `node tools/lab.js --nhl` (100 games each, about 35 s). The report compares each club with the league and with the saved reference; a seeded run reproduces exactly, so any change from the reference is the engine's doing. Re-save the reference with `--save` only for an intended change, and say so in the commit. A system or aggression effect is real only when its interval in `--compare` or `--sweep` excludes zero; judge by expected-goal differential first, since records need thousands of games to separate settings.
+- Balance is measured, not eyeballed. Before shipping an engine change, run `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and `node tools/lab.js` and `node tools/lab.js --nhl` (100 games each, about 35 s). The report compares each club with the league and with the saved reference; a seeded run reproduces exactly, so any change from the reference is the engine's doing. The reference keeps a fingerprint of every game, so "identical" means all 100 games finished exactly as before. For a change to how games start or reset, also run `node tools/lab.js --games 20 --order` (every game must match when replayed in reverse order). For a change to Play Review or the expected-goal model, run `node tools/review.js`. Re-save the reference with `--save` only for an intended change, and say so in the commit. A system or aggression effect is real only when its interval in `--compare` or `--sweep` excludes zero; judge by expected-goal differential first, since records need thousands of games to separate settings.
 - Anything inferred or mocked (positions at a real shot, replay movement) is labeled on the page and never feeds a measured or calibrated number. `docs/MODELING.md` keeps the three kinds apart.
 - Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo (`raw/` is ignored); the fitted model, the ratings extract and the compact game file go in. `docs/RAW-INPUTS.md` lists the exact inputs, where to download each and the command for each script; run `xg_fit.py` with `.venv/bin/python` (pandas, scikit-learn). Re-run the script, not the numbers, when the data changes. All three scripts reproduce the committed files byte for byte from those inputs (`mp_extract.py --check` proves it for the ratings file; for the other two, `git status` stays clean after a run). Do not hand-edit their outputs.
 - The expected-goal formula lives in two places, the engine (`xgModel`) and the review page; change both or neither.
@@ -70,6 +74,6 @@ The sim's script is about 1,500 lines after the embedded data. Its sections are 
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.49)
+## State (site 0.50)
 
-All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels identical to the reference), `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.38, 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.
+All checks pass, all over HTTP: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels: all 100 games identical to the reference), `node tools/lab.js --games 20 --order`, `node tools/review.js`, `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` play as sim 0.38 did (re-saved at 0.50 to add game fingerprints, no game changed), 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. The restructure in `docs/RESTRUCTURE.md` is under way: step 0 (the safety net) is done, step 1 (CSS, script and data out of the single file) is next. The next engine work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.

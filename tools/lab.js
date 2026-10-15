@@ -7,11 +7,14 @@
 //   node tools/lab.js --sweep BOS.fore                  every option of one card, same seeds for each
 //   node tools/lab.js --json out.json                   also write every game's numbers
 //   node tools/lab.js --save                            make this run the reference in tools/baselines.json
+//   node tools/lab.js --games 20 --order                also replay the seeds on one page in reverse order: every game must match
 //   node tools/lab.js --param shotDecision.xgChoice.minXg=0.1   try a physics.json value without editing the file
 //
 // The report compares each club's per-game numbers with the league (MoneyPuck 2025-26 and the rules
 // benchmarks in physics.json) and with the saved reference run for the same level, seeds and games.
 // A seeded run reproduces exactly, so any difference from the reference means the engine changed.
+// The reference also keeps a fingerprint of every game (a hash of its final numbers), so the report
+// says "identical" only when every game finished exactly as before, not just the averages.
 //
 // Cards: fore brk entry oz dz pp pk (option values as in systems.json) and agg (0 to 1), per club abbr.
 // Each game g plays with Math.random seeded from (--seed + g), so a run is reproducible and two
@@ -19,21 +22,23 @@
 // game diverges as soon as the change matters, so the pairing helps a little; the intervals
 // below are what to trust.
 const { chromium } = require('playwright');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const PAGE = path.join(__dirname, '..', 'public', 'bruins-vs-canadiens', 'index.html');
+const { serve, writeBaselines } = require('./serve');
+const { openPage: openServed } = require('./harness');
 const DATA = path.join(__dirname, '..', 'public', 'bruins-vs-canadiens', 'data');
 const BASELINE_FILE = path.join(__dirname, 'baselines.json');
 const BASELINES = fs.existsSync(BASELINE_FILE) ? JSON.parse(fs.readFileSync(BASELINE_FILE, 'utf8')) : {};
 const CARD_IDS = { fore: 'Fore', brk: 'Break', entry: 'Entry', oz: 'Oz', dz: 'Dz', pp: 'PP', pk: 'PK', agg: 'Agg' };
 
 function args() {
-  const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false, param: '' };
+  const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false, param: '', order: false };
   for (let i = 0; i < a.length; i++) {
     const k = a[i].replace(/^--/, '');
-    if (k === 'nhl' || k === 'save') o[k] = true;
+    if (k === 'nhl' || k === 'save' || k === 'order') o[k] = true;
     else if (k in o) o[k] = typeof o[k] === 'number' ? +a[++i] : a[++i];
     else { console.error(`unknown option ${a[i]}`); process.exit(2); }
   }
@@ -42,12 +47,9 @@ function args() {
 const parseSet = s => (s ? s.split(',') : []).map(x => { const [k, v] = x.split('='); const [club, card] = k.split('.'); if (!CARD_IDS[card]) throw new Error(`unknown card ${card}`); return { club, card, v }; });
 
 // ---------- browser side ----------
-async function openPage(browser) {
-  const page = await browser.newPage();
-  const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
-  await page.setContent(fs.readFileSync(PAGE, 'utf8'), { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(400);
+async function openPage(browser, srv) {
+  const { page, errors } = await openServed(browser, srv);
+  await page.waitForTimeout(300);
   await page.click('#pause');
   await page.evaluate(() => { document.getElementById('log').prepend = () => {}; });
   return { page, errors };
@@ -82,15 +84,19 @@ function playSeeds(page, seeds, nhl, set, param) {
   }, [seeds, nhl, set, CARD_IDS, param]);
 }
 
-// Plays seeds first..first+n-1 across the worker pages.
-async function run(pages, o, set) {
+// Plays seeds first..first+n-1 across the worker pages (each page in reverse order with `reverse`).
+async function run(pages, o, set, reverse) {
   const seeds = Array.from({ length: o.games }, (_, i) => o.seed + i);
-  const chunks = pages.map((_, w) => seeds.filter((_, i) => i % pages.length === w));
+  const chunks = pages.map((_, w) => seeds.filter((_, i) => i % pages.length === w)).map(c => reverse ? c.reverse() : c);
   const parts = await Promise.all(pages.map((p, w) => chunks[w].length ? playSeeds(p.page, chunks[w], o.nhl, set, o.params) : null));
   const done = parts.filter(Boolean);
   const rows = done.flatMap(p => p.rows).sort((a, b) => a.seed - b.seed);
   return { rows, tac: done[0].tac, cfg: done[0].cfg };
 }
+
+// One game's fingerprint: a short hash of everything the row records. Expected goals are rounded to
+// nine decimals so the hash depends on the game, not on how the sum was printed.
+const fingerprint = row => crypto.createHash('sha1').update(JSON.stringify(row, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(9) : v)).digest('hex').slice(0, 10);
 
 // ---------- statistics ----------
 const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
@@ -148,6 +154,7 @@ function baselineTable(T, level, o) {
   lines.push('Metric | League | ' + T.map(t => `${t.abbr} now | ${t.abbr} ref | ${t.abbr} vs league`).join(' | '));
   lines.push('--- | --- | ' + T.map(() => '--- | --- | ---').join(' | '));
   let changed = 0;
+  const prints = same && ref.fingerprints, differ = prints ? o.rows.filter((r, n) => fingerprint(r) !== prints[n]).map(r => r.seed) : [];
   for (const [k, label] of METRICS) {
     const cells = T.map(t => {
       const m = mean(t[k]), e = ci(t[k]), r = ref && ref.perTeam[t.abbr] && ref.perTeam[t.abbr][k];
@@ -157,7 +164,10 @@ function baselineTable(T, level, o) {
     });
     lines.push(`${label} | ${f2(L[k])} | ${cells.join(' | ')}`);
   }
-  lines.push('', !ref ? '' : changed ? `${changed} cell(s) changed from the reference. If the engine change was intended, re-run with --save.` : same ? 'Identical to the reference: the engine plays these games exactly as before.' : 'No cell moved beyond its interval.');
+  const games = differ.length ? ` ${differ.length} of ${o.rows.length} games finished differently (seeds ${differ.slice(0, 8).join(', ')}${differ.length > 8 ? ', ...' : ''}).` : '';
+  lines.push('', !ref ? '' : changed || differ.length ? `${changed} cell(s) changed from the reference.${games} If the engine change was intended, re-run with --save.`
+    : same && prints ? `Identical to the reference: all ${prints.length} games finished exactly as before.`
+    : same ? 'Identical to the reference in every average. It has no game fingerprints yet; re-save it with --save to add them.' : 'No cell moved beyond its interval.');
   return lines.join('\n');
 }
 
@@ -178,8 +188,9 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
   const base = parseSet(o.set);
   o.params = (o.param ? o.param.split(',') : []).map(x => { const [key, v] = x.split('='); return { key, v }; });
   if (o.params.length) console.log(`Physics overrides: ${o.param}`);
+  const srv = await serve();
   const browsers = await Promise.all(Array.from({ length: o.workers }, () => chromium.launch()));
-  const pages = await Promise.all(browsers.map(openPage));
+  const pages = await Promise.all(browsers.map(b => openPage(b, srv)));
   const t0 = Date.now();
   const level = o.nhl ? 'nhl' : 'defaults';
   const out = { options: o, runs: [] };
@@ -190,11 +201,18 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
     console.log(`Multipliers: ${Object.entries(A.cfg).map(([k, v]) => `${k} ${v}`).join(', ')}\n`);
     const { T, text } = matchupTable(A.rows);
     console.log(text + '\n');
-    if (!o.compare && !o.sweep) console.log(baselineTable(T, level, o) + '\n');
+    if (!o.compare && !o.sweep) console.log(baselineTable(T, level, { ...o, rows: A.rows }) + '\n');
+    if (o.order) {
+      const R = await run(pages.slice(0, 1), o, base, true);
+      const differ = A.rows.filter((r, n) => fingerprint(r) !== fingerprint(R.rows[n])).map(r => r.seed);
+      console.log(differ.length ? `ORDER CHECK FAILED: ${differ.length} of ${A.rows.length} games changed when played in reverse order on one page (seeds ${differ.join(', ')}). State is leaking from one game to the next.\n`
+        : `Order check: all ${A.rows.length} games are identical played in reverse order on one page.\n`);
+      if (differ.length) process.exitCode = 1;
+    }
     if (o.save) {
       if (o.set || o.compare || o.sweep || o.param) throw new Error('--save takes the build as it is; drop --set, --compare, --sweep and --param');
-      BASELINES[level] = { games: o.games, seed: o.seed, saved: new Date().toISOString().slice(0, 10), cards: A.tac, cfg: A.cfg, perTeam: summary(T) };
-      fs.writeFileSync(BASELINE_FILE, JSON.stringify(BASELINES, null, 1) + '\n');
+      BASELINES[level] = { games: o.games, seed: o.seed, saved: new Date().toISOString().slice(0, 10), cards: A.tac, cfg: A.cfg, perTeam: summary(T), fingerprints: A.rows.map(fingerprint) };
+      writeBaselines(BASELINE_FILE, BASELINES);
       console.log(`Saved the ${level} reference to tools/baselines.json.\n`);
     }
     if (o.compare) {
@@ -225,6 +243,7 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
     console.log(`${out.runs.reduce((s, r) => s + r.rows.length, 0)} games in ${((Date.now() - t0) / 1000).toFixed(0)} s on ${o.workers} workers. ERRORS: ${JSON.stringify(errors)}`);
     if (o.json) fs.writeFileSync(o.json, JSON.stringify(out));
     await Promise.all(browsers.map(b => b.close()));
+    await srv.close();
     if (errors.length) process.exitCode = 1;
   }
 })();

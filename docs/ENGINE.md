@@ -55,7 +55,7 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 
 ## Baselines (sim 0.35)
 
-Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight games at a time. Each game seeds `Math.random`, so a run reproduces exactly and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
+Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight games at a time. Each game seeds `Math.random`, so a run reproduces exactly and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. Each reference also keeps a fingerprint of every game, and `--order` replays the seeds in reverse order on one page to prove no state leaks between games. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
 
 At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-26):
 

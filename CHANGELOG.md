@@ -1,8 +1,12 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.49 = sim 0.40 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.50 = sim 0.40 + Play Review 0.7. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.50
+- Restructure step 0, the safety net (plan in `docs/RESTRUCTURE.md`). The checks now load the pages over HTTP, the way a visitor does, from a small server inside each tool (`tools/serve.js`; `node tools/serve.js` also serves `public/` for a browser). The saved references keep a fingerprint of every game, so `tools/lab.js` says "identical" only when all 100 games finish exactly as before, and names the seeds that changed otherwise. `--order` replays the seeds in reverse order on one page and fails if any game changes. `tools/review.js` fingerprints every shot Play Review scores. Both levels were re-saved with fingerprints; the averages were identical before the re-save, so no game changed.
+- Play Review 0.7.
 
 ### 0.49
 - Sim 0.40.
@@ -67,6 +71,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Play Review
+
+### 0.7
+- A test hook for `tools/review.js` (the scored shots, read-only). Nothing visible changes.
 
 ### 0.6
 - The replay respects offside: attackers without the puck hold at the blue line until the puck crosses it, then skate in over the next 0.7 s. Before this, rush clips started teammates inside the zone ahead of the puck.

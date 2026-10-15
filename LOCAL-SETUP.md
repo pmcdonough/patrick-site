@@ -68,7 +68,7 @@ git status --short                                                          # cl
 Served (the pages fetch their data over HTTP):
 
 ```
-python3 -m http.server --directory public 8000
+node tools/serve.js                   # or: python3 -m http.server --directory public 8000
 # open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#lab  http://localhost:8000/play-review/
 ```
 
@@ -87,9 +87,11 @@ node tools/lab.js --nhl         # 100 games at the NHL-average tick: report vs l
 node tools/lab.js               # the same at build defaults
 node tools/shifts.js            # shift-length distribution and change windows
 node tools/rules.js             # offsides and icings per game against league rates
+node tools/lab.js --games 20 --order   # every game identical when replayed in reverse order on one page
+node tools/review.js            # every shot Play Review scores, against its reference
 ```
 
-A seeded `lab.js` run reproduces exactly, so "identical to the reference" means the engine plays the same games as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
+The checks serve `public/` themselves and load the pages over HTTP, so no server needs to be running. A seeded `lab.js` run reproduces exactly, and the reference keeps a fingerprint of every game, so "identical to the reference" means all 100 games finished exactly as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
 
 ## 8. Working on it from Claude Code
 
