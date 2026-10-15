@@ -613,7 +613,7 @@
  "defensiveZone": {
   "zone": {
    "label": "Zone (box + 1)",
-   "desc": "Nearest skater pressures; D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters.",
+   "desc": "Nearest skater pressures; D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters. Any attacker who gets into the slot is picked up by the nearest free defender before anything else.",
    "spots": {
     "LD": [
      10,
@@ -635,11 +635,28 @@
      24,
      42
     ]
+   },
+   "slotCoverage": {
+    "desc": "The slot is protected first. Every attacker without the puck inside maxFx of our goal line and within halfWidthFt of the middle gets the nearest defender who is not pressuring the carrier or fronting the shot, closest threat first, and that defender plays goalSideFt toward our net and insideFt toward the middle of him. The defender who has a man keeps him unless another free defender is closer by more than stickFt.",
+    "maxFx": 34,
+    "halfWidthFt": 16,
+    "goalSideFt": 2.5,
+    "insideFt": 1,
+    "stickFt": 10
+   },
+   "dSpread": {
+    "desc": "How far from the middle of the ice each defenseman stands at the net when he has nobody to box out: the strong-side D (the puck's side) at strongSideFt, the weak-side D at weakSideFt. Before sim 0.35 these were 9.5 and 5.5 ft, which left a lane between them at the top of the crease.",
+    "strongSideFt": 6,
+    "weakSideFt": 3
    }
   },
   "man": {
    "label": "Man-on-man",
-   "desc": "D take the opposing forwards low, forwards take the points and any extra forward; each defender plays 4 ft goal-side of his man."
+   "desc": "D take the opposing forwards low, forwards take the points and any extra forward. Each defender plays between his man and the net, cushionPerFt of the man's distance from the net (between minCushionFt and maxCushionFt), so he is tight at the crease and already in the way when a man cuts in from the wall. He stays with his man: he switches only when another attacker is closer by more than stickFt, and only the man on the puck carrier pressures him.",
+   "stickFt": 15,
+   "cushionPerFt": 0.5,
+   "minCushionFt": 2,
+   "maxCushionFt": 15.0
   }
  },
  "penaltyKill": {

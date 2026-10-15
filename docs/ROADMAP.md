@@ -1,16 +1,16 @@
 # Roadmap
 
-Where each project stands at site 0.42 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.43 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
 A hockey engine whose decisions are tuned to public data is only a toy until it can be checked against what real players did. The path is: real game events in (done, from the NHL play-by-play and shift chart), the model's alternative for each decision out (done for shots versus passes and drives), then validation of those alternatives against a season of real decisions, then tracking data so the positions stop being inferred. Each step makes the matchup lab more believable, because the lab is only as good as the decision model under it.
 
-## Bruins vs Canadiens (sim 0.34)
+## Bruins vs Canadiens (sim 0.35)
 
-1. Make the system effects believable before tuning anything else (`docs/ENGINE.md`, System effects): man-on-man coverage gives up 68% more expected goals, crashing the net lowers expected goals, chip-and-chase scores goals the expected-goal model never saw, and the power-play systems do nothing measurable. Each is a measured finding with a `tools/lab.js --sweep` command to re-check it.
-2. Decide shots from the expected-goal model instead of the geometric shot quality (`shotDecision` in `physics.json`, `carrierThink` in the engine). `docs/XG-MODEL.md` describes the gap. Recalibrate at the NHL-average tick afterward (`node tools/calibration.js`, `node tools/nhl-average.js`).
-3. Defensive coverage that produces the real danger-tier mix (the sim has too many medium-danger looks; `tierGoalScale` compensates). Fixing coverage, not the scale, is the right move.
+1. Defense that allows the real number of chances. Since 0.35 the carrier takes every look the expected-goal model says is worth it, so the sim's chance volume is now honest, and it is 60 to 90% above the league (mostly medium-danger looks off passes into the slot); `tierGoalScale` 0.39 keeps goals realistic in the meantime. What is left is not one bug: defenders already outnumber attackers in the slot when the pass goes; they lose the receiver on the catch and on the rush. Candidates: a stick on the receiver at the catch, rush defense (backcheckers picking up the late man), and box-out battles at the net. Each step is measured with `tools/lab.js --nhl` against the league column; `tierGoalScale` should climb back toward 0.72 as the gap closes.
+2. System effects that are still wrong (`docs/ENGINE.md`, System effects): man-on-man gives up about two expected goals a game more than zone; crashing the net lowers expected goals for; aggression and the power-play systems do nothing measurable. Each has a `tools/lab.js --sweep` command to re-check it.
+3. Icings run high at the build defaults (Boston about 10 a game), a side effect of the extra pressure in its own zone.
 4. Overtime at three-on-three. Overtime is five minutes at full strength now; the lab's OTL counts would shift a little.
 5. Validate system effects. The lab compares strategies inside the model; nothing says a 1-2-2 moves a real game the way it moves a simulated one. The honest first step is a season of real team results against the systems each club is known to run, which needs observed systems per club (item 5 in `docs/MODELING.md`).
 6. Mobile layout and a follow-the-puck camera, discussed and parked early (`docs/HISTORY.md` item 11).

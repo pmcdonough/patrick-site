@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.42 = sim 0.34 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.43 = sim 0.35 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.43
+- Sim 0.35. `tools/lab.js` gains `--param` to try a `physics.json` value without editing it, and its report flags changes from the reference again (a misplaced comment had switched the counter off in 0.42).
 
 ### 0.42
 - Sim 0.34. `tools/lab.js`: parallel, seeded, reproducible headless matchups with confidence intervals, a report against the league and a saved reference (`tools/baselines.json`), and paired comparisons and sweeps. First sweep of every Bruins card recorded in `docs/ENGINE.md`.
@@ -68,6 +71,15 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.35
+- Shoot or pass is decided by the expected-goal model: a carrier with a look worth at least 0.12 (an open wrist shot from about 20 ft straight on) shoots unless a teammate's look, discounted for the pass, is clearly better; a defender in the lane or on him lowers his look. The slot and in-tight rules are gone. Open shooters in the slot used to pass three times out of four.
+- Every puck that reaches the goal line between the posts gets a save roll. Pucks that slipped past where the goalie stood used to go in without one.
+- A pass on its way to a teammate keeps both teams in their structure; the defense used to treat every pass as a loose puck and leave the receiver.
+- Man-on-man: the man on the puck carrier is the one who pressures him, marks hold when attackers cross, and each defender plays between his man and the net with a cushion. It still gives up more than zone coverage, but about two expected goals a game less than before.
+- Zone coverage picks up any attacker in the slot first, the defensemen stand closer to the middle, and own-zone defenders skate hard to their man.
+- Sticks within 5 ft get a piece of passes going by, and a touch that does not control a pass knocks it off line. In the offensive zone a receiver settles the puck (0.35 s) before his next pass.
+- Goalie scale 0.39 (was 0.72) keeps goals at the league rate; the sim still creates 60 to 90% more expected goals than the league, shown unscaled in the reports.
 
 ### 0.34
 - Every game starts from the same state. `newGame` now resets player and goalie positions and momentum, the per-player burst, sprint and rushed flags, the dump and line-change timers and the puck, which used to carry over from the previous game. Play is unchanged; a lab run's games are now independent and a seeded run reproduces exactly.

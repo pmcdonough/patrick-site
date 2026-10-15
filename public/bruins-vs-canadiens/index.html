@@ -244,9 +244,9 @@
     <p>Boston is the home team at TD Garden and attacks to the right in the first and third periods. Both clubs dress their 2026-27 opening lineups: four forward lines, three defense pairs and two goalies, with scratches and injuries listed on the roster sheets. Each skater's ratings come from his 2025-26 season as recorded by MoneyPuck: shooting from individual expected goals and finishing, passing from primary assists and on-ice expected goals, defense from on-ice expected goals against relative to his team plus takeaways and blocked shots, faceoffs from his real win rate, and a penalty tendency from his penalties per 60. Skating speed and acceleration scale with his rating against NHL EDGE tracking benchmarks. Goalies save by danger tier at their real 2025-26 rates and freeze the puck at their own observed tendency. Small samples are shrunk toward average, and players who changed clubs carry their previous club's numbers, noted per player.</p>
 
     <h3>How a game is played</h3>
-    <p>The engine runs the clock in real time at 1x. Every tick, the player with the puck makes a read. Alone in front, he shoots. A clean look from the slot is a shot. A perimeter look goes through traffic, and a point man fires when the lane is there. A teammate with a step on the last defender gets sprung, a lead forward at the far blue line gets the headman pass, and otherwise he carries, chips or dumps the puck in according to his team's entry system. Under pressure in his own zone with no safe pass, he bangs it off the glass. Held too long with nothing on, he moves it to the nearest safe option. Passes lead the receiver and the receiver skates to meet them; long and hurried passes are harder to hit.</p>
+    <p>The engine runs the clock in real time at 1x. Every tick, the player with the puck makes a read. In the offensive zone he weighs his own shot against the best pass: how likely each one is to score, a defender in his lane or on his stick, and whether the pass will get there. A good look from the slot is a shot. A teammate with a clearly better look gets the puck. A perimeter look goes through traffic, and a point man fires when the lane is there. A teammate with a step on the last defender gets sprung, a lead forward at the far blue line gets the headman pass, and otherwise he carries, chips or dumps the puck in according to his team's entry system. Under pressure in his own zone with no safe pass, he bangs it off the glass. Held too long with nothing on, he moves it to the nearest safe option. Passes lead the receiver and the receiver skates to meet them; long and hurried passes are harder to hit, and a defender's stick in the lane can knock one off line. In the offensive zone a receiver settles the puck before his next pass.</p>
     <p>Everyone else takes a spot from the team's current system: breakout, neutral-zone attack, offensive-zone shape, forecheck, defensive-zone coverage, power play or penalty kill. The breakout is not a set of fixed spots. Once a team has the puck in its own end the forwards leave their support positions and burst north ahead of it, timing the rush so they take the pass in stride, and the carrier wheels out with speed. Through the neutral zone all three forwards are at full effort. In the offensive zone the cycle keeps moving: corner, half wall and net front rotate between the three forwards every few seconds, and nobody stands still on any shape. A dump and chase is a hard rim around the boards to the far corner with the weak-side forward already sprinting to beat the defense to it.</p>
-    <p>On the other side of the puck, the forecheck's first man pressures and the second man takes the next pass on a 2-1-2 or a left wing lock. Defensemen play gap control that reads the carrier's speed, never let an attacker behind them, box out the net-front man and step into shooting lanes. The center owns the slot and plays goal-side of the most dangerous man between the dots. Wingers shade the high men on their side. Man coverage has the defensemen take the forwards. Back-checkers caught above the puck sprint. Shots are blocked, miss, or reach the goalie, who is a line squared to the shooter; a shot that crosses the line is a save at that goalie's rate for the danger of the shot, rebounds go to the corner, and traffic in the crease makes him cover it up.</p>
+    <p>On the other side of the puck, the forecheck's first man pressures and the second man takes the next pass on a 2-1-2 or a left wing lock. Defensemen play gap control that reads the carrier's speed, never let an attacker behind them, box out the net-front man and step into shooting lanes. The center owns the slot and plays goal-side of the most dangerous man between the dots. Wingers shade the high men on their side, and anyone who gets to the slot is picked up first. Man coverage has the defensemen take the forwards and the forwards take the points; each defender stays with his man between him and the net, and only the man on the puck carrier pressures him. While a pass is on its way, the defense plays the receiver. Back-checkers caught above the puck sprint. Shots are blocked, miss, or reach the goalie, who is a line squared to the shooter; a shot that crosses the line or reaches the goal line is a save at that goalie's rate for the danger of the shot, rebounds go to the corner, and traffic in the crease makes him cover it up.</p>
 
     <h3>Line changes and fatigue</h3>
     <p>Forwards and pairs change separately, on the fly only when the moment is right: our carrier is through the neutral zone and can dump it in, or the other team is retrieving a puck deep in their own end. Nobody changes off a loose puck, during a rush against, or while the puck is in our zone. Each bench has two doors: forwards change through the door at the attacking end and defense through the door at the defending end, and both swap when the teams change ends for the second period. Forwards sit at their door's end of the bench and defense at theirs, the next unit stands at its door as a shift gets long, first man off nearest his door, replacement on once he is within a stick length. A tired skater near his door swaps himself out alone when play is at the far end, and a turnover mid-change can draw a too-many-men minor. At stoppages the visitors change first and Boston gets the last change and can match lines. Shifts target about 45 seconds for forwards and 55 for defense, the top lines and pairs get the most ice, the first power-play unit stays out longer, penalty killers go short, and the bench shortens late in a close game.</p>
@@ -841,7 +841,7 @@
  "defensiveZone": {
   "zone": {
    "label": "Zone (box + 1)",
-   "desc": "Nearest skater pressures; D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters.",
+   "desc": "Nearest skater pressures; D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters. Any attacker who gets into the slot is picked up by the nearest free defender before anything else.",
    "spots": {
     "LD": [
      10,
@@ -863,11 +863,28 @@
      24,
      42
     ]
+   },
+   "slotCoverage": {
+    "desc": "The slot is protected first. Every attacker without the puck inside maxFx of our goal line and within halfWidthFt of the middle gets the nearest defender who is not pressuring the carrier or fronting the shot, closest threat first, and that defender plays goalSideFt toward our net and insideFt toward the middle of him. The defender who has a man keeps him unless another free defender is closer by more than stickFt.",
+    "maxFx": 34,
+    "halfWidthFt": 16,
+    "goalSideFt": 2.5,
+    "insideFt": 1,
+    "stickFt": 10
+   },
+   "dSpread": {
+    "desc": "How far from the middle of the ice each defenseman stands at the net when he has nobody to box out: the strong-side D (the puck's side) at strongSideFt, the weak-side D at weakSideFt. Before sim 0.35 these were 9.5 and 5.5 ft, which left a lane between them at the top of the crease.",
+    "strongSideFt": 6,
+    "weakSideFt": 3
    }
   },
   "man": {
    "label": "Man-on-man",
-   "desc": "D take the opposing forwards low, forwards take the points and any extra forward; each defender plays 4 ft goal-side of his man."
+   "desc": "D take the opposing forwards low, forwards take the points and any extra forward. Each defender plays between his man and the net, cushionPerFt of the man's distance from the net (between minCushionFt and maxCushionFt), so he is tight at the crease and already in the way when a man cuts in from the wall. He stays with his man: he switches only when another attacker is closer by more than stickFt, and only the man on the puck carrier pressures him.",
+   "stickFt": 15,
+   "cushionPerFt": 0.5,
+   "minCushionFt": 2,
+   "maxCushionFt": 15.0
   }
  },
  "penaltyKill": {
@@ -2871,10 +2888,11 @@
   "accelFtPerSec2": 21,
   "brakingFtPerSec2": 18,
   "effort": {
-   "desc": "share of top speed when not chasing, rushing or far from the spot",
+   "desc": "share of top speed when not chasing, rushing or far from the spot. In our own zone a defender more than defendOwnZoneUrgentBeyondFt from his spot (his man, the slot attacker he picked up, the net-front man he boxes out) skates at full effort, including while the attackers are passing.",
    "withPurpose": 0.88,
    "cruise": 0.72,
-   "carrierFactor": 0.95
+   "carrierFactor": 0.95,
+   "defendOwnZoneUrgentBeyondFt": 4
   },
   "fatigue": {
    "desc": "Shift fatigue. After startsAt seconds on the ice a skater loses top speed, acceleration and hands, reaching the full penalty at fullAt seconds. A unit stuck defending past 30-45 s is the case this models.",
@@ -2896,7 +2914,25 @@
   "errorPerPassDeficit": 0.12,
   "errorPerFt": 0.000909,
   "leadFactor": 0.9,
-  "note": "55 to 85 ft/s is 37 to 58 mph"
+  "note": "55 to 85 ft/s is 37 to 58 mph",
+  "interceptControlPerSkill": 0.35,
+  "deflectOnTouch": 0.8,
+  "deflectAngleRad": 1.0,
+  "deflectSpeedMin": 0.25,
+  "deflectSpeedMax": 0.6,
+  "interceptNote": "A defender whose stick reaches a fast pass controls it with probability interceptControlPerSkill times his skill. Otherwise, with probability deflectOnTouch, he knocks it off line: up to deflectAngleRad off its path at deflectSpeedMin to deflectSpeedMax of its speed, and it becomes a loose puck. Before sim 0.35 an uncontrolled touch left the pass untouched. Separately, every defender a pass goes by within stickReachFt gets one chance to get a stick on it, stickDeflectBase plus stickDeflectPerDef times his defense rating, and a stick on it knocks it off line the same way.",
+  "stickReachFt": 5.0,
+  "stickDeflectBase": 0.15,
+  "stickDeflectPerDef": 0.35,
+  "want": {
+   "desc": "When a carrier without a clear shot looks for a pass: always when a defender is within pressureFt plus pressurePerAggressionFt times his team's aggression, otherwise at ratePerSec (powerPlayRatePerSec on the power play) times 0.5 plus his passing rating. The pass itself still needs a clear lane and a teammate worth passing to.",
+   "pressureFt": 7,
+   "pressurePerAggressionFt": 2,
+   "ratePerSec": 0.6,
+   "powerPlayRatePerSec": 1.4
+  },
+  "controlSec": 0.35,
+  "controlNote": "In the offensive zone a receiver needs controlSec with the puck before he makes a discretionary pass (the expected-goal pass and the open-man pass); shots and the stuck-play passes are not held back. Without it the attacking team moved the puck several times a second. It does not apply in the other zones, where a defenseman who cannot move the puck clears it."
  },
  "shot": {
   "wrist": {
@@ -2949,8 +2985,8 @@
   },
   "bodyRadiusFt": 2.3,
   "reboundCoolSec": 0.55,
-  "tierGoalScale": 0.72,
-  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie; 0.72 lands goals per game at the league rate at the NHL-average settings, since the sim's shot mix still carries more medium-danger looks than the real game.",
+  "tierGoalScale": 0.39,
+  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie. 0.39 lands goals per game at the league rate at the NHL-average settings. It was 0.72 before sim 0.35; it fell because since 0.35 carriers shoot whenever the expected-goal model says the look is worth it, and the sim still creates about 70% more expected goals than the league (too many medium-danger looks). Until coverage closes that gap, this scale keeps scores realistic; expected goals in the reports stay unscaled so the gap stays visible.",
   "desc": ""
  },
  "shotBlock": {
@@ -2985,16 +3021,7 @@
   }
  },
  "shotDecision": {
-  "desc": "When a carrier shoots. A clean look from the slot is a must-shoot (fires within a fraction of a second); everything else is a per-second probability scaled by shot quality, aggression and the shooter's rating. Shot quality is 0 to 1 from distance (75 ft horizon) and angle. Rates were retuned in 0.29 so that, at the NHL-average settings, unblocked attempts and the danger-tier mix match MoneyPuck's league rates with the expected-goal model scoring each shot.",
-  "slot": {
-   "maxDistFromNetFt": 30,
-   "halfWidthFt": 14,
-   "minQuality": 0.7,
-   "shootRatePerSec": 0.3,
-   "requiresClearLane": true,
-   "minDistFromNetFt": 9,
-   "openRequiresNoOpponentWithinFt": 6
-  },
+  "desc": "When a carrier shoots. In the offensive zone the expected-goal model decides between shooting and passing (xgChoice); on top of that, the perimeter, probabilistic and point-shot rules throw pucks at the net from distance at per-second rates, which is where most NHL attempts and blocks come from. Shot quality (0 to 1 from distance and angle, 75 ft horizon) still scales those volume rules. The slot and in-tight rules that used to decide close shots were replaced by xgChoice in sim 0.35.",
   "probabilistic": {
    "baseRate": 0.02,
    "qualityPower": 2,
@@ -3015,15 +3042,7 @@
    "desc": "A skater with a reasonable lane from the half wall, circles or point (28 to 55 ft) throws it at the net through traffic: that is where most NHL shots come from, and where most blocks happen.",
    "minDistFt": 28,
    "maxDistFt": 55,
-   "ratePerSec": 0.1
-  },
-  "inTight": {
-   "desc": "Puck on the stick in front of the goalie with no defender on him, within a second of getting it: shoot now. Only the goalie can stop this one, so no lane check.",
-   "maxDistFt": 14,
-   "maxOffCenterFt": 9,
-   "noDefenderWithinFt": 8,
-   "shootRatePerSec": 1.0,
-   "withinSecOfReceiving": 0.7
+   "ratePerSec": 0.25
   },
   "stuckAfterSec": 2.2,
   "breakaway": {
@@ -3031,7 +3050,26 @@
    "behindByFt": 14,
    "wideAllowanceFt": 30
   },
-  "stuckShotRatePerSec": 0.2
+  "stuckShotRatePerSec": 0.2,
+  "xgChoice": {
+   "desc": "Shoot or pass, decided by the expected-goal model. Each tick in the offensive zone the carrier compares his own look (the model's xG from where he stands, times his finishing, times blockedLaneFactor if a defender is in the lane, times tightCoverFactor if a defender is within tightCoverFt of him: the model's xG assumes the usual NHL pressure, and a stick on the shooter takes most of a look away) with the best pass: a teammate's look (a one-timer if it goes cross-ice to an open man) times the chance the pass gets there (passCompleteBase minus passCompletePerFt per foot, at least passCompleteMin) and coveredFactor if a defender is within openFt of him. If his own look is at least minXg and within passMustBeatBy of the best pass, he shoots at shootRatePerSec scaled from 15% at minXg to full at cleanXg, and does not look for a discretionary pass unless a defender is within passUnderPressureFt. If a teammate's look is better by more than passMustBeatBy, he passes to him at passRatePerSec. Looks below minXg are left to the perimeter and point-shot rules.",
+   "minXg": 0.12,
+   "cleanXg": 0.22,
+   "shootRatePerSec": 4.0,
+   "passRatePerSec": 3.0,
+   "passMustBeatBy": 1.3,
+   "laneWidthFt": 2.5,
+   "blockedLaneFactor": 0.5,
+   "oneTimerCrossFt": 14,
+   "openFt": 7,
+   "coveredFactor": 0.5,
+   "passCompleteBase": 0.95,
+   "passCompletePerFt": 0.006,
+   "passCompleteMin": 0.5,
+   "passUnderPressureFt": 5,
+   "tightCoverFt": 4,
+   "tightCoverFactor": 0.4
+  }
  },
  "dangerTiers": {
   "desc": "Fallback only, used when the expected-goal model is not loaded. With the model, a shot's tier follows MoneyPuck's xG thresholds (low under 0.08, medium under 0.20, high 0.20 and up).",
@@ -3070,7 +3108,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.34';
+  const VERSION = '0.35';
   $('version').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -3595,12 +3633,13 @@ function startSim(DATA) {
         const s = pkSlot(t, p, SYS.penaltyKill[tac.pk].slots); [fx, fy] = s;
       } else if (tac.dz === 'man') {
         const mark = manMark(t, p);
-        if (mark) { const n = ownNet(t); const d = dist(mark, n) || 1; const k = Math.min(mark.isD ? 4 : 2.0, d * 0.4); return { x: mark.x + (n.x - mark.x) / d * k, y: mark.y + (n.y - mark.y) / d * k }; }
+        // between his man and the net, with more cushion the farther his man is from it, so a cut to the net runs into him
+        if (mark) { const MC = SYS.defensiveZone.man, n = ownNet(t); const d = dist(mark, n) || 1; const k = Math.min(clamp(d * MC.cushionPerFt, MC.minCushionFt, MC.maxCushionFt), d * 0.6); return { x: mark.x + (n.x - mark.x) / d * k, y: mark.y + (n.y - mark.y) / d * k }; }
         [fx, fy] = [10, 42];
       } else {
         const strong = pfy < 42;
         [fx, fy] = SYS.defensiveZone.zone.spots[p.role];
-        if (p.isD) fy = p.role === 'LD' ? (strong ? 33 : 37) : (strong ? 48 : 52);
+        if (p.isD) { const ZD = SYS.defensiveZone.zone.dSpread; const off = (p.role === 'LD') === strong ? ZD.strongSideFt : ZD.weakSideFt; fy = p.role === 'LD' ? 42.5 - off : 42.5 + off; }
         // the center owns the slot: he takes the most dangerous uncovered forward between the dots and plays goal-side of him
         if (p.role === 'C') {
           const opp = teams[1 - t.id];
@@ -3624,6 +3663,9 @@ function startSim(DATA) {
           const highs = active(opp).filter(o => o !== puck.carrier && (side ? o.y < 42 : o.y >= 42)).map(o => ({ o, fx: 178 - toFx(opp, o.x) })).filter(h => h.fx > 22 && h.fx < 70);
           if (highs.length) { const h = highs.sort((a, b) => a.fx - b.fx)[0]; fx = clamp(h.fx - 5, 18, 50); fy = clamp(h.o.y + (side ? 5 : -5), 8, 77); }
         }
+        // the slot comes first: a defender assigned to a slot attacker plays on his hip, goal-side
+        const cover = t.slotCover && t.slotCover.get(p);
+        if (cover) { const SC = SYS.defensiveZone.zone.slotCoverage; fx = clamp(cover.fx - SC.goalSideFt, 3, SC.maxFx); fy = cover.o.y + (cover.o.y < 42.5 ? SC.insideFt : -SC.insideFt); }
       }
     } else {
       [fx, fy] = { LW: [pfx + 8, 14], RW: [pfx + 8, 71], C: [pfx, 42], LD: [pfx - 20, 28], RD: [pfx - 20, 57] }[p.role];
@@ -3640,9 +3682,10 @@ function startSim(DATA) {
 
   // ---------- AI ----------
   function nearestTo(list, pt) { let b = null, bd = 1e9; for (const p of list) { const d = dist(p, pt); if (d < bd) { bd = d; b = p; } } return b; }
-  function assign(players, spots) {
+  // nearest-first pairing of players to spots; `keep` (optional) is the current pairing and `stickFt` how much closer a new spot must be to switch
+  function assign(players, spots, keep, stickFt) {
     const out = new Map(); const pairs = [];
-    players.forEach(p => spots.forEach((s, i) => pairs.push([dist(p, s), p, i])));
+    players.forEach(p => spots.forEach((s, i) => pairs.push([dist(p, s) - (keep && keep.get(p) === s ? stickFt : 0), p, i])));
     pairs.sort((a, b) => a[0] - b[0]);
     const used = new Set();
     for (const [, p, i] of pairs) { if (out.has(p) || used.has(i)) continue; out.set(p, spots[i]); used.add(i); }
@@ -3654,16 +3697,22 @@ function startSim(DATA) {
     const s = m.get(p) || pts[0];
     return [toFx(t, s.x), s.y];
   }
-  function manMark(t, p) {
-    // man-on-man: defensemen take the opposing forwards down low, forwards take the points (and any extra forward)
-    const opp = active(teams[1 - t.id]).filter(o => o !== puck.carrier);
-    const mine = active(t).filter(q => q !== t.pressurer);
+  // man-on-man: defensemen take the opposing forwards down low, forwards take the points (and any extra forward).
+  // Everyone is marked, the puck carrier included: the man on the carrier is the one who pressures him, and nobody
+  // else leaves his man to do it. Computed once per tick in assignTargets; manMark reads the result.
+  const manMark = (t, p) => (t.marks && t.marks.get(p)) || null;
+  function manMarks(t) {
+    const opp = active(teams[1 - t.id]);
+    const mine = active(t).filter(q => !q.leaving);
     const myD = mine.filter(q => q.isD), myF = mine.filter(q => !q.isD);
     const oppF = opp.filter(o => !o.isD), oppD = opp.filter(o => o.isD);
-    const m1 = assign(myD, oppF);
+    // a defender keeps his man unless another is closer by more than stickFt, so marks do not swap every time two attackers cross
+    const keep = t.marks, stick = SYS.defensiveZone.man.stickFt;
+    const m1 = assign(myD, oppF, keep, stick);
     const taken = new Set(m1.values());
-    const m2 = assign(myF, [...oppD, ...oppF.filter(o => !taken.has(o))]);
-    return m1.get(p) || m2.get(p) || null;
+    const m2 = assign(myF, [...oppD, ...oppF.filter(o => !taken.has(o))], keep, stick);
+    t.marks = new Map([...m1, ...m2]);
+    return t.marks;
   }
   function leadForward(p, t) {
     let best = null, bf = -1;
@@ -3715,12 +3764,26 @@ function startSim(DATA) {
     if (pz === 'off' && q > 0) {
       const open = laneClear(p, oppNet(t), opp, 5.2) && pressure > 6;
       const SD = PH.shotDecision; const n = oppNet(t);
-      // in tight: alone in front, nobody on him, shoot now
-      const IT = SD.inTight; const dIn = dist(p, n);
-      if (dIn <= IT.maxDistFt && Math.abs(p.y - n.y) <= IT.maxOffCenterFt && pressure > IT.noDefenderWithinFt && (p.vx * t.dir > -3) && (puck.holdT || 0) < IT.withinSecOfReceiving && Math.random() < dt * IT.shootRatePerSec) { shoot(p); return null; }
-      // must-shoot: a clean look from the slot
-      const inSlot = dist(p, n) < SD.slot.maxDistFromNetFt && dist(p, n) > SD.slot.minDistFromNetFt && Math.abs(p.y - n.y) < SD.slot.halfWidthFt && q >= SD.slot.minQuality && (!SD.slot.requiresClearLane || open);
-      if (inSlot && Math.random() < dt * SD.slot.shootRatePerSec) { shoot(p); return null; }
+      // shoot or pass, by expected goals: my look now (worth less with a defender in the lane) against the best pass,
+      // which is the receiver's look times the chance the pass gets there and he is still open when it does
+      const XC = SD.xgChoice, mine = lookXg(p, t, false);
+      if (mine) {
+        const myV = mine.xg * (laneClear(p, n, opp, XC.laneWidthFt) ? 1 : XC.blockedLaneFactor) * (pressure < XC.tightCoverFt ? XC.tightCoverFactor : 1);
+        let best = null, bestV = 0;
+        for (const m of mates) {
+          if (zone(t, m.x) !== 'off' || !laneClear(p, m, opp)) continue;
+          const room = Math.min(...opp.map(o => dist(o, m))), d = dist(p, m);
+          const look = lookXg(m, t, Math.abs(m.y - p.y) > XC.oneTimerCrossFt && room > XC.openFt);
+          if (!look) continue;
+          const v = look.xg * clamp(XC.passCompleteBase - d * XC.passCompletePerFt, XC.passCompleteMin, 1) * (room > XC.openFt ? 1 : XC.coveredFactor);
+          if (v > bestV) { bestV = v; best = m; }
+        }
+        if (myV >= XC.minXg && myV * XC.passMustBeatBy >= bestV) {
+          const rate = XC.shootRatePerSec * clamp((myV - XC.minXg) / (XC.cleanXg - XC.minXg), 0.15, 1);
+          if (Math.random() < dt * rate) { shoot(p); return null; }
+          p.lookingToShoot = true;
+        } else if (best && bestV > myV * XC.passMustBeatBy && bestV >= XC.minXg && (puck.holdT || 0) >= PH.pass.controlSec && Math.random() < dt * XC.passRatePerSec) { pass(p, best); return null; }
+      }
       const PE = SD.perimeter; const dNet = dist(p, n);
       const throughTraffic = laneClear(p, n, opp, 2.2) && pressure > 4; // a body in the lane is fine, a stick on the puck is not
       if (throughTraffic && dNet >= PE.minDistFt && dNet <= PE.maxDistFt && q > 0.05 && Math.random() < dt * PE.ratePerSec * cfg.shots) { shoot(p); return null; }
@@ -3781,7 +3844,11 @@ function startSim(DATA) {
       if (deep.length && Math.random() < dt * 2) { pass(p, deep.sort((a, b) => dist(a, p) - dist(b, p))[0]); return null; } // or just give it to the nearest man and reset
       return towardMid;
     }
-    const wantPass = pressure < 7 + agg * 2 || Math.random() < dt * (pp ? 1.4 : 0.6) * (0.5 + p.pass);
+    // a carrier with a shot worth taking does not look around for a pass unless a stick is on him
+    const holding = p.lookingToShoot && pressure > PH.shotDecision.xgChoice.passUnderPressureFt; p.lookingToShoot = false;
+    const W = PH.pass.want;
+    // in the offensive zone a pass has to be settled before the next one: no discretionary pass within controlSec of getting the puck
+    const wantPass = !holding && (pz !== 'off' || (puck.holdT || 0) >= PH.pass.controlSec) && (pressure < W.pressureFt + agg * W.pressurePerAggressionFt || Math.random() < dt * (pp ? W.powerPlayRatePerSec : W.ratePerSec) * (0.5 + p.pass));
     if (wantPass) {
       let best = null, bs = -1;
       for (const m of mates) {
@@ -3820,11 +3887,22 @@ function startSim(DATA) {
     const err = ((1 - from.pass) * PH.pass.errorPerPassDeficit + d * PH.pass.errorPerFt) * (from.rushed > 0 ? 2.2 : 1) * hands(from) / cfg.passAcc; // long passes are harder to hit; a hurried one is worse
     const a = Math.atan2(lead.y - from.y, lead.x - from.x) + rnd(-err, err);
     puck.carrier = null; puck.vx = Math.cos(a) * sp; puck.vy = Math.sin(a) * sp; puck.lastTeam = from.team; puck.shot = false; puck.cool = 0.25; release(from);
-    puck.receiver = to;
+    puck.receiver = to; puck.reached = new Set();
     // a pass into the slot is a one-timer if the receiver has a look
     // one-timer: a cross-ice pass to an open man in the slot
     const oppAll = active(teams[1 - from.team.id]);
     puck.oneTimer = zone(from.team, to.x) === 'off' && shotQuality(to, from.team) > 0.45 && Math.abs(to.y - from.y) > 14 && Math.min(...oppAll.map(o => dist(o, to))) > 7;
+  }
+  // Expected goals of a shot from where p stands now: the same context shoot() records (type, rebound, strength),
+  // times the shooter's finishing. Used to score the shot itself and to decide between shooting and passing.
+  function lookXg(p, t, oneTimer) {
+    const n = oppNet(t), dN = dist(p, n);
+    if (toFx(t, p.x) > 178) return 0;
+    const slap = p.isD || dN > 45;
+    const angleDeg = Math.abs(Math.atan2(p.y - n.y, (n.x - p.x) * t.dir)) * 180 / Math.PI;
+    const ctx = { type: slap ? 'SLAP' : (oneTimer ? 'SNAP' : 'WRIST'), rebound: puck.sinceSave < PH.shot.xg.reboundWithinSec, pp: onPP(t), sh: shorthanded(t) && !onPP(t) };
+    const base = xgModel(dN, angleDeg, ctx);
+    return base === null ? null : { base, xg: clamp(base * p.finishing, 0.005, 0.9) };
   }
   function shoot(from, oneTimer) {
     const t = from.team, n = oppNet(t);
@@ -3839,10 +3917,8 @@ function startSim(DATA) {
     // expected goals from the shot's geometry and context (rebound, rush, strength, shot type), then the shooter's finishing;
     // the danger tier follows MoneyPuck's xG thresholds. Counted on unblocked attempts.
     const dN = dist(from, n), offY = Math.abs(from.y - n.y);
-    const angleDeg = Math.abs(Math.atan2(from.y - n.y, (n.x - from.x) * t.dir)) * 180 / Math.PI;
-    const ctx = { type: slap ? 'SLAP' : (oneTimer ? 'SNAP' : 'WRIST'), rebound: puck.sinceSave < PH.shot.xg.reboundWithinSec, pp: onPP(t), sh: shorthanded(t) && !onPP(t) };
-    const base = xgModel(dN, angleDeg, ctx);
-    if (base !== null) { puck.tier = xgTier(base); puck.xg = clamp(base * from.finishing, 0.005, 0.9); }
+    const look = lookXg(from, t, oneTimer);
+    if (look !== null) { puck.tier = xgTier(look.base); puck.xg = look.xg; }
     else { const TG = PH.dangerTiers; puck.tier = (dN <= TG.high.maxDistFt && offY <= TG.high.maxOffCenterFt) ? 'high' : (dN <= TG.medium.maxDistFt && offY <= TG.medium.maxOffCenterFt) ? 'medium' : 'low'; puck.xg = MP ? MP.league.dangerTiers[puck.tier].goalRate : 0.07; }
     puck.tierCounted = false;
     // shot block: a defender in the lane, close to the shooter, gets in front of it
@@ -3865,7 +3941,10 @@ function startSim(DATA) {
   }
 
   function assignTargets(dt) {
-    const carrier = puck.carrier;
+    // a pass on its way to a teammate is still that team's puck: both sides keep their structure and the defense
+    // plays the receiver, instead of everyone treating it as a loose puck for the length of the pass
+    const inFlight = !puck.carrier && !puck.shot && puck.receiver && puck.receiver.onIce && !puck.receiver.box && !puck.receiver.leaving && puck.lastTeam === puck.receiver.team;
+    const carrier = puck.carrier || (inFlight ? puck.receiver : null);
     const loose = !carrier;
     for (const t of teams) {
       const opp = teams[1 - t.id];
@@ -3880,19 +3959,39 @@ function startSim(DATA) {
       if (situation === 'defense') {
         chaser = nearestTo(sk, carrier);
         const pk = shorthanded(t) && !onPP(t);
+        if (!pk && pz === 'own' && t.tac.dz === 'man') { for (const [d, a] of manMarks(t)) if (a === carrier) chaser = d; } else t.marks = null;
         if (pk && pz === 'own' && !SYS.penaltyKill[t.tac.pk].pressure && !(toFx(t, carrier.x) < 40 && Math.abs(carrier.y - 42.5) < 16)) chaser = null;
         if (!pk && SYS.forecheck[t.tac.fore].secondChaser && pz === 'off') chaser2 = nearestTo(sk.filter(p => p !== chaser), carrier);
       }
       t.pressurer = chaser; t.fronter = null;
       // front the shot: in our zone the nearest free defender steps into the carrier's shooting lane
       let fronter = null;
-      if (situation === 'defense' && pz === 'own' && shotQuality(carrier, opp) > 0.35) {
+      if (situation === 'defense' && pz === 'own' && !t.marks && shotQuality(carrier, opp) > 0.35) { // man coverage has no fronter: everyone is on his man
         // the center stays home on the slot man if there is one; otherwise anyone can front the shot
         const slotThreat = active(opp).some(o => o !== carrier && !o.isD && 178 - toFx(opp, o.x) < 42 && Math.abs(o.y - 42.5) < 18);
         fronter = nearestTo(sk.filter(p => p !== chaser && p !== chaser2 && !(slotThreat && p.role === 'C')), carrier);
       }
       t.fronter = fronter;
+      // protect the slot: in zone coverage every attacker in the slot gets the nearest free defender, the most dangerous first
+      const prevCover = t.slotCover; t.slotCover = null;
+      if (situation === 'defense' && pz === 'own' && t.tac.dz !== 'man' && !(shorthanded(t) && !onPP(t))) {
+        const SC = SYS.defensiveZone.zone.slotCoverage;
+        const threats = active(opp).filter(o => o !== carrier).map(o => ({ o, fx: 178 - toFx(opp, o.x) })).filter(h => h.fx > 3 && h.fx < SC.maxFx && Math.abs(h.o.y - 42.5) < SC.halfWidthFt).sort((a, b) => a.fx - b.fx);
+        let free = sk.filter(p => p !== chaser && p !== chaser2 && p !== fronter && !p.leaving);
+        for (const h of threats) {
+          // the defender already on this man keeps him unless another free one is closer by more than stickFt
+          let d = nearestTo(free, h.o);
+          const had = prevCover && [...prevCover].find(([q, ph]) => ph.o === h.o && free.includes(q));
+          if (had && d && dist(had[0], h.o) - SC.stickFt < dist(d, h.o)) d = had[0];
+          if (!d) break;
+          (t.slotCover = t.slotCover || new Map()).set(d, h); free = free.filter(p => p !== d);
+        }
+      }
       for (const p of active(t)) {
+        if (p === carrier && inFlight) { // meet the pass: the point on the puck's path he can reach
+          const vv = puck.vx * puck.vx + puck.vy * puck.vy || 1; const tau = clamp(((p.x - puck.x) * puck.vx + (p.y - puck.y) * puck.vy) / vv, 0, 1.5);
+          p.target = onside({ x: puck.x + puck.vx * tau, y: puck.y + puck.vy * tau }); continue;
+        }
         if (p === carrier) { p.target = carrierThink(p, dt); continue; }
         if (p.leaving) { const door = doorFor(t, p); p.target = { x: door + (p.x < door ? -1.5 : 1.5), y: 1.5 }; continue; }
         if (t.dumpT > 0 && loose && attacking && !p.isD && p !== chaser) { // dump and chase: the far-side forward sprints for the far corner where the rim arrives
@@ -3943,7 +4042,10 @@ function startSim(DATA) {
       const caughtUpIce = theirs && toFx(p.team, p.x) > toFx(p.team, puck.x) - 12 && zone(p.team, puck.x) !== 'off';
       // a rimmed dump: the defending retriever has to turn, read the rim and go; the chasing forward is already flying
       const retrievingRim = puck.rim && !puck.carrier && puck.lastTeam && puck.lastTeam !== p.team && (p.team.rimT || 0) < 1.1;
-      const urgent = !retrievingRim && (rush || burst || p.sprint || p === p.team.pressurer || p === p.team.fronter || caughtUpIce || (puck.carrier && puck.carrier.team !== p.team && zone(p.team, puck.x) === 'own' && d > 12) || (!puck.carrier && d > 40));
+      // defending our own zone (a pass between two attackers counts) a defender works to his spot, which is usually a man
+      const holder = puck.carrier || (!puck.shot && puck.receiver && puck.lastTeam === puck.receiver.team ? puck.receiver : null);
+      const defendingHome = holder && holder.team !== p.team && zone(p.team, puck.x) === 'own' && d > PH.skater.effort.defendOwnZoneUrgentBeyondFt;
+      const urgent = !retrievingRim && (rush || burst || p.sprint || p === p.team.pressurer || p === p.team.fronter || caughtUpIce || defendingHome || (!puck.carrier && d > 40));
       const max = p.goalie ? p.spd : p.spd * cfg.speed * fatigue(p) * (p === puck.carrier ? PH.skater.effort.carrierFactor : 1) * (urgent ? 1 : Math.min(1, (p === puck.carrier || p.leaving || d > 30 ? PH.skater.effort.withPurpose : PH.skater.effort.cruise) * cfg.cruise));
       const want = d < 0.8 ? 0 : Math.min(max, Math.sqrt(2 * PH.skater.brakingFtPerSec2 * (p.goalie ? 1 : cfg.accel) * d));
       const ax = (d ? dx / d : 0) * want - p.vx, ay = (d ? dy / d : 0) * want - p.vy;
@@ -4037,7 +4139,9 @@ function startSim(DATA) {
       const bodyR = PH.goalie.bodyRadiusFt;
       const crossesGoalie = segmentsCross(px, py, puck.x, puck.y, seg[0], seg[1], seg[2], seg[3]) || pointToSegment(g.x, g.y, px, py, puck.x, puck.y) < bodyR;
       const smothered = sp < 10 && dist(puck, g) < 2.6;
-      if ((crossesGoalie || smothered) && puck.lastTeam !== t && !puck.beaten) {
+      // every puck that reaches the goal line between the posts gets its one save roll, even when it slipped past where he
+      // was standing (a deflection, a pass across the crease, a shot to the side he was leaving); before 0.35 those went in free
+      if ((crossesGoalie || smothered || (crossed && inY)) && puck.lastTeam !== t && !puck.beaten) {
         const hard = sp > PH.goalie.saveProb.hardShotFtPerSec;
         // save probability: the goalie's 2025-26 save percentage for this shot's danger tier (MoneyPuck), else the generic model
         let saveP;
@@ -4093,13 +4197,34 @@ function startSim(DATA) {
     }
     if (puck.cool > 0) return;
     const fast = sp > 45;
+    // a stick in the passing lane: each defender gets one chance per pass to get a piece of it when it goes by within reach
+    if (!puck.shot && puck.receiver && puck.lastTeam) {
+      const R = PH.pass; puck.reached = puck.reached || new Set();
+      for (const d of active(teams[1 - puck.lastTeam.id])) {
+        if (puck.reached.has(d) || dist(d, puck) > R.stickReachFt) continue;
+        puck.reached.add(d);
+        if (Math.random() < R.stickDeflectBase + d.def * R.stickDeflectPerDef) {
+          const a = Math.atan2(puck.vy, puck.vx) + rnd(-R.deflectAngleRad, R.deflectAngleRad), k = rnd(R.deflectSpeedMin, R.deflectSpeedMax);
+          puck.vx = Math.cos(a) * sp * k; puck.vy = Math.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = d.team; puck.cool = 0.15; puck.touched = true;
+          return;
+        }
+      }
+    }
     let best = null, bd = 1e9;
     for (const p of skaters()) { const d = dist(p, puck); if (d < (puck.receiver === p ? PH.skater.receiverPickupRadiusFt : PH.skater.pickupRadiusFt) && d < bd) { bd = d; best = p; } }
     if (best) {
       const ownPass = puck.lastTeam === best.team;
       puck.touched = true;
       if (best.leaving && best.subOn && Math.random() < PH.turnover.benchMinorOnMidChangeTouch) { const srv = best.sub || best; benchMinor(best.team, srv.onIce ? srv : best); return; }
-      if (fast && !ownPass && Math.random() > 0.35 * best.skill) { if (puck.shot && best.team !== puck.shooter.team) { best.team.blocked++; puck.shot = false; puck.lastTeam = best.team; } return; }
+      if (fast && !ownPass && Math.random() > PH.pass.interceptControlPerSkill * best.skill) {
+        if (puck.shot && best.team !== puck.shooter.team) { best.team.blocked++; puck.shot = false; puck.lastTeam = best.team; return; }
+        // a stick on a pass he cannot control still knocks it off line: slower, a new direction, and nobody's puck
+        if (!puck.shot && Math.random() < PH.pass.deflectOnTouch) {
+          const a = Math.atan2(puck.vy, puck.vx) + rnd(-PH.pass.deflectAngleRad, PH.pass.deflectAngleRad), k = rnd(PH.pass.deflectSpeedMin, PH.pass.deflectSpeedMax);
+          puck.vx = Math.cos(a) * sp * k; puck.vy = Math.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = best.team; puck.cool = 0.15;
+        }
+        return;
+      }
       if (fast && ownPass && Math.random() > (puck.receiver === best ? 0.95 : 0.75)) return;
       if (puck.rim && !ownPass) best.rushed = 1.6; // retrieving a hard rim with a forechecker bearing down: the next play is hurried
       puck.carrier = best; puck.shot = false; puck.rim = false; puck.beaten = false;

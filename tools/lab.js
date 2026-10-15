@@ -7,6 +7,7 @@
 //   node tools/lab.js --sweep BOS.fore                  every option of one card, same seeds for each
 //   node tools/lab.js --json out.json                   also write every game's numbers
 //   node tools/lab.js --save                            make this run the reference in tools/baselines.json
+//   node tools/lab.js --param shotDecision.xgChoice.minXg=0.1   try a physics.json value without editing the file
 //
 // The report compares each club's per-game numbers with the league (MoneyPuck 2025-26 and the rules
 // benchmarks in physics.json) and with the saved reference run for the same level, seeds and games.
@@ -29,7 +30,7 @@ const BASELINES = fs.existsSync(BASELINE_FILE) ? JSON.parse(fs.readFileSync(BASE
 const CARD_IDS = { fore: 'Fore', brk: 'Break', entry: 'Entry', oz: 'Oz', dz: 'Dz', pp: 'PP', pk: 'PK', agg: 'Agg' };
 
 function args() {
-  const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false };
+  const a = process.argv.slice(2), o = { games: 100, seed: 1, workers: Math.max(1, Math.min(8, os.cpus().length - 2)), nhl: false, set: '', compare: '', sweep: '', json: '', save: false, param: '' };
   for (let i = 0; i < a.length; i++) {
     const k = a[i].replace(/^--/, '');
     if (k === 'nhl' || k === 'save') o[k] = true;
@@ -53,9 +54,10 @@ async function openPage(browser) {
 }
 
 // Applies multipliers and cards, then plays the given seeds and returns one row per game.
-function playSeeds(page, seeds, nhl, set) {
-  return page.evaluate(([seeds, nhl, set, CARD_IDS]) => {
+function playSeeds(page, seeds, nhl, set, param) {
+  return page.evaluate(([seeds, nhl, set, CARD_IDS, param]) => {
     const r = window.rinkSim, $ = id => document.getElementById(id);
+    for (const { key, v } of param) { const ks = key.split('.'), last = ks.pop(); let o = r.DATA.physics; for (const k of ks) { o = o[k]; if (!o) throw new Error(`no physics key ${key}`); } if (!(last in o)) throw new Error(`no physics key ${key}`); o[last] = typeof o[last] === 'number' ? +v : v; }
     const side = abbr => { const i = r.teams.findIndex(t => t.abbr === abbr); if (i < 0) throw new Error(`no club ${abbr}`); return i ? 'a' : 'h'; };
     if (nhl) for (const k of Object.keys(r.cfg)) r.cfg[k] = 1;
     for (const { club, card, v } of set) {
@@ -77,14 +79,14 @@ function playSeeds(page, seeds, nhl, set) {
     }
     const tac = r.teams.map(t => ({ abbr: t.abbr, ...t.tac }));
     return { rows, tac, cfg: { ...r.cfg } };
-  }, [seeds, nhl, set, CARD_IDS]);
+  }, [seeds, nhl, set, CARD_IDS, param]);
 }
 
 // Plays seeds first..first+n-1 across the worker pages.
 async function run(pages, o, set) {
   const seeds = Array.from({ length: o.games }, (_, i) => o.seed + i);
   const chunks = pages.map((_, w) => seeds.filter((_, i) => i % pages.length === w));
-  const parts = await Promise.all(pages.map((p, w) => chunks[w].length ? playSeeds(p.page, chunks[w], o.nhl, set) : null));
+  const parts = await Promise.all(pages.map((p, w) => chunks[w].length ? playSeeds(p.page, chunks[w], o.nhl, set, o.params) : null));
   const done = parts.filter(Boolean);
   const rows = done.flatMap(p => p.rows).sort((a, b) => a.seed - b.seed);
   return { rows, tac: done[0].tac, cfg: done[0].cfg };
@@ -149,7 +151,8 @@ function baselineTable(T, level, o) {
   for (const [k, label] of METRICS) {
     const cells = T.map(t => {
       const m = mean(t[k]), e = ci(t[k]), r = ref && ref.perTeam[t.abbr] && ref.perTeam[t.abbr][k];
-      const moved = r && Math.abs(m - r[0]) > (same ? 0.001 : e + r[1]); // the reference keeps three decimals if (moved) changed++;
+      const moved = r && Math.abs(m - r[0]) > (same ? 0.001 : e + r[1]); // the reference keeps three decimals
+      if (moved) changed++;
       return `${f2(m)} ±${f2(e)} | ${r ? f2(r[0]) + (moved ? ' changed' : '') : '-'} | ${(m >= L[k] ? '+' : '') + (100 * (m - L[k]) / L[k]).toFixed(0)}%`;
     });
     lines.push(`${label} | ${f2(L[k])} | ${cells.join(' | ')}`);
@@ -173,6 +176,8 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
 (async () => {
   const o = args();
   const base = parseSet(o.set);
+  o.params = (o.param ? o.param.split(',') : []).map(x => { const [key, v] = x.split('='); return { key, v }; });
+  if (o.params.length) console.log(`Physics overrides: ${o.param}`);
   const browsers = await Promise.all(Array.from({ length: o.workers }, () => chromium.launch()));
   const pages = await Promise.all(browsers.map(openPage));
   const t0 = Date.now();
@@ -187,7 +192,7 @@ const cardLine = tac => tac.map(t => `${t.abbr} ${t.fore}/${t.brk}/${t.entry}/${
     console.log(text + '\n');
     if (!o.compare && !o.sweep) console.log(baselineTable(T, level, o) + '\n');
     if (o.save) {
-      if (o.set || o.compare || o.sweep) throw new Error('--save takes the cards as built; drop --set, --compare and --sweep');
+      if (o.set || o.compare || o.sweep || o.param) throw new Error('--save takes the build as it is; drop --set, --compare, --sweep and --param');
       BASELINES[level] = { games: o.games, seed: o.seed, saved: new Date().toISOString().slice(0, 10), cards: A.tac, cfg: A.cfg, perTeam: summary(T) };
       fs.writeFileSync(BASELINE_FILE, JSON.stringify(BASELINES, null, 1) + '\n');
       console.log(`Saved the ${level} reference to tools/baselines.json.\n`);

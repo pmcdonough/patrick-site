@@ -22,9 +22,9 @@ Formations and most rules use team-relative coordinates: `toFx(t, x)` gives dist
 
 **Lines, benches and shifts** (`pattern`, `nextLine`, `buildUnit`, `stoppageChange`, `matchLines`, `safeToChange`, `defending`, `shiftTarget`, `startUnitChange`, `startSoloChange`, `manageChanges`, `benchMinor`). Rotation patterns and shift targets come from `systems.json` deployment. Each bench has two doors (`fDoor`, `dDoor`, `doorFor`): forwards use the door at the attacking end, defense the other, so they swap with `t.dir`. Change windows are in `SYS.deployment.changeWindows`; the only on-the-fly windows are our carrier through the neutral zone, or the opponent retrieving deep in his own end. Nobody changes off a loose puck or while defending. Past `desperateAfterSec` a unit takes the first half-decent window and its carrier clears early.
 
-**Formations** (`formationSpot`). One function returns the spot for a player given situation (offense, defense, loose) and zone. Offense in own zone starts at the breakout spots and, once possession has lasted `breakout.flow.startAfterSec`, moves the forwards north ahead of the puck. Neutral-zone offense is relative to the puck (lead winger, strong-side winger, center trailer, D trailing). Offensive zone uses the chosen system's spots, with the cycle rotating its three forward spots every `offensiveZone.motion.cycleEverySec` and a small drift on every spot. Defense: forecheck spots in their zone, puck-relative spots in neutral, and in our zone either the penalty-kill slots, man coverage (`manMark`), or zone coverage where the center owns the slot, D box out the net-front man and wingers shade the high man. Gap control caps a defenseman's depth at the deepest attacker minus 9 ft, reading the attacker's speed.
+**Formations** (`formationSpot`). One function returns the spot for a player given situation (offense, defense, loose) and zone. Offense in own zone starts at the breakout spots and, once possession has lasted `breakout.flow.startAfterSec`, moves the forwards north ahead of the puck. Neutral-zone offense is relative to the puck (lead winger, strong-side winger, center trailer, D trailing). Offensive zone uses the chosen system's spots, with the cycle rotating its three forward spots every `offensiveZone.motion.cycleEverySec` and a small drift on every spot. Defense: forecheck spots in their zone, puck-relative spots in neutral, and in our zone either the penalty-kill slots, man coverage, or zone coverage where the center owns the slot, D box out the net-front man (or stand `zone.dSpread` off the middle), wingers shade the high man, and any attacker in the slot gets the nearest free defender first (`zone.slotCoverage`, sticky). Man coverage (`manMarks`, once per tick) marks every attacker including the carrier; the man on the carrier is the one who pressures him, marks switch only past `man.stickFt`, and each defender plays between his man and the net with a cushion that grows with the man's distance from it. In our own zone a defender more than `skater.effort.defendOwnZoneUrgentBeyondFt` from his spot skates at full effort. Gap control caps a defenseman's depth at the deepest attacker minus 9 ft, reading the attacker's speed.
 
-**AI** (`assignTargets`, `carrierThink`, `pass`, `shoot`, `chip`, `clearPuck`, `laneClear`, `shotQuality`, `leadForward`). `assignTargets` picks the chaser (nearest to the puck or carrier; a second chaser on 2-1-2 and lock forechecks), a fronter in our zone, the dump-and-chase sprinter, and gives everyone else a formation spot, clamped onside at fx 106 while we attack. `carrierThink` runs the carrier's decision each tick: in-tight shot, slot must-shoot, perimeter shots through traffic, probabilistic and point shots, breakaway, spring pass to a lead forward, the chosen zone entry (headman, carry, chip, dump), the stuck rule after `shotDecision.stuckAfterSec`, clearing under pressure in our zone, and pass scoring (openness, progress, shot quality of the receiver, distance).
+**AI** (`assignTargets`, `carrierThink`, `pass`, `shoot`, `chip`, `clearPuck`, `laneClear`, `shotQuality`, `leadForward`). `assignTargets` picks the chaser (nearest to the puck or carrier; a second chaser on 2-1-2 and lock forechecks), a fronter in our zone, the dump-and-chase sprinter, and gives everyone else a formation spot, clamped onside at fx 106 while we attack. `carrierThink` runs the carrier's decision each tick: in the offensive zone, shoot or pass by expected goals (`lookXg`, `shotDecision.xgChoice`: his look against the best pass, discounted for a defender in the lane or on him), then perimeter shots through traffic, probabilistic and point shots; breakaway, spring pass to a lead forward, the chosen zone entry (headman, carry, chip, dump), the stuck rule after `shotDecision.stuckAfterSec`, clearing under pressure in our zone, and the open-man pass (`pass.want`; in the offensive zone only after `pass.controlSec` with the puck). A pass on its way to a teammate counts as that team's puck in `assignTargets` (`inFlight`): both sides keep their structure and the defense plays the receiver. Defenders get one stick on a pass that goes by within `pass.stickReachFt`, and an uncontrolled touch knocks it off line.
 
 **Expected goals** (`xgModel`, `xgTier`, `XGF`). The logistic model from `xg-model.json`, evaluated in `shoot()` with the shot's distance, angle, type, rebound and strength; `puck.xg` feeds the team total and the goalie's save roll. `docs/XG-MODEL.md` has the fit and the calibration story.
 
@@ -45,51 +45,57 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 ## Invariants
 
 - Only the helpers above read direction. If something looks mirrored in the second period, a raw x slipped in.
-- Each shot gets exactly one save roll (`puck.beaten`), and whether it is on net is decided at release (`puck.onNet`). Wide pucks the goalie touches are misses, not saves. The save roll divides xG by the league on-net share because xG is per unblocked attempt and the roll only sees pucks that reached the goalie.
+- Each shot gets exactly one save roll (`puck.beaten`), and whether it is on net is decided at release (`puck.onNet`). Every puck that reaches the goal line between the posts gets that roll, including one that slipped past where the goalie stood; before 0.35 those went in without one (about two goals per team per game at the 0.35 settings). Wide pucks the goalie touches are misses, not saves. The save roll divides xG by the league on-net share because xG is per unblocked attempt and the roll only sees pucks that reached the goalie.
 - A player is never in two places: `onIce`, `leaving`, `entering`, `box` are mutually consistent; `rebuildOnIce` recomputes `t.players` after any change.
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 
-## Baselines (sim 0.34)
+## Baselines (sim 0.35)
 
-Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight games at a time. Each game seeds `Math.random`, so a run reproduces exactly and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
+Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight games at a time. Each game seeds `Math.random`, so a run reproduces exactly and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the opponent's blocks (the engine's `blocked` counts blocks a team made).
 
 At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-26):
 
 | | League | BOS | MTL |
 |---|---|---|---|
-| Goals | 3.08 | 4.20 | 3.59 |
-| Expected goals | 3.13 | 3.95 | 4.08 |
-| Shots on goal | 27.8 | 23.8 | 27.9 |
-| Unblocked attempts | 42.7 | 36.8 | 55.6 |
-| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 18.0 / 14.0 / 3.7 | 35.7 / 14.5 / 2.6 |
-| Offsides | 3.0 | 2.4 | 5.5 |
-| Icings | 4.2 | 6.4 | 5.1 |
+| Goals | 3.08 | 3.37 | 2.95 |
+| Expected goals | 3.13 | 5.97 | 5.01 |
+| Shots on goal | 27.8 | 35.9 | 33.5 |
+| Unblocked attempts | 42.7 | 53.5 | 61.5 |
+| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 24.5 / 22.2 / 5.4 | 37.4 / 16.8 / 3.9 |
+| Offsides | 3.0 | 2.3 | 5.0 |
+| Icings | 4.2 | 7.8 | 5.7 |
 
-What is off, in order of how much it matters: both clubs generate about 28% more expected goals than the league, almost all of it from medium-danger looks (75% over); Montreal misses the net about 28 times a game (league 15); Montreal is offside nearly twice the league rate; icings run high. At build defaults (speed 1.3x, shot volume 2x) the clubs score 4.5 to 5.2 a game on 4.8 expected; that level is for watching, not for judging systems.
+Goals match the league because `goalie.tierGoalScale` is 0.39. Everything else is honest: since 0.35 a carrier takes every look worth taking, so the sim's chance count shows how many looks its defense gives up, which is 60 to 90% too many, mostly medium-danger looks off passes into the slot (Boston, attacking Montreal's man coverage, gets the most). Montreal misses the net about 28 times a game (league 15) and is offside nearly twice the league rate; icings run high. At build defaults (speed 1.3x, shot volume 2x) goals are 2.9 to 3.5 a game on 5 to 5.7 expected, and Boston ices it about 10 times a game.
 
-## System effects (sim 0.34)
+How 0.35 got here, measured each step with `lab.js --nhl` (both clubs' expected goals): the expected-goal decision alone took the sim from about 4 to 12 a game, because open looks were everywhere and players had been passing them up; passes no longer turning the defense into a loose-puck scramble, man coverage that keeps its marks with a cushion, and the pass control time brought it back to 5 to 6. Several sensible changes measured almost nothing on their own (slot pick-up, sticks on passes, own-zone effort, defenseman spacing) and were kept because they are right, not because they moved the number.
 
-The question the lab exists to answer: does changing a card move the result, by more than the noise, in a direction a hockey person would accept? First sweep: every Bruins card against the Canadiens' build cards, NHL-average tick, 100 games per option, the same seeds for every option (`node tools/lab.js --nhl --sweep BOS.<card>`). Differences are against the current Bruins card, with 95% intervals.
+## System effects (sim 0.35)
 
-| Bruins card | Change | xG for | xG against | Points % |
-|---|---|---|---|---|
-| Defensive zone | zone to man | +0.64 | +2.79 | -26% |
-| Entry | dump to chip | -0.84 | +0.19 | +2% (goals do not fall) |
-| Offensive zone | cycle to crash | -0.94 | -0.25 | -2% |
-| Offensive zone | cycle to umbrella | +0.44 | -0.18 | +4% |
-| Forecheck | 2-1-2 to 1-2-2 or 1-3-1 | 0 to +0.2 | -0.25 to -0.37 | +4% to +9% |
-| Breakout | boards to stretch | +0.16 | -0.15 | +9% |
-| Penalty kill | pressure to diamond | +0.12 | -0.45 | +9% |
-| Power play | any change | within ±0.1 | within ±0.1 | noise |
-| Aggression | 0.55 to 1.0 | +0.28 | -0.28 | +10% |
+The question the lab exists to answer: does changing a card move the result, by more than the noise, in a direction a hockey person would accept? Every Bruins card against the Canadiens' build cards, NHL-average tick, 100 games per option, the same seeds for every option (`node tools/lab.js --nhl --sweep BOS.<card>`). Differences are against the current Bruins card; * means the 95% interval excludes zero.
+
+| Bruins card | Change | xG for | xG against | Points % | 0.34 for comparison (xGF / xGA) |
+|---|---|---|---|---|---|
+| Defensive zone | zone to man | +0.80 * | +2.00 * | +1% | +0.64 / +2.79 |
+| Entry | dump to carry | +0.98 * | -0.09 | +4% | +0.46 / +0.15 |
+| Entry | dump to headman | +0.75 * | -0.11 | +8% | +0.39 / +0.06 |
+| Entry | dump to chip | -1.14 * | +0.38 * | -6% | -0.84 / +0.19 |
+| Offensive zone | cycle to umbrella | -0.82 * | +0.25 | -14% * | +0.44 / -0.18 |
+| Offensive zone | cycle to crash | -1.09 * | +0.23 | -11% | -0.94 / -0.25 |
+| Forecheck | 2-1-2 to 1-2-2 / lock / 1-3-1 | -0.1 to +0.2 | -0.30 to -0.38 * | -3% to +14% | similar |
+| Breakout | boards to stretch | +0.36 * | +0.12 | +9% | +0.16 / -0.15 |
+| Penalty kill | pressure to diamond | -0.06 | -0.93 * | +14% * | +0.12 / -0.45 |
+| Power play | any change | within ±0.1 | within ±0.25 | noise | noise |
+| Aggression | 0 to 1 | within ±0.1 | within ±0.4 | noise | +0.28 / -0.28 at 1.0 |
 
 What it says:
 
-- Records are noise at these sample sizes. A points-percentage difference carries about ±12 points at 100 games; a 50-game record about ±14 on win percentage. Only the man-on-man result separates on points. Expected-goal differential separates at about ±0.35 a game, so read it first. The reality of hockey is the same: an 82-game season does not separate two systems either.
-- The cards do matter. Eight of the nine rows move expected goals by more than their interval.
-- Several directions are suspect and should be fixed before anyone acts on them: man-on-man gives up 68% more expected goals, far beyond any real difference between coverage schemes, and the Canadiens play it by default, which also inflates every Bruins number above; crashing the net lowers expected goals for, the opposite of what it is for; chip-and-chase cuts expected goals by a fifth while goals hold, so pucks are going in that the expected-goal model never saw (worth tracing goals scored with `puck.shot` false); the power-play systems do nothing measurable; aggression has no monotonic effect on points.
-- The pairing by seed barely narrows the intervals: a game diverges within seconds of a changed card. The value of seeds is reproducibility.
+- Records are still noise at these sample sizes: about ±12 points on a points-percentage difference at 100 games. Expected-goal differential separates at about ±0.4 a game; read it first.
+- More of the effects now point the way analysts would expect: controlled entries (carry, headman) create about a goal's worth of expected goals more than dumping it in, chipping it creates less, and the penalty kill's diamond protects the slot better than chasing.
+- Man-on-man still gives up 2 expected goals a game more than zone. It used to cost the Bruins a quarter of their points; now it costs nothing in points because both sides score more. Still too big.
+- Crashing the net still lowers expected goals for, and the umbrella flipped from better than the cycle to worse. Both offensive-zone systems need a look at where their forwards stand.
+- Aggression no longer does anything measurable. It fed the old probabilistic shot rate and the reflex pass, which the expected-goal decision now outweighs; its steal and penalty effects are too small to show. It needs a real job (forecheck depth, pinching, how hard the chaser goes).
+- The power-play systems still do nothing measurable.
 
 ## Tuning knobs most likely to matter
 

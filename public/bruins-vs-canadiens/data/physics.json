@@ -79,10 +79,11 @@
   "accelFtPerSec2": 21,
   "brakingFtPerSec2": 18,
   "effort": {
-   "desc": "share of top speed when not chasing, rushing or far from the spot",
+   "desc": "share of top speed when not chasing, rushing or far from the spot. In our own zone a defender more than defendOwnZoneUrgentBeyondFt from his spot (his man, the slot attacker he picked up, the net-front man he boxes out) skates at full effort, including while the attackers are passing.",
    "withPurpose": 0.88,
    "cruise": 0.72,
-   "carrierFactor": 0.95
+   "carrierFactor": 0.95,
+   "defendOwnZoneUrgentBeyondFt": 4
   },
   "fatigue": {
    "desc": "Shift fatigue. After startsAt seconds on the ice a skater loses top speed, acceleration and hands, reaching the full penalty at fullAt seconds. A unit stuck defending past 30-45 s is the case this models.",
@@ -104,7 +105,25 @@
   "errorPerPassDeficit": 0.12,
   "errorPerFt": 0.000909,
   "leadFactor": 0.9,
-  "note": "55 to 85 ft/s is 37 to 58 mph"
+  "note": "55 to 85 ft/s is 37 to 58 mph",
+  "interceptControlPerSkill": 0.35,
+  "deflectOnTouch": 0.8,
+  "deflectAngleRad": 1.0,
+  "deflectSpeedMin": 0.25,
+  "deflectSpeedMax": 0.6,
+  "interceptNote": "A defender whose stick reaches a fast pass controls it with probability interceptControlPerSkill times his skill. Otherwise, with probability deflectOnTouch, he knocks it off line: up to deflectAngleRad off its path at deflectSpeedMin to deflectSpeedMax of its speed, and it becomes a loose puck. Before sim 0.35 an uncontrolled touch left the pass untouched. Separately, every defender a pass goes by within stickReachFt gets one chance to get a stick on it, stickDeflectBase plus stickDeflectPerDef times his defense rating, and a stick on it knocks it off line the same way.",
+  "stickReachFt": 5.0,
+  "stickDeflectBase": 0.15,
+  "stickDeflectPerDef": 0.35,
+  "want": {
+   "desc": "When a carrier without a clear shot looks for a pass: always when a defender is within pressureFt plus pressurePerAggressionFt times his team's aggression, otherwise at ratePerSec (powerPlayRatePerSec on the power play) times 0.5 plus his passing rating. The pass itself still needs a clear lane and a teammate worth passing to.",
+   "pressureFt": 7,
+   "pressurePerAggressionFt": 2,
+   "ratePerSec": 0.6,
+   "powerPlayRatePerSec": 1.4
+  },
+  "controlSec": 0.35,
+  "controlNote": "In the offensive zone a receiver needs controlSec with the puck before he makes a discretionary pass (the expected-goal pass and the open-man pass); shots and the stuck-play passes are not held back. Without it the attacking team moved the puck several times a second. It does not apply in the other zones, where a defenseman who cannot move the puck clears it."
  },
  "shot": {
   "wrist": {
@@ -157,8 +176,8 @@
   },
   "bodyRadiusFt": 2.3,
   "reboundCoolSec": 0.55,
-  "tierGoalScale": 0.72,
-  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie; 0.72 lands goals per game at the league rate at the NHL-average settings, since the sim's shot mix still carries more medium-danger looks than the real game.",
+  "tierGoalScale": 0.39,
+  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie. 0.39 lands goals per game at the league rate at the NHL-average settings. It was 0.72 before sim 0.35; it fell because since 0.35 carriers shoot whenever the expected-goal model says the look is worth it, and the sim still creates about 70% more expected goals than the league (too many medium-danger looks). Until coverage closes that gap, this scale keeps scores realistic; expected goals in the reports stay unscaled so the gap stays visible.",
   "desc": ""
  },
  "shotBlock": {
@@ -193,16 +212,7 @@
   }
  },
  "shotDecision": {
-  "desc": "When a carrier shoots. A clean look from the slot is a must-shoot (fires within a fraction of a second); everything else is a per-second probability scaled by shot quality, aggression and the shooter's rating. Shot quality is 0 to 1 from distance (75 ft horizon) and angle. Rates were retuned in 0.29 so that, at the NHL-average settings, unblocked attempts and the danger-tier mix match MoneyPuck's league rates with the expected-goal model scoring each shot.",
-  "slot": {
-   "maxDistFromNetFt": 30,
-   "halfWidthFt": 14,
-   "minQuality": 0.7,
-   "shootRatePerSec": 0.3,
-   "requiresClearLane": true,
-   "minDistFromNetFt": 9,
-   "openRequiresNoOpponentWithinFt": 6
-  },
+  "desc": "When a carrier shoots. In the offensive zone the expected-goal model decides between shooting and passing (xgChoice); on top of that, the perimeter, probabilistic and point-shot rules throw pucks at the net from distance at per-second rates, which is where most NHL attempts and blocks come from. Shot quality (0 to 1 from distance and angle, 75 ft horizon) still scales those volume rules. The slot and in-tight rules that used to decide close shots were replaced by xgChoice in sim 0.35.",
   "probabilistic": {
    "baseRate": 0.02,
    "qualityPower": 2,
@@ -223,15 +233,7 @@
    "desc": "A skater with a reasonable lane from the half wall, circles or point (28 to 55 ft) throws it at the net through traffic: that is where most NHL shots come from, and where most blocks happen.",
    "minDistFt": 28,
    "maxDistFt": 55,
-   "ratePerSec": 0.1
-  },
-  "inTight": {
-   "desc": "Puck on the stick in front of the goalie with no defender on him, within a second of getting it: shoot now. Only the goalie can stop this one, so no lane check.",
-   "maxDistFt": 14,
-   "maxOffCenterFt": 9,
-   "noDefenderWithinFt": 8,
-   "shootRatePerSec": 1.0,
-   "withinSecOfReceiving": 0.7
+   "ratePerSec": 0.25
   },
   "stuckAfterSec": 2.2,
   "breakaway": {
@@ -239,7 +241,26 @@
    "behindByFt": 14,
    "wideAllowanceFt": 30
   },
-  "stuckShotRatePerSec": 0.2
+  "stuckShotRatePerSec": 0.2,
+  "xgChoice": {
+   "desc": "Shoot or pass, decided by the expected-goal model. Each tick in the offensive zone the carrier compares his own look (the model's xG from where he stands, times his finishing, times blockedLaneFactor if a defender is in the lane, times tightCoverFactor if a defender is within tightCoverFt of him: the model's xG assumes the usual NHL pressure, and a stick on the shooter takes most of a look away) with the best pass: a teammate's look (a one-timer if it goes cross-ice to an open man) times the chance the pass gets there (passCompleteBase minus passCompletePerFt per foot, at least passCompleteMin) and coveredFactor if a defender is within openFt of him. If his own look is at least minXg and within passMustBeatBy of the best pass, he shoots at shootRatePerSec scaled from 15% at minXg to full at cleanXg, and does not look for a discretionary pass unless a defender is within passUnderPressureFt. If a teammate's look is better by more than passMustBeatBy, he passes to him at passRatePerSec. Looks below minXg are left to the perimeter and point-shot rules.",
+   "minXg": 0.12,
+   "cleanXg": 0.22,
+   "shootRatePerSec": 4.0,
+   "passRatePerSec": 3.0,
+   "passMustBeatBy": 1.3,
+   "laneWidthFt": 2.5,
+   "blockedLaneFactor": 0.5,
+   "oneTimerCrossFt": 14,
+   "openFt": 7,
+   "coveredFactor": 0.5,
+   "passCompleteBase": 0.95,
+   "passCompletePerFt": 0.006,
+   "passCompleteMin": 0.5,
+   "passUnderPressureFt": 5,
+   "tightCoverFt": 4,
+   "tightCoverFactor": 0.4
+  }
  },
  "dangerTiers": {
   "desc": "Fallback only, used when the expected-goal model is not loaded. With the model, a shot's tier follows MoneyPuck's xG thresholds (low under 0.08, medium under 0.20, high 0.20 and up).",
