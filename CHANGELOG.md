@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.46 = sim 0.38 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.47 = sim 0.38 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.47
+- Home page: the Bruins vs Canadiens card describes the strategy test (two plans through the same 100 games, a plain verdict), sight lines and the check against the real teams; its art shows a plan B result instead of a record. The GitHub link in the header is gone; each card keeps its source link.
 
 ### 0.46
 - Sim 0.38 (penalty kill, redesign phase 3). The home page card opens the sim on Watch, with Test a strategy as the second link.
