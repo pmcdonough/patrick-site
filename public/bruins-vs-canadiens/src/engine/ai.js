@@ -1,11 +1,11 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, rnd, toFx, toRink, zone } from './rink.js?v=0.44';
-import * as DM from './detmath.js?v=0.44';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.45';
+import * as DM from './detmath.js?v=0.45';
 
 export function install(S) {
-  const { MP, PH, SYS, active, cfg, emit, game, log, onPP, puck, release, shorthanded, teams, xgModel, xgTier } = S;
+  const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
   let doorFor, formationSpot, hands;   // from other modules, bound by link()
 
   // ---------- AI ----------
@@ -110,17 +110,17 @@ export function install(S) {
         const { myV, best, bestV } = read;
         if (myV >= XC.minXg && myV * XC.passMustBeatBy >= bestV) {
           const rate = XC.shootRatePerSec * clamp((myV - XC.minXg) / (XC.cleanXg - XC.minXg), 0.15, 1);
-          if (Math.random() < dt * rate) { shoot(p); return null; }
+          if (random() < dt * rate) { shoot(p); return null; }
           p.lookingToShoot = true;
-        } else if (best && bestV > myV * XC.passMustBeatBy && bestV >= XC.minXg && (puck.holdT || 0) >= PH.pass.controlSec && Math.random() < dt * XC.passRatePerSec) { pass(p, best); return null; }
+        } else if (best && bestV > myV * XC.passMustBeatBy && bestV >= XC.minXg && (puck.holdT || 0) >= PH.pass.controlSec && random() < dt * XC.passRatePerSec) { pass(p, best); return null; }
       }
       const PE = SD.perimeter; const dNet = dist(p, n);
       const throughTraffic = laneClear(p, n, opp, 2.2) && pressure > 4; // a body in the lane is fine, a stick on the puck is not
-      if (throughTraffic && dNet >= PE.minDistFt && dNet <= PE.maxDistFt && q > 0.05 && Math.random() < dt * PE.ratePerSec * cfg.shots) { shoot(p); return null; }
+      if (throughTraffic && dNet >= PE.minDistFt && dNet <= PE.maxDistFt && q > 0.05 && random() < dt * PE.ratePerSec * cfg.shots) { shoot(p); return null; }
       const PR = SD.probabilistic, PS = SD.pointShot;
       const pointShot = p.isD || toFx(t, p.x) < 135;
       const rate = cfg.shots * PR.baseRate * (DM.pow(q, PR.qualityPower) * (0.9 + agg * PR.aggressionWeight) * (0.6 + p.shoot * PR.shooterWeight) + (open && q > PR.openLookMinQuality ? PR.openLookBonus : 0) + (pressure < PR.pressureWithinFt ? PR.pressureBonus * q : 0)) + (pointShot && q > PS.minQuality ? PS.baseRate + (open ? PS.openBonus : 0) : 0);
-      if (Math.random() < dt * rate) { shoot(p); return null; }
+      if (random() < dt * rate) { shoot(p); return null; }
     }
     // a skater heading for a change gets the puck deep and goes: dump and change
     if (p.leaving && pz !== 'off') {
@@ -135,7 +135,7 @@ export function install(S) {
     if ((p.breakaway || (pfx > 92 && pfx < 106 && headedIn)) && oppAhead.length === 0 && pz !== 'own' && pfx < 172) {
       if (!p.breakaway) { p.breakaway = true; game.note = `Breakaway, ${p.name}!`; log(`Breakaway: ${t.abbr} #${p.num} ${p.name} is in alone.`); }
       const n = oppNet(t); const dn = dist(p, n);
-      if (dn < 16 + p.shoot * 8 && Math.random() < dt * 6) { shoot(p); return null; }
+      if (dn < 16 + p.shoot * 8 && random() < dt * 6) { shoot(p); return null; }
       return { x: n.x - t.dir * 5, y: n.y + (p.y < 42 ? -2 : 2) };
     }
     p.breakaway = false;
@@ -145,13 +145,13 @@ export function install(S) {
       const K = SYS.penaltyKill.clear;
       const back = opp.filter(o => toFx(t, o.x) > pfx).length, up = 1 + mates.filter(m => toFx(t, m.x) > pfx - K.rushTrailFt).length;
       const rush = pz === 'neutral' && p.vx * t.dir > K.rushMinSpeedFtPerSec && up > back;
-      if (!rush) { if (Math.random() < dt * K.ratePerSec) { pkClear(p, opp); return null; } return { x: p.x, y: p.y }; }
+      if (!rush) { if (random() < dt * K.ratePerSec) { pkClear(p, opp); return null; } return { x: p.x, y: p.y }; }
     }
     // a teammate with a step on the last defender: spring him
     if (pz !== 'off') {
       const lastD = Math.max(...opp.map(o => 178 - toFx(teams[1 - t.id], o.x)), 0);
       const sprung = lastD < 112 ? mates.filter(m => !m.leaving && toFx(t, m.x) <= 114 && toFx(t, m.x) >= lastD + 2 && toFx(t, m.x) > pfx + 8 && laneClear(p, m, opp) && dist(p, m) < 90) : [];
-      if (sprung.length && Math.random() < dt * 3) { pass(p, sprung.sort((a, b) => toFx(t, b.x) - toFx(t, a.x))[0]); return null; }
+      if (sprung.length && random() < dt * 3) { pass(p, sprung.sort((a, b) => toFx(t, b.x) - toFx(t, a.x))[0]); return null; }
     }
     if (pz === 'neutral') {
       const offsideMate = mates.some(m => toFx(t, m.x) > 113.5);
@@ -176,17 +176,17 @@ export function install(S) {
       // looser lane for the pass, then a shot through bodies, then walk the puck toward the middle to change the angle
       const deep = mates.filter(m => toFx(t, m.x) > 124);
       const loose = deep.filter(m => laneClear(p, m, opp, 2.4) && dist(p, m) > 6).sort((a, b) => shotQuality(b, t) - shotQuality(a, t));
-      if (loose.length && Math.random() < dt * 2) { pass(p, loose[0]); return null; }
-      if (q > 0.15 && laneClear(p, oppNet(t), opp, 1.6) && Math.random() < dt * PH.shotDecision.stuckShotRatePerSec) { shoot(p); return null; }
+      if (loose.length && random() < dt * 2) { pass(p, loose[0]); return null; }
+      if (q > 0.15 && laneClear(p, oppNet(t), opp, 1.6) && random() < dt * PH.shotDecision.stuckShotRatePerSec) { shoot(p); return null; }
       const n2 = oppNet(t); const towardMid = { x: p.x + (n2.x - p.x) * 0.25, y: p.y + (n2.y - p.y) * 0.35 };
-      if (deep.length && Math.random() < dt * 2) { pass(p, deep.sort((a, b) => dist(a, p) - dist(b, p))[0]); return null; } // or just give it to the nearest man and reset
+      if (deep.length && random() < dt * 2) { pass(p, deep.sort((a, b) => dist(a, p) - dist(b, p))[0]); return null; } // or just give it to the nearest man and reset
       return towardMid;
     }
     // a carrier with a shot worth taking does not look around for a pass unless a stick is on him
     const holding = p.lookingToShoot && pressure > PH.shotDecision.xgChoice.passUnderPressureFt; p.lookingToShoot = false;
     const W = PH.pass.want;
     // in the offensive zone a pass has to be settled before the next one: no discretionary pass within controlSec of getting the puck
-    const wantPass = !holding && (pz !== 'off' || (puck.holdT || 0) >= PH.pass.controlSec) && (pressure < W.pressureFt + agg * W.pressurePerAggressionFt || Math.random() < dt * (pp ? W.powerPlayRatePerSec : W.ratePerSec) * (0.5 + p.pass));
+    const wantPass = !holding && (pz !== 'off' || (puck.holdT || 0) >= PH.pass.controlSec) && (pressure < W.pressureFt + agg * W.pressurePerAggressionFt || random() < dt * (pp ? W.powerPlayRatePerSec : W.ratePerSec) * (0.5 + p.pass));
     if (wantPass) {
       let best = null, bs = -1;
       for (const m of mates) {
@@ -204,7 +204,7 @@ export function install(S) {
       const C = SYS.clearing; const pk = shorthanded(t) && !onPP(t);
       // A gassed unit gets it out like a penalty kill does: off the glass and go change.
       const gassed = [...t.onF, ...t.onD].some(q => q.shift > SYS.deployment.changeWindows.desperateAfterSec);
-      if ((pressure < C.pressureFt || (pk && pressure < C.pkPressureFt) || (gassed && pressure < C.gassedPressureFt)) && Math.random() < dt * C.ratePerSec) { clearPuck(p); return null; }
+      if ((pressure < C.pressureFt || (pk && pressure < C.pkPressureFt) || (gassed && pressure < C.gassedPressureFt)) && random() < dt * C.ratePerSec) { clearPuck(p); return null; }
       const n = ownNet(t);
       if (dist(p, n) < 10 && t.tac.brk !== 'reverse') return toRink(t, 40, p.y < 42 ? 12 : 73);
       return toRink(t, Math.max(pfx + 25, 40), p.y < 42 ? 14 : 71);
@@ -284,7 +284,7 @@ export function install(S) {
       if (along < 2 || along > L * PH.shotBlock.laneFraction) continue;
       const off = Math.abs(-(o.x - from.x) * dy + (o.y - from.y) * dx);
       const reach = PH.shotBlock.laneHalfWidthFt + (along < PH.shotBlock.closeWithinFt ? PH.shotBlock.closeBonusFt : 0); // a defender right on the shooter covers more of the lane
-      if (off < reach && Math.random() < PH.shotBlock.probBase + o.def * PH.shotBlock.probPerDef) {
+      if (off < reach && random() < PH.shotBlock.probBase + o.def * PH.shotBlock.probPerDef) {
         ot.blocked++; puck.shot = false; puck.touched = true; puck.lastTeam = ot; puck.cool = 0.2; emit('fx', 'ring', { x: o.x, y: o.y, col: '#222', big: false });
         puck.x = o.x + dx * 1.5; puck.y = o.y + dy * 1.5;
         const ra = DM.atan2(-dy, -dx) + rnd(-1.1, 1.1); const rs = rnd(12, 28);

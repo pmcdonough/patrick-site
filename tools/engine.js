@@ -30,8 +30,6 @@ function pageControls() {
   return out;
 }
 
-const mulberry = s => { let a = s * 2654435761; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
-
 async function load() {
   const { createSim } = await import(pathToFileURL(path.join(SIM, 'src', 'engine', 'sim.js')).href);
   const controls = pageControls();
@@ -76,11 +74,8 @@ async function load() {
 
   // One seeded game from the opening faceoff; `each` runs after every tick if given.
   function play(sim, seed, each) {
-    const saved = Math.random; Math.random = mulberry(seed);
-    try {
-      sim.newGame(); let k = 0;
-      while (!sim.game.over && k++ < 300000) { sim.tick(0.03); if (each) each(sim); }
-    } finally { Math.random = saved; }
+    sim.newGame(seed); let k = 0;
+    while (!sim.game.over && k++ < 300000) { sim.tick(0.03); if (each) each(sim); }
     const g = sim.game;
     return { seed, end: g.shootout ? 'SO' : g.overtime ? 'OT' : 'REG', teams: sim.teams.map(t => ({
       abbr: t.abbr, goals: t.score, sog: t.shots, attempts: t.attempts, blocksMade: t.blocked, missed: t.missed, xg: t.xg,
@@ -90,4 +85,4 @@ async function load() {
   return { create, setCard, options, play, CARDS };
 }
 
-module.exports = { load, mulberry, CARDS };
+module.exports = { load, CARDS };

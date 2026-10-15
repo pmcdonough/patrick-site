@@ -2,12 +2,12 @@
 // runs the controls, the game plans, Test a strategy and How real is it.
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.44';
+import { createSim } from './engine/sim.js?v=0.45';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.44';
+  const VERSION = '0.45';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -565,17 +565,15 @@ export function startSim(DATA) {
   let pageSim = null;
   function runInPage(jobs, rows, onRow, finish, done0 = 0, total = jobs.length) {
     const s = pageSim || (pageSim = createSim(DATA));
-    const wasPaused = game.paused, saveRandom = Math.random; game.paused = true;
+    const wasPaused = game.paused; game.paused = true;
     let i = 0, done = done0, cur = null;
-    const end = () => { Math.random = saveRandom; game.paused = wasPaused; finish(); };
+    const end = () => { game.paused = wasPaused; finish(); };
     TEST.finish = end;
-    // the seeded generator is switched on only while this game ticks, so drawing between frames cannot use up its numbers
-    let rng = null;
-    const start = j => { Object.assign(s.cfg, j.cfg); s.setTactics(0, j.tacs[0]); s.setTactics(1, j.tacs[1]); let a = j.seed * 2654435761; rng = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; Math.random = rng; s.newGame(); Math.random = saveRandom; cur = j; };
+    const start = j => { Object.assign(s.cfg, j.cfg); s.setTactics(0, j.tacs[0]); s.setTactics(1, j.tacs[1]); s.newGame(j.seed); cur = j; };
     const step = () => {
       if (TEST.stop) return end();
       if (!cur) { if (i >= jobs.length) return end(); start(jobs[i++]); }
-      Math.random = rng; let k = 0; while (k++ < 4000 && !s.game.over) s.tick(0.03); Math.random = saveRandom;
+      let k = 0; while (k++ < 4000 && !s.game.over) s.tick(0.03);
       if (s.game.over) { rows.set(cur.id, { end: s.game.shootout ? 'SO' : s.game.overtime ? 'OT' : 'REG', teams: s.teams.map(t => ({ goals: t.score, xg: t.xg, sog: t.shots, sample: s.teamSample(t) })) }); done++; onRow(done, total); cur = null; }
       requestAnimationFrame(step);
     };

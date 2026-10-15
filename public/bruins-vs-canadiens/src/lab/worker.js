@@ -9,7 +9,6 @@ self.onmessage = async e => {
   const { createSim } = await engine; const m = e.data;
   if (m.type === 'init') { sim = createSim(m.DATA); self.postMessage({ type: 'ready' }); return; }
   Object.assign(sim.cfg, m.cfg); sim.setTactics(0, m.tacs[0]); sim.setTactics(1, m.tacs[1]);
-  let a = m.seed * 2654435761; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-  sim.newGame(); let k = 0; while (!sim.game.over && k++ < 300000) sim.tick(0.03);
+  sim.newGame(m.seed); let k = 0; while (!sim.game.over && k++ < 300000) sim.tick(0.03);
   self.postMessage({ type: 'row', id: m.id, row: { end: sim.game.shootout ? 'SO' : sim.game.overtime ? 'OT' : 'REG', teams: sim.teams.map(t => ({ goals: t.score, xg: t.xg, sog: t.shots, sample: sim.teamSample(t) })) } });
 };

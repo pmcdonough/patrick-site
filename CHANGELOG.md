@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.54 = sim 0.44 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.55 = sim 0.45 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.55
+- Sim 0.45 (restructure step 3). Unit tests: `node --test tools/test` (8 tests, about 20 s): a seed plays the same game whatever came before it, a new game keeps nothing from the last one, every random draw in a seeded game comes from its generator, no icing on a shorthanded team, the plan drawer offers only defined systems, the engine's math within one unit in the last place, and the expected-goal model against the fit script's grid. Each of the first three was checked by breaking the engine on purpose and watching it fail.
 
 ### 0.54
 - Sim 0.44 (restructure step 2 done: the engine split into modules).
@@ -114,6 +117,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.45
+- Random numbers are passed in, not patched in. `sim.newGame(seed)` gives the game its own seeded generator (`src/engine/rng.js`) and every draw in the engine goes through it; `newGame()` without a seed uses `Math.random`. The tools, the strategy test's workers and its in-page fallback no longer replace `Math.random` to seed a game.
+- Every game starts from freshly built teams, players, puck and clock: `newGame` rebuilds both teams from the rosters instead of resetting a list of fields, the list that missed a field twice before. Only the game plans, and the page's speed and pause, carry over.
+- No game changes: both references identical game for game (so the old reset list was not hiding a leak); the order check and the worker cross-check pass.
 
 ### 0.44
 - The engine is split by subject into modules in `src/engine/`: `rink.js`, `xg.js`, `rosters.js`, `officials.js`, `lines.js`, `formations.js`, `ai.js`, `physics.js` and `rules.js`, with `sim.js` keeping the game state, `newGame` and `tick` (118 lines, from 1,218). Each module installs its functions into one shared object and links to the others', so the code inside reads as it did in one file. The split was generated from the old file, with the names each piece borrows found by a linter rather than by hand.

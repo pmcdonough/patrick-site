@@ -9,24 +9,25 @@
 //   sim.on('reset', () => ...)             a new game started
 //   sim.setTactics(i, { fore, brk, entry, oz, dz, pp, pk, agg })   club i's game plan (the same as setting sim.teams[i].tac)
 //   sim.cfg                                engine multipliers (the sliders); every one at 1 is the NHL-average calibration
-//   sim.newGame(); while (!sim.game.over) sim.tick(0.03);
+//   sim.newGame(seed); while (!sim.game.over) sim.tick(0.03);   the same seed plays the same game, in Node and any browser
 //
 // The engine is split by subject. This file holds the game state, starts a game and runs the tick; rink.js (geometry),
 // xg.js (expected goals) and rosters.js (ratings) are plain functions, and officials, lines, formations, ai, physics
 // and rules each install their functions into one shared object, S, then link to each other's (see install in each).
 // Trigonometry, exp, log and pow come from detmath.js, never from Math, so a seed plays the same game everywhere.
-// Random numbers come from Math.random; the tools and the strategy test seed it per game (docs/RESTRUCTURE.md step 3
-// passes a generator in instead). `drift: false` stops the small idle sway of players on their spots.
-import * as DM from './detmath.js?v=0.44';
-import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, rnd, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.44';
-import { makeXg } from './xg.js?v=0.44';
-import { buildTeams } from './rosters.js?v=0.44';
-import * as officialsModule from './officials.js?v=0.44';
-import * as linesModule from './lines.js?v=0.44';
-import * as formationsModule from './formations.js?v=0.44';
-import * as aiModule from './ai.js?v=0.44';
-import * as physicsModule from './physics.js?v=0.44';
-import * as rulesModule from './rules.js?v=0.44';
+// Random numbers: every draw goes through random(), one generator per game. newGame(seed) plays the seeded game
+// (rng.js); newGame() uses opts.rng, or Math.random. `drift: false` stops the small idle sway of players on their spots.
+import * as DM from './detmath.js?v=0.45';
+import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.45';
+import { makeXg } from './xg.js?v=0.45';
+import { seeded } from './rng.js?v=0.45';
+import { buildTeams } from './rosters.js?v=0.45';
+import * as officialsModule from './officials.js?v=0.45';
+import * as linesModule from './lines.js?v=0.45';
+import * as formationsModule from './formations.js?v=0.45';
+import * as aiModule from './ai.js?v=0.45';
+import * as physicsModule from './physics.js?v=0.45';
+import * as rulesModule from './rules.js?v=0.45';
 
 export function createSim(DATA, opts = {}) {
   const drift = opts.drift !== false;
@@ -34,6 +35,10 @@ export function createSim(DATA, opts = {}) {
   const on = (kind, f) => { (listeners[kind] = listeners[kind] || []).push(f); };
   const emit = (kind, ...args) => { const l = listeners[kind]; if (l) for (const f of l) f(...args); };
   const log = (text, cls) => emit('log', text, cls);
+  const unseeded = opts.rng || (() => Math.random());
+  let gen = unseeded;
+  const random = () => gen();
+  const rnd = (a, b) => a + random() * (b - a);
 
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const RT = DATA.ratings, SYS = DATA.systems, PH = DATA.physics, MP = DATA['moneypuck-2025'], XG = DATA['xg-model'];
@@ -50,29 +55,25 @@ export function createSim(DATA, opts = {}) {
   const freshPuck = () => ({ x: 100, y: 42.5, vx: 0, vy: 0, carrier: null, lastTeam: null, shot: false, shooter: null, releaseTeam: null, releaseFx: 0, touched: true, sinceSave: 99, xg: undefined });
   const puck = freshPuck();
   function release(from) { puck.releaseTeam = from.team; puck.releaseFx = toFx(from.team, from.x); puck.touched = false; puck.raceJudged = false; }
-  const game = { period: 1, clock: 1200, speed: 3, paused: false, over: false, faceoff: null, faceT: 0, note: 'Faceoff', whistle: null };
+  const freshGame = () => ({ period: 1, clock: 1200, speed: 3, paused: false, over: false, faceoff: null, faceT: 0, note: 'Faceoff', whistle: null, overtime: false, shootout: false, recorded: false });
+  const game = freshGame();
 
   // ---------- The modules: each adds its functions to S, then all link to each other's ----------
-  const S = { drift, emit, log, cfg, DATA, RT, SYS, PH, MP, XG, XGF, xgModel, xgTier, ROSTERS, teams, active, skaters, shorthanded, onPP, avgDef, freshPuck, puck, release, game };
+  const S = { drift, emit, log, random, rnd, cfg, DATA, RT, SYS, PH, MP, XG, XGF, xgModel, xgTier, ROSTERS, teams, active, skaters, shorthanded, onPP, avgDef, freshPuck, puck, release, game };
   const links = [officialsModule, linesModule, formationsModule, aiModule, physicsModule, rulesModule].map(m => m.install(S));
   links.forEach(link => link());
   const { officials, moveOfficials, stoppageChange, setFaceoff, manageChanges, assignTargets, movePlayers, turnGoalie, movePuck, releaseFromBox, checkOffside, endPeriod,
     lookXg, readLook, buildUnit, peekLine, shiftTarget, fDoor, dDoor, doorFor, fatigueLevel, goalieLine } = S;
 
-  function newGame() {
-    game.overtime = false; game.shootout = false; game.recorded = false;
-    teams.forEach(t => {
-      t.score = t.shots = t.attempts = t.blocked = t.missed = t.poss = t.oz = t.take = t.pim = t.changes = t.xg = t.faceoffs = t.faceoffsWon = t.freezes = t.offsides = t.icings = t.clears = 0; t.tier = { low: 0, medium: 0, high: 0 }; t.dir = t.id ? -1 : 1; t.special = false;
-      delete t.dumpSide; delete t.dumpT; delete t.changeJitter; delete t.rimT; t.lineF = 0; t.lineD = 0;
-      for (const k of ['marks', 'slotCover', 'pressurer', 'fronter', 'sinceEntry', 'wasOff', 'possT', 'delayed', 'chips']) delete t[k];
-      // every game starts from the state a freshly built team has, so a game never depends on how the last one ended
-      [...t.all, ...t.goalies].forEach(p => { p.x = 100; p.y = 42; p.vx = 0; p.vy = 0; delete p.burst; delete p.rushed; delete p.sprint; delete p.trail; delete p.target; delete p.lookingToShoot; });
-      t.all.forEach(p => { p.box = 0; p.onIce = false; p.leaving = false; p.entering = false; p.subOn = false; p.shift = 0; p.toi = 0; p.sub = null; p.gg = 0; p.dist = 0; p.topSpd = 0; p.bursts = 0; p.blocks = 0; p.breakaway = false; p.oneTimers = 0; }); t.flash = null;
-      t.goalies.forEach(g => { g.toi = 0; g.dist = 0; g.onIce = false; g.ang = undefined; });
-      t.rot = { F: -1, D: -1 }; t.onF = []; t.onD = [];
-    });
-    for (const k of Object.keys(puck)) delete puck[k]; Object.assign(puck, freshPuck()); game.whistle = null;
-    game.period = 1; game.clock = 1200; game.over = false; emit('reset');
+  function newGame(seed) {
+    gen = seed === undefined ? unseeded : seeded(seed);
+    // every game starts from freshly built teams, players, puck and clock, so nothing from the last game can leak into
+    // this one; only the game plans (and the page's speed and pause) carry over
+    const tacs = teams.map(t => t.tac);
+    buildTeams(DATA, XGF, teams); teams.forEach((t, i) => { t.tac = tacs[i]; });
+    for (const k of Object.keys(puck)) delete puck[k]; Object.assign(puck, freshPuck());
+    const { speed, paused } = game; for (const k of Object.keys(game)) delete game[k]; Object.assign(game, freshGame(), { speed, paused });
+    emit('reset');
     // opening lines only after the clock, the period, the score and both penalty boxes are reset: the rotation reads all of them
     teams.forEach(t => stoppageChange(t, true));
     log('Puck drop at TD Garden. Bruins attack right.');
@@ -86,9 +87,9 @@ export function createSim(DATA, opts = {}) {
       if (game.faceT <= 0) {
         const hc = teams[0].onF.find(p => p.role === 'C') || teams[0].onF[0], ac = teams[1].onF.find(p => p.role === 'C') || teams[1].onF[0];
         const fh = hc ? hc.faceoff : 0.45, fa = ac ? ac.faceoff : 0.45;
-        const win = Math.random() < fh / (fh + fa) ? teams[0] : teams[1];
+        const win = random() < fh / (fh + fa) ? teams[0] : teams[1];
         teams[0].faceoffs++; teams[1].faceoffs++; win.faceoffsWon++;
-        const d = win.onD[Math.floor(Math.random() * win.onD.length)] || win.onF[0];
+        const d = win.onD[Math.floor(random() * win.onD.length)] || win.onF[0];
         const a = DM.atan2(d.y - puck.y, d.x - puck.x); puck.vx = DM.cos(a) * 30; puck.vy = DM.sin(a) * 30; puck.lastTeam = win; puck.cool = 0.1;
         game.faceoff = null; game.note = `${win.name} win the draw`;
       }

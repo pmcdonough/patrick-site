@@ -1,10 +1,10 @@
 // The rules: shot tallies, penalties and the box, offside, goals, the shootout and the end of a period.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { RH, clamp, endDot, neutralDot, ownNet, toFx } from './rink.js?v=0.44';
+import { RH, clamp, endDot, neutralDot, ownNet, toFx } from './rink.js?v=0.45';
 
 export function install(S) {
-  const { MP, PH, active, emit, game, log, onPP, puck, teams } = S;
+  const { active, emit, game, log, MP, onPP, PH, puck, random, teams } = S;
   let rebuildOnIce, setFaceoff, stoppageChange;   // from other modules, bound by link()
 
   function countUnblocked(team) {
@@ -15,7 +15,7 @@ export function install(S) {
   const INFRACTIONS = ['hooking', 'tripping', 'slashing', 'holding', 'interference', 'cross-checking'];
   function penalize(p, victim) {
     const t = p.team; p.box = PH.game.minorPenaltySec; t.pim += 2;
-    const name = INFRACTIONS[Math.floor(Math.random() * INFRACTIONS.length)];
+    const name = INFRACTIONS[Math.floor(random() * INFRACTIONS.length)];
     log(`Penalty: ${t.abbr} #${p.num} ${p.name}, ${name} (2:00). ${teams[1 - t.id].name} power play.`, 'goal');
     // off the ice and into the box
     p.onIce = false; p.leaving = false; p.sub = null;
@@ -71,7 +71,7 @@ export function install(S) {
     for (let round = 0; round < 12; round++) {
       for (const i of [0, 1]) {
         const shooter = order[i][round % order[i].length]; const g = teams[1 - i].goalie;
-        if (Math.random() < chance(shooter, g)) { goals[i]++; log(`Shootout: ${teams[i].abbr} #${shooter.num} ${shooter.name} scores.`); }
+        if (random() < chance(shooter, g)) { goals[i]++; log(`Shootout: ${teams[i].abbr} #${shooter.num} ${shooter.name} scores.`); }
         else log(`Shootout: ${g.name} stops #${shooter.num} ${shooter.name}.`);
       }
       const left = Math.max(0, 2 - round);   // rounds remaining in the first three

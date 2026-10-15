@@ -22,7 +22,7 @@
 // --pool is the one part that needs a browser: it loads the page and plays the same seeds in its own workers.
 //
 // Cards: fore brk entry oz dz pp pk (the options the plan drawer offers) and agg (0 to 1), per club abbr.
-// Each game g plays with Math.random seeded from (--seed + g), so a run is reproducible and two
+// Each game g plays seed (--seed + g) (sim.newGame(seed)), so a run is reproducible and two
 // settings compared with --compare or --sweep face the same random stream game for game. The
 // game diverges as soon as the change matters, so the pairing helps a little; the intervals
 // below are what to trust.

@@ -14,7 +14,8 @@
     "check": "node smoke.js",
     "lab": "node lab.js",
     "review": "node review.js",
-    "serve": "node serve.js"
+    "serve": "node serve.js",
+    "test": "node --test test/"
   },
   "devDependencies": {
     "playwright": "^1.47.0"

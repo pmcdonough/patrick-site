@@ -1,10 +1,10 @@
 // Lines, benches and shifts: rotations, stoppage and on-the-fly changes, line matching, bench minors, faceoffs.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { RH, RW, clamp, endDot, ownNet, rnd, toFx, zone } from './rink.js?v=0.44';
+import { RH, RW, clamp, endDot, ownNet, toFx, zone } from './rink.js?v=0.45';
 
 export function install(S) {
-  const { PH, SYS, avgDef, game, log, onPP, puck, shorthanded, teams } = S;
+  const { avgDef, game, log, onPP, PH, puck, rnd, shorthanded, SYS, teams } = S;
   let blowWhistle;   // from other modules, bound by link()
 
   // ---------- Lines, benches and shifts ----------

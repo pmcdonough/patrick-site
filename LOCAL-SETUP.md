@@ -37,6 +37,7 @@ The pages and checks run without them. To rebuild the data, put the source files
 ## 4. Does it work?
 
 ```
+node --test tools/test               # the unit tests: "pass 8", "fail 0" (about 20 s)
 node tools/smoke.js                   # ends with "ERRORS: []"
 ```
 

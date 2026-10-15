@@ -1,8 +1,9 @@
 // Rosters and ratings: each club's lines, pairs and goalies from data/rosters.json, rated from the stat lines and
-// MoneyPuck (data/ratings.json, moneypuck-2025.json), with skating speed from physics.json.
-import { clamp } from './rink.js?v=0.44';
+// MoneyPuck (data/ratings.json, moneypuck-2025.json), with skating speed from physics.json. newGame calls buildTeams
+// again for every game, refilling the same two team objects from scratch, so nothing from one game reaches the next.
+import { clamp } from './rink.js?v=0.45';
 
-export function buildTeams(DATA, XGF) {
+export function buildTeams(DATA, XGF, teams = [{}, {}]) {
   const RT = DATA.ratings, PH = DATA.physics, MP = DATA['moneypuck-2025'];
   function buildRosters(R) {
     const out = {};
@@ -32,19 +33,17 @@ export function buildTeams(DATA, XGF) {
     const faceoff = mp ? mp.faceoff : 0.45, pen60 = mp ? mp.penaltiesPer60 : (MP ? MP.league.penaltiesPer60Skater : 0.7);
     const finishing = (MP && MP.skaters[id] && XGF[(MP.skaters[id].mpName || '').toLowerCase()]) || 1;
     return { team, id, name, num, isD, gp, g, a, shoot: S, pass: Pa, def: De, skate, skill: ovr, faceoff, pen60, mpRated: !!mp, finishing, spd: PH.skater.topSpeed.baseFtPerSec + skate * PH.skater.topSpeed.perSkateRating,
-             x: 100, y: 42, vx: 0, vy: 0, goalie: false, onIce: false, box: 0, shift: 0, toi: 0, leaving: false, role: isD ? 'LD' : 'C', dist: 0, topSpd: 0, bursts: 0 };
+             x: 100, y: 42, vx: 0, vy: 0, goalie: false, onIce: false, box: 0, shift: 0, toi: 0, leaving: false, role: isD ? 'LD' : 'C', dist: 0, topSpd: 0, bursts: 0,
+             entering: false, subOn: false, sub: null, gg: 0, blocks: 0, breakaway: false, oneTimers: 0 };
   }
   function mkGoalie(row, team) {
     const [name, num, sv, id] = row;
     const mg = MP && MP.goalies[id];
     const tiers = mg ? { low: mg.tiers.low.svPctShrunk, medium: mg.tiers.medium.svPctShrunk, high: mg.tiers.high.svPctShrunk } : null;
-    return { team, id, name, num, goalie: true, skill: clamp((sv - RT.goalie.svPctFloor) / RT.goalie.svPctRange, RT.goalie.min, RT.goalie.max), tiers, freezeRate: mg ? mg.freezeRate : null, spd: PH.goalie.speedFtPerSec, x: 100, y: 42, vx: 0, vy: 0, onIce: false, box: 0, shift: 0, toi: 0, role: 'G' };
+    return { team, id, name, num, goalie: true, skill: clamp((sv - RT.goalie.svPctFloor) / RT.goalie.svPctRange, RT.goalie.min, RT.goalie.max), tiers, freezeRate: mg ? mg.freezeRate : null, spd: PH.goalie.speedFtPerSec, x: 100, y: 42, vx: 0, vy: 0, onIce: false, box: 0, shift: 0, toi: 0, dist: 0, role: 'G' };
   }
 
-  const teams = [
-    { id: 0, key: 'BOS', dir: 1 },
-    { id: 1, key: 'MTL', dir: -1 }
-  ];
+  [{ id: 0, key: 'BOS', dir: 1 }, { id: 1, key: 'MTL', dir: -1 }].forEach((start, i) => { const t = teams[i]; for (const k of Object.keys(t)) delete t[k]; Object.assign(t, start); });
   teams.forEach(t => {
     const R = ROSTERS[t.key];
     Object.assign(t, { name: R.name, abbr: R.abbr, col: R.col, col2: R.col2, ink: R.ink, score: 0, shots: 0, attempts: 0, blocked: 0, missed: 0, xg: 0, offsides: 0, icings: 0, clears: 0, tier: { low: 0, medium: 0, high: 0 }, faceoffs: 0, faceoffsWon: 0, freezes: 0, poss: 0, oz: 0, take: 0, pim: 0, changes: 0, tac: {}, players: [] });
@@ -56,7 +55,7 @@ export function buildTeams(DATA, XGF) {
     t.bench = { x0: t.id ? 104 : 58, x1: t.id ? 142 : 96 }; t.bench.door = (t.bench.x0 + t.bench.x1) / 2;
     t.bench.left = t.bench.x0 + 5; t.bench.right = t.bench.x1 - 5;
     t.pbox = { x0: t.id ? 112 : 62, x1: t.id ? 138 : 88 };
-    t.rot = { F: 0, D: 0 }; t.onF = []; t.onD = []; t.lineF = 0; t.lineD = 0;
+    t.rot = { F: -1, D: -1 }; t.onF = []; t.onD = []; t.lineF = 0; t.lineD = 0; t.special = false; t.flash = null;
   });
   return { ROSTERS, teams };
 }

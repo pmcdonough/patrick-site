@@ -1,11 +1,11 @@
 // Movement and the puck: skating, fatigue, staying on the ice, goalies, the puck in flight, saves and rebounds.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, rnd, toFx, toRink, zone } from './rink.js?v=0.44';
-import * as DM from './detmath.js?v=0.44';
+import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.45';
+import * as DM from './detmath.js?v=0.45';
 
 export function install(S) {
-  const { MP, PH, SYS, XG, active, cfg, emit, game, log, puck, shorthanded, skaters, teams } = S;
+  const { active, cfg, emit, game, log, MP, PH, puck, random, rnd, shorthanded, skaters, SYS, teams, XG } = S;
   let benchMinor, countUnblocked, goal, penalize, setFaceoff, shoot, shotQuality;   // from other modules, bound by link()
 
   // Fatigue 0..1 from time on ice this shift: nothing until startsAt, full at fullAt.
@@ -103,8 +103,8 @@ export function install(S) {
       const t = c.team; const ot = teams[1 - t.id]; const opp = active(ot);
       for (const o of opp) {
         if (dist(o, c) < PH.turnover.stealRadiusFt) {
-          if (!shorthanded(ot) && Math.random() < dt * (PH.turnover.minorPenaltyRateBase + ot.tac.agg * PH.turnover.minorPenaltyRatePerAggression) * clamp(o.pen60 / (MP ? MP.league.penaltiesPer60Skater : 0.7), 0.4, 2.2)) { penalize(o, c); return; }
-          if (Math.random() < dt * (PH.turnover.stealRateBase + ot.tac.agg * PH.turnover.stealRatePerAggression) * (0.7 + o.def - c.skill * 0.6) * (c.rushed > 0 ? 3 : 1) * hands(c)) { puck.carrier = o; puck.cool = 0.3; ot.take++; puck.touched = true; emit('fx', 'ring', { x: o.x, y: o.y, col: ot.col2, big: false }); break; }
+          if (!shorthanded(ot) && random() < dt * (PH.turnover.minorPenaltyRateBase + ot.tac.agg * PH.turnover.minorPenaltyRatePerAggression) * clamp(o.pen60 / (MP ? MP.league.penaltiesPer60Skater : 0.7), 0.4, 2.2)) { penalize(o, c); return; }
+          if (random() < dt * (PH.turnover.stealRateBase + ot.tac.agg * PH.turnover.stealRatePerAggression) * (0.7 + o.def - c.skill * 0.6) * (c.rushed > 0 ? 3 : 1) * hands(c)) { puck.carrier = o; puck.cool = 0.3; ot.take++; puck.touched = true; emit('fx', 'ring', { x: o.x, y: o.y, col: ot.col2, big: false }); break; }
         }
       }
       return;
@@ -139,13 +139,13 @@ export function install(S) {
         } else saveP = (puck.shot && g.tiers) ? 1 - (1 - g.tiers[puck.tier]) * PH.goalie.tierGoalScale : hard ? PH.goalie.saveProb.hardBase + g.skill * PH.goalie.saveProb.hardPerRating : PH.goalie.saveProb.soft;
         const wide = puck.shot && !puck.onNet;
         if (puck.shot) { if (wide) puck.shooter.team.missed++; else puck.shooter.team.shots++; countUnblocked(puck.shooter.team); puck.shot = false; }
-        if (!(wide || Math.random() < saveP)) puck.beaten = true; // through him: no second chance on the next tick
+        if (!(wide || random() < saveP)) puck.beaten = true; // through him: no second chance on the next tick
         if (!puck.beaten) {
           puck.lastTeam = t; puck.touched = true; if (sp > 25) emit('fx', 'save', { x: g.x, y: g.y });
           const FZ = PH.goalie.freeze; const attackers = active(teams[1 - t.id]).filter(o => dist(o, g) < FZ.attackerWithinFt).length;
           const fzScale = g.freezeRate && MP ? clamp(g.freezeRate / 0.21, 0.6, 1.6) : 1; // each goalie's own freeze tendency (freezes per shot on goal, league ~0.21)
           const freezeP = ((attackers ? FZ.probWithPressure : FZ.probNoPressure) + (hard ? FZ.hardShotBonus : 0)) * fzScale;
-          if (sp > 25 && Math.random() < freezeP) { t.freezes++; setFaceoff(front > 0 ? 31 : 169, puck.y < 42 ? 20.5 : 64.5, 'Goalie freezes it'); log(`${g.name} covers it up${attackers ? ' with traffic in the crease' : ''}.`); return; }
+          if (sp > 25 && random() < freezeP) { t.freezes++; setFaceoff(front > 0 ? 31 : 169, puck.y < 42 ? 20.5 : 64.5, 'Goalie freezes it'); log(`${g.name} covers it up${attackers ? ' with traffic in the crease' : ''}.`); return; }
           const a = DM.atan2(puck.y < 42 ? -1.6 : 1.6, front) + rnd(-0.4, 0.4); // steer the rebound to the corner
           puck.vx = DM.cos(a) * 45; puck.vy = DM.sin(a) * 45; puck.shot = false; puck.cool = PH.goalie.reboundCoolSec; puck.sinceSave = 0; // nobody gets it until it has traveled
           puck.x = g.x + front * 2.5; puck.y = g.y + (puck.y < g.y ? -1.5 : 1.5); // rebound off the pads, kicked away
@@ -189,7 +189,7 @@ export function install(S) {
       for (const d of active(teams[1 - puck.lastTeam.id])) {
         if (puck.reached.has(d) || dist(d, puck) > R.stickReachFt) continue;
         puck.reached.add(d);
-        if (Math.random() < R.stickDeflectBase + d.def * R.stickDeflectPerDef) {
+        if (random() < R.stickDeflectBase + d.def * R.stickDeflectPerDef) {
           const a = DM.atan2(puck.vy, puck.vx) + rnd(-R.deflectAngleRad, R.deflectAngleRad), k = rnd(R.deflectSpeedMin, R.deflectSpeedMax);
           puck.vx = DM.cos(a) * sp * k; puck.vy = DM.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = d.team; puck.cool = 0.15; puck.touched = true;
           return;
@@ -201,22 +201,22 @@ export function install(S) {
     if (best) {
       const ownPass = puck.lastTeam === best.team;
       puck.touched = true;
-      if (best.leaving && best.subOn && Math.random() < PH.turnover.benchMinorOnMidChangeTouch) { const srv = best.sub || best; benchMinor(best.team, srv.onIce ? srv : best); return; }
-      if (fast && !ownPass && Math.random() > PH.pass.interceptControlPerSkill * best.skill) {
+      if (best.leaving && best.subOn && random() < PH.turnover.benchMinorOnMidChangeTouch) { const srv = best.sub || best; benchMinor(best.team, srv.onIce ? srv : best); return; }
+      if (fast && !ownPass && random() > PH.pass.interceptControlPerSkill * best.skill) {
         if (puck.shot && best.team !== puck.shooter.team) { best.team.blocked++; puck.shot = false; puck.lastTeam = best.team; return; }
         // a stick on a pass he cannot control still knocks it off line: slower, a new direction, and nobody's puck
-        if (!puck.shot && Math.random() < PH.pass.deflectOnTouch) {
+        if (!puck.shot && random() < PH.pass.deflectOnTouch) {
           const a = DM.atan2(puck.vy, puck.vx) + rnd(-PH.pass.deflectAngleRad, PH.pass.deflectAngleRad), k = rnd(PH.pass.deflectSpeedMin, PH.pass.deflectSpeedMax);
           puck.vx = DM.cos(a) * sp * k; puck.vy = DM.sin(a) * sp * k; puck.receiver = null; puck.oneTimer = false; puck.lastTeam = best.team; puck.cool = 0.15;
         }
         return;
       }
-      if (fast && ownPass && Math.random() > (puck.receiver === best ? 0.95 : 0.75)) return;
+      if (fast && ownPass && random() > (puck.receiver === best ? 0.95 : 0.75)) return;
       if (puck.rim && !ownPass) best.rushed = 1.6; // retrieving a hard rim with a forechecker bearing down: the next play is hurried
       puck.carrier = best; puck.shot = false; puck.rim = false; puck.beaten = false;
       if (!ownPass && puck.lastTeam) best.team.take++;
       const wasReceiver = puck.receiver === best; const ot1 = puck.oneTimer; puck.receiver = null; puck.oneTimer = false;
-      if (wasReceiver && ot1 && shotQuality(best, best.team) > 0.5 && Math.random() < 0.05) { best.oneTimers = (best.oneTimers || 0) + 1; shoot(best, true); return; }
+      if (wasReceiver && ot1 && shotQuality(best, best.team) > 0.5 && random() < 0.05) { best.oneTimers = (best.oneTimers || 0) + 1; shoot(best, true); return; }
     }
   }
 
