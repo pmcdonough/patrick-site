@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.47 = sim 0.38 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.48 = sim 0.39 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.48
+- Sim 0.39.
 
 ### 0.47
 - Home page: the Bruins vs Canadiens card describes the strategy test (two plans through the same 100 games, a plain verdict), sight lines and the check against the real teams; its art shows a plan B result instead of a record. The GitHub link in the header is gone; each card keeps its source link.
@@ -83,6 +86,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.39
+- Test a strategy explains itself: plan A is your team as set, plan B the same team with the changes you want to try, and both play the other team through the same games, so a difference is the change and not easier games. Plan A, plan B and the same games have explainers and glossary entries.
+- How it works, Using it, rewritten for the current page: Watch with sight lines and the game plans, Test a strategy with plan A and plan B, How real is it and Settings. The calibration section points at How real is it instead of the old Advanced tab.
 
 ### 0.38
 - Penalty kill: there is no icing while shorthanded, so a killer with the puck in his own end or the neutral zone clears it the length of the ice within a beat, down the open lane closest to straight ahead, and lifts it over the sticks when every lane is covered. Only a breakaway or an odd-man rush up the neutral zone keeps it. Before, killers cleared only under pressure and only to just past the far blue line, so almost half the clears stopped short. Now about nine in ten reach past the far dots, and killers hold the puck under a second per power-play minute, down from about six.

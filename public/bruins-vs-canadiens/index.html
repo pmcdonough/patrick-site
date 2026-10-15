@@ -123,6 +123,8 @@
   .bgrid label.changed::after { content: 'changed'; color: var(--link); font-size: 0.66rem; letter-spacing: 0.08em; }
   .bgrid select { background: var(--raised); }
   .bgrid small.desc { display: none; } .bgrid label.changed small.desc { display: block; }
+  .explain { margin: 0; line-height: 1.5; }
+  .explain button.tip { width: auto; height: auto; border-radius: 4px; padding: 0; font: inherit; color: var(--link); background: none; border: 0; text-decoration: underline dotted; text-underline-offset: 3px; }
   .gfield { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
   .gfield select { width: auto; }
   button.primary { background: var(--link); border-color: var(--link); color: #fff; font: 700 1.05rem var(--display); letter-spacing: 0.03em; padding: 9px 18px; }
@@ -354,6 +356,7 @@
     <div class="test">
       <div class="card setup">
         <h2 class="vt">Test a strategy</h2>
+        <p class="hint explain">Plan A is your team as it is set now. Plan B is the same team with the changes you want to try. Both plans play the other team through <button type="button" class="tip" data-term="same" aria-label="What does the same games mean?">the same games</button>, so a difference between them comes from your change, not from one plan getting easier games. The verdict says whether that difference is bigger than normal luck.</p>
         <div class="coachas"><span class="hint">You coach</span><div class="seg" role="group" aria-label="Which team you coach"><button type="button" data-coach="0" aria-pressed="true">Bruins</button><button type="button" data-coach="1" aria-pressed="false">Canadiens</button></div></div>
         <section class="side mtl" id="oppBlock">
           <div class="who"><span class="dot" id="oppDot"></span><span id="oppName">Canadiens (MTL)</span><small>Opponent</small></div>
@@ -363,8 +366,8 @@
         <section class="side bos" id="planBlock">
           <div class="who"><span class="dot" id="myDot"></span><span id="myName">Bruins (BOS)</span><small>Your plans</small></div>
           <button type="button" class="linkish under" id="myEdit">Edit plan A</button>
-          <div class="abrow"><span class="tag a">A</span><div><b>Plan A, as the team is set now</b><p class="hint" id="planAText"></p></div></div>
-          <div class="abrow"><span class="tag b">B</span><div class="bwrap"><div class="bhead"><b>Plan B</b><button type="button" class="linkish" id="bReset">Same as plan A</button></div><p class="hint">Change any choice to test it against plan A. Changed choices are marked.</p><div class="cgrid bgrid" id="bGrid"></div></div></div>
+          <div class="abrow"><span class="tag a">A</span><div><b>Plan A, as the team is set now</b> <button type="button" class="tip" data-term="planA" aria-label="What is plan A?">?</button><p class="hint" id="planAText"></p></div></div>
+          <div class="abrow"><span class="tag b">B</span><div class="bwrap"><div class="bhead"><b>Plan B <button type="button" class="tip" data-term="planB" aria-label="What is plan B?">?</button></b><button type="button" class="linkish" id="bReset">Same as plan A</button></div><p class="hint">Change any choice to test it against plan A. Changed choices are marked.</p><div class="cgrid bgrid" id="bGrid"></div></div></div>
         </section>
         <label class="gfield" for="labN">Games for each plan <select id="labN"><option value="10">10, a quick look</option><option value="50">50</option><option value="100" selected>100</option><option value="200">200</option></select></label>
         <div class="row"><button type="button" id="labRun" class="primary">Run the matchup</button><button type="button" id="labStop" hidden>Stop</button></div>
@@ -466,7 +469,7 @@
     <p>Offside with the tag-up rule and a delayed call. Hybrid icing judged at the end-zone dots, waived while shorthanded, and the team that iced cannot change. Minor penalties drawn at each player's real rate, with power plays and the penalty-box clock. Goalie freezes when there is traffic in the crease. Offside and icing calls are tuned to land at league rates per game. Three officials work NHL mechanics: the referee at the goal line in the zone, the lead linesman on the blue line for offside, the trail linesman on the red line for icing. A tie goes to a five-minute sudden-death overtime, played at full strength here, and then a shootout, three shooters each and sudden death after that, with each shooter's chance scaled by his shooting and the goalie's quality in tight.</p>
 
     <h3>Physics and calibration</h3>
-    <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts on rushes, breakouts and chases, cruising otherwise. Wrist shots run 58 to 85 mph and point shots 80 to 100; the dump is about 85 mph around the glass. Every unblocked attempt gets an expected-goal value from a model fit on two seasons of MoneyPuck shot data: distance and angle to the net, shot type, rebound, and the strength on the ice, times the shooter's own finishing over those seasons. The danger tiers follow MoneyPuck's expected-goal thresholds, and a goal is scored against each goalie at that value scaled by his real save rate in the tier. The engine is balanced at the NHL-average settings, the tick mark on each slider; the defaults it ships with run hotter on speed and shot volume because that is more fun to watch. The reality check under Advanced compares the sim's per-game rates with each club's real 2025-26 rates and the league average, live or over a ten-game batch with the win record, and flags anything more than 50 percent off. That table is the honest statement of where the engine still differs from the real game.</p>
+    <p>Skating is calibrated to NHL EDGE tracking: top speeds of 19 to 23 mph by skater, bursts on rushes, breakouts and chases, cruising otherwise. Wrist shots run 58 to 85 mph and point shots 80 to 100; the dump is about 85 mph around the glass. Every unblocked attempt gets an expected-goal value from a model fit on two seasons of MoneyPuck shot data: distance and angle to the net, shot type, rebound, and the strength on the ice, times the shooter's own finishing over those seasons. The danger tiers follow MoneyPuck's expected-goal thresholds, and a goal is scored against each goalie at that value scaled by his real save rate in the tier. The engine is balanced at the NHL-average settings, the tick mark on each slider; the defaults it ships with run hotter on speed and shot volume because that is more fun to watch. How real is it compares the sim's per-game numbers with each team's real 2025-26 numbers and the league average, from the last test or from the game being played, and gives each one a verdict: on target within 15 percent, above or below, well above or well below past half. That view is the honest statement of where the engine still differs from the real game.</p>
 
     <h3>Glossary</h3>
     <dl class="glossary" id="glossary"></dl>
@@ -475,7 +478,10 @@
     <div id="aboutSystems"></div>
 
     <h3>Using it</h3>
-    <p>Game: pause, speed, a new game, Effects and Sticks, with the box score and play-by-play. Effects are skate trails behind anyone moving fast, a streak on hard shots and passes, a ripple on takeaways and blocked shots, a flash on big saves, and the goal light with the scorer picked out. Sticks point at the puck when it is close; turned off, each skater shows a short heading tick. Each club's coaching card sits above its bench: seven systems and an aggression dial that you can change mid-game, taking effect on the next play. Hover any choice for what it does. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems. Rosters: who is on the ice, time on ice and current shift, goals and blocks, with each player's real stat line on hover. Lab is the matchup lab: it shows the systems on both cards side by side, plays the two clubs against each other as many times as you ask and reports the record with its margin of error, grades those games against the real clubs' per-game rates and final records in the reality check, and sweeps every option for one card so a choice can be judged against what the other bench is running. Advanced holds the engine settings (multipliers for acceleration, speed, effort, passing, puck glide, goalie coverage and shot volume, with a tick at the value calibrated to real tracking data), and the list of data sources. Settings can be saved in your browser, exported to share, or made the defaults for everyone. The Game tab keeps this session's record, wins, losses and overtime or shootout losses for each club. The version number is at the bottom of the page.</p>
+    <p>Watch plays one game on the rink. Pause it, change the speed or start a new game; the scoreboard shows the shots, each team's share of the chances and the power play. Effects draws skate trails, streaks on hard shots and passes, ripples on takeaways and blocked shots, a flash on big saves and the goal light. Sticks draws each skater's stick. Sight lines shows what the puck carrier sees in the offensive zone: his open look at the net, the shadow each defender casts over it, and his best pass, with how likely each one is to score. Below the rink each team's game plan reads as a sentence. Edit plan opens both plans with what every choice means, and a change takes effect on the next play. The box score, the play by play and the rosters fold open underneath.</p>
+    <p>Each plan is seven systems and an aggression dial. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems.</p>
+    <p>Test a strategy answers whether a change would help. Pick the team you coach. Plan A is that team as it is set; plan B is a copy where you change what you want to try. Run plays both plans against the other team's plan through the same games, 100 each unless you pick another number, at the NHL-realistic settings, in about a minute on most computers. The same games means each pair of games starts from the same random numbers, so the bounces match until a difference in plan makes play go another way, and a gap between the plans is the plans, not the schedule. The result is a sentence and three verdicts, net chances, goal difference and points, each a clear edge, too close to call or a clear cost. Trust net chances first: points need far more games to separate. Rank every option for one choice tries every option of one system, every forecheck for example, in the same games and orders them.</p>
+    <p>How real is it puts every number the sim produces next to what each team really did in 2025-26 and the league average, with a verdict on each, from the last test or from this game so far. Settings, behind the gear, holds the engine sliders, with a tick at the value calibrated to NHL tracking, and the data sources; settings and plans can be saved in your browser or exported to share. The version number is at the bottom of the page.</p>
 
     <h3>What it is not</h3>
     <p>It is not a replay of real games. Player movement is a decision model, tuned against public aggregates, not tracking data, so the engine can be systematically wrong in ways the calibration table will show. Ratings reflect one season of results and a weak defensive proxy, and systems are drawn from coaching references, not from either club's actual playbook. Everything that drives it, from rosters to formation coordinates to the speed of a rimmed puck, is kept as plain data with its sources, so any of it can be questioned and corrected without touching the engine.</p>
@@ -3386,7 +3392,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.38';
+  const VERSION = '0.39';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -3479,7 +3485,7 @@ function startSim(DATA) {
   }
   document.querySelectorAll('select, input[type=range]').forEach(el => el.addEventListener('input', readTactics));
   readTactics();
-  // Hover text on the coaching cards, read from the systems data: every option explains itself, the select shows the
+  // Hover text on the game-plan choices, read from the systems data: every option explains itself, the select shows the
   // current choice's explanation, and the aggression dial says what it changes.
   (() => {
     const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
@@ -5325,6 +5331,9 @@ self.onmessage = e => { const m = e.data;
   // short explainers for the numbers a newcomer will not know
   const TERMS = {
     chances: ['Chances (expected goals)', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."],
+    planA: ['Plan A', 'Your team as it is set now, the plan on the Watch view. It is the baseline every test compares against.'],
+    planB: ['Plan B', 'A copy of plan A with the changes you want to try. Change one choice to learn what that choice is worth, or several to test a whole new plan.'],
+    same: ['The same games', 'Both plans play games that start from the same random numbers, so the bounces are the same until a difference in plan makes play go another way. A gap between the plans comes from the plans, not from one of them getting easier games.'],
     net: ['Net chances', 'Chances for minus chances against, per game. The best single number for whether a plan is working.'],
     close: ['Too close to call', 'The difference is smaller than the normal swing from luck at this many games. Run more games, or treat the two plans as even.'],
     edge: ['Clear edge, clear cost', 'The whole 95% range of the difference is on one side of zero, so luck alone is unlikely to explain it at this many games.'],
@@ -5348,7 +5357,7 @@ self.onmessage = e => { const m = e.data;
     const r = t.getBoundingClientRect(); pop.style.left = Math.min(window.innerWidth - pop.offsetWidth - 12, Math.max(12, r.left - 20)) + 'px'; pop.style.top = (r.bottom + 8) + 'px';
   });
   const aboutDlg = $('about');
-  (() => {   // the About dialog's systems list, one line per choice, from the same descriptions the coaching cards show
+  (() => {   // the About dialog's systems list, one line per choice, from the same descriptions the game plans show
     const el = $('aboutSystems'); if (!el) return;
     const groups = [['Forecheck', 'forecheck'], ['Breakout', 'breakout'], ['Zone entry', 'entry'], ['Offensive zone', 'offensiveZone'], ['Defensive zone', 'defensiveZone'], ['Power play', 'powerPlay'], ['Penalty kill', 'penaltyKill']];
     el.innerHTML = groups.map(([title, key]) => `<p><b>${title}.</b> ` + Object.values(SYS[key]).filter(v => v && typeof v === 'object' && v.label && v.desc).map(v => `<i>${v.label}</i>: ${v.desc}`).join(' ') + '</p>').join('');

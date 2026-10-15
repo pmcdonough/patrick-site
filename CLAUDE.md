@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (the matchup lab) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.47, sim 0.38, Play Review 0.6.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.48, sim 0.39, Play Review 0.6.
 
 ## Layout
 
@@ -70,6 +70,6 @@ The sim's script is about 1,500 lines after the embedded data. Its sections are 
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.47)
+## State (site 0.48)
 
 All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels identical to the reference), `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.38, 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.
