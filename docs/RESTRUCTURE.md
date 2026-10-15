@@ -1,6 +1,19 @@
-# Restructure plan: the sim and Play Review as modules
+# Restructure: the sim and Play Review as modules
 
-Status: steps 0 (site 0.50), 1 (site 0.51), 2 (sites 0.52 to 0.54) 3 (site 0.55) and 4 (site 0.56) done; step 5 next. Step 4 imports `xg.js`, `rink.js` and `detmath.js` from the sim's `engine/` folder rather than moving them to `public/shared/`: they are engine code, and inside the sim's folder their own imports carry the sim's stamp. Of the unit tests listed in step 3, two are not written: one save roll per shot and the penalty-kill clear distance need a hook inside `movePuck` or a long statistical run; `tools/lab.js` and the step 0 references cover them for now. Step 2 landed a little differently from the layout below: the game state stayed in `engine/sim.js` (no `state.js`), the officials got their own module, the engine's math is `engine/detmath.js`, and `rink.js` and `xg.js` sit in `engine/` until step 4 decides how Play Review shares them. Written at site 0.49, sim 0.40, Play Review 0.6.
+Status: done, sites 0.50 to 0.56 (2026-10-15). Written as a plan at site 0.49, sim 0.40, Play Review 0.6; the plan follows the outcome below, unchanged except where it was answered.
+
+## Outcome
+
+| Step | Shipped | Where it differed from the plan |
+|---|---|---|
+| 0, safety net | site 0.50: checks over HTTP (`tools/serve.js`), a fingerprint per game in the references, `lab.js --order`, `tools/review.js` | none |
+| 1, pieces out | site 0.51, sim 0.41: `style.css`, the script as one module, data fetched only, module workers; `tools/build.py` retired | no `_headers` file: the Cloudflare Worker already makes browsers revalidate every file |
+| 2, the engine | sims 0.42 to 0.44: `engine/sim.js` with events out; workers import it; the engine tools run in Node; the engine split into modules | found that browsers and Node round `Math.sin` and friends differently, so the engine got its own math (`detmath.js`, sim 0.43) and the references were re-saved once; `lab.js` uses child processes, not worker threads; the game state stayed in `sim.js` and the officials got a module |
+| 3, structure | sim 0.45: `newGame(seed)` with the generator passed in (`rng.js`), every game built fresh, 8 unit tests | two planned tests (one save roll per shot, the penalty-kill clear) left for a hook in `movePuck` (`docs/ROADMAP.md`, Engineering) |
+| 4, Play Review | Play Review 0.9: its own `style.css` and `src/main.js`, scoring with the sim's `xg.js`, `rink.js` and `detmath.js` | they stayed in the sim's `engine/` folder instead of `public/shared/`, so their own imports carry the sim's stamp |
+| 5, docs | this pass (no site version: nothing under `public/` changed); `tools/browsers.js` added | none |
+
+Every step kept the references identical game for game, except sim 0.43, which changed the engine's math on purpose. A long-shift bug found on the way (a skater out for most of a period in 2 of 40 seeded games, with either math) is roadmap item 0.
 
 The sim is one HTML file of about 5,400 lines: 250 of CSS, 230 of markup, 2,900 of embedded data (the expected-goal model alone is one 93,000-character line) and 2,000 of script, all of it inside one `startSim(DATA)` closure. Play Review is the same shape at 1,300 lines. This plan moves both onto plain ES modules served over HTTP, in steps that each ship on their own and each prove the engine still plays the same hockey.
 

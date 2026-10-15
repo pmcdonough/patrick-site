@@ -4,92 +4,119 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 ## What this repo is
 
-A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: a page, a stylesheet and a plain JavaScript module (`src/main.js`) on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (the matchup lab) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, built on the same data and models.
+A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (plan A against plan B on the same seeded games) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
 
 Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.56, sim 0.45, Play Review 0.9.
 
 ## Layout
 
 ```
-public/index.html                         home page (card for each project, version badge, link preview tags)
-public/assets/share.png                   the 1200x630 link preview image
-public/bruins-vs-canadiens/index.html     the sim's page: markup, plus style.css and src/main.js with a ?v= version stamp
-public/bruins-vs-canadiens/style.css      its styles
-public/bruins-vs-canadiens/src/main.js    the page: drawing, controls, game plans, Test a strategy, How real is it
-public/bruins-vs-canadiens/src/engine/      the engine: never touches the page; the page reads its state and listens to its events
-  sim.js                                  createSim(DATA): game state, newGame, tick; installs and links the modules below
-  rink.js, xg.js, rosters.js              geometry, expected goals, ratings (plain functions)
-  officials.js, lines.js, formations.js,  each install(S): adds its functions to the shared object S and links to the others'
-  ai.js, physics.js, rules.js
-  detmath.js                              sin, cos, atan2, exp, log, pow, hypot from exact arithmetic: the same bits in every browser and in Node
-  rng.js                                  the seeded generator: newGame(seed) plays the game for that seed
-public/bruins-vs-canadiens/src/lab/worker.js  Test a strategy's background worker: imports the engine and plays seeded games
-public/bruins-vs-canadiens/data/*.json    the data that drives it (rosters, ratings, systems, physics, moneypuck-2025, defaults, xg-model)
-public/play-review/                       shot versus pass review of a real game: index.html, style.css, src/main.js (?v= stamps); fetches xg-model,
-                                          systems and its game file, and imports the sim's engine/xg.js, rink.js and detmath.js for its scoring
-public/play-review/data/game-*.json       one file per game, from tools/game_load.py
-tools/xg_fit.py                           fits data/xg-model.json from MoneyPuck shot CSVs
-tools/mp_extract.py                       builds data/moneypuck-2025.json from the MoneyPuck season CSVs; --check diffs against the committed file
-tools/game_load.py                        NHL play-by-play + shift chart JSON -> play-review game file
-tools/engine.js                           the engine in Node, set up as a fresh visit to the page sets it up (lab, shifts, rules, nhl-average use it)
-tools/lab.js                              parallel, seeded matchups in Node: report vs league and reference, --compare, --sweep, --order, --pool (the page's workers)
-tools/review.js                           fingerprint of every shot Play Review scores, against the reference
-tools/baselines.json                      saved references for lab.js and review.js, with a fingerprint per game and per shot (write with --save)
-tools/serve.js                            static server for public/, run inside each check (node tools/serve.js serves it for a browser)
-tools/test/*.test.js                      unit tests (node --test tools/test): determinism, fresh state per game, the engine's math, expected goals
-tools/harness.js                          loads pages over HTTP in headless Chromium for the checks that need the page (smoke, calibration, review, lab --pool)
-tools/*.js                                the other checks: shifts, rules and nhl-average in Node, smoke and calibration in Chromium
-docs/ENGINE.md                            how the engine is organized, invariants, tuning knobs, lessons learned
-docs/HISTORY.md                           what was built before version numbers existed, in order
-docs/XG-MODEL.md                          the expected-goal model and how the engine scores shots with it
-docs/PLAY-REVIEW.md                       the review page's pipeline, reconstruction, scoring and replay
-docs/MODELING.md                          index of every model: measured, calibrated or inferred, and where it lives
-docs/ROADMAP.md                           where each project stands and what comes next, in priority order
-docs/RAW-INPUTS.md                        every raw input file: what it is, its URL, retrieval date, the command that uses it
-docs/RESTRUCTURE.md                       the plan to move both pages onto ES modules, step by step; where it stands
-LOCAL-SETUP.md                            one-time setup on a new machine and the checks that prove it works
-raw/                                      the raw inputs (git-ignored)
-.venv/                                    Python environment for the fit scripts (git-ignored)
-CHANGELOG.md                              per-version changes
+public/index.html                  home page (a card for each project, version badges, link preview tags)
+public/assets/share.png            the 1200x630 link preview image
+public/bruins-vs-canadiens/
+  index.html                       the page's markup; loads style.css and src/main.js with a ?v= version stamp
+  style.css                        its styles
+  data/*.json                      rosters, ratings, systems, physics, moneypuck-2025, defaults, xg-model
+  src/main.js                      the page: drawing, controls, game plans, Test a strategy, How real is it
+  src/lab/worker.js                Test a strategy's background worker: imports the engine, plays seeded games
+  src/engine/                      the engine; never touches the page (the page reads its state and listens to its events)
+    sim.js                         createSim(DATA): game state, newGame(seed), tick; installs and links the modules below
+    rink.js, xg.js, rosters.js     geometry, expected goals, ratings: plain functions
+    officials.js, lines.js,        each install(S): adds its functions to the shared object S, then links to the others'
+    formations.js, ai.js,
+    physics.js, rules.js
+    rng.js                         the seeded generator behind newGame(seed)
+    detmath.js                     sin, cos, atan2, exp, log, pow, hypot from exact arithmetic: the same bits everywhere
+public/play-review/
+  index.html, style.css            markup and styles, with ?v= stamps
+  src/main.js                      reconstruction, scoring, replay; imports the sim's engine/xg.js, rink.js and detmath.js
+  data/game-*.json                 one file per game, from tools/game_load.py
+tools/
+  engine.js                        the engine in Node, set up the way a fresh visit to the page sets it up
+  lab.js                           seeded matchups in Node, 8 processes: report vs league and reference, --compare, --sweep, --order, --pool
+  shifts.js, rules.js, nhl-average.js   shift lengths, offsides and icings, six games at the NHL tick (Node)
+  test/*.test.js                   unit tests: node --test tools/test
+  smoke.js                         loads all three pages over HTTP, plays a game, checks the version stamps (Chromium)
+  calibration.js                   a ten-game strategy test through the page's own controls (Chromium)
+  review.js                        fingerprint of every shot Play Review scores, against the reference (Chromium)
+  browsers.js                      the same seeded games in Node and in Chromium, Firefox and WebKit
+  baselines.json                   saved references for lab.js and review.js, a fingerprint per game and per shot
+  serve.js, harness.js             the static server each page check starts, and the Playwright loader
+  xg_fit.py, mp_extract.py,        the data scripts: fit xg-model.json, extract moneypuck-2025.json, build a game file
+  game_load.py
+docs/ENGINE.md                     how the engine is organized, where each function lives, invariants, baselines, lessons
+docs/MODELING.md                   every model: measured, calibrated or inferred, and where it lives
+docs/XG-MODEL.md                   the expected-goal model: data, method, fit, how the engine uses it
+docs/PLAY-REVIEW.md                Play Review's pipeline, reconstruction, scoring and replay
+docs/ROADMAP.md                    where each project stands and what comes next, in priority order
+docs/RAW-INPUTS.md                 every raw input file: what it is, its URL, retrieval date, the command that uses it
+docs/RESTRUCTURE.md                how the single-file pages became modules (sites 0.50 to 0.56), and what was found on the way
+docs/HISTORY.md                    what was built before version numbers existed, in order
+LOCAL-SETUP.md                     one-time setup on a new machine and the checks that prove it works
+CHANGELOG.md                       per-version changes
+raw/, .venv/                       raw inputs and the Python environment for the data scripts (both git-ignored)
 ```
 
 ## Rules of the road
 
+Copy and data:
+
 - The app's visible copy never mentions technical internals: no file names, no "data/systems.json", no function names. Data sources are listed only in the Settings drawer, in a collapsed section. System descriptions in `systems.json` are shown to visitors under each choice, so they are written in hockey terms too, never with parameter names. The About dialog explains how the game works in hockey terms.
 - Copy is plain and factual. No em dashes. Short sentences. Hockey vocabulary, not marketing.
-- Every number a hockey person might question lives in `data/`, not in the script. If you add a threshold to the engine, put it in `physics.json` or `systems.json` with a `desc`, and read it from `PH` or `SYS`.
-- Pages are served over HTTP and fetch their data; opening them from disk is not supported (decided 2026-10-14). After editing anything in `data/` or a game file, run `node tools/smoke.js`: it fails if any page cannot load its data. Do not add external scripts or stylesheets beyond the Google Fonts link already there.
-- The sim's page loads `style.css?v=` and `src/main.js?v=` stamped with the sim version, and every import in `src/` carries the same stamp (the worker passes its own on), so a visitor never mixes files from two deploys. Bump them all with `VERSION`; `smoke.js` fails if any disagrees or an import has none.
-- The engine (`src/engine/`) never touches the page: no `document`, no `window`, no drawing. Anything the page shows comes from its state or its events (`log`, `fx`, `final`, `reset`).
-- The engine never calls `Math.random`: every draw goes through `random()` or `rnd()` from `S`, the game's own generator, which `newGame(seed)` seeds. A game started with `newGame()` uses `Math.random`. `node --test tools/test` fails if a seeded game touches `Math.random`.
-- Every game starts from freshly built teams (`buildTeams` refills the same two team objects in `newGame`); only the game plans carry over. Put a new field's starting value in `rosters.js`, not in a reset list.
-- The engine never calls `Math.sin`, `cos`, `tan`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`: browsers and Node compute those differently in the last bit, which changes how seeded games end. Use `detmath.js` (add a function there if you need one). `Math.abs`, `min`, `max`, `floor`, `round`, `sign` and `sqrt` are exact everywhere and fine.
-- Balance is measured, not eyeballed. Before shipping an engine change, run `node --test tools/test` (the unit tests), `node tools/smoke.js` (no script errors), `node tools/shifts.js` and `node tools/rules.js`, and `node tools/lab.js` and `node tools/lab.js --nhl` (100 games each, about 40 s, in Node). The report compares each club with the league and with the saved reference; a seeded run reproduces exactly, so any change from the reference is the engine's doing. The reference keeps a fingerprint of every game, so "identical" means all 100 games finished exactly as before. For a change to how games start or reset, also run `node tools/lab.js --games 20 --order` (every game must match when replayed in reverse order). For a change to Play Review or the expected-goal model, run `node tools/review.js`. Re-save the reference with `--save` only for an intended change, and say so in the commit. A system or aggression effect is real only when its interval in `--compare` or `--sweep` excludes zero; judge by expected-goal differential first, since records need thousands of games to separate settings.
+- Every number a hockey person might question lives in `data/`, not in the code. If you add a threshold to the engine, put it in `physics.json` or `systems.json` with a `desc`, and read it from `PH` or `SYS`.
 - Anything inferred or mocked (positions at a real shot, replay movement) is labeled on the page and never feeds a measured or calibrated number. `docs/MODELING.md` keeps the three kinds apart.
 - Raw inputs (MoneyPuck CSVs, NHL JSON) stay out of the repo (`raw/` is ignored); the fitted model, the ratings extract and the compact game file go in. `docs/RAW-INPUTS.md` lists the exact inputs, where to download each and the command for each script; run `xg_fit.py` with `.venv/bin/python` (pandas, scikit-learn). Re-run the script, not the numbers, when the data changes. All three scripts reproduce the committed files byte for byte from those inputs (`mp_extract.py --check` proves it for the ratings file; for the other two, `git status` stays clean after a run). Do not hand-edit their outputs.
-- The expected-goal formula lives in one place, `src/engine/xg.js`; Play Review imports it with the sim's rink and math. Its imports from the sim carry the sim's `?v=` stamp, so bump them with the sim's `VERSION` (`smoke.js` checks both projects' stamps). A change to the model or the rink shows up in `node tools/review.js`.
-- Test a strategy plays the engine's own `tick` and `newGame`, in background workers that import the same engine (`runJobs`, `src/lab/worker.js`) or on the page when workers are unavailable (`runInPage`); it has no engine logic of its own. Do not add a second way to play a game. A seeded game must play identically in a worker, on the page and in `tools/lab.js` (Node); `node tools/lab.js --games 20 --pool` proves it.
+
+Pages:
+
+- Pages are served over HTTP and fetch their data; opening them from disk is not supported (decided 2026-10-14). No bundler, no framework, no external scripts or stylesheets beyond the Google Fonts links already there.
+- Every file a page loads carries a `?v=` version stamp: the sim's `index.html` loads `style.css` and `src/main.js` with the sim version, every import in its `src/` carries the same stamp (the worker passes its own on), and Play Review stamps its own files with its version and its imports from the sim with the sim's. A visitor never mixes files from two deploys, and Cloudflare already makes browsers revalidate every file. `smoke.js` fails if any stamp disagrees or an import has none.
+
+Engine:
+
+- The engine (`src/engine/`) never touches the page: no `document`, no `window`, no drawing. Anything the page shows comes from its state or its events (`log`, `fx`, `final`, `reset`).
+- A game depends only on its seed. `newGame(seed)` gives it its own generator; the engine never calls `Math.random` (every draw goes through `random()` or `rnd()` from `S`), and a game started with `newGame()` uses `Math.random`.
+- Every game starts from freshly built teams, players, puck and clock (`buildTeams` refills the same two team objects in `newGame`); only the game plans carry over. Put a new field's starting value in `rosters.js`, not in a reset list.
+- The engine never calls `Math.sin`, `cos`, `tan`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`: browsers and Node compute those differently in the last bit, which changes how seeded games end. Use `detmath.js` (add a function there if you need one). `Math.abs`, `min`, `max`, `floor`, `round`, `sign` and `sqrt` are exact everywhere and fine.
+- The expected-goal formula lives in one place, `src/engine/xg.js`. Play Review imports it with the sim's rink and math, so the two pages cannot disagree.
+- Test a strategy plays the engine's own `tick` and `newGame`, in background workers that import the engine (`runJobs`, `src/lab/worker.js`) or, when a browser cannot start workers, on an engine instance of its own on the page (`runInPage`); it has no engine logic of its own. Do not add a second way to play a game. A seeded game plays identically in a worker, on the page, in `tools/lab.js` (Node) and in every browser.
 - The engine is balanced at the NHL-average multipliers (every slider at 1.0, the tick mark). The build defaults in `defaults.json` deliberately run hotter (acceleration 2.3, speed 1.3, cruise 1.15, shot volume 2) because it is more fun to watch. Calibrate at 1.0, then check that the defaults still look right.
+- Balance is measured, not eyeballed. A seeded run reproduces exactly, so any change from the saved reference is the code's doing. Re-save a reference with `--save` only for an intended change, and say so in the commit. A system or aggression effect is real only when its interval in `--compare` or `--sweep` excludes zero; judge by expected-goal differential first, since records need thousands of games to separate settings.
+
+## Checks
+
+The engine checks run in Node; the page checks start their own server and load the pages in headless Chromium (`LOCAL-SETUP.md` has the setup).
+
+| Run | When | Passes when |
+|---|---|---|
+| `node tools/smoke.js` | every change; first command of a session | `ERRORS: []` |
+| `node --test tools/test` | any engine change (about 20 s) | `fail 0` |
+| `node tools/lab.js` and `node tools/lab.js --nhl` | any engine change (about 40 s each) | "Identical to the reference: all 100 games", or a change you intended and re-save |
+| `node tools/lab.js --games 20 --order --pool` | a change to how games start or reset, to the worker or to the strategy test | "Order check" and "Pool check" lines, no FAILED |
+| `node tools/shifts.js`, `node tools/rules.js` | a change to lines, changes, offside or icing | numbers against the targets in their headers |
+| `node tools/review.js` | a change to Play Review, the expected-goal model or the rink | "Identical to the reference" |
+| `node tools/calibration.js` | a change to Test a strategy or How real is it | the two tables print, `ERRORS []` |
+| `node tools/browsers.js` | a change to `detmath.js` or anything the engine computes with | every installed browser "identical to Node" |
 
 ## Shipping a version
 
-The site has its own version (the home page footer and the Site section of the changelog); each project keeps its own number. Bump the site version on every commit that changes anything under `public/` or ships a set of changes, and the project version only when that project changed (its card badge and, for the sim, its page footer). A repo-only fix with nothing under `public/` (a `.gitignore` line, a doc typo) can go in without a version.
+The site has its own version (the home page footer and the Site section of the changelog); each project keeps its own number. Bump the site version on every commit that changes anything under `public/` or ships a set of changes, and the project version only when that project changed. A repo-only change with nothing under `public/` (a tool, a doc) can go in without a version.
 
-1. If the sim changed, bump `const VERSION = '0.xx'` near the top of `public/bruins-vs-canadiens/src/main.js` and every `?v=0.xx` stamp of the sim's (`grep -rn '?v=' public`: two in its `index.html`, one per import in its `src/`, and Play Review's three imports from the sim's engine). If Play Review changed, bump its `VERSION` in `public/play-review/src/main.js` and the two stamps in its `index.html`.
+1. If the sim changed, bump `const VERSION = '0.xx'` near the top of `public/bruins-vs-canadiens/src/main.js` and every stamp with the sim's version (`grep -rn '?v=' public`: two in its `index.html`, one per import in its `src/`, and Play Review's three imports from the sim's engine). If Play Review changed, bump its `VERSION` in `public/play-review/src/main.js` and the two stamps in its `index.html`.
 2. Add a section to `CHANGELOG.md` and update the summary line at its top (`Site 0.xx = sim 0.yy + Play Review 0.z`).
 3. Update `public/index.html`: the card badge of any project that changed (`<span class="ver">v0.xx</span>`) and the footer's site version.
 4. Update the version in "What this repo is" above, the "State" section below and the first line of `docs/ROADMAP.md`.
-5. Run `node tools/smoke.js`, plus the engine checks above if the engine changed.
-6. One commit with what changed and the version numbers in the subject, for example `Shots decided by the expected-goal model (sim 0.34, site 0.42)`, then push. pmcdonough.com serves `public/` through Cloudflare.
+5. Run the checks above for what changed; `smoke.js` always.
+6. One commit with what changed and the version numbers in the subject, for example `Shots decided by the expected-goal model (sim 0.34, site 0.42)`, then push. The live site updates about a minute later; check its footer.
 
 ## Working with Claude Code
 
 Run Claude Code from the repo root so this file loads automatically. `LOCAL-SETUP.md` has the one-time setup; the first command of a session is `node tools/smoke.js` (the pages load their data and the sim runs).
 
-The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`, under 400) and the page, `src/main.js`, about 840. `docs/ENGINE.md` (Where things live) names the file for each function, and sections inside a file are marked with `// ---------- Name ----------` comments, so search for those rather than reading the whole file. The data lives only in `data/*.json`; the pages no longer carry copies of it.
+The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`, under 400) and the sim's page, `src/main.js`, about 850. `docs/ENGINE.md` (Where things live) names the file for each function, and sections inside a file are marked with `// ---------- Name ----------` comments, so search for those rather than reading whole files.
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
 ## State (site 0.56)
 
-All checks pass: `node --test tools/test`, `node tools/smoke.js`, `node tools/lab.js` (both levels: all 100 games identical to the reference), `node tools/lab.js --games 20 --order --pool`, `node tools/review.js`, `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.43 (re-saved for the engine's own math; the averages are within a fifth of an interval of the sim 0.38 references they replace), 100 games at each level, saved from Node; the page's workers play all 200 identically; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. The restructure in `docs/RESTRUCTURE.md` is under way: steps 0 (the safety net) and 1 (CSS, script and data out of the single file) are done, step 2 split the engine into modules that play the same game for a seed in Node and every browser, step 3 passed the seeded generator in, built every game fresh and added unit tests, and step 4 put Play Review on the sim's expected-goal, rink and math modules. Next is step 5 (the docs pass). Roadmap item 0 is a long-shift bug found along the way. The next engine work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.
+All checks pass. References in `tools/baselines.json` are from sim 0.43 (re-saved once for the engine's own math; the averages are within a fifth of an interval of the sim 0.38 references they replaced), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete. Roadmap item 0 is a long-shift bug found during it; after that, by priority, the first candidate is defense that allows the real number of chances.

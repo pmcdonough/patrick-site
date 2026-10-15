@@ -67,7 +67,7 @@ It proves the pipeline end to end: real events in, scored alternatives out, on t
 
 ## Running another game
 
-Grab the two NHL files for any game ID, run `tools/game_load.py`, and change the `get('data/game-2025020812.json')` line in the page (or make it a query parameter, which is the obvious next step). The systems used for inference are hard-coded per club near the top of the script (`OZ`); other clubs need an entry there.
+Grab the two NHL files for any game ID, run `tools/game_load.py`, and change the `get('data/game-2025020812.json')` line in `public/play-review/src/main.js` (or make it a query parameter, which is the obvious next step). The systems used for inference are hard-coded per club near the top of the script (`OZ`); other clubs need an entry there.
 
 ## Next
 

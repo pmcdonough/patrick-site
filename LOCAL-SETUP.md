@@ -25,6 +25,7 @@ Node (version 22 or later) for the engine checks, and Playwright for the checks 
 cd tools
 npm install
 npx playwright install chromium
+npx playwright install firefox webkit   # optional: only tools/browsers.js uses them
 cd ..
 ```
 
@@ -41,15 +42,16 @@ node --test tools/test               # the unit tests: "pass 8", "fail 0" (about
 node tools/smoke.js                   # ends with "ERRORS: []"
 ```
 
-`smoke.js` serves `public/`, plays a full game headless, loads the home page and Play Review, and fails on any script error or any data file that does not load. It also checks that the sim's `?v=` stamps match its version.
+The unit tests run the engine in Node. `smoke.js` serves `public/` itself, plays a full game in headless Chromium, loads the home page and Play Review, and fails on any script error, any data file that does not load, or any `?v=` version stamp that disagrees with its project's version.
 
 The version numbers should agree with the top of `CHANGELOG.md`:
 
 ```
-head -3 CHANGELOG.md                                                        # Site 0.xx = sim 0.yy + Play Review 0.z
-grep -o "Site v0\.[0-9]*" public/index.html                                 # the site version
-grep -o "const VERSION = '[0-9.]*'" public/bruins-vs-canadiens/index.html   # the sim version
-grep -o 'class="ver">v[0-9.]*' public/index.html                            # sim, then Play Review
+head -3 CHANGELOG.md                                                              # Site 0.xx = sim 0.yy + Play Review 0.z
+grep -o "Site v0\.[0-9]*" public/index.html                                       # the site version
+grep -o "const VERSION = '[0-9.]*'" public/bruins-vs-canadiens/src/main.js        # the sim version
+grep -o "const VERSION = '[0-9.]*'" public/play-review/src/main.js                # the Play Review version
+grep -o 'class="ver">v[0-9.]*' public/index.html                                  # the card badges: sim, then Play Review
 ```
 
 ## 5. Does the data reproduce?
@@ -78,33 +80,29 @@ Things to click once: each of the three steps in the header; Edit plan and chang
 
 The live site at pmcdonough.com serves `public/` through Cloudflare.
 
-## 7. Baselines
+## 7. The full set of checks
 
-`docs/ENGINE.md` has the numbers the engine hits and how they compare with the league. Re-measure after any engine change:
+`docs/ENGINE.md` has the numbers the engine hits and how they compare with the league. The "Checks" table in `CLAUDE.md` says which to run for which change; all of them:
 
 ```
+node --test tools/test          # unit tests
+node tools/smoke.js             # the pages load and run, the version stamps agree
 node tools/lab.js --nhl         # 100 games at the NHL-average tick: report vs league and the saved reference
 node tools/lab.js               # the same at build defaults
+node tools/lab.js --games 20 --order --pool   # every game identical replayed in reverse order, and in the page's own workers
 node tools/shifts.js            # shift-length distribution and change windows
 node tools/rules.js             # offsides and icings per game against league rates
-node tools/lab.js --games 20 --order --pool   # every game identical replayed in reverse order, and in the page's own workers
 node tools/review.js            # every shot Play Review scores, against its reference
+node tools/calibration.js       # a ten-game strategy test through the page's controls
+node tools/browsers.js          # the same seeded games in Chromium, Firefox and WebKit as in Node
 ```
 
-`lab.js`, `shifts.js`, `rules.js` and `nhl-average.js` run the engine in Node; `smoke.js`, `calibration.js`, `review.js` and `lab.js --pool` load the pages in Chromium, serving `public/` themselves, so no server needs to be running. A seeded `lab.js` run reproduces exactly, and the reference keeps a fingerprint of every game, so "identical to the reference" means all 100 games finished exactly as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
+`lab.js`, `shifts.js`, `rules.js`, `nhl-average.js` and the unit tests run the engine in Node; the others load the pages in a browser, serving `public/` themselves, so no server needs to be running. A seeded `lab.js` run reproduces exactly, and the reference keeps a fingerprint of every game, so "identical to the reference" means all 100 games finished exactly as before. To test a system: `node tools/lab.js --nhl --compare MTL.fore=131` or `--sweep BOS.entry`.
 
 ## 8. Working on it from Claude Code
 
-Start Claude Code from the repo root so `CLAUDE.md` loads automatically. It has the rules (visible copy never mentions internals, every number lives in data, every page is served over HTTP, balance is measured not eyeballed) and the shipping checklist.
+Start Claude Code from the repo root so `CLAUDE.md` loads automatically. It has the rules (visible copy never mentions internals, every number lives in data, the engine never touches the page and draws every random number from the game's own generator, balance is measured not eyeballed), the checks for each kind of change, and the shipping checklist.
 
-The routine for any change:
-
-```
-# edit public/bruins-vs-canadiens/src/main.js, style.css, index.html and/or data/*.json
-node tools/smoke.js
-node tools/lab.js --nhl          # for any engine change; also tools/lab.js at build defaults
-```
-
-Then follow "Shipping a version" in `CLAUDE.md`: bump the versions, add a changelog section, one commit with the version numbers in the subject, push.
+The routine for any change: edit (the engine in `public/bruins-vs-canadiens/src/engine/`, the sim's page in its `src/main.js`, `style.css` and `index.html`, the data in `data/*.json`), run the checks from the table in `CLAUDE.md`, then follow "Shipping a version": bump the versions and stamps, add a changelog section, one commit with the version numbers in the subject, push.
 
 What to work on next is in `docs/ROADMAP.md`.

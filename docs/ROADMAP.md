@@ -31,8 +31,16 @@ From the brief, in order:
 1. Zone-entry review: the next play type after shots. Was the carry, chip or dump the best entry given who was back? Needs the same inference the shot review uses plus the entry events in the play-by-play.
 2. Decision-agreement validation: score a season of real shots with the pass and drive alternatives and measure how often the model's preferred choice matches what the real player did, by situation. This is the number that says whether the model is worth listening to.
 3. A game picker (any game ID through `tools/game_load.py`, the file name as a query parameter) and a per-player view (one skater's shots across games).
-4. Observed systems per club for inference, replacing the hard-coded `OZ` table at the top of the page's script.
+4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
+
+## Engineering
+
+Follow-ons from the restructure (`docs/RESTRUCTURE.md`), none urgent:
+
+1. A GitHub Action that runs `node --test tools/test` and `node tools/lab.js --nhl` on every push, so a change that alters games without a re-saved reference is caught before it is live. The engine checks need only Node.
+2. The two unit tests step 3 left unwritten: one save roll per shot, and the penalty-kill clear distance. Both need a small hook inside `movePuck` (an `fx`-style event for a save roll and for a clear would do).
+3. Bump all version stamps with one command (a small script that sets `VERSION` and every `?v=` for a project), since a missed stamp is the most likely shipping mistake now; `smoke.js` already catches one.
 
 ## Known weaknesses
 

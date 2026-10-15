@@ -63,4 +63,4 @@ The same code, `src/engine/xg.js` imported by `public/play-review/src/main.js`, 
 
 ## Refitting
 
-Download newer shot files from MoneyPuck, run `python3 tools/xg_fit.py shots_2025.csv shots_2026.csv`, then `node tools/smoke.js`, `node tools/review.js` and `node tools/calibration.js` to see what moved.
+Download newer shot files from MoneyPuck into `raw/` (`docs/RAW-INPUTS.md`), run `.venv/bin/python tools/xg_fit.py raw/shots_2025.csv raw/shots_2026.csv`, then `node --test tools/test` (the engine against the new grid), `node tools/smoke.js`, `node tools/lab.js --nhl` and `node tools/review.js` to see what moved. Expect the references to change; re-save them with `--save` and say why in the commit.
