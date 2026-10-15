@@ -1,6 +1,6 @@
 # Play Review
 
-The first slice of the counterfactual play-review product described in the product brief: one real game, every unblocked shot scored by expected goals against the best pass the model saw from the same spot, with a replay of the seconds around each shot. Version 0.6, at `public/play-review/`.
+The first slice of the counterfactual play-review product described in the product brief: one real game, every unblocked shot scored by expected goals against the best pass the model saw from the same spot, with a replay of the seconds around each shot. At `public/play-review/` (`index.html`, `style.css`, `src/main.js`); its version is in `CHANGELOG.md`.
 
 ## What it shows
 
@@ -67,7 +67,11 @@ It proves the pipeline end to end: real events in, scored alternatives out, on t
 
 ## Running another game
 
-Grab the two NHL files for any game ID, run `tools/game_load.py`, and change the `get('data/game-2025020812.json')` line in `public/play-review/src/main.js` (or make it a query parameter, which is the obvious next step). The systems used for inference are hard-coded per club near the top of the script (`OZ`); other clubs need an entry there.
+Grab the two NHL files for any game ID, run `tools/game_load.py`, and change the `get('data/game-2025020812.json')` line in `public/play-review/src/main.js` (or make it a query parameter, which is the obvious next step). The systems used for inference are hard-coded per club in the `OZ` table in `src/main.js`; other clubs need an entry there.
+
+## What tracking data would change
+
+Tracking (every skater, both goalies and the puck, many times a second) removes the page's central guess. The nine positions it infers would be observed, so "a pass was worth more" would be a statement about the real ice, not about where teammates usually stand. The completion, pressure and drive numbers, set by hand today, could be fit from real passes and real carries. The expected-goal model could use where the goalie was and who screened him, which matters most for exactly the net-front passes this page flags. And the replay would be the real play instead of a reconstruction. `docs/MODELING.md` has the same picture for every model.
 
 ## Next
 

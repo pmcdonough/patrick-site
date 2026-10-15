@@ -261,6 +261,7 @@
   .about-body { padding-block: 6px 20px; padding-inline: 20px; max-width: 70ch; font-size: 0.92rem; line-height: 1.55; }
   .about-body h3 { font-family: var(--display); font-weight: 800; font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 18px 0 4px; }
   .about-body p { margin: 0 0 10px; } .about-body .lede { font-size: 1rem; }
+  .about-body ul { margin: 0 0 10px; padding-left: 1.2em; } .about-body li { margin-bottom: 6px; }
   .about-body code { font-size: 0.8rem; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
 
   .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding-block: 10px; padding-inline: 12px; min-width: 0; font-size: 0.8rem; }

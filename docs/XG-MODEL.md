@@ -49,9 +49,9 @@ For every shooter with at least 60 unblocked shots across the two seasons (738 p
 
 ## In the engine
 
-`shoot()` computes distance and angle to the net, the shot type (slap for point shots and defensemen, snap for one-timers, wrist otherwise), rebound (within 3 s of the goalie's last save), and the strength, then stores `puck.xg` and the tier. `countUnblocked()` adds `puck.xg` to the team's expected goals. The goalie's save roll uses it: goal probability = xG divided by the league share of unblocked shots that hit the net (0.651, since this check only runs on pucks that reach the goalie), times the goalie's goal rate in that tier relative to the league's, times `goalie.tierGoalScale` (0.39 since sim 0.35; 0.72 before).
+`shoot()` (`src/engine/ai.js`, through `makeXg` in `src/engine/xg.js`) computes distance and angle to the net, the shot type (slap for point shots and defensemen, snap for one-timers, wrist otherwise), rebound (within 3 s of the goalie's last save), and the strength, then stores `puck.xg` and the tier. `countUnblocked()` (`src/engine/rules.js`) adds `puck.xg` to the team's expected goals. The goalie's save roll uses it: goal probability = xG divided by the league share of unblocked shots that hit the net (0.651, since this check only runs on pucks that reach the goalie), times the goalie's goal rate in that tier relative to the league's, times `goalie.tierGoalScale` (0.39 since sim 0.35; 0.72 before).
 
-The shot mix was retuned at the same time because the old tier boxes had hidden how close the sim's shots were. At the NHL-average settings the engine now produces about 43 unblocked attempts per team per game in a 28 / 13 / 3 low / medium / high split (league 31 / 8 / 3), mean xG per attempt 0.087 (league 0.073), and 3.5 to 4 goals per team per game over a ten-game batch. The medium tier is still too fat; `tierGoalScale` compensates for goals, and the reality check shows the mix honestly.
+The shot mix was retuned at the same time because the old tier boxes had hidden how close the sim's shots were. At sim 0.29, at the NHL-average settings, the engine produced about 43 unblocked attempts per team per game in a 28 / 13 / 3 low / medium / high split (league 31 / 8 / 3), mean xG per attempt 0.087 (league 0.073), and 3.5 to 4 goals per team per game over a ten-game batch. The medium tier is still too fat; `tierGoalScale` compensates for goals, and the reality check shows the mix honestly.
 
 Since sim 0.35 the carrier also decides with the model (`lookXg`, `shotDecision.xgChoice` in `physics.json`). In the offensive zone he compares his own look (the model's xG times his finishing, halved with a defender in the lane, cut further with a defender within 4 ft) with the best pass (a teammate's look times the chance the pass gets there). He shoots a look worth at least 0.12 when no pass is clearly better, which covers an open wrist shot from about 20 ft straight on; a teammate's look better by 30% gets the pass. The volume rules (perimeter and point shots, the stuck rule) still throw low-danger pucks on net.
 
@@ -60,6 +60,10 @@ The consequence: the sim now takes the chances its defense allows, and it allows
 ## In the play-review page
 
 The same code, `src/engine/xg.js` imported by `public/play-review/src/main.js`, scores the real shot (real type, strength and rebound flag) and each teammate's hypothetical one-timer (type SNAP) from his inferred spot. See `docs/PLAY-REVIEW.md`.
+
+## What tracking data would add
+
+The model sees where a shot came from, its type, rebound and strength. What it cannot see is most of what decides a save: where the goalie was and whether he was set, screens and traffic, the pass before the shot and how far it moved the goalie, the shooter's speed and release. Puck and player tracking records all of it, and shot models built on tracking separate goals from saves well beyond what any location-only model reaches; MoneyPuck's own model, with more public context than this one, sits only 0.025 AUC higher. With tracking the save roll could also become a goalie-position model instead of one rate per tier. `docs/MODELING.md` (What full tracking data would change) covers the rest of the engine.
 
 ## Refitting
 

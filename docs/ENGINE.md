@@ -1,6 +1,6 @@
 # Engine notes
 
-How the sim in `public/bruins-vs-canadiens/` is put together, what must stay true, and what we learned tuning it. Function names below are the ones in the code; "Where things live" names the file for each.
+How the sim in `public/bruins-vs-canadiens/` is put together, what must stay true, and what we learned tuning it. `docs/MODELING.md` describes the same engine as a model (state, kinematics, policy, outcome models, calibration, inference) and what tracking data would change. Function names below are the ones in the code; "Where things live" names the file for each.
 
 ## File structure
 
@@ -79,6 +79,8 @@ Goals match the league because `goalie.tierGoalScale` is 0.39. Everything else i
 How 0.35 got here, measured each step with `lab.js --nhl` (both clubs' expected goals): the expected-goal decision alone took the sim from about 4 to 12 a game, because open looks were everywhere and players had been passing them up; passes no longer turning the defense into a loose-puck scramble, man coverage that keeps its marks with a cushion, and the pass control time brought it back to 5 to 6. Several sensible changes measured almost nothing on their own (slot pick-up, sticks on passes, own-zone effort, defenseman spacing) and were kept because they are right, not because they moved the number.
 
 ## System effects (sim 0.35)
+
+Measured at sim 0.35. The engine's own math (0.43) and the dead-pass fix (0.46) changed every game a little, so before relying on a number here, re-run its sweep (`node tools/lab.js --nhl --sweep BOS.<card>`) and update the table.
 
 The question the lab exists to answer: does changing a card move the result, by more than the noise, in a direction a hockey person would accept? Every Bruins card against the Canadiens' build cards, NHL-average tick, 100 games per option, the same seeds for every option (`node tools/lab.js --nhl --sweep BOS.<card>`). Differences are against the current Bruins card; * means the 95% interval excludes zero.
 

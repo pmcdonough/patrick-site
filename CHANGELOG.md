@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.60 = sim 0.49 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.61 = sim 0.50 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.61
+- Documentation sweep, in the apps and in the repo. Home page: the sim's card points to how the models work. Repo: `docs/MODELING.md` gains a technical summary of the engine as a model (state and time, kinematics, the decision policy, the outcome models, calibration, the lab's inference) and a table of what full tracking data would change in each model; `README.md` gains a modeling section; `docs/XG-MODEL.md` and `docs/PLAY-REVIEW.md` gain their own tracking sections; stale details fixed across `README.md`, `MODELING.md` (save scale, file locations, the lab's statistics), `XG-MODEL.md` (file locations, sim 0.29 numbers labeled), `PLAY-REVIEW.md`, `ENGINE.md` (the 0.35 system effects flagged for a re-run), `ROADMAP.md` and `LOCAL-SETUP.md`.
 
 ### 0.60
 - Sim 0.49 (the Game plan lab reads top to bottom).
@@ -105,6 +108,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 
 ## Play Review
 
+### 0.10
+- The method note says the shot scoring is the sim's own model and code, and what tracking data would change for the review: observed positions, fitted pass and pressure numbers, an expected-goal model that sees the goalie and screens, and the real play in the replay.
+
 ### 0.9
 - Scores shots with the sim's own code: the expected-goal model (`engine/xg.js`), the rink (`engine/rink.js`) and the engine's math, imported from the sim instead of copied. The rule that the formula lived in two places is gone.
 - The page splits like the sim's: `index.html` (markup, 44 lines), `style.css` and `src/main.js` (a module), with `?v=` stamps.
@@ -137,6 +143,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.50
+- How it works gains two sections. The models, technically: time and motion, the rule-based decision policy, the expected-goal model and its fit, the save roll and its calibration factor, the ratings, measured against calibrated against assumed numbers, and the Game plan lab's paired statistics. What full tracking data would change: movement, decisions, expected goals, goalies, systems and coverage, validation.
+- Corrected: saves were described as the goalie's tier save rate; since 0.35 the save roll starts from the shot's expected goals. The penalty kill's long clear is described.
 
 ### 0.49
 - The Game plan lab reads top to bottom, in one column: the Baseline card (a prompt before the first run, then the record and the comparison with the real teams), both teams' plans side by side (stacked on a phone), the buttons, then the tests.
