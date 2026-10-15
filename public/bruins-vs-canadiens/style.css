@@ -45,9 +45,6 @@
   .labpromo .go { cursor: default; }
   .labpromo .primary { margin-left: auto; }
   /* Game plan lab */
-  .stale { margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--raised); border-left: 3px solid var(--link); font-size: 0.9rem; }
-  .isstale > :not(.stale):not(.forwho) { opacity: 0.5; }
-  #tested.isstale { opacity: 0.5; }
   .tryrow select { width: auto; flex: 1 1 160px; min-width: 0; }
   .tested { display: flex; flex-direction: column; gap: 12px; }
   .tested:empty { display: none; }
@@ -56,6 +53,19 @@
   article.change h4 small { font: 400 0.85rem var(--body); color: var(--fg-dim); margin-left: 6px; }
   .headline.sm { font-size: 1.15rem; }
   .side .cgrid.lgrid { grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+  .labflow { display: flex; flex-direction: column; gap: 14px; max-width: 1000px; margin-inline: auto; }
+  .basehead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .basehead .vt { margin: 0; }
+  .planpair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .planpair { grid-template-columns: 1fr; } }
+  .actions .row { flex-wrap: wrap; align-items: center; }
+  .actions .gfield { margin-left: auto; }
+  .smallrow { gap: 12px; }
+  .lgrid label.changed select, .lgrid label.changed input { outline: 2px solid var(--link); outline-offset: 1px; }
+  .lgrid label.changed::after { content: 'changed'; color: var(--link); font-size: 0.66rem; letter-spacing: 0.08em; }
+  .tested article.change { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .tested .what { margin: 0; line-height: 1.5; }
+  .tested .tnum { font: 600 0.72rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
   .lgrid select { background: var(--raised); }
   @media (max-width: 380px) { .side .cgrid.lgrid { grid-template-columns: 1fr; } }
   .steps { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; font-size: 0.9rem; color: var(--fg-dim); }

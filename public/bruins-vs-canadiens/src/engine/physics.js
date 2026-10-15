@@ -1,8 +1,8 @@
 // Movement and the puck: skating, fatigue, staying on the ice, goalies, the puck in flight, saves and rebounds.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.48';
-import * as DM from './detmath.js?v=0.48';
+import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.49';
+import * as DM from './detmath.js?v=0.49';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, PH, puck, random, rnd, shorthanded, skaters, SYS, teams, XG } = S;

@@ -4,9 +4,9 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 ## What this repo is
 
-A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. It has two views that share nothing but the engine: Watch a game (scoreboard, rink, each team's game plan as a sentence with its drawer, the Watch settings drawer with the sliders, box score, play by play and rosters, and a strip that explains the lab and links to it) and the Game plan lab (its own plans for both teams, remembered in the browser; a baseline of 100 games at the NHL settings with the comparison with the real 2025-26 teams folded under it; then changes, or every option of one choice, played through the same games and judged against the baseline). The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
+A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. It has two views that share nothing but the engine: Watch a game (scoreboard, rink, each team's game plan as a sentence with its drawer, the Watch settings drawer with the sliders, box score, play by play and rosters, and a strip that explains the lab and links to it) and the Game plan lab, read top to bottom (the baseline of 100 games at the NHL settings with the comparison with the real 2025-26 teams folded under it; both teams' plans, its own, side by side; Rerun the baseline and Test against the baseline, each enabled only after an edit; the tests of the edited plans on the same games; all kept in the browser; and a button that sends both plans to Watch). The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.59, sim 0.48, Play Review 0.9.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.60, sim 0.49, Play Review 0.9.
 
 ## Layout
 
@@ -119,6 +119,6 @@ The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`,
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.59)
+## State (site 0.60)
 
 All checks pass. References in `tools/baselines.json` are from sim 0.46 (re-saved when a dead pass became a loose puck, which fixed play freezing for up to a period; no average moved by more than one combined interval), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`).

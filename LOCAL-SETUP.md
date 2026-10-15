@@ -76,7 +76,7 @@ node tools/serve.js                   # or: python3 -m http.server --directory p
 
 The pages need a server: opened straight from disk they cannot load their data or modules.
 
-Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, test a change, rank every option for one choice, change a plan and see the baseline go out of date; Play Review, pick a shot, play the replay. The browser console should stay clean.
+Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, change a choice and Test against the baseline, rank every option for one choice, go to Watch and back (the results stay), Watch these plans in a game; Play Review, pick a shot, play the replay. The browser console should stay clean.
 
 The live site at pmcdonough.com serves `public/` through Cloudflare.
 

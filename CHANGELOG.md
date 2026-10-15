@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.59 = sim 0.48 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.60 = sim 0.49 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.60
+- Sim 0.49 (the Game plan lab reads top to bottom).
 
 ### 0.59
 - Sim 0.48 (the Game plan lab). Home page card describes the lab and links to it. `tools/calibration.js` runs a ten-game baseline in the lab.
@@ -134,6 +137,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.49
+- The Game plan lab reads top to bottom, in one column: the Baseline card (a prompt before the first run, then the record and the comparison with the real teams), both teams' plans side by side (stacked on a phone), the buttons, then the tests.
+- Testing is editing: change either plan, one choice or several, and Test against the baseline plays the plans as they are now through the baseline's games. Each test lists what changed for each team, and choices that differ from the baseline are marked in both plans. Rerun the baseline makes the current plans the new baseline. Each button is clickable only once something changed since the run it would repeat. The single "try a change" picker is gone; ranking every option of one choice stays, folded.
+- The baseline and the tests are kept in the browser with the plans, so they are still there after watching a game or a reload (results from another sim version are dropped).
+- Watch these plans in a game copies both lab plans to the Watch view and starts a game with them.
 
 ### 0.48
 - Two views that share nothing but the engine. **Watch a game** is the game on the rink with its own plans (Edit plan) and its own settings, now a Settings button in the Watch controls, plus the box score, play by play and rosters, and a strip that explains the lab in three steps and opens it. The **Game plan lab** replaces Test a strategy and How real is it.
