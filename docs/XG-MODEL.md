@@ -59,7 +59,7 @@ The consequence: the sim now takes the chances its defense allows, and it allows
 
 ## In the play-review page
 
-The same formula, copied into `public/play-review/index.html`, scores the real shot (real type, strength and rebound flag) and each teammate's hypothetical one-timer (type SNAP) from his inferred spot. See `docs/PLAY-REVIEW.md`.
+The same code, `src/engine/xg.js` imported by `public/play-review/src/main.js`, scores the real shot (real type, strength and rebound flag) and each teammate's hypothetical one-timer (type SNAP) from his inferred spot. See `docs/PLAY-REVIEW.md`.
 
 ## Refitting
 

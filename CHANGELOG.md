@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.55 = sim 0.45 + Play Review 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.56 = sim 0.45 + Play Review 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.56
+- Play Review 0.9 (restructure step 4). `tools/smoke.js` checks both projects' version stamps, including Play Review's imports from the sim.
 
 ### 0.55
 - Sim 0.45 (restructure step 3). Unit tests: `node --test tools/test` (8 tests, about 20 s): a seed plays the same game whatever came before it, a new game keeps nothing from the last one, every random draw in a seeded game comes from its generator, no icing on a shorthanded team, the plan drawer offers only defined systems, the engine's math within one unit in the last place, and the expected-goal model against the fit script's grid. Each of the first three was checked by breaking the engine on purpose and watching it fail.
@@ -89,6 +92,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Play Review
+
+### 0.9
+- Scores shots with the sim's own code: the expected-goal model (`engine/xg.js`), the rink (`engine/rink.js`) and the engine's math, imported from the sim instead of copied. The rule that the formula lived in two places is gone.
+- The page splits like the sim's: `index.html` (markup, 44 lines), `style.css` and `src/main.js` (a module), with `?v=` stamps.
+- Every shot scores exactly as before to nine decimals (`tools/review.js`); the engine's math differs from the built-ins only far below that.
 
 ### 0.8
 - Fetches its data only; the embedded copies of the expected-goal model, the systems and the game file are gone (the page is 461 lines, from 1,276). Every shot scores exactly as before (`tools/review.js`).

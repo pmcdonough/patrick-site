@@ -25,7 +25,7 @@ Every rink panel is labeled "inferred positions" and the method note says so in 
 
 ## Scoring
 
-Shot taken: the xG model with the real shot type (NHL type names mapped to MoneyPuck's), the strength from the situation code, and a rebound flag when the previous event was a shot by the same team within 3 seconds, times the shooter's finishing.
+Shot taken: the sim's own xG model (`bruins-vs-canadiens/src/engine/xg.js`, with its rink and math, so the two pages can never disagree) with the real shot type (NHL type names mapped to MoneyPuck's), the strength from the situation code, and a rebound flag when the previous event was a shot by the same team within 3 seconds, times the shooter's finishing.
 
 Each teammate: xG of a one-timer (type SNAP) from his inferred spot, times his finishing, times a pressure factor (0.6 with a defender within 4 ft, 0.85 within 8 ft), times the chance the pass arrives (0.96 minus 0.0045 per foot, floor 0.4, times 0.45 if a defender is in the lane), times 0.9 for the one-timer having to get off. The best teammate's value minus the shot's xG is the gap, shown in points (hundredths of a goal).
 

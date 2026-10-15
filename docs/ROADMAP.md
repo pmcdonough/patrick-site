@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.55 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.56 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -24,7 +24,7 @@ Since 0.37 the lab compares plan A and plan B (and since 0.38 How real is it rea
 2. Save and compare runs: keep the last few results so two plans can sit side by side without re-running.
 3. A per-game log for a run (score, OT or SO, shots) that can be exported, so a result can be checked outside the page.
 
-## Play Review (0.6)
+## Play Review (0.9)
 
 From the brief, in order:
 
