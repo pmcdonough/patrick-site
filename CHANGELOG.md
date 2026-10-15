@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.48 = sim 0.39 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.49 = sim 0.40 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.49
+- Sim 0.40.
 
 ### 0.48
 - Sim 0.39.
@@ -86,6 +89,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.40
+- Sight lines explain themselves. The tag carries the same marks as the drawing (a yellow wedge for the shot, a blue dash for the pass), names the teammate the pass goes to, and says what the carrier will do by the rule he decides with: shooting, passing, or holding for a better play. The wedge is outlined to the two posts and the pass target is ringed. The legend under the rink says what each color means, and Sight lines has a glossary entry.
+- 0.5x speed, for following sight lines.
 
 ### 0.39
 - Test a strategy explains itself: plan A is your team as set, plan B the same team with the changes you want to try, and both play the other team through the same games, so a difference is the change and not easier games. Plan A, plan B and the same games have explainers and glossary entries.

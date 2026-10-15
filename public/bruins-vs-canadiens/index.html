@@ -297,6 +297,7 @@
     <div class="rinkbar">
       <div class="row">
         <button id="pause" type="button">Pause</button>
+        <button type="button" class="spd" data-s="0.5">0.5x</button>
         <button type="button" class="spd" data-s="1">1x</button>
         <button type="button" class="spd" data-s="3" aria-pressed="true">3x</button>
         <button type="button" class="spd" data-s="8">8x</button>
@@ -308,7 +309,7 @@
         <button id="sightBtn" type="button" aria-pressed="true" title="Show what the puck carrier sees: his open look at the net, what the defenders block, and his best pass">Sight lines</button>
       </div>
     </div>
-    <p class="sight-legend" id="sightLegend"><span><i class="sw lit"></i>Open look at the net</span><span><i class="sw shade"></i>Blocked by a defender</span><span><i class="sw pass"></i>His best pass, bold when it beats the shot</span></p>
+    <p class="sight-legend" id="sightLegend"><b>Sight lines</b> <span><i class="sw lit"></i>Yellow: the part of the net the puck carrier can shoot at</span><span><i class="sw shade"></i>Dark: the part a defender blocks</span><span><i class="sw pass"></i>Blue dash: his best pass, to the ringed teammate</span><span>The tag gives each one's chance to score and what he will do <button type="button" class="tip" data-term="sight" aria-label="How do sight lines work?">?</button></span></p>
     <div class="plans">
       <article class="plan bos">
         <header><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span><h2>Bruins game plan</h2><button type="button" class="linkish" data-edit="h">Edit plan</button></header>
@@ -478,7 +479,7 @@
     <div id="aboutSystems"></div>
 
     <h3>Using it</h3>
-    <p>Watch plays one game on the rink. Pause it, change the speed or start a new game; the scoreboard shows the shots, each team's share of the chances and the power play. Effects draws skate trails, streaks on hard shots and passes, ripples on takeaways and blocked shots, a flash on big saves and the goal light. Sticks draws each skater's stick. Sight lines shows what the puck carrier sees in the offensive zone: his open look at the net, the shadow each defender casts over it, and his best pass, with how likely each one is to score. Below the rink each team's game plan reads as a sentence. Edit plan opens both plans with what every choice means, and a change takes effect on the next play. The box score, the play by play and the rosters fold open underneath.</p>
+    <p>Watch plays one game on the rink. Pause it, change the speed (0.5x is the one for following sight lines) or start a new game; the scoreboard shows the shots, each team's share of the chances and the power play. Effects draws skate trails, streaks on hard shots and passes, ripples on takeaways and blocked shots, a flash on big saves and the goal light. Sticks draws each skater's stick. Sight lines shows what the puck carrier sees in the offensive zone: his open look at the net, the shadow each defender casts over it, and his best pass, with how likely each one is to score. Below the rink each team's game plan reads as a sentence. Edit plan opens both plans with what every choice means, and a change takes effect on the next play. The box score, the play by play and the rosters fold open underneath.</p>
     <p>Each plan is seven systems and an aggression dial. The dial sets how hard the team plays on and with the puck: higher means checkers go after the carrier harder, with more takeaways and more penalties, skaters shoot more from ordinary spots, and the carrier holds the puck a beat longer looking for a play. It does not change the forecheck, gap control or line changes; those come from the systems.</p>
     <p>Test a strategy answers whether a change would help. Pick the team you coach. Plan A is that team as it is set; plan B is a copy where you change what you want to try. Run plays both plans against the other team's plan through the same games, 100 each unless you pick another number, at the NHL-realistic settings, in about a minute on most computers. The same games means each pair of games starts from the same random numbers, so the bounces match until a difference in plan makes play go another way, and a gap between the plans is the plans, not the schedule. The result is a sentence and three verdicts, net chances, goal difference and points, each a clear edge, too close to call or a clear cost. Trust net chances first: points need far more games to separate. Rank every option for one choice tries every option of one system, every forecheck for example, in the same games and orders them.</p>
     <p>How real is it puts every number the sim produces next to what each team really did in 2025-26 and the league average, with a verdict on each, from the last test or from this game so far. Settings, behind the gear, holds the engine sliders, with a tick at the value calibrated to NHL tracking, and the data sources; settings and plans can be saved in your browser or exported to share. The version number is at the bottom of the page.</p>
@@ -3392,7 +3393,7 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.39';
+  const VERSION = '0.40';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
@@ -4839,7 +4840,9 @@ function startSim(DATA) {
     const far = q => ({ x: c.x + (q.x - c.x) * 1.04, y: c.y + (q.y - c.y) * 1.04 });
     ctx.save();
     ctx.beginPath(); ctx.moveTo(c.x, c.y); const f0 = far(posts[0]), f1 = far(posts[1]); ctx.lineTo(f0.x, f0.y); ctx.lineTo(f1.x, f1.y); ctx.closePath();
-    ctx.fillStyle = 'rgba(255, 200, 60, 0.38)'; ctx.fill(); ctx.clip();
+    ctx.fillStyle = 'rgba(255, 200, 60, 0.38)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(214, 150, 0, 0.9)'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(f0.x, f0.y); ctx.lineTo(c.x, c.y); ctx.lineTo(f1.x, f1.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(f0.x, f0.y); ctx.lineTo(f1.x, f1.y); ctx.closePath(); ctx.clip();
     ctx.fillStyle = 'rgba(22, 32, 44, 0.3)';
     const toNet = { x: n.x - c.x, y: n.y - c.y };
     for (const o of opp) {
@@ -4852,15 +4855,31 @@ function startSim(DATA) {
       ctx.lineTo(o.x + Math.cos(a - Math.PI / 2 - h) * r, o.y + Math.sin(a - Math.PI / 2 - h) * r); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
-    const passWins = read.best && read.bestV > read.myV;
+    // what he will do with it, by the same rule carrierThink uses: shoot a look worth taking unless a pass is clearly better
+    const XC = PH.shotDecision.xgChoice;
+    const reads = read.myV >= XC.minXg && read.myV * XC.passMustBeatBy >= read.bestV ? 'shoot' : read.best && read.bestV > read.myV * XC.passMustBeatBy && read.bestV >= XC.minXg ? 'pass' : 'hold';
     if (read.best) {
-      ctx.save(); ctx.strokeStyle = '#0b4ea2'; ctx.globalAlpha = passWins ? 0.95 : 0.4; ctx.lineWidth = passWins ? 0.7 : 0.35; ctx.setLineDash([1.6, 1.2]);
-      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(read.best.x, read.best.y); ctx.stroke(); ctx.restore();
+      const strong = reads === 'pass';
+      ctx.save(); ctx.strokeStyle = '#0b4ea2'; ctx.globalAlpha = strong ? 0.95 : 0.55; ctx.lineWidth = strong ? 0.7 : 0.45; ctx.setLineDash([1.6, 1.2]);
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(read.best.x, read.best.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.lineWidth = 0.45; ctx.beginPath(); ctx.arc(read.best.x, read.best.y, 3.2, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     }
-    const tag = `Shot ${Math.round(read.myV * 100)}%` + (read.best ? `  \u00b7  best pass ${Math.round(read.bestV * 100)}%` : '');
-    ctx.save(); ctx.font = '600 2.1px Barlow, "Segoe UI", sans-serif'; const w = ctx.measureText(tag).width + 1.8, x = clamp(c.x - w / 2, 1, 199 - w), y = Math.max(0.5, c.y - 7.2);
-    ctx.fillStyle = 'rgba(22, 32, 44, 0.86)'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, 3.2, 1.6); else ctx.rect(x, y, w, 3.2); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(tag, x + 0.9, y + 1.65); ctx.restore();
+    // the tag: a yellow wedge mark with his shot, a blue dash with the pass and who it goes to, and his read
+    const pctv = v => Math.round(v * 100) + '%';
+    const parts = [['wedge', `Shot ${pctv(read.myV)}`], ...(read.best ? [['dash', `Pass to #${read.best.num} ${pctv(read.bestV)}`]] : []), ['read', reads === 'shoot' ? 'Shooting' : reads === 'pass' ? 'Passing' : 'Holding for a better play']];
+    ctx.save(); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    const fontN = '600 2.1px Barlow, "Segoe UI", sans-serif', fontB = '800 2.1px Barlow, "Segoe UI", sans-serif', icon = 2.2, gap = 1.3;
+    const widths = parts.map(([k, txt]) => { ctx.font = k === 'read' ? fontB : fontN; return ctx.measureText(txt).width + (k === 'read' ? 0 : icon + 0.6); });
+    const w = widths.reduce((a, b) => a + b, 0) + gap * (parts.length - 1) + 1.8, h = 3.2, x = clamp(c.x - w / 2, 1, 199 - w), y = Math.max(0.5, c.y - 7.4);
+    ctx.fillStyle = 'rgba(22, 32, 44, 0.9)'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, 1.6); else ctx.rect(x, y, w, h); ctx.fill();
+    let cx = x + 0.9; const my = y + h / 2;
+    parts.forEach(([k, txt], i) => {
+      if (k === 'wedge') { ctx.fillStyle = 'rgba(255, 200, 60, 0.95)'; ctx.beginPath(); ctx.moveTo(cx, my); ctx.lineTo(cx + icon, my - 0.9); ctx.lineTo(cx + icon, my + 0.9); ctx.closePath(); ctx.fill(); cx += icon + 0.6; }
+      if (k === 'dash') { ctx.strokeStyle = '#7fb0ee'; ctx.lineWidth = 0.45; ctx.setLineDash([0.6, 0.45]); ctx.beginPath(); ctx.moveTo(cx, my); ctx.lineTo(cx + icon, my); ctx.stroke(); ctx.setLineDash([]); cx += icon + 0.6; }
+      ctx.font = k === 'read' ? fontB : fontN; ctx.fillStyle = k === 'read' ? (reads === 'hold' ? '#c9d3de' : '#ffd166') : '#fff';
+      ctx.fillText(txt, cx, my + 0.1); cx += ctx.measureText(txt).width + gap;
+    });
+    ctx.restore();
   }
   function drawPlayers() {
     ctx.save(); ctx.scale(S, S); ctx.translate(0, RINK_Y);
@@ -5331,6 +5350,7 @@ self.onmessage = e => { const m = e.data;
   // short explainers for the numbers a newcomer will not know
   const TERMS = {
     chances: ['Chances (expected goals)', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."],
+    sight: ['Sight lines', `What the player with the puck sees in the offensive zone. The yellow wedge runs from him to the two posts: the open part of the net he can shoot at. A defender in front of him casts a dark shadow over the part he blocks. The blue dash goes to his best pass, the ringed teammate. The tag gives the chance each one has of becoming a goal and his read: he shoots a look worth at least ${Math.round(PH.shotDecision.xgChoice.minXg * 100)}% unless a pass is clearly better, passes when a teammate has a clearly better look, and otherwise holds the puck for a better play. Slow the game to 0.5x to follow it.`],
     planA: ['Plan A', 'Your team as it is set now, the plan on the Watch view. It is the baseline every test compares against.'],
     planB: ['Plan B', 'A copy of plan A with the changes you want to try. Change one choice to learn what that choice is worth, or several to test a whole new plan.'],
     same: ['The same games', 'Both plans play games that start from the same random numbers, so the bounces are the same until a difference in plan makes play go another way. A gap between the plans comes from the plans, not from one of them getting easier games.'],
