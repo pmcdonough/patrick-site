@@ -4,9 +4,9 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 ## What this repo is
 
-A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. Its tabs are Game, Rosters, Lab (the matchup lab and the reality check) and Advanced (engine settings, data sources). The second project is Play Review at `public/play-review/`, built on the same data and models.
+A static personal site in `public/`. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/index.html`: one HTML file, plain JavaScript on a 2D canvas, no libraries, no build step, driven by the JSON files in `public/bruins-vs-canadiens/data/`. A header says what it is and links three steps into the strategy test; below it are three views, Watch (scoreboard, rink, each team's game plan as a sentence, box score, play by play and rosters folded), Test a strategy (the matchup lab) and How real is it (the reality check), with the game plans and the settings (engine sliders, data sources) in side drawers. The second project is Play Review at `public/play-review/`, built on the same data and models.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.43, sim 0.35, Play Review 0.6.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.44, sim 0.36, Play Review 0.6.
 
 ## Layout
 
@@ -39,7 +39,7 @@ CHANGELOG.md                              per-version changes
 
 ## Rules of the road
 
-- The app's visible copy never mentions technical internals: no file names, no "data/systems.json", no function names. Data sources are listed only in the Advanced tab, in a collapsed section. The About dialog explains how the game works in hockey terms.
+- The app's visible copy never mentions technical internals: no file names, no "data/systems.json", no function names. Data sources are listed only in the Settings drawer, in a collapsed section. System descriptions in `systems.json` are shown to visitors under each choice, so they are written in hockey terms too, never with parameter names. The About dialog explains how the game works in hockey terms.
 - Copy is plain and factual. No em dashes. Short sentences. Hockey vocabulary, not marketing.
 - Every number a hockey person might question lives in `data/`, not in the script. If you add a threshold to the engine, put it in `physics.json` or `systems.json` with a `desc`, and read it from `PH` or `SYS`.
 - After editing anything in `data/` or a game file, run `python3 tools/build.py` so the embedded copies in both pages match. Pages fetch their data over HTTP and fall back to the embedded copies from `file://`.
@@ -70,6 +70,6 @@ The sim's script is about 1,500 lines after the embedded data. Its sections are 
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.43)
+## State (site 0.44)
 
 All checks pass: `python3 tools/build.py --check`, `node tools/smoke.js`, `node tools/lab.js` (both levels identical to the reference), `node tools/calibration.js`, `node tools/shifts.js`, `node tools/rules.js`, and all three data scripts reproduce their committed files from `raw/`. References in `tools/baselines.json` are from sim 0.35, 100 games at each level; `docs/ENGINE.md` has the first full sweep of the Bruins cards and what it says about the engine. Nothing is half-done. The next piece of work, by priority, is in `docs/ROADMAP.md`; the first candidate is defense that allows the real number of chances.

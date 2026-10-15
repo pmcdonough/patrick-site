@@ -7,7 +7,7 @@
 <title>Bruins vs Canadiens</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
 <style>
-  /* Layout: rink (with benches above and penalty boxes below) and roster sheets on the left, systems panel on the right; stacks on phones. */
+  /* Layout: a header that says what this is (pitch, three steps, view switcher), then one of three views: Watch (scoreboard, rink, game plans), Test a strategy, How real is it. Game plans and settings open in side drawers. */
   :root {
     --bg: #e9ecef;
     --panel: #f7f8fa;
@@ -22,41 +22,101 @@
     --away: #af1e2d;
     --away-2: #ffffff;
     --away-3: #192168;
+    --bos-tint: #fff5dc; --bos-edge: #e9b84d; --mtl-tint: #f9e6e8; --mtl-edge: #d9a0a7; --link: #0b4ea2; --raised: #ffffff;
     --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
     --body: 'Barlow', 'Segoe UI', system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --ice: #dfe9f2; --home: #141414; color-scheme: dark; } }
+    --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --ice: #dfe9f2; --home: #141414; --bos-tint: #2b2414; --bos-edge: #7a5a1c; --mtl-tint: #2e1a1d; --mtl-edge: #74333b; --link: #7fb0ee; --raised: #1d242e; color-scheme: dark; } }
   :root[data-theme="dark"] {
-    --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --ice: #dfe9f2; --home: #141414; color-scheme: dark; }
+    --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --ice: #dfe9f2; --home: #141414; --bos-tint: #2b2414; --bos-edge: #7a5a1c; --mtl-tint: #2e1a1d; --mtl-edge: #74333b; --link: #7fb0ee; --raised: #1d242e; color-scheme: dark; }
 
-  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   footer.version { text-align: center; color: var(--fg-dim); font-size: 0.75rem; padding: 4px 16px 18px; }
-  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding-block: 16px; padding-inline: 16px; max-width: 1440px; margin: 0 auto; }
-  @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } }
-  .rink { min-width: 0; }
+  .wrap, header.top { max-width: 1240px; margin: 0 auto; }
+  .wrap { display: flex; flex-direction: column; gap: 14px; padding-block: 4px 16px; }
+  .view { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 200 / 109; border-radius: 14px; }
 
-  .topbar { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: stretch; margin-bottom: 10px; }
-  .coach { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding-block: 8px 10px; padding-inline: 12px; min-width: 0; }
-  .chead { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 800; font-size: 1.35rem; margin-bottom: 6px; }
-  .coach.r .chead { justify-content: flex-end; }
-  .chead .dot { width: 14px; height: 14px; border-radius: 50%; border: 3px solid; box-sizing: border-box; flex: none; }
-  .chead .score { font-size: 1.6em; font-variant-numeric: tabular-nums; margin-left: 4px; }
-  .coach.r .chead .score { margin-left: 0; margin-right: 4px; }
+  header.top { display: grid; grid-template-columns: 1fr auto; gap: 10px 24px; align-items: end; padding-block: 16px 6px; }
+  .eyebrow { font-family: var(--display); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-dim); }
+  .brand h1 { font-family: var(--display); font-weight: 800; font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.02; margin: 0; text-wrap: balance; }
+  .brand h1 .vs { color: var(--fg-dim); font-weight: 600; font-size: 0.6em; margin: 0 0.2em; vertical-align: 0.15em; }
+  .brand p { margin: 4px 0 0; color: var(--fg-dim); max-width: 62ch; }
+  nav.views { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+  nav.views button { border: 0; background: none; padding: 7px 13px; border-radius: 7px; font: 700 1rem var(--display); letter-spacing: 0.03em; color: var(--fg-dim); white-space: nowrap; }
+  nav.views button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  nav.views .gear { font-size: 1.1rem; padding: 6px 10px; }
+  .steps { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; font-size: 0.9rem; color: var(--fg-dim); }
+  .steps .go { background: none; border: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 6px; font: 400 0.9rem var(--body); color: var(--fg-dim); text-align: left; }
+  .steps .go b { color: var(--fg); font-weight: 600; }
+  .steps .go:hover b, .steps .go:focus-visible b { text-decoration: underline; text-underline-offset: 3px; }
+  .steps .go.how { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+  .steps .n { display: inline-grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; background: var(--fg); color: var(--bg); font: 800 0.82rem var(--display); margin-right: 6px; }
+  @media (max-width: 760px) { header.top { grid-template-columns: 1fr; } nav.views { overflow-x: auto; } .steps .go small { display: none; } }
+  .flash { animation: flash 1.8s ease-out 1; }
+  @keyframes flash { 0%, 30% { box-shadow: 0 0 0 4px var(--link); } 100% { box-shadow: 0 0 0 4px transparent; } }
+  @media (prefers-reduced-motion: reduce) { .flash { animation: none; box-shadow: 0 0 0 4px var(--link); } }
+
+  .score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px 12px; background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding-block: 8px; padding-inline: 16px; }
+  .team { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 1.5rem; min-width: 0; }
+  .team.r { justify-content: flex-end; }
+  .team .g { font-size: 2.1rem; font-variant-numeric: tabular-nums; }
+  .team .dot, .plan .dot, .side .dot { width: 15px; height: 15px; border-radius: 50%; border: 4px solid; box-sizing: border-box; flex: none; }
+  .clock { display: flex; flex-direction: column; align-items: center; text-align: center; font-family: var(--display); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); min-width: 150px; }
+  .clock b { font-size: 1.9rem; color: var(--fg); font-variant-numeric: tabular-nums; letter-spacing: 0; line-height: 1.05; }
+  .clock #note { text-transform: none; letter-spacing: 0.02em; font-size: 0.9rem; max-width: 220px; }
+  .strip { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 26px; align-items: center; border-top: 1px solid var(--line); padding-top: 7px; font-size: 0.88rem; color: var(--fg-dim); }
+  .strip b { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .share { display: inline-flex; align-items: center; gap: 8px; }
+  .share .bar { width: 150px; height: 9px; border-radius: 5px; overflow: hidden; display: flex; background: var(--line); }
+  .share .bar i { display: block; height: 100%; transition: width 0.4s; }
+  button.tip { border: 1px solid var(--line); background: var(--panel); border-radius: 50%; width: 20px; height: 20px; font-size: 0.72rem; line-height: 1; padding: 0; color: var(--fg-dim); }
+  .pop { position: fixed; max-width: 300px; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 18px rgb(0 0 0 / 0.12); font-size: 0.88rem; line-height: 1.45; z-index: 30; }
+  .pop b { display: block; font-family: var(--display); font-size: 1.05rem; letter-spacing: 0.02em; }
+  @media (max-width: 620px) { .team { font-size: 1.1rem; gap: 6px; } .team .g { font-size: 1.6rem; } .clock { min-width: 0; } .share .bar { width: 100px; } }
+  .sight-legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.82rem; color: var(--fg-dim); margin: -4px 0 0; }
+  .sight-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 18px; height: 10px; border-radius: 3px; display: inline-block; }
+  .sw.lit { background: rgb(255 200 60 / 0.6); } .sw.shade { background: rgb(22 32 44 / 0.35); } .sw.pass { height: 3px; background: #0b4ea2; }
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .plans { grid-template-columns: 1fr; } }
+  .plan { border: 1px solid; border-radius: 14px; padding-block: 12px; padding-inline: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .plan.bos, .side.bos { background: var(--bos-tint); border-color: var(--bos-edge); }
+  .plan.mtl, .side.mtl { background: var(--mtl-tint); border-color: var(--mtl-edge); }
+  .plan header { display: flex; align-items: center; gap: 8px; }
+  .plan h2 { flex: 1; font-size: 1.15rem; letter-spacing: 0.04em; }
+  .plan p { margin: 0; line-height: 1.45; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: var(--raised); border-radius: 999px; padding: 2px 10px; font-size: 0.82rem; }
+  button.linkish { background: none; border: 0; padding: 2px 0; color: var(--link); font-weight: 600; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding-block: 4px 10px; padding-inline: 16px; }
+  details.more { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+  details.more:first-child { border-top: 0; margin-top: 4px; }
+  details.more > summary { cursor: pointer; font: 700 1.05rem var(--display); letter-spacing: 0.04em; }
+  details.more > summary small { font: 400 0.85rem var(--body); color: var(--fg-dim); margin-left: 8px; letter-spacing: 0; }
+  details.more > *:not(summary) { margin-top: 10px; }
+  .sheets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 760px) { .sheets { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding-block: 14px; padding-inline: 16px; }
+  .vhead { display: flex; flex-direction: column; gap: 4px; }
+  h2.vt { font-size: 1.6rem; letter-spacing: 0.02em; text-transform: none; }
+  .vhead .hint { margin: 0; max-width: 75ch; }
+
+  .scrim { position: fixed; inset: 0; background: rgb(10 14 20 / 0.4); z-index: 20; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); box-sizing: border-box; background: var(--panel); border-left: 1px solid var(--line); z-index: 21; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)); padding-inline: 18px max(18px, env(safe-area-inset-right, 0px)); }
+  .drawer > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .side { border: 1px solid; border-radius: 12px; padding-block: 10px 12px; padding-inline: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .side .who { display: flex; align-items: center; gap: 8px; font: 800 1.25rem var(--display); }
+  .side .cgrid { grid-template-columns: 1fr; gap: 10px; }
+  .side .cgrid label { font-size: 0.72rem; }
+  .side .cgrid select { font-size: 0.92rem; padding: 5px 6px; background: var(--raised); }
+  .side .cgrid small.desc { font-size: 0.8rem; color: var(--fg-dim); text-transform: none; letter-spacing: 0; line-height: 1.35; }
   .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
   .cgrid label { display: flex; flex-direction: column; gap: 2px; font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); min-width: 0; }
   .cgrid select { font-size: 0.8rem; padding: 3px 4px; border-radius: 5px; }
   .cgrid label.agg { grid-column: 1 / -1; }
   .cgrid input[type=range] { margin: 2px 0 0; }
-  .clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 150px; }
-  .clock .row.center { justify-content: center; margin-top: 6px; }
-  button.mini { font-size: 0.72rem; padding: 4px 8px; }
-  .clock .hint { font-size: 0.68rem; text-align: center; max-width: 150px; }
-  @media (max-width: 1000px) { .topbar { grid-template-columns: 1fr 1fr; } .clock { grid-column: 1 / -1; order: -1; } }
-  @media (max-width: 620px) { .topbar { grid-template-columns: 1fr; } .coach.r .chead { justify-content: flex-start; flex-direction: row-reverse; } }
-  .clock { text-align: center; font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--fg-dim); letter-spacing: 0.06em; }
-  .clock b { display: block; font-size: 1.8rem; color: var(--fg); font-variant-numeric: tabular-nums; letter-spacing: 0; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding-block: 14px; padding-inline: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   h2 { font-family: var(--display); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 8px; }
   h2 .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; box-sizing: border-box; }
@@ -93,10 +153,6 @@
   .rinkbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
   button.about { background: transparent; border-color: var(--fg-dim); }
   button.about::before { content: 'i'; display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; font: 700 11px/16px var(--display); text-align: center; margin-right: 7px; vertical-align: -2px; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--line); margin: -4px 0 2px; }
-  .tab { font: 700 0.78rem var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-dim); background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 8px; margin-bottom: -1px; white-space: nowrap; }
-  .tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--away); }
-  .tabpane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   details.adv { border: 1px solid var(--line); border-radius: 10px; padding-block: 10px; padding-inline: 12px; }
   details.adv > summary { font-family: var(--display); font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
   details.adv > *:not(summary) { margin-top: 10px; }
@@ -132,18 +188,37 @@
 <body>
 
 
-<div class="wrap">
-  <div class="rink">
-    <div class="topbar">
-    <div class="coach l">
-      <div class="chead"><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span><span class="tname">Bruins</span><span class="score" id="sHome">0</span></div>
-      <div class="cgrid"><label>Forecheck<select id="hFore"><option value="122" selected>1-2-2</option><option value="212">2-1-2</option><option value="131">1-3-1 trap</option><option value="lwl">Left wing lock</option></select></label><label>Breakout<select id="hBreak"><option value="boards" selected>Up the boards</option><option value="stretch">Stretch pass</option><option value="reverse">Reverse D-to-D</option></select></label><label>Entry<select id="hEntry"><option value="headman" selected>Headman</option><option value="carry">Carry wide</option><option value="chip">Chip & chase</option><option value="dump">Dump & chase</option></select></label><label>O-zone<select id="hOz"><option value="cycle" selected>Cycle low</option><option value="umbrella">Umbrella</option><option value="crash">Crash the net</option></select></label><label>D-zone<select id="hDz"><option value="zone" selected>Zone</option><option value="man">Man-on-man</option></select></label><label>Power play<select id="hPP"><option value="131">1-3-1</option><option value="umbrella" selected>Umbrella</option><option value="overload">Overload</option></select></label><label>Penalty kill<select id="hPK"><option value="box">Passive box</option><option value="diamond">Diamond</option><option value="pressure" selected>Aggressive box</option></select></label><label class="agg">Aggression<input id="hAgg" type="range" min="0" max="100" value="55"></label></div>
-    </div>
-    <div class="clock"><span id="period">1st</span><b id="clock">20:00</b><span id="note">Faceoff</span><div class="row center"><button id="sysSave" type="button" class="mini">Save systems</button><button id="sysReset" type="button" class="mini">Reset</button></div><span id="sysNote" class="hint"></span></div>
-    <div class="coach r">
-      <div class="chead"><span class="score" id="sAway">0</span><span class="tname">Canadiens</span><span class="dot" style="background:var(--away); border-color:var(--away-3)"></span></div>
-      <div class="cgrid"><label>Forecheck<select id="aFore"><option value="122" selected>1-2-2</option><option value="212">2-1-2</option><option value="131">1-3-1 trap</option><option value="lwl">Left wing lock</option></select></label><label>Breakout<select id="aBreak"><option value="boards">Up the boards</option><option value="stretch" selected>Stretch pass</option><option value="reverse">Reverse D-to-D</option></select></label><label>Entry<select id="aEntry"><option value="headman" selected>Headman</option><option value="carry">Carry wide</option><option value="chip">Chip & chase</option><option value="dump">Dump & chase</option></select></label><label>O-zone<select id="aOz"><option value="cycle">Cycle low</option><option value="umbrella" selected>Umbrella</option><option value="crash">Crash the net</option></select></label><label>D-zone<select id="aDz"><option value="zone">Zone</option><option value="man" selected>Man-on-man</option></select></label><label>Power play<select id="aPP"><option value="131" selected>1-3-1</option><option value="umbrella">Umbrella</option><option value="overload">Overload</option></select></label><label>Penalty kill<select id="aPK"><option value="box">Passive box</option><option value="diamond" selected>Diamond</option><option value="pressure">Aggressive box</option></select></label><label class="agg">Aggression<input id="aAgg" type="range" min="0" max="100" value="40"></label></div>
-    </div>
+<header class="top">
+  <div class="brand">
+    <div class="eyebrow">Hockey strategy lab</div>
+    <h1>Bruins <span class="vs">vs</span> Canadiens</h1>
+    <p>Test hockey strategies before game day. Set each team's systems, simulate 100 games with real 2025-26 rosters, and see what changes.</p>
+  </div>
+  <nav class="views" aria-label="Views">
+    <button type="button" data-view="watch" aria-pressed="true">Watch</button>
+    <button type="button" data-view="test" aria-pressed="false">Test a strategy</button>
+    <button type="button" data-view="real" aria-pressed="false">How real is it</button>
+    <button type="button" id="gearBtn" class="gear" aria-label="Settings" title="Settings">&#9881;</button>
+  </nav>
+  <div class="steps">
+    <button type="button" class="go" data-go="1"><span class="n">1</span><b>Set each team's plan</b> forecheck, breakout, coverage</button>
+    <button type="button" class="go" data-go="2"><span class="n">2</span><b>Simulate the games</b> 100 take about a minute</button>
+    <button type="button" class="go" data-go="3"><span class="n">3</span><b>See what changes</b> record, goals and chances</button>
+    <button type="button" id="aboutBtn" class="go how" aria-haspopup="dialog">How it works</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" data-view="watch">
+    <div class="score">
+      <div class="team"><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span><span class="tname">Bruins</span><span class="g" id="sHome">0</span></div>
+      <div class="clock"><span id="period">1st</span><b id="clock">20:00</b><span id="note">Faceoff</span></div>
+      <div class="team r"><span class="g" id="sAway">0</span><span class="tname">Canadiens</span><span class="dot" style="background:var(--away); border-color:var(--away-3)"></span></div>
+      <div class="strip">
+        <span>Shots <b id="stShots">0 to 0</b></span>
+        <span class="share">Chances <span class="bar" aria-hidden="true"><i id="cbH" style="width:50%;background:var(--home-2)"></i><i id="cbA" style="width:50%;background:var(--away)"></i></span><b id="chPct">even</b> <button type="button" class="tip" data-term="chances" aria-label="What are chances?">?</button></span>
+        <span id="stPP">Even strength</span>
+      </div>
     </div>
     <canvas id="c" width="1200" height="654"></canvas>
     <div class="rinkbar">
@@ -153,20 +228,29 @@
         <button type="button" class="spd" data-s="3" aria-pressed="true">3x</button>
         <button type="button" class="spd" data-s="8">8x</button>
         <button id="newgame" type="button">New game</button>
+      </div>
+      <div class="row">
         <button id="fxBtn" type="button" aria-pressed="true" title="Skate trails, puck streaks, hits, saves and the goal light">Effects</button>
         <button id="stickBtn" type="button" aria-pressed="true" title="Draw sticks on the skaters">Sticks</button>
+        <button id="sightBtn" type="button" aria-pressed="true" title="Show what the puck carrier sees: his open look at the net, what the defenders block, and his best pass">Sight lines</button>
       </div>
-      <button id="aboutBtn" type="button" class="about" aria-haspopup="dialog">About this game</button>
     </div>
-  </div>
-  <div class="panel">
-    <div class="tabs" role="tablist">
-      <button type="button" role="tab" class="tab" data-tab="game" aria-selected="true">Game</button>
-      <button type="button" role="tab" class="tab" data-tab="rosters">Rosters</button>
-      <button type="button" role="tab" class="tab" data-tab="lab">Lab</button>
-      <button type="button" role="tab" class="tab" data-tab="advanced">Advanced</button>
+    <p class="sight-legend" id="sightLegend"><span><i class="sw lit"></i>Open look at the net</span><span><i class="sw shade"></i>Blocked by a defender</span><span><i class="sw pass"></i>His best pass, bold when it beats the shot</span></p>
+    <div class="plans">
+      <article class="plan bos">
+        <header><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span><h2>Bruins game plan</h2><button type="button" class="linkish" data-edit="h">Edit plan</button></header>
+        <p id="planH"></p>
+        <div class="chips" id="chipsH"></div>
+      </article>
+      <article class="plan mtl">
+        <header><span class="dot" style="background:var(--away); border-color:var(--away-3)"></span><h2>Canadiens game plan</h2><button type="button" class="linkish" data-edit="a">Edit plan</button></header>
+        <p id="planA"></p>
+        <div class="chips" id="chipsA"></div>
+      </article>
     </div>
-    <section class="tabpane" data-pane="game">
+    <div class="box">
+      <details class="more">
+        <summary>Box score <small>shots, chances, faceoffs, possession, penalties</small></summary>
       <div class="stats">
         <span class="h" id="shH">0</span><span class="k">Shots on goal</span><span class="a" id="shA">0</span>
         <span class="h" id="atH">0</span><span class="k">Attempts</span><span class="a" id="atA">0</span>
@@ -181,31 +265,32 @@
         <span class="h" id="pimH">0</span><span class="k">Penalty min</span><span class="a" id="pimA">0</span>
         <span class="h" id="chH">0</span><span class="k">Line changes</span><span class="a" id="chA">0</span>
       </div>
-      <p class="hint" id="record" style="margin:8px 0 0">This session: no games finished yet (W-L-OTL).</p>
-      <h3 class="sub">Play by play</h3>
-      <ul class="log" id="log"></ul>
-    </section>
-    <section class="tabpane" data-pane="rosters" hidden>
-      <p class="hint">Dot marks who is on the ice. Each line shows time on ice, goals and blocks this game; hover a name for his 2025-26 line and ratings.</p>
-      <div class="sheet" id="sheetH"></div>
-      <div class="sheet" id="sheetA"></div>
-    </section>
-    <section class="tabpane" data-pane="lab" hidden>
-      <p class="hint">Play the two clubs against each other many times with the systems on the cards and judge a strategy against the other bench's by the record. Change a card, run again, compare.</p>
-      <details class="adv" open>
+        <p class="hint" id="record">This session: no games finished yet (W-L-OTL).</p>
+      </details>
+      <details class="more">
+        <summary>Play by play <small id="logSum"></small></summary>
+        <ul class="log" id="log"></ul>
+      </details>
+      <details class="more">
+        <summary>Rosters <small>who is on the ice, time on ice, goals</small></summary>
+        <p class="hint">Dot marks who is on the ice. Each line shows time on ice, goals and blocks this game; hover a name for his 2025-26 line and ratings.</p>
+        <div class="sheets"><div class="sheet" id="sheetH"></div><div class="sheet" id="sheetA"></div></div>
+      </details>
+    </div>
+  </section>
+
+  <section class="view card" data-view="test" hidden>
+    <div class="vhead"><h2 class="vt">Test a strategy</h2><p class="hint">Play the two teams against each other many times with the plans below and compare. Change one plan, run again, and see whether the difference is bigger than the luck in a run of games.</p></div>
+      <details class="adv" open id="labCardsBox">
         <summary>Matchup <small id="labCardsSum" class="hint"></small></summary>
         <div id="labCards" class="calib lab"></div>
-        <div class="row" style="margin-top:8px"><label class="hint">Games <select id="labN"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
+        <div class="row" style="margin-top:8px"><button type="button" class="linkish" data-edit="h">Edit Bruins plan</button><button type="button" class="linkish" data-edit="a">Edit Canadiens plan</button></div>
+        <div class="row" style="margin-top:8px"><label class="hint">Games <select id="labN"><option>10</option><option>25</option><option>50</option><option selected>100</option></select></label><button id="labRun" type="button">Run this matchup</button><button id="labStop" type="button" hidden>Stop</button><span id="labNote" class="hint" style="align-self:center"></span></div>
       </details>
       <details class="adv" open id="labRecord">
         <summary>Record <small id="labRecordSum" class="hint"></small></summary>
         <div id="labResult" class="calib lab"></div>
         <p class="hint" id="labResultNote">Run the matchup to see each club's wins, losses and overtime or shootout losses, win and points percentage with a 95% interval, and goals and expected goals for and against per game. Two settings whose intervals overlap are not separated at that sample size.</p>
-      </details>
-      <details class="adv" id="labCalib">
-        <summary>Reality check <small id="calibNote" class="hint"></small></summary>
-        <div id="calib" class="calib"></div>
-        <p class="hint">Per-game numbers from the last run (or this game so far, scaled to 60 minutes) next to what each club actually averaged in 2025-26 and the league. Orange cells are more than 50 percent off. The record rows compare with each club's final 2025-26 record; the sim plays only these two clubs against each other, while the real record came against the whole league.</p>
       </details>
       <details class="adv" id="labSweepBox">
         <summary>Sweep one choice <small id="labSweepSum" class="hint"></small></summary>
@@ -217,8 +302,35 @@
         <summary>What this can and cannot say</summary>
         <p class="hint">The engine reproduces league-average rates for shots, goals, shifts, offsides and icings, so the totals are in the right range. Whether changing a forecheck or a breakout moves a game by the amount it does in the NHL has not been checked against real results, so a difference between two rows is what this model thinks, with the interval showing how sure the model itself is. Ten games cannot separate two close strategies; the interval says how many can. Treat it as a way to ask a question of the video, not as an answer.</p>
       </details>
-    </section>
-    <section class="tabpane" data-pane="advanced" hidden>
+  </section>
+
+  <section class="view card" data-view="real" hidden>
+    <div class="vhead"><h2 class="vt">How real is it</h2><p class="hint">The sim next to what each team actually did in 2025-26 and the league average. It reads the last test run, or this game so far scaled to 60 minutes.</p></div>
+      <div id="labCalib">
+        <p class="hint" id="calibNote"></p>
+        <div id="calib" class="calib"></div>
+        <p class="hint">Per-game numbers from the last run (or this game so far, scaled to 60 minutes) next to what each club actually averaged in 2025-26 and the league. Orange cells are more than 50 percent off. The record rows compare with each club's final 2025-26 record; the sim plays only these two clubs against each other, while the real record came against the whole league.</p>
+      </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="planDrawer" role="dialog" aria-label="Game plans" hidden>
+  <header><h2 class="vt">Game plans</h2><button type="button" class="closeD">Done</button></header>
+  <p class="hint">Changes apply to the game on the ice right away and to the next test run.</p>
+  <section class="side bos" id="sideH">
+    <div class="who"><span class="dot" style="background:var(--home); border-color:var(--home-2)"></span>Bruins</div>
+    <div class="cgrid"><label>Forecheck<select id="hFore"><option value="122" selected>1-2-2</option><option value="212">2-1-2</option><option value="131">1-3-1 trap</option><option value="lwl">Left wing lock</option></select></label><label>Breakout<select id="hBreak"><option value="boards" selected>Up the boards</option><option value="stretch">Stretch pass</option><option value="reverse">Reverse D-to-D</option></select></label><label>Entry<select id="hEntry"><option value="headman" selected>Headman</option><option value="carry">Carry wide</option><option value="chip">Chip & chase</option><option value="dump">Dump & chase</option></select></label><label>Offensive zone<select id="hOz"><option value="cycle" selected>Cycle low</option><option value="umbrella">Umbrella</option><option value="crash">Crash the net</option></select></label><label>Defensive zone<select id="hDz"><option value="zone" selected>Zone</option><option value="man">Man-on-man</option></select></label><label>Power play<select id="hPP"><option value="131">1-3-1</option><option value="umbrella" selected>Umbrella</option><option value="overload">Overload</option></select></label><label>Penalty kill<select id="hPK"><option value="box">Passive box</option><option value="diamond">Diamond</option><option value="pressure" selected>Aggressive box</option></select></label><label class="agg">Aggression<input id="hAgg" type="range" min="0" max="100" value="55"></label></div>
+  </section>
+  <section class="side mtl" id="sideA">
+    <div class="who"><span class="dot" style="background:var(--away); border-color:var(--away-3)"></span>Canadiens</div>
+    <div class="cgrid"><label>Forecheck<select id="aFore"><option value="122" selected>1-2-2</option><option value="212">2-1-2</option><option value="131">1-3-1 trap</option><option value="lwl">Left wing lock</option></select></label><label>Breakout<select id="aBreak"><option value="boards">Up the boards</option><option value="stretch" selected>Stretch pass</option><option value="reverse">Reverse D-to-D</option></select></label><label>Entry<select id="aEntry"><option value="headman" selected>Headman</option><option value="carry">Carry wide</option><option value="chip">Chip & chase</option><option value="dump">Dump & chase</option></select></label><label>Offensive zone<select id="aOz"><option value="cycle">Cycle low</option><option value="umbrella" selected>Umbrella</option><option value="crash">Crash the net</option></select></label><label>Defensive zone<select id="aDz"><option value="zone">Zone</option><option value="man" selected>Man-on-man</option></select></label><label>Power play<select id="aPP"><option value="131" selected>1-3-1</option><option value="umbrella">Umbrella</option><option value="overload">Overload</option></select></label><label>Penalty kill<select id="aPK"><option value="box">Passive box</option><option value="diamond" selected>Diamond</option><option value="pressure">Aggressive box</option></select></label><label class="agg">Aggression<input id="aAgg" type="range" min="0" max="100" value="40"></label></div>
+  </section>
+  <div class="row"><button id="sysSave" type="button">Save these plans</button><button id="sysReset" type="button">Reset</button></div>
+  <p id="sysNote" class="hint"></p>
+</aside>
+<aside class="drawer" id="setDrawer" role="dialog" aria-label="Settings" hidden>
+  <header><h2 class="vt">Settings</h2><button type="button" class="closeD">Done</button></header>
       <details class="adv" open>
         <summary>Engine settings</summary>
         <p class="hint">Multipliers on skating, passing, the puck, goalies and shooting. Sliders are centered on the build defaults; the NHL tick marks the value calibrated to real tracking data. Changes apply immediately.</p>
@@ -231,9 +343,8 @@
         <summary>Data sources</summary>
         <div id="datasrc" class="datasrc"></div>
       </details>
-    </section>
-  </div>
-</div>
+  <p class="hint">Bruins vs Canadiens <span id="versionD"></span></p>
+</aside>
 
 <dialog id="about">
   <div class="about-head"><h2>About this game</h2><button id="aboutClose" type="button">Close</button></div>
@@ -880,7 +991,7 @@
   },
   "man": {
    "label": "Man-on-man",
-   "desc": "D take the opposing forwards low, forwards take the points and any extra forward. Each defender plays between his man and the net, cushionPerFt of the man's distance from the net (between minCushionFt and maxCushionFt), so he is tight at the crease and already in the way when a man cuts in from the wall. He stays with his man: he switches only when another attacker is closer by more than stickFt, and only the man on the puck carrier pressures him.",
+   "desc": "D take the opposing forwards low, forwards take the points and any extra forward. Each defender plays between his man and the net, tight at the crease and with more room farther out, so a man cutting in from the wall runs into him. He stays with his man when attackers cross, and only the man on the puck carrier pressures him.",
    "stickFt": 15,
    "cushionPerFt": 0.5,
    "minCushionFt": 2,
@@ -3108,8 +3219,8 @@
 function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.35';
-  $('version').textContent = 'v' + VERSION;
+  const VERSION = '0.36';
+  $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const cfg = { accel: 1, speed: 1, cruise: 1, passSpd: 1, glide: 1, goalie: 1, shots: 1, passAcc: 1 };
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
   const canvas = $('c'), ctx = canvas.getContext('2d');
@@ -3245,7 +3356,7 @@ function startSim(DATA) {
     if (BD.systems) SYS_IDS.forEach(id => { const side = id[0] === 'h' ? 'BOS' : 'MTL'; const key = id.slice(1); const v = BD.systems[side] && BD.systems[side][key]; if (v !== undefined) $(id).value = key === 'Agg' ? Math.round(v * 100) : v; });
     readTactics();
     const factorySys = Object.fromEntries(SYS_IDS.map(id => [id, $(id).value]));
-    const setSys = vals => { SYS_IDS.forEach(id => { const v = vals && vals[id] !== undefined ? vals[id] : factorySys[id]; $(id).value = v; }); readTactics(); };
+    const setSys = vals => { SYS_IDS.forEach(id => { const v = vals && vals[id] !== undefined ? vals[id] : factorySys[id]; $(id).value = v; $(id).dispatchEvent(new Event('input')); }); readTactics(); };
     const sysNote = msg => { $('sysNote').textContent = msg; };
     $('sysSave').addEventListener('click', () => { sysNote(store.set('rink.systems', Object.fromEntries(SYS_IDS.map(id => [id, $(id).value]))) ? 'Saved as your default systems.' : 'Could not save in this browser.'); });
     $('sysReset').addEventListener('click', () => { const saved = store.get('rink.systems'); setSys(saved); sysNote(saved ? 'Reset to your saved systems.' : 'Reset to the factory systems.'); });
@@ -3766,18 +3877,9 @@ function startSim(DATA) {
       const SD = PH.shotDecision; const n = oppNet(t);
       // shoot or pass, by expected goals: my look now (worth less with a defender in the lane) against the best pass,
       // which is the receiver's look times the chance the pass gets there and he is still open when it does
-      const XC = SD.xgChoice, mine = lookXg(p, t, false);
-      if (mine) {
-        const myV = mine.xg * (laneClear(p, n, opp, XC.laneWidthFt) ? 1 : XC.blockedLaneFactor) * (pressure < XC.tightCoverFt ? XC.tightCoverFactor : 1);
-        let best = null, bestV = 0;
-        for (const m of mates) {
-          if (zone(t, m.x) !== 'off' || !laneClear(p, m, opp)) continue;
-          const room = Math.min(...opp.map(o => dist(o, m))), d = dist(p, m);
-          const look = lookXg(m, t, Math.abs(m.y - p.y) > XC.oneTimerCrossFt && room > XC.openFt);
-          if (!look) continue;
-          const v = look.xg * clamp(XC.passCompleteBase - d * XC.passCompletePerFt, XC.passCompleteMin, 1) * (room > XC.openFt ? 1 : XC.coveredFactor);
-          if (v > bestV) { bestV = v; best = m; }
-        }
+      const XC = SD.xgChoice, read = readLook(p, t, opp, mates, pressure);
+      if (read) {
+        const { myV, best, bestV } = read;
         if (myV >= XC.minXg && myV * XC.passMustBeatBy >= bestV) {
           const rate = XC.shootRatePerSec * clamp((myV - XC.minXg) / (XC.cleanXg - XC.minXg), 0.15, 1);
           if (Math.random() < dt * rate) { shoot(p); return null; }
@@ -3903,6 +4005,23 @@ function startSim(DATA) {
     const ctx = { type: slap ? 'SLAP' : (oneTimer ? 'SNAP' : 'WRIST'), rebound: puck.sinceSave < PH.shot.xg.reboundWithinSec, pp: onPP(t), sh: shorthanded(t) && !onPP(t) };
     const base = xgModel(dN, angleDeg, ctx);
     return base === null ? null : { base, xg: clamp(base * p.finishing, 0.005, 0.9) };
+  }
+  // The carrier's read in the offensive zone: his own look (worse with a defender in the lane or on him) and the best
+  // pass (the receiver's look times the chance the pass gets there). carrierThink decides with it; the sight lines draw it.
+  function readLook(p, t, opp, mates, pressure) {
+    const XC = PH.shotDecision.xgChoice, n = oppNet(t), mine = lookXg(p, t, false);
+    if (!mine) return null;
+    const myV = mine.xg * (laneClear(p, n, opp, XC.laneWidthFt) ? 1 : XC.blockedLaneFactor) * (pressure < XC.tightCoverFt ? XC.tightCoverFactor : 1);
+    let best = null, bestV = 0;
+    for (const m of mates) {
+      if (zone(t, m.x) !== 'off' || !laneClear(p, m, opp)) continue;
+      const room = Math.min(...opp.map(o => dist(o, m))), d = dist(p, m);
+      const look = lookXg(m, t, Math.abs(m.y - p.y) > XC.oneTimerCrossFt && room > XC.openFt);
+      if (!look) continue;
+      const v = look.xg * clamp(XC.passCompleteBase - d * XC.passCompletePerFt, XC.passCompleteMin, 1) * (room > XC.openFt ? 1 : XC.coveredFactor);
+      if (v > bestV) { bestV = v; best = m; }
+    }
+    return { myV, best, bestV };
   }
   function shoot(from, oneTimer) {
     const t = from.team, n = oppNet(t);
@@ -4322,8 +4441,8 @@ function startSim(DATA) {
   }
 
   // ---------- Effects: skate trails, puck streak, hit ripples, goal light ----------
-  const FX = { on: true, sticks: true, rings: [], goalLight: null, saveFlash: null, lastGoalScorer: null, scorerT: 0 };
-  try { FX.on = localStorage.getItem('rinkFx') !== 'off'; FX.sticks = localStorage.getItem('rinkSticks') !== 'off'; } catch (e) {}
+  const FX = { on: true, sticks: true, sight: true, rings: [], goalLight: null, saveFlash: null, lastGoalScorer: null, scorerT: 0 };
+  try { FX.on = localStorage.getItem('rinkFx') !== 'off'; FX.sticks = localStorage.getItem('rinkSticks') !== 'off'; FX.sight = localStorage.getItem('rinkSight') !== 'off'; } catch (e) {}
   const fxRing = (x, y, col, big) => { if (FX.on) FX.rings.push({ x, y, col, t: 0, max: big ? 0.9 : 0.5, r: big ? 9 : 5 }); };
   function fxTick(dt) {
     for (const r of FX.rings) r.t += dt; FX.rings = FX.rings.filter(r => r.t < r.max);
@@ -4376,6 +4495,9 @@ function startSim(DATA) {
   }
   $('fxBtn').addEventListener('click', () => { FX.on = !FX.on; $('fxBtn').setAttribute('aria-pressed', FX.on); try { localStorage.setItem('rinkFx', FX.on ? 'on' : 'off'); } catch (e) {} });
   $('fxBtn').setAttribute('aria-pressed', FX.on);
+  const showSight = () => { $('sightBtn').setAttribute('aria-pressed', FX.sight); $('sightLegend').hidden = !FX.sight; };
+  $('sightBtn').addEventListener('click', () => { FX.sight = !FX.sight; showSight(); try { localStorage.setItem('rinkSight', FX.sight ? 'on' : 'off'); } catch (e) {} });
+  showSight();
   $('stickBtn').addEventListener('click', () => { FX.sticks = !FX.sticks; $('stickBtn').setAttribute('aria-pressed', FX.sticks); try { localStorage.setItem('rinkSticks', FX.sticks ? 'on' : 'off'); } catch (e) {} });
   $('stickBtn').setAttribute('aria-pressed', FX.sticks);
 
@@ -4509,9 +4631,45 @@ function startSim(DATA) {
     ctx.fillText('SCOREKEEPER', 100, RINK_Y + RH + 5.5);
     ctx.restore();
   }
+  // Sight lines: what the puck carrier sees in the offensive zone. A lit wedge from him to the posts, a shadow behind every
+  // defender in front of him, a line to his best pass (bold when it is worth more than his shot) and both values as a tag.
+  // Drawn from the same read carrierThink decides with (readLook); it changes nothing in the game.
+  function drawSight() {
+    const c = puck.carrier; if (!c || c.goalie || c.box) return;
+    const t = c.team; if (zone(t, c.x) !== 'off') return;
+    const opp = active(teams[1 - t.id]), mates = active(t).filter(m => m !== c && !m.leaving);
+    const read = readLook(c, t, opp, mates, Math.min(...opp.map(o => dist(o, c)))); if (!read) return;
+    const n = oppNet(t), posts = [{ x: n.x, y: n.y - NETW / 2 }, { x: n.x, y: n.y + NETW / 2 }];
+    const far = q => ({ x: c.x + (q.x - c.x) * 1.04, y: c.y + (q.y - c.y) * 1.04 });
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(c.x, c.y); const f0 = far(posts[0]), f1 = far(posts[1]); ctx.lineTo(f0.x, f0.y); ctx.lineTo(f1.x, f1.y); ctx.closePath();
+    ctx.fillStyle = 'rgba(255, 200, 60, 0.38)'; ctx.fill(); ctx.clip();
+    ctx.fillStyle = 'rgba(22, 32, 44, 0.3)';
+    const toNet = { x: n.x - c.x, y: n.y - c.y };
+    for (const o of opp) {
+      const dx = o.x - c.x, dy = o.y - c.y, d = Math.hypot(dx, dy), r = 2.2;
+      if (d < r + 0.5 || dx * toNet.x + dy * toNet.y <= 0) continue;
+      const a = Math.atan2(dy, dx), h = Math.asin(r / d), L = 90;
+      ctx.beginPath();
+      ctx.moveTo(o.x + Math.cos(a + Math.PI / 2 + h) * r, o.y + Math.sin(a + Math.PI / 2 + h) * r);
+      ctx.lineTo(c.x + Math.cos(a + h) * L, c.y + Math.sin(a + h) * L); ctx.lineTo(c.x + Math.cos(a - h) * L, c.y + Math.sin(a - h) * L);
+      ctx.lineTo(o.x + Math.cos(a - Math.PI / 2 - h) * r, o.y + Math.sin(a - Math.PI / 2 - h) * r); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    const passWins = read.best && read.bestV > read.myV;
+    if (read.best) {
+      ctx.save(); ctx.strokeStyle = '#0b4ea2'; ctx.globalAlpha = passWins ? 0.95 : 0.4; ctx.lineWidth = passWins ? 0.7 : 0.35; ctx.setLineDash([1.6, 1.2]);
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(read.best.x, read.best.y); ctx.stroke(); ctx.restore();
+    }
+    const tag = `Shot ${Math.round(read.myV * 100)}%` + (read.best ? `  \u00b7  best pass ${Math.round(read.bestV * 100)}%` : '');
+    ctx.save(); ctx.font = '600 2.1px Barlow, "Segoe UI", sans-serif'; const w = ctx.measureText(tag).width + 1.8, x = clamp(c.x - w / 2, 1, 199 - w), y = Math.max(0.5, c.y - 7.2);
+    ctx.fillStyle = 'rgba(22, 32, 44, 0.86)'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, 3.2, 1.6); else ctx.rect(x, y, w, 3.2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(tag, x + 0.9, y + 1.65); ctx.restore();
+  }
   function drawPlayers() {
     ctx.save(); ctx.scale(S, S); ctx.translate(0, RINK_Y);
     drawFx();
+    if (FX.sight) drawSight();
     for (const t of teams) for (const p of t.players) {
       if (p.box) continue;
       // shadow for fatigue: a tired skater's ring fades
@@ -4617,6 +4775,12 @@ function startSim(DATA) {
     const pk = teams.find(t => shorthanded(t));
     if (pk && !game.faceoff && !game.over) { const left = Math.max(...pk.all.map(p => p.box)); note = `${teams[1 - pk.id].name} PP ${mmss(left)}`; }
     $('note').textContent = game.paused ? 'Paused' : note;
+    $('stShots').textContent = `${teams[0].shots} to ${teams[1].shots}`;
+    const xgT = teams[0].xg + teams[1].xg, sh = xgT > 0.05 ? teams[0].xg / xgT : 0.5;
+    $('cbH').style.width = (sh * 100).toFixed(1) + '%'; $('cbA').style.width = (100 - sh * 100).toFixed(1) + '%';
+    $('chPct').textContent = xgT <= 0.05 ? 'even' : `${Math.round(Math.max(sh, 1 - sh) * 100)}% ${sh >= 0.5 ? teams[0].name : teams[1].name}`;
+    $('stPP').textContent = pk && !game.over ? `${teams[1 - pk.id].name} power play` : 'Even strength';
+    const lastLog = $('log').firstElementChild; $('logSum').textContent = lastLog ? 'last: ' + lastLog.textContent.replace(/^\S+ \S+\s*/, '') : '';
     $('pimH').textContent = teams[0].pim; $('pimA').textContent = teams[1].pim;
     $('shH').textContent = teams[0].shots; $('shA').textContent = teams[1].shots;
     $('atH').textContent = teams[0].attempts; $('atA').textContent = teams[1].attempts;
@@ -4738,13 +4902,75 @@ function startSim(DATA) {
   let calibT = 0;
   function updateCalib(now) { if (batch && batch.n) return; if (now - calibT < 1000) return; calibT = now; renderCalib(); }
 
-  // ---------- Tabs and About ----------
-  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(o => o.setAttribute('aria-selected', o === b));
-    document.querySelectorAll('.tabpane').forEach(p => { p.hidden = p.dataset.pane !== b.dataset.tab; });
-    try { localStorage.setItem('rink.tab', b.dataset.tab); } catch (e) {}
+  // ---------- Views, steps, drawers and game plans ----------
+  const VIEWS = ['watch', 'test', 'real'];
+  function showView(v) {
+    if (!VIEWS.includes(v)) v = 'watch';
+    document.querySelectorAll('nav.views [data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
+    document.querySelectorAll('section.view').forEach(sec => { sec.hidden = sec.dataset.view !== v; });
+    try { localStorage.setItem('rink.view', v); } catch (e) {}
+  }
+  document.querySelectorAll('nav.views [data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+  try {
+    const h = location.hash.slice(1), old = { game: 'watch', rosters: 'watch', advanced: 'watch', lab: 'test', calib: 'real' };
+    showView(h === 'lab' || h === 'test' ? 'test' : h === 'real' ? 'real' : h === 'watch' ? 'watch' : localStorage.getItem('rink.view') || old[localStorage.getItem('rink.tab')] || 'watch');
+  } catch (e) { showView('watch'); }
+  // the three steps jump into the strategy test and point at the part that does that step
+  const flash = el => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); };
+  const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.steps [data-go]').forEach(b => b.addEventListener('click', () => {
+    showView('test');
+    const box = { 1: $('labCardsBox'), 2: $('labRun'), 3: $('labRecord') }[b.dataset.go];
+    if (box.tagName === 'DETAILS') box.open = true;
+    box.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'center' }); flash(box);
+    const focus = b.dataset.go === '1' ? box.querySelector('[data-edit]') : b.dataset.go === '2' ? box : null;
+    if (focus) focus.focus({ preventScroll: true });
   }));
-  try { let t = location.hash === '#lab' ? 'lab' : localStorage.getItem('rink.tab'); if (t === 'calib') t = 'lab'; if (t === 'admin') t = 'advanced'; if (t === 'systems') t = 'game'; const b = t && document.querySelector(`.tab[data-tab="${t}"]`); if (b) b.click(); } catch (e) {}
+  // drawers: the game plans (both teams) and the settings
+  let drawerOpen = null, drawerFrom = null;
+  function openDrawer(id, focusEl) {
+    closeDrawer(); drawerFrom = document.activeElement; drawerOpen = $(id); drawerOpen.hidden = false; $('scrim').hidden = false;
+    (focusEl || drawerOpen.querySelector('.closeD')).focus({ preventScroll: true });
+    const sec = focusEl && focusEl.closest('.side'); drawerOpen.scrollTop = sec ? Math.max(0, sec.offsetTop - 12) : 0;
+  }
+  function closeDrawer() { if (!drawerOpen) return; drawerOpen.hidden = true; $('scrim').hidden = true; drawerOpen = null; if (drawerFrom && drawerFrom.focus) drawerFrom.focus(); }
+  $('scrim').addEventListener('click', closeDrawer);
+  document.querySelectorAll('.closeD').forEach(b => b.addEventListener('click', closeDrawer));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+  document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openDrawer('planDrawer', $(b.dataset.edit === 'h' ? 'sideH' : 'sideA').querySelector('select'))));
+  $('gearBtn').addEventListener('click', () => openDrawer('setDrawer'));
+  // each choice in the plan drawer shows what it means under it
+  (() => {
+    const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
+    document.querySelectorAll('.side .cgrid label').forEach(l => {
+      const el = l.querySelector('select, input'); if (!el) return;
+      const small = document.createElement('small'); small.className = 'desc'; l.append(small);
+      const key = el.id.slice(1);
+      const say = () => { if (key === 'Agg') { small.textContent = `${aggWord(el.value / 100)}. ${SYS.coaching ? SYS.coaching.aggression.desc : ''}`; return; } const d = SYS[SECTION[key]] && SYS[SECTION[key]][el.value]; small.textContent = d && d.desc ? d.desc : ''; };
+      el.addEventListener('input', say); say();
+    });
+  })();
+  function aggWord(v) { return v < 0.34 ? 'Low' : v < 0.67 ? 'Medium' : 'High'; }
+  // each team's plan as a sentence on the Watch view
+  function renderPlans() {
+    const txt = (side, k) => { const el = $(side + k); return el.selectedOptions ? el.selectedOptions[0].text : ''; };
+    const lc = v => v.charAt(0).toLowerCase() + v.slice(1);
+    for (const side of ['h', 'a']) {
+      $(side === 'h' ? 'planH' : 'planA').textContent = `${txt(side, 'Fore')} forecheck, ${lc(txt(side, 'Break'))} breakout, ${lc(txt(side, 'Entry'))} to get in. ${txt(side, 'Oz')} in the offensive zone, ${lc(txt(side, 'Dz'))} coverage in their own end.`;
+      $(side === 'h' ? 'chipsH' : 'chipsA').innerHTML = [`Power play: ${txt(side, 'PP')}`, `Penalty kill: ${txt(side, 'PK')}`, `Aggression: ${lc(aggWord($(side + 'Agg').value / 100))}`].map(c => `<span class="chip">${c}</span>`).join('');
+    }
+  }
+  document.querySelectorAll('.side select, .side input[type=range]').forEach(el => el.addEventListener('input', renderPlans));
+  renderPlans();
+  // short explainers for the numbers a newcomer will not know
+  const TERMS = { chances: ['Chances', "How many goals a team's shots were worth, from where and how each one was taken. A shot from the slot is worth far more than one from the point. Over many games, chances predict results better than goals do."] };
+  let pop = null;
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button.tip'); if (pop) { pop.remove(); pop = null; } if (!t || !TERMS[t.dataset.term]) return;
+    const [h, d] = TERMS[t.dataset.term]; pop = document.createElement('div'); pop.className = 'pop'; pop.setAttribute('role', 'tooltip');
+    pop.innerHTML = `<b>${h}</b>${d}`; document.body.append(pop);
+    const r = t.getBoundingClientRect(); pop.style.left = Math.min(window.innerWidth - pop.offsetWidth - 12, Math.max(12, r.left - 20)) + 'px'; pop.style.top = (r.bottom + 8) + 'px';
+  });
   const aboutDlg = $('about');
   (() => {   // the About dialog's systems list, one line per choice, from the same descriptions the coaching cards show
     const el = $('aboutSystems'); if (!el) return;

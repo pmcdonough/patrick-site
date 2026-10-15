@@ -72,9 +72,9 @@ python3 -m http.server --directory public 8000
 # open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#lab  http://localhost:8000/play-review/
 ```
 
-From disk (the pages fall back to embedded data): open `public/bruins-vs-canadiens/index.html` and `public/play-review/index.html` directly. The sim's Advanced tab, Data sources, says which copy is in use.
+From disk (the pages fall back to embedded data): open `public/bruins-vs-canadiens/index.html` and `public/play-review/index.html` directly. The sim's Settings drawer (the gear), Data sources, says which copy is in use.
 
-Things to click once: Lab tab, Games 10, Run this matchup (about 45 seconds), then open Reality check; Sweep one card; Play Review, pick a shot, play the replay. The browser console should stay clean.
+Things to click once: each of the three steps in the header; Edit plan and change a choice; Sight lines on and off; Test a strategy, Games 10, Run this matchup, then How real is it; Sweep one choice; Play Review, pick a shot, play the replay. The browser console should stay clean.
 
 The live site at pmcdonough.com serves `public/` through Cloudflare.
 

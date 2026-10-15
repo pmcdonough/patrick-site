@@ -3,7 +3,7 @@
 const { open } = require('./harness');
 (async () => {
   const { browser, page, errors } = await open();
-  await page.click('.tab[data-tab="lab"]'); await page.selectOption('#labN', '10'); await page.click('#labRun');
+  await page.click('[data-view="test"]'); await page.selectOption('#labN', '10'); await page.click('#labRun');
   for (let i = 0; i < 180; i++) { await page.waitForTimeout(1000); const t = await page.$eval('#labNote', e => e.textContent); if (/^\d+ games/.test(t)) break; }
   const dump = async sel => (await page.$$eval(sel, rows => rows.map(r => Array.from(r.children).map(c => c.textContent.trim()).join(' | ')))).join('\n');
   console.log(await dump('#labResult tr')); console.log(''); console.log(await dump('#calib tr')); console.log('ERRORS', errors);

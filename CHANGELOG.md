@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.43 = sim 0.35 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.44 = sim 0.36 + Play Review 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.44
+- Sim 0.36 (the redesign, phase 1). The home page card opens Test a strategy.
 
 ### 0.43
 - Sim 0.35. `tools/lab.js` gains `--param` to try a `physics.json` value without editing it, and its report flags changes from the reference again (a misplaced comment had switched the counter off in 0.42).
@@ -71,6 +74,13 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.36
+- Redesign, phase 1. A header says what this is in one line and links three steps (set each team's plan, simulate the games, see what changes) into the strategy test, with How it works for the long explanation. Three views replace the four tabs: Watch, Test a strategy and How real is it, with the settings behind a gear.
+- Watch: a scoreboard with shots, the share of chances (with an explainer) and the power-play state; the rink; each team's game plan as a sentence in its team color with Edit plan, which opens both plans in a drawer with every choice explained under it; box score, play by play and rosters folded below.
+- Sight lines, a new effect: the puck carrier's open look at the net, the shadow each defender casts over it, his best pass (bold when it beats the shot) and both values. It draws the same read the player decides with and changes nothing in the game.
+- Test a strategy runs 100 games by default; fewer cannot separate most settings.
+- Play is unchanged: both 100-game references are identical.
 
 ### 0.35
 - Shoot or pass is decided by the expected-goal model: a carrier with a look worth at least 0.12 (an open wrist shot from about 20 ft straight on) shoots unless a teammate's look, discounted for the pass, is clearly better; a defender in the lane or on him lowers his look. The slot and in-tight rules are gone. Open shooters in the slot used to pass three times out of four.
