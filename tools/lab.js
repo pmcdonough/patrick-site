@@ -11,6 +11,7 @@
 //   node tools/lab.js --games 20 --pool                 also play the seeds in the page's own background workers (the Game plan lab): every game must match
 //   node tools/lab.js --param shotDecision.xgChoice.minXg=0.1   try a physics.json value without editing the file
 //   node tools/lab.js --param systems.defensiveZone.zone.slotCoverage.maxFx=44   or a systems.json value
+//   node tools/lab.js --param cfg.speed=1               or one of the multipliers (accel, speed, cruise, shots, ...)
 //
 // The report compares each club's per-game numbers with the league (MoneyPuck 2025-26 and the rules
 // benchmarks in physics.json) and with the saved reference run for the same level, seeds and games.

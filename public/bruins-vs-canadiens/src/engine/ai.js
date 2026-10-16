@@ -1,8 +1,8 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.61';
-import * as DM from './detmath.js?v=0.61';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.62';
+import * as DM from './detmath.js?v=0.62';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, XG, xgModel, xgTier } = S;
@@ -391,9 +391,12 @@ export function install(S) {
             const vv = puck.vx * puck.vx + puck.vy * puck.vy || 1; const tau = clamp(((p.x - puck.x) * puck.vx + (p.y - puck.y) * puck.vy) / vv, 0, 1.5);
             p.target = onside({ x: puck.x + puck.vx * tau, y: puck.y + puck.vy * tau }); continue;
           }
-          // in our zone the man on the puck plays him from the inside, between him and our net, so a drive to the net runs into him
-          const inside = situation === 'defense' && pz === 'own' && !(shorthanded(t) && !onPP(t)) ? (t.marks ? SYS.defensiveZone.man : SYS.defensiveZone.zone).carrierGoalSideFt : 0;
+          // in our zone the man on the puck plays him from the inside, between him and our net, so a drive to the net runs into him;
+          // in the middle of the ice he contains him from a stick length, on the wall or below the goal line he closes in to take it
+          let inside = situation === 'defense' && pz === 'own' && !(shorthanded(t) && !onPP(t)) ? (t.marks ? SYS.defensiveZone.man : SYS.defensiveZone.zone).carrierGoalSideFt : 0;
           if (!loose && inside > 0) {
+            const CP = SYS.defensiveZone.carrierPressure, cfx = toFx(t, carrier.x);
+            if (!(cfx > 0 && cfx < CP.middleMaxFx && Math.abs(carrier.y - 42.5) < CP.middleHalfWidthFt)) inside = CP.wallGoalSideFt;
             const n = ownNet(t), lx = carrier.x + carrier.vx * 0.25, ly = carrier.y + carrier.vy * 0.25; const d = dist(n, { x: lx, y: ly }) || 1; const k = Math.min(inside, d * 0.5);
             p.target = { x: lx + (n.x - lx) / d * k, y: ly + (n.y - ly) / d * k }; continue;
           }

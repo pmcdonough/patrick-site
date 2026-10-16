@@ -35,11 +35,12 @@ async function load() {
   const controls = pageControls();
   const side = (sim, abbr) => { const i = sim.teams.findIndex(t => t.abbr === abbr); if (i < 0) throw new Error(`no club ${abbr}`); return i; };
 
-  // A sim as a fresh page has it. `params` overrides physics.json values ({ key: 'a.b.c', v }), or systems.json values
-  // with a key starting 'systems.', for this sim only.
+  // A sim as a fresh page has it. `params` overrides physics.json values ({ key: 'a.b.c', v }), systems.json values
+  // with a key starting 'systems.', or a multiplier with 'cfg.' (cfg.speed), for this sim only.
   function create({ nhl = false, params = [] } = {}) {
     const DATA = readData();
     for (const { key, v } of params) {
+      if (key.startsWith('cfg.')) continue;   // a multiplier, set on the sim below
       // a key is a physics.json path, or a systems.json path written with a leading 'systems.'
       const sys = key.startsWith('systems.'), ks = (sys ? key.slice(8) : key).split('.'), last = ks.pop(); let o = sys ? DATA.systems : DATA.physics;
       for (const k of ks) { o = o[k]; if (!o) throw new Error(`no physics key ${key}`); }
@@ -49,6 +50,7 @@ async function load() {
     const sim = createSim(DATA);
     const admin = DATA.defaults.admin || {};
     for (const k of Object.keys(sim.cfg)) sim.cfg[k] = nhl ? 1 : admin[k] !== undefined ? +admin[k] : 1;
+    for (const { key, v } of params) if (key.startsWith('cfg.')) { const k = key.slice(4); if (!(k in sim.cfg)) throw new Error(`no multiplier ${k}`); sim.cfg[k] = +v; }
     // the page's controls: markup values, then the build defaults' systems; aggression is a 0-100 slider
     sim.controls = {};
     for (const [i, s] of [[0, 'h'], [1, 'a']]) {

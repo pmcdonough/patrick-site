@@ -508,6 +508,12 @@
  },
  "neutralDefenseNote": "neutral spots are relative to the puck's fx (negative = behind the puck toward our net)",
  "defensiveZone": {
+  "carrierPressure": {
+   "desc": "In our zone the defender on the puck carrier plays him from the inside in both systems. In the middle of the ice (within middleHalfWidthFt of the middle and less than middleMaxFx from our goal line) he contains him from the system's distance, a stick length; on the wall or below the goal line, where the carrier is no threat to shoot, he closes to wallGoalSideFt, still inside, to take the puck and let his team get it out.",
+   "middleHalfWidthFt": 20,
+   "middleMaxFx": 45,
+   "wallGoalSideFt": 1.5
+  },
   "zone": {
    "label": "Zone (box + 1)",
    "desc": "Nearest skater pressures, from the inside: about a stick length between the carrier and the net, so a drive to the net runs into him. D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters. Any attacker who gets into the slot is picked up by the nearest free defender before anything else.",

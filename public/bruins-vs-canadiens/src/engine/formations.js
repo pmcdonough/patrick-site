@@ -1,8 +1,8 @@
 // Formations: the spot each skater wants for the situation, the system and the puck.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { clamp, dist, ownNet, toFx, toRink } from './rink.js?v=0.61';
-import * as DM from './detmath.js?v=0.61';
+import { clamp, dist, ownNet, toFx, toRink } from './rink.js?v=0.62';
+import * as DM from './detmath.js?v=0.62';
 
 export function install(S) {
   const { PH, SYS, active, drift, game, onPP, puck, shorthanded, teams } = S;

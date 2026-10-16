@@ -1,7 +1,7 @@
 // Lines, benches and shifts: rotations, stoppage and on-the-fly changes, line matching, bench minors, faceoffs.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { RH, RW, clamp, endDot, ownNet, toFx, zone } from './rink.js?v=0.61';
+import { RH, RW, clamp, endDot, ownNet, toFx, zone } from './rink.js?v=0.62';
 
 export function install(S) {
   const { avgDef, game, log, onPP, PH, puck, rnd, shorthanded, SYS, teams } = S;

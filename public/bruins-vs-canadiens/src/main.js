@@ -3,13 +3,13 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.61';
-import { installReview } from './review.js?v=0.61';
+import { createSim } from './engine/sim.js?v=0.62';
+import { installReview } from './review.js?v=0.62';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.61';
+  const VERSION = '0.62';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,

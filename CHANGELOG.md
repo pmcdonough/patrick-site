@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.74 = sim 0.61 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.75 = sim 0.62 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.75
+- Sim 0.62 (Watch balance, pinned shifts). `tools/lab.js --param cfg.accel=1.5` tries a multiplier. References re-saved at both levels.
 
 ### 0.74
 - Sim 0.61 (pass coverage, first pass). The home page says a quarter more chances, not a third. References re-saved at both levels.
@@ -185,6 +188,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.62
+- Watch is balanced again: the build default for acceleration comes down from 2.3 to 1.8 times the NHL rate. At 2.3 every defender recovered almost at once, man coverage gained the most from it, and Montreal took 74% of the points. Each multiplier set back to 1 in turn showed acceleration was the cause (the others moved the split by a few points). At 1.5 Boston led 60 to 46 and games ran over 4 goals a team. Skaters get up to speed a little less suddenly; top speed and the rest are unchanged.
+- Fixed: pinned shifts. Since the coverage fixes of 0.58 to 0.61 the man on a carrier held a stick length inside him even on the wall, where the carrier is no threat, so nobody took the puck and the pinned team could not get it out or change: shifts over two minutes went from about 1 a game at the build defaults to 4, the longest past five minutes (a unit test caught one of 184 s). Now he contains a carrier in the middle of the ice from a stick length and closes to 1.5 ft, still inside, on the wall or below the goal line (`systems.json` `defensiveZone.carrierPressure`). Shifts over two minutes about 2.4 a game at the build defaults, none over three; 5.5 at the NHL settings (8 before). Letting a tired unit clear under more pressure was tried and made it worse: icings tripled, and an icing team cannot change.
+- Recalibrated: `goalie.tierGoalScale` 1.05 to 1.02 (goals 3.08 a team at the NHL settings).
+- At the build defaults, 100 games: Boston 57% of the points, Montreal 49%; goals 3.7 and 3.6 a game. At the NHL settings: Boston 62%, Montreal 46%; expected goals 3.89 and 4.23 (league 3.13).
 
 ### 0.61
 - Measured first: 70 to 80% of medium- and high-danger shots come off a pass caught within 2.5 s, and when the pass leaves, the receiver's nearest defender is a median 12 to 14 ft away. The biggest single source for both clubs is a forward 10 to 20 ft out at even strength, about 5 a game each.
