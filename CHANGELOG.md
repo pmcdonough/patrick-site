@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.83 = sim 0.70 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.84 = sim 0.71 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.84
+- Sim 0.71 (attackers out of the crease and off the goalie). References re-saved at both levels.
 
 ### 0.83
 - Sim 0.70 (Review a game prints the shot on screen). No change to play.
@@ -214,6 +217,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ## Hockey Strategy Lab
 
 Called Bruins vs Canadiens until 0.66; entries before it keep that name.
+
+### 0.71
+- Attackers no longer stand in the crease or on the goalie. A review replay showed a Canadien standing on the goalie in the crease, with the shooter's read pricing a pass to him at 28%. Skaters were kept apart from each other but not from goalies, and nothing knew the crease. Now, while his team has the puck, an attacker without it sets up at the top of the crease and skates around it, not through it; the carrier can still go through, and anyone can go in after a rebound or a loose puck, as the rules allow. No attacker can stand on the other team's goalie (`physics.json` `crease`).
+- Measured at the NHL settings: attackers on a goalie 1.2% of the time before, 0.2% now; in a crease 2.6% before, 1.8% now, nearly all of it rebounds. No goal in the measured games had an attacker on the goalie, so there is no goalie-interference call to make.
+- Over 300 games Boston lost about a third of a high-danger chance a game (the crease tap-ins) and Montreal gained about 0.2 expected goals. Goals rose 4%, so `goalie.tierGoalScale` comes down from 1.02 to 0.98. The two clubs now split the points about evenly at the NHL settings over 300 games (53% each).
 
 ### 0.70
 - Review a game: Print or save as PDF prints the shot you are viewing on one page, instead of the whole game: the play at the release with his sight lines, the call, his whole read, and What if he passed with its numbers when it has been played out. The button shows once a shot is chosen; printing from the browser's menu gives the same page.

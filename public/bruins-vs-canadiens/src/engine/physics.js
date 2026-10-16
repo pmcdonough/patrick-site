@@ -1,8 +1,8 @@
 // Movement and the puck: skating, fatigue, staying on the ice, goalies, the puck in flight, saves and rebounds.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.70';
-import * as DM from './detmath.js?v=0.70';
+import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.71';
+import * as DM from './detmath.js?v=0.71';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, PH, puck, random, rnd, shorthanded, skaters, SYS, teams, XG } = S;
@@ -15,10 +15,11 @@ export function install(S) {
   function movePlayers(dt) {
     const all = teams.flatMap(t => t.players).filter(p => !p.box);
     for (const p of all) {
-      const tg = p.target || p;
+      const ours = puck.carrier && puck.carrier.team === p.team;
+      // an attacker without the puck sets up at the top of the other team's crease, not in it, and skates around it
+      const tg = !p.goalie && ours && p !== puck.carrier ? aroundCrease(p, outOfCrease(p.team, p.target || p)) : p.target || p;
       const dx = tg.x - p.x, dy = tg.y - p.y, d = DM.hypot(dx, dy);
       // effort: full speed only when chasing, rushing or far from the spot; otherwise cruise at ~65% (EDGE: bursts over 20 mph are a handful per shift)
-      const ours = puck.carrier && puck.carrier.team === p.team;
       const breakingOut = ours && zone(p.team, puck.carrier.x) === 'own' && (p.team.possT || 0) > SYS.breakout.flow.startAfterSec && !p.leaving;
       const rush = p === puck.carrier && (zone(p.team, p.x) === 'neutral' || breakingOut) && !p.leaving;
       const onRush = ours && zone(p.team, puck.carrier.x) === 'neutral' && puck.carrier.vx * p.team.dir > 4 && !p.leaving;
@@ -39,8 +40,33 @@ export function install(S) {
       if (am > acc) { p.vx += ax / am * acc; p.vy += ay / am * acc; } else { p.vx += ax; p.vy += ay; }
       for (const o of all) if (o !== p && !o.goalie && !p.goalie) { const dd = dist(p, o); if (dd < 3 && dd > 0) { p.vx += (p.x - o.x) / dd * 8 * dt; p.vy += (p.y - o.y) / dd * 8 * dt; } }
       p.x += p.vx * dt; p.y += p.vy * dt; p.dist = (p.dist || 0) + DM.hypot(p.vx, p.vy) * dt; const spd = DM.hypot(p.vx, p.vy); if (spd > p.topSpd) p.topSpd = spd; if (spd > 29.3 && !p.burst) { p.bursts = (p.bursts || 0) + 1; p.burst = true; } if (spd < 26) p.burst = false;
-      keepOnIce(p, p.leaving ? 1.0 : 1.5); if (!p.goalie) keepOffNets(p, 1.6);
+      keepOnIce(p, p.leaving ? 1.0 : 1.5); if (!p.goalie) { keepOffNets(p, 1.6); keepOffGoalies(p); }
     }
+  }
+  // a spot inside the other team's crease, moved out to its edge along the line from the middle of the goal line
+  function outOfCrease(t, s) {
+    const n = oppNet(t), d = DM.hypot(s.x - n.x, s.y - n.y);
+    if ((s.x - n.x) * t.dir > 0 || d >= PH.crease.setupFt) return s;   // behind the goal line, or already outside
+    const k = PH.crease.setupFt / (d || 1), ux = d ? (s.x - n.x) : -t.dir, uy = d ? (s.y - n.y) : 0;
+    return { x: n.x + ux * k, y: n.y + uy * k };
+  }
+  // the route to s, around the other team's crease: if the straight line crosses it, first to the edge where it comes closest
+  function aroundCrease(p, s) {
+    const n = oppNet(p.team), ex = s.x - p.x, ey = s.y - p.y, L2 = ex * ex + ey * ey;
+    const k = L2 ? clamp(((n.x - p.x) * ex + (n.y - p.y) * ey) / L2, 0, 1) : 0, cx = p.x + ex * k, cy = p.y + ey * k;
+    const d = DM.hypot(cx - n.x, cy - n.y);
+    if (d >= PH.crease.radiusFt || (cx - n.x) * p.team.dir > 0) return s;
+    const ux = d ? (cx - n.x) / d : -p.team.dir, uy = d ? (cy - n.y) / d : (p.y < n.y ? -1 : 1);
+    return { x: n.x + ux * PH.crease.setupFt, y: n.y + uy * PH.crease.setupFt };
+  }
+  // no attacker stands on the other team's goalie: inside his room he is moved off, and the goalie keeps his spot
+  function keepOffGoalies(o) {
+    const t = teams[1 - o.team.id], g = t.goalie; if (!g || g.box || !g.onIce) return;
+    const dx = o.x - g.x, dy = o.y - g.y, d = DM.hypot(dx, dy), r = PH.crease.goalieRoomFt;
+    if (d >= r) return;
+    const ux = d ? dx / d : -t.dir, uy = d ? dy / d : 0;
+    o.x = g.x + ux * r; o.y = g.y + uy * r;
+    const vn = o.vx * ux + o.vy * uy; if (vn < 0) { o.vx -= vn * ux; o.vy -= vn * uy; }   // stop his motion into the goalie
   }
 
   function keepOffNets(o, r) {

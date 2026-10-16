@@ -59,7 +59,7 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 - The engine's math is exact or comes from `detmath.js`; never `Math.sin`, `cos`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`, which differ in the last bit between browsers and Node.
 
-## Baselines (sim 0.62 references)
+## Baselines (sim 0.71 references)
 
 Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight at a time in Node. Each game plays its own seed (`newGame(seed)`), and the engine's trigonometry and logarithms come from `detmath.js`, so a run reproduces exactly, in Node and in any browser, and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. Each reference also keeps a fingerprint of every game, and `--order` replays the seeds in reverse order in one process to prove no state leaks between games, and `--pool` plays them in the page's own workers to prove the page and Node agree. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the blocks against them (the engine's `blocked` counts blocks a team made, `blockedOwn` shots its own skaters caught in flight); it equals the three danger tiers added up.
 
@@ -67,17 +67,17 @@ At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-2
 
 | | League | BOS | MTL |
 |---|---|---|---|
-| Goals | 3.08 | 3.24 | 2.92 |
-| Expected goals | 3.13 | 3.89 | 4.23 |
-| Shots on goal | 27.8 | 24.1 | 33.4 |
-| Unblocked attempts | 42.7 | 38.0 | 53.2 |
-| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 20.9 / 13.6 / 3.5 | 36.9 / 13.1 / 3.2 |
-| Offsides | 3.0 | 2.2 | 6.1 |
-| Icings | 4.2 | 7.7 | 7.0 |
+| Goals | 3.08 | 2.90 | 3.12 |
+| Expected goals | 3.13 | 3.92 | 4.40 |
+| Shots on goal | 27.8 | 23.7 | 33.3 |
+| Unblocked attempts | 42.7 | 38.8 | 53.7 |
+| Low / medium / high danger | 31.2 / 8.1 / 3.4 | 21.7 / 14.0 / 3.2 | 36.3 / 14.0 / 3.3 |
+| Offsides | 3.0 | 2.5 | 5.5 |
+| Icings | 4.2 | 7.5 | 6.8 |
 
-These are the references `tools/lab.js --nhl` compares against (`tools/baselines.json`), saved at sim 0.62 when the man on a carrier on the wall started closing on him. Boston takes 62% of the points and Montreal 46% (real 2025-26: 61% and 65%; head to head the two cannot both be above .500, and the interval is about ±10); Boston's share of expected goals is 48% (real 47%). Boston turns expected goals into goals better (0.83 against 0.69 a game), mostly Swayman's real medium-danger save rate, about 15% better than Dobes's, and noise of about ±0.3 goals a game.
+These are the references `tools/lab.js --nhl` compares against (`tools/baselines.json`), saved at sim 0.71 when attackers stopped standing in the crease and on the goalie. Over these 100 games Boston takes 49% of the points and Montreal 57%; over 300 games the two split them evenly (53% each), so the 100-game split is mostly luck. At sim 0.62 Boston took 62% and Montreal 46% (real 2025-26: 61% and 65%; head to head the two cannot both be above .500, and the interval is about ±10); Boston's share of expected goals is 48% (real 47%). Boston turns expected goals into goals better (0.83 against 0.69 a game), mostly Swayman's real medium-danger save rate, about 15% better than Dobes's, and noise of about ±0.3 goals a game.
 
-Goals match the league because `goalie.tierGoalScale` is 1.02 (1.05 in sim 0.61, 0.92 in 0.60, 0.74 in 0.59, 0.68 in 0.58, 0.57 in 0.57; 0.39 from 0.35 to 0.56, while about three goals in ten went in with no save roll). Everything else is honest: since 0.35 a carrier takes every look worth taking, so the sim's chance count shows how many looks its defense gives up, which is 20 to 30% too many (60 to 90% before sim 0.58), mostly medium-danger looks off passes into the low slot: about 13 a team a game against 8; high-danger looks are at the league rate. The biggest single source, for both clubs, is a forward 10 to 20 ft out at even strength taking a pass and shooting on his read, about 5 a game each. Montreal shoots far more than the league from the point and is offside nearly twice the league rate; icings run high. At build defaults (acceleration 1.8x, speed 1.3x, shot volume 2x) goals are 3.7 and 3.6 a game on 4.6 and 5.2 expected, and the points split about evenly (Boston 57%, Montreal 49%); at the old 2.3x acceleration Montreal took three quarters of them, because every defender recovered almost at once and man coverage gained the most from it; Boston ices it about 9 times a game.
+Goals match the league because `goalie.tierGoalScale` is 0.98 (1.02 in sim 0.62 to 0.70, 1.05 in 0.61, 0.92 in 0.60, 0.74 in 0.59, 0.68 in 0.58, 0.57 in 0.57; 0.39 from 0.35 to 0.56, while about three goals in ten went in with no save roll). Everything else is honest: since 0.35 a carrier takes every look worth taking, so the sim's chance count shows how many looks its defense gives up, which is 20 to 30% too many (60 to 90% before sim 0.58), mostly medium-danger looks off passes into the low slot: about 13 a team a game against 8; high-danger looks are at the league rate. The biggest single source, for both clubs, is a forward 10 to 20 ft out at even strength taking a pass and shooting on his read, about 5 a game each. Montreal shoots far more than the league from the point and is offside nearly twice the league rate; icings run high. At build defaults (acceleration 1.8x, speed 1.3x, shot volume 2x) goals are 3.3 and 3.4 a game on 4.6 and 4.9 expected (sim 0.71), and the points split about evenly (Boston 53%, Montreal 56%; 57% and 49% in 0.62); at the old 2.3x acceleration Montreal took three quarters of them, because every defender recovered almost at once and man coverage gained the most from it; Boston ices it about 9 times a game.
 
 How 0.35 got here, measured each step with `lab.js --nhl` (both clubs' expected goals): the expected-goal decision alone took the sim from about 4 to 12 a game, because open looks were everywhere and players had been passing them up; passes no longer turning the defense into a loose-puck scramble, man coverage that keeps its marks with a cushion, and the pass control time brought it back to 5 to 6. Several sensible changes measured almost nothing on their own (slot pick-up, sticks on passes, own-zone effort, defenseman spacing) and were kept because they are right, not because they moved the number.
 
@@ -130,6 +130,8 @@ Nothing runs away inside a game. Play does not depend on the score except the la
 ## Lessons learned
 
 Things that were wrong once and the fix, so nobody reintroduces them.
+
+- Attackers in the crease and on the goalie (found from a review replay, sim 0.71): skaters were kept apart from each other but not from goalies, and nothing knew the crease, so a net-front forward could stand on the goalie and the read priced a pass to him there. Measured at the NHL settings: an attacker in a crease 2.6% of the time, on a goalie (within 3 ft) 1.2%, and 0.6% of the passes the read preferred went to a man in the crease. Now (physics `crease`, `outOfCrease`, `aroundCrease`, `keepOffGoalies` in `physics.js`) an attacker without the puck sets up at the crease's edge and skates around it while his team has the puck, and no attacker can stand within 3 ft of the other goalie: on a goalie 0.2% of the time, in a crease 1.8%, nearly all of it rebounds and loose pucks, which the rules allow. Keeping a team's own defenders off their own goalie too raised both clubs' expected goals (it opened the lanes in front), so it applies to attackers only. No goal in the measured games had an attacker on the goalie, so there is no goalie-interference call. Over 300 games Boston lost about a third of a high-danger chance a game (the crease tap-ins) and Montreal gained about 0.2 expected goals; goals rose 4%, and `tierGoalScale` went from 1.02 to 0.98.
 
 - Lead forwards overshooting the blue line: braking distance was ignored; the onside clamp now sits at fx 106 and targets back off at 113.
 - Offsides on faceoffs: the faceoff zone flag leaked into the offside check; clear it at the drop.

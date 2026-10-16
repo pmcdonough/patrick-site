@@ -179,8 +179,8 @@
   },
   "bodyRadiusFt": 2.3,
   "reboundCoolSec": 0.55,
-  "tierGoalScale": 1.02,
-  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie. 1.02 lands goals per game at the league rate at the NHL-average settings (the two teams' average). It was 0.72 before sim 0.35, 0.39 from 0.35 to 0.56, 0.57 in 0.57, 0.68 in 0.58, 0.74 in 0.59, 0.92 in 0.60 and 1.05 in 0.61: since 0.35 carriers shoot whenever the expected-goal model says the look is worth it, and the sim creates more expected goals than the league (too many medium-danger looks), so the scale came down; until 0.57 it was also absorbing about three goals in ten that went in with no save roll at all; and in 0.58 man-on-man coverage started playing the puck carrier from the inside, which cut Boston's expected goals against Montreal by about a quarter, and in 0.59 zone coverage did the same, which cut Montreal's against Boston by about a sixth. In 0.60 it rose to 0.92 when shots started hitting the net at the league's rate for their danger tier: before, close shots almost never missed, so dividing by the league's 65% on-net share had been giving close chances about 1.4 times their goal rate. Above 0.72 now: both clubs' goalies are better than the league (each allowed about 10% fewer goals than expected in 2025-26), which the old accuracy hid; in 0.61 man coverage sagged more toward the net and the chance count fell again, so the scale passed 1. Until coverage closes the rest of the chance gap, this scale keeps scores realistic; expected goals in the reports stay unscaled so the gap stays visible.",
+  "tierGoalScale": 0.98,
+  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie. 0.98 lands goals per game at the league rate at the NHL-average settings (the two teams' average). It was 0.72 before sim 0.35, 0.39 from 0.35 to 0.56, 0.57 in 0.57, 0.68 in 0.58, 0.74 in 0.59, 0.92 in 0.60, 1.05 in 0.61 and 1.02 in 0.62 to 0.70: since 0.35 carriers shoot whenever the expected-goal model says the look is worth it, and the sim creates more expected goals than the league (too many medium-danger looks), so the scale came down; until 0.57 it was also absorbing about three goals in ten that went in with no save roll at all; and in 0.58 man-on-man coverage started playing the puck carrier from the inside, which cut Boston's expected goals against Montreal by about a quarter, and in 0.59 zone coverage did the same, which cut Montreal's against Boston by about a sixth. In 0.60 it rose to 0.92 when shots started hitting the net at the league's rate for their danger tier: before, close shots almost never missed, so dividing by the league's 65% on-net share had been giving close chances about 1.4 times their goal rate. Above 0.72 now: both clubs' goalies are better than the league (each allowed about 10% fewer goals than expected in 2025-26), which the old accuracy hid; in 0.61 man coverage sagged more toward the net and the chance count fell again, so the scale passed 1. In 0.71 attackers stopped standing in the crease and on the goalie (physics crease): fewer tap-ins for Boston, a few more chances for Montreal, goals up about 4%, so it came back below 1. Until coverage closes the rest of the chance gap, this scale keeps scores realistic; expected goals in the reports stay unscaled so the gap stays visible.",
   "desc": ""
  },
  "shotBlock": {
@@ -322,5 +322,11 @@
   "goalSideFt": 1,
   "laneFt": 5,
   "wideFt": 6
+ },
+ "crease": {
+  "desc": "The goal crease: a half circle radiusFt in front of each goal line. While his team has the puck, an attacker without it sets up at the edge of the other team's crease (setupFt from the middle of the goal line), screening from the top of the crease the way net-front forwards do, not standing in it; the carrier can skate through, and anyone can go in after a loose puck, as the rules allow. No skater, from either team, can stand on a goalie: within goalieRoomFt of him a skater is moved off, and the goalie keeps his spot. Rule 69 (goalie interference) takes away a goal when an attacker in the crease impairs the goalie, which these keep from happening.",
+  "radiusFt": 6,
+  "setupFt": 6.5,
+  "goalieRoomFt": 3
  }
 }
