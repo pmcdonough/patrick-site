@@ -45,7 +45,7 @@ async function load() {
       const sys = key.startsWith('systems.'), ks = (sys ? key.slice(8) : key).split('.'), last = ks.pop(); let o = sys ? DATA.systems : DATA.physics;
       for (const k of ks) { o = o[k]; if (!o) throw new Error(`no physics key ${key}`); }
       if (!(last in o)) throw new Error(`no physics key ${key}`);
-      o[last] = typeof o[last] === 'number' ? +v : v;
+      o[last] = typeof o[last] === 'number' ? +v : typeof o[last] === 'boolean' ? v === 'true' : v;
     }
     const sim = createSim(DATA);
     const admin = DATA.defaults.admin || {};
