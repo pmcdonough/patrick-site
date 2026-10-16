@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.69 = sim 0.57 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.70 = sim 0.58 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.70
+- Sim 0.58 (man coverage plays the carrier from the inside). References re-saved at both levels.
 
 ### 0.69
 - Sim 0.57 (every goal beats a save roll). Lab games open on the Watch rink. References re-saved at both levels. A unit test checks every goal beat a save roll (fails on 0.56).
@@ -170,6 +173,14 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.58
+- Man-on-man coverage plays the puck carrier from the inside. The man on the carrier used to skate straight at the puck, and man coverage has no second defender stepping into the shooting lane, so a carrier who got by him had a clear path to the net: on Boston's medium-danger shots against Montreal's man coverage the shooter's own defender was goal-side only 22% of the time, and on high-danger shots 5%. Now he plays a stick length between the carrier and the net (`systems.json` `defensiveZone.man.carrierGoalSideFt`, 5 ft).
+- Found while chasing Boston's 76% of the points at sim 0.57: goals on shots were close to even, and switching Montreal to zone on the same games took Boston's expected goals down by 2 a game. Not goaltending: goals that beat the goalie without a shot come to about 0.1 a team a game.
+- At the NHL settings, 100 games: expected goals Boston 6.00 to 4.28, Montreal 5.09 to 4.98; Boston's medium-danger shots 22.6 to 16.0 and high-danger 5.5 to 3.3 (league 8.1 and 3.4). Boston 59% of the points, Montreal 53% (real 61% and 65%); Boston's expected-goal share 47%, the same as the real season. Man against zone for Montreal, same games: no difference in expected-goal differential (it was 2 a game). Tightening the cushion on the men away from the puck instead made it worse.
+- Recalibrated: `goalie.tierGoalScale` 0.57 to 0.68, goals back at the league rate (3.03 a team, league 3.08).
+- Shifts run a little longer: mean 51 s and p90 76 s at the build defaults (47 and 72 before; target 45 to 50 and 70 to 75).
+- At the build defaults Montreal now takes 77% of the points (64% before): at that speed its man coverage holds Boston to 3.6 expected goals. The lab plays at the NHL settings, so only Watch sees it.
 
 ### 0.57
 - Fixed: a puck the defending team touched last (a rebound drifting back, a deflection or a block off a defender) crossed the goal line with no save roll. Found from a lab game that ended 12-3: five of the twelve went in that way. Over the 100 reference games at the NHL settings it was 192 of 627 goals, about three in ten. Now every puck that crosses the line gets its roll; one his own team touched last is saved like any loose puck (98.5% slow, about 95% hard).

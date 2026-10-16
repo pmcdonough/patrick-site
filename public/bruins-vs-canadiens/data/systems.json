@@ -549,11 +549,12 @@
   },
   "man": {
    "label": "Man-on-man",
-   "desc": "D take the opposing forwards low, forwards take the points and any extra forward. Each defender plays between his man and the net, tight at the crease and with more room farther out, so a man cutting in from the wall runs into him. He stays with his man when attackers cross, and only the man on the puck carrier pressures him.",
+   "desc": "D take the opposing forwards low, forwards take the points and any extra forward. Each defender plays between his man and the net, tight at the crease and with more room farther out, so a man cutting in from the wall runs into him. He stays with his man when attackers cross. Only the man on the puck carrier pressures him, and he plays him from the inside, about a stick length between him and the net, so the carrier has to go around him to get to the net.",
    "stickFt": 15,
    "cushionPerFt": 0.5,
    "minCushionFt": 2,
-   "maxCushionFt": 15.0
+   "maxCushionFt": 15.0,
+   "carrierGoalSideFt": 5
   }
  },
  "penaltyKill": {
