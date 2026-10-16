@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.80 = sim 0.67 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.81 = sim 0.68 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.81
+- Sim 0.68 (Review a game, its own view). The home card's Review section and the lab line say so; Under the hood mentions the review's own engine. No change to play.
 
 ### 0.80
 - Sim 0.67 (the shot replay pauses and resumes). No change to play.
@@ -205,6 +208,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ## Hockey Strategy Lab
 
 Called Bruins vs Canadiens until 0.66; entries before it keep that name.
+
+### 0.68
+- Review a game is its own view, between Watch a game and the Game plan lab, instead of a panel between the rink and the game plans. When a Watch game ends, the Watch view links to its review.
+- The lab's game pickers have Watch it and Review it. Review it goes straight to the review: the page plays the game from its seed and plans in a couple of seconds and checks that the final matches the lab's. A test card picks the test plans or the baseline plans first.
+- Recent games: the review lists the last 8 games you opened, each named for where it came from (Watch game 1, Lab baseline, game 27, Lab test, Bruins defensive zone: man-on-man, game 11). The lab's are kept in this browser as their seed and plans and played again exactly when reopened; a Watch game lasts until the page reloads, since it cannot be played again exactly.
+- How it works describes all of it.
 
 ### 0.67
 - Review this game: Pause in the shot replay now leads to Play, which carries on from where it stopped. Before, the button went back to Play the lead-up and started the clip over. Play from the start sits beside it while a clip is playing or paused.

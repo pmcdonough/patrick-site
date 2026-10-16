@@ -3,14 +3,14 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.67';
-import { installReview } from './review.js?v=0.67';
-import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.67';
+import { createSim } from './engine/sim.js?v=0.68';
+import { installReview } from './review.js?v=0.68';
+import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.68';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.67';
+  const VERSION = '0.68';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -415,7 +415,10 @@ export function startSim(DATA) {
   }
 
   // the shot review under the rink once a game ends (review.js): it records as the game plays and draws with the functions above
-  const REVIEW = installReview({ sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim: () => createSim(DATA) });
+  const REVIEW = installReview({ sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim: () => createSim(DATA), VERSION,
+    labGame: () => LABGAME && { label: LABGAME.label, recipe: LABGAME.recipe, final: LABGAME.row.teams.map(t => t.goals) },
+    reviewShown: () => !document.querySelector('section.view[data-view="review"]').hidden,
+    goReview: () => { showView('review'); window.scrollTo(0, 0); } });
 
   // ---------- Roster sheets ----------
   const mmss = v => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, '0')}`;
@@ -797,15 +800,24 @@ export function startSim(DATA) {
     let items = idxs.map((bi, k) => ({ bi, k, seed: LAB.base.seeds[bi], swing: rowsB ? perGame(rowsB[k], c).xgd - perGame(rowsA[k], c).xgd : 0 }));
     if (rowsB) items = pickerOrder(items, cls);
     const opts = items.map(x => `<option value="${x.k}">Game ${x.seed}: ${rowsB ? `baseline ${sc(rowsA[x.k])}, test ${sc(rowsB[x.k])}, ${sgn(x.swing, 1)} net chances` : sc(rowsA[x.k])}</option>`).join('');
-    return `<div class="gamepick"><label>${rowsB ? pickerLabel(me.name, cls) : 'Open a baseline game'}<select data-pick="${kind}" data-test="${testIndex === undefined ? '' : testIndex}">${opts}</select></label><div class="row">${rowsB ? '<button type="button" data-open="base">Watch it with the baseline plans</button><button type="button" data-open="test">Watch it with the test plans</button>' : '<button type="button" data-open="base">Watch and review it</button>'}</div></div>`;
+    return `<div class="gamepick"><label>${rowsB ? pickerLabel(me.name, cls) : 'Open a baseline game'}<select data-pick="${kind}" data-test="${testIndex === undefined ? '' : testIndex}">${opts}</select></label><div class="row">${rowsB ? '<div class="seg" role="group" aria-label="Which plans"><button type="button" data-plans="test" aria-pressed="true">Test plans</button><button type="button" data-plans="base" aria-pressed="false">Baseline plans</button></div>' : ''}<button type="button" data-open="watch">Watch it</button><button type="button" data-open="review">Review it</button></div></div>`;
   }
-  // opening a lab game on the Watch rink, from the baseline card or a test card
+  // a lab game, from the baseline card or a test card: watched on the rink, or reviewed straight away on Review a game
+  const recipeOf = (seed, plans) => ({ seed, tacs: plans.map(tacOfPlan), cfg: NHL_CFG() });
   document.addEventListener('click', e => {
-    const b = e.target.closest('[data-open]'); if (!b || TEST.running || !LAB.base) return;
+    const p = e.target.closest('.gamepick [data-plans]');
+    if (p) { p.parentElement.querySelectorAll('[data-plans]').forEach(o => o.setAttribute('aria-pressed', o === p)); return; }
+    const b = e.target.closest('.gamepick [data-open]'); if (!b || TEST.running || !LAB.base) return;
     const box = b.closest('.gamepick'), sel = box.querySelector('select'), k = +sel.value, ti = sel.dataset.test;
-    if (ti === '') { const bi = k; playLabGame(LAB.base.seeds[bi], LAB.base.plans, `Baseline game ${LAB.base.seeds[bi]}`, LAB.base.rows[bi]); return; }
-    const e2 = LAB.tested[+ti], bi = e2.idx[k], seed = LAB.base.seeds[bi], test = b.dataset.open === 'test';
-    playLabGame(seed, test ? e2.plans : LAB.base.plans, `${test ? 'Test' : 'Baseline'} game ${seed}${test ? ', the test plans' : ', the baseline plans'}`, test ? e2.rowsB[k] : LAB.base.rows[bi]);
+    let seed, plans, label, row;
+    if (ti === '') { seed = LAB.base.seeds[k]; plans = LAB.base.plans; label = `Lab baseline, game ${seed}`; row = LAB.base.rows[k]; }
+    else {
+      const e2 = LAB.tested[+ti], bi = e2.idx[k], test = box.querySelector('[data-plans="test"]').getAttribute('aria-pressed') === 'true';
+      seed = LAB.base.seeds[bi]; plans = test ? e2.plans : LAB.base.plans; row = test ? e2.rowsB[k] : LAB.base.rows[bi];
+      label = test ? `Lab test, ${testTitle(e2)}, game ${seed}` : `Lab baseline, game ${seed}`;
+    }
+    if (b.dataset.open === 'watch') { playLabGame(seed, plans, label, row); return; }
+    showView('review'); window.scrollTo(0, 0); REVIEW.reviewLab(recipeOf(seed, plans), label, row.teams.map(t => t.goals));
   });
   function renderTested() {
     if (!LAB.base) { $('tested').innerHTML = ''; return; }
@@ -883,15 +895,16 @@ export function startSim(DATA) {
   $('labStop').addEventListener('click', () => { TEST.stop = true; if (TEST.finish) TEST.finish(); });
 
   // ---------- Views, steps, drawers and game plans ----------
-  const VIEWS = ['watch', 'lab'];
+  const VIEWS = ['watch', 'review', 'lab'];
   function showView(v) {
     if (!VIEWS.includes(v)) v = 'watch';
     document.querySelectorAll('nav.views [data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
     document.querySelectorAll('section.view').forEach(sec => { sec.hidden = sec.dataset.view !== v; });
   }
   document.querySelectorAll('nav.views [data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-  // the page opens on Watch; a link can ask for the lab (#lab, or the old #test and #real)
-  { const h = location.hash.slice(1); showView(['lab', 'test', 'real'].includes(h) ? 'lab' : 'watch'); }
+  // the page opens on Watch; a link can ask for the lab (#lab, or the old #test and #real) or the review (#review)
+  { const h = location.hash.slice(1); showView(['lab', 'test', 'real'].includes(h) ? 'lab' : h === 'review' ? 'review' : 'watch'); }
+  document.querySelectorAll('[data-go-watch]').forEach(b => b.addEventListener('click', () => { showView('watch'); window.scrollTo(0, 0); }));
   document.querySelectorAll('[data-go-lab]').forEach(b => b.addEventListener('click', () => { showView('lab'); window.scrollTo(0, 0); $('myGrid').querySelector('select').focus({ preventScroll: true }); }));
   // drawers: the game plans (both teams) and the settings
   let drawerOpen = null, drawerFrom = null;
@@ -980,7 +993,7 @@ export function startSim(DATA) {
   document.querySelectorAll('.spd').forEach(b => b.addEventListener('click', () => { game.speed = +b.dataset.s; document.querySelectorAll('.spd').forEach(o => o.setAttribute('aria-pressed', o === b)); }));
   $('newgame').addEventListener('click', () => { if (!SIM_END.on) watchGame(); });
   // Sim to the final horn: the rest of this game at once, the same ticks the rink would play, a few thousand per frame
-  // so the page stays responsive; then the review opens
+  // so the page stays responsive; then it can be reviewed
   const SIM_END = { on: false };
   $('simEnd').addEventListener('click', () => {
     if (SIM_END.on || game.over) return;
@@ -990,7 +1003,6 @@ export function startSim(DATA) {
       b.textContent = game.over ? 'Sim to the final horn' : `Simming: ${['1st', '2nd', '3rd', 'OT'][game.period - 1] || 'OT'} period`;
       if (!game.over) { requestAnimationFrame(run); return; }
       SIM_END.on = false; b.disabled = true; $('newgame').disabled = false; FX.rings = []; FX.goalLight = null;
-      const rv = $('review'); if (!rv.hidden) rv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     requestAnimationFrame(run);
   });
@@ -1002,12 +1014,12 @@ export function startSim(DATA) {
   // the lab's fixed 0.03 s, so it plays exactly as it did in the lab and its shots can be reviewed. The Watch plans and
   // sliders are not touched; leaving the lab game (New game, or the link in the note) puts them back in charge.
   function playLabGame(seed, plans, label, row) {
-    LABGAME = { seed, label, row }; labAcc = 0;
+    LABGAME = { seed, label, row, recipe: recipeOf(seed, plans) }; labAcc = 0;
     plans.forEach((p, i) => sim.setTactics(i, tacOfPlan(p)));
     Object.keys(cfg).forEach(k => { cfg[k] = 1; });
     newGame(seed); game.paused = false; $('pause').textContent = 'Pause';
     const r = row.teams;
-    $('labGameNote').innerHTML = `<b>${label}</b>, at the NHL settings: it plays exactly as it did in the lab, where it ended ${teams[0].abbr} ${r[0].goals}, ${teams[1].abbr} ${r[1].goals}${row.end !== 'REG' ? ` (${row.end})` : ''}. Sim to the final horn to go straight to its review. <button type="button" class="linkish" id="labGameLeave">Back to my own game</button>`;
+    $('labGameNote').innerHTML = `<b>${label}</b>, at the NHL settings: it plays exactly as it did in the lab, where it ended ${teams[0].abbr} ${r[0].goals}, ${teams[1].abbr} ${r[1].goals}${row.end !== 'REG' ? ` (${row.end})` : ''}. Sim to the final horn to review it sooner. <button type="button" class="linkish" id="labGameLeave">Back to my own game</button>`;
     $('labGameNote').hidden = false; $('labGameLeave').addEventListener('click', watchGame);
     showView('watch'); window.scrollTo(0, 0);
   }

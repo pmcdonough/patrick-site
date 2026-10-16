@@ -399,3 +399,21 @@
   .gamepick { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
   .gamepick label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--fg-dim); flex: 1 1 280px; min-width: 0; }
   .gamepick select { background: var(--raised); }
+  /* Review a game: which game is on screen, the recent ones, or how to get one */
+  section.view[data-view="review"] { display: flex; flex-direction: column; gap: 14px; }
+  section.view[data-view="review"][hidden] { display: none; }
+  .rvpick { display: flex; flex-direction: column; gap: 12px; }
+  .rvpick .vt { margin: 0; }
+  .rvnow { margin: 0; font-size: 1.02rem; line-height: 1.5; }
+  .rvempty p { margin: 0 0 10px; color: var(--fg-dim); max-width: 70ch; line-height: 1.5; }
+  .rvempty .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .rvbusy { display: flex; flex-direction: column; gap: 6px; } .rvbusy .hint { margin: 0; }
+  .progress i.run { width: 35%; animation: rvrun 1.1s ease-in-out infinite alternate; }
+  @keyframes rvrun { from { margin-left: 0; } to { margin-left: 65%; } }
+  @media (prefers-reduced-motion: reduce) { .progress i.run { animation: none; width: 100%; opacity: 0.5; } }
+  .rvrecent { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .rvrecent .k { width: 100%; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); }
+  .rvrecent button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; max-width: 100%; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); font-size: 0.86rem; }
+  .rvrecent button small { color: var(--fg-dim); font-size: 0.76rem; }
+  .rvrecent button[aria-pressed="true"] { background: var(--raised); color: var(--fg); border-color: var(--link); box-shadow: 0 0 0 1px var(--link); }
+  .gamepick .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }

@@ -1,14 +1,17 @@
-// The shot review: after a Watch game ends, every shot of that game, judged by the shooter's own read at the moment he
-// let it go (the same values his decision and the sight lines use), with a replay of the seconds around it.
-// It only listens: the engine's 'shot' event, its state after each tick, 'reset' and 'final'. It never changes the game.
+// Review a game: every shot of a finished game, judged by the shooter's own read at the moment he let it go (the same
+// values his decision and the sight lines use), with a replay of the seconds around it.
+// A recorder only listens to an engine: its 'shot' event, its state after each tick, 'reset' and 'final'. It never
+// changes the game. One records the Watch rink as it plays; another plays a lab game on an engine of its own, from the
+// game's seed and plans, so a lab game can be reviewed without watching it. Finished games go in a short list of recent
+// games; a lab game is kept as its recipe (seed, plans, settings) in this browser and played again when reopened.
 // main.js installs it with the drawing functions it shares (installReview(kit)), so the replay looks like the rink.
 // What if he passed: about once a second of play it keeps a snapshot of the game; for a shot, a separate engine
 // (kit.makeSim) restores the last one, replays the same ticks to the instant before the release, then plays the pass he
 // passed up and the shot he took, each review.whatIf.runs times with paired fresh random numbers.
 
 export function installReview(kit) {
-  const { sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim } = kit;
-  const { teams, game, puck, PH, active, dist, oppNet, readLook, goalieLine, clamp } = sim;
+  const { sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim, VERSION } = kit;
+  const { PH, clamp } = sim;
   const RV = PH.review, XC = PH.shotDecision.xgChoice, WI = RV.whatIf;
   const STEP = 1 / RV.sampleHz;
   const PERIOD = ['1st', '2nd', '3rd', 'OT'];
@@ -17,26 +20,62 @@ export function installReview(kit) {
   const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
   // ---------- Recording: the last few seconds of play, and every shot with its read ----------
-  const R = { t: 0, nextAt: 0, ring: [], moments: [], open: [], scores: [0, 0], snap: null, dts: [], snapAge: 0 };
-  // one sample of the play on an engine (the Watch game, or the what-if engine)
+  // one sample of the play on an engine (a recorded game, or the what-if engine)
   const frameOf = (E, t) => ({
     t, puck: [E.puck.x, E.puck.y], carrier: E.puck.carrier,
     sk: E.teams.flatMap(q => q.players.filter(p => !p.goalie && !p.box).map(p => [p, p.x, p.y])),
     gl: E.teams.map(q => q.goalie).filter(g => g && !g.box).map(g => [g, g.x, g.y, E.goalieLine(g)]),
   });
-  const frame = () => frameOf(sim, R.t);
-  const counts = t => { const o = teams[1 - t.id]; return { score: t.score, shots: t.shots, missed: t.missed, blocked: o.blocked + t.blockedOwn }; };
-  sim.on('shot', info => {
-    if (game.shootout) return;
-    const p = info.shooter, t = p.team, opp = active(teams[1 - t.id]), mates = active(t).filter(m => m !== p && !m.leaving);
-    const read = readLook(p, t, opp, mates, Math.min(...opp.map(o => dist(o, p))));
-    const now = frame(), here = q => ({ x: q.x, y: q.y, num: q.num });
-    const m = { id: R.moments.length, team: t.id, period: game.period, clock: game.clock, shooter: p, why: info.why, oneTimer: info.oneTimer,
-      xg: info.xg, read, net: oppNet(t), shooterAt: here(p), sightRead: read && { ...read, best: read.best && here(read.best) }, opp: opp.map(o => ({ x: o.x, y: o.y })), at: now, frames: [...R.ring.filter(f => f.t >= R.t - RV.leadSec), now], before: counts(t), outcome: null,
-      replay: R.snap && info.why !== 'oneTimer' && read && read.best ? { snap: R.snap, dts: R.dts.slice() } : null };   // a one-timer is not a choice he could have passed up
-    m.verdict = judge(read);
-    R.moments.push(m); R.open.push(m);
-  });
+  // a recorder on engine E: step(dt) after every tick; at the final horn, onFinal gets the finished game
+  function makeRecorder(E, onFinal) {
+    const { teams, game, active, dist, oppNet, readLook } = E;
+    let R;
+    const fresh = () => { R = { t: 0, nextAt: 0, ring: [], moments: [], open: [], scores: [0, 0], snap: null, dts: [], snapAge: 0 }; };
+    fresh();
+    const frame = () => frameOf(E, R.t);
+    const counts = t => { const o = teams[1 - t.id]; return { score: t.score, shots: t.shots, missed: t.missed, blocked: o.blocked + t.blockedOwn }; };
+    E.on('shot', info => {
+      if (game.shootout) return;
+      const p = info.shooter, t = p.team, opp = active(teams[1 - t.id]), mates = active(t).filter(m => m !== p && !m.leaving);
+      const read = readLook(p, t, opp, mates, Math.min(...opp.map(o => dist(o, p))));
+      const now = frame(), here = q => ({ x: q.x, y: q.y, num: q.num });
+      const m = { id: R.moments.length, team: t.id, period: game.period, clock: game.clock, shooter: p, why: info.why, oneTimer: info.oneTimer,
+        xg: info.xg, read, net: oppNet(t), shooterAt: here(p), sightRead: read && { ...read, best: read.best && here(read.best) }, opp: opp.map(o => ({ x: o.x, y: o.y })), at: now, frames: [...R.ring.filter(f => f.t >= R.t - RV.leadSec), now], before: counts(t), outcome: null,
+        replay: R.snap && info.why !== 'oneTimer' && read && read.best ? { snap: R.snap, dts: R.dts.slice() } : null };   // a one-timer is not a choice he could have passed up
+      m.verdict = judge(read);
+      R.moments.push(m); R.open.push(m);
+    });
+    // after every tick: sample the play, and settle what became of each open shot
+    function step(dt) {
+      R.t += dt; R.dts.push(dt); R.snapAge += dt;
+      if (!R.snap || R.snapAge >= RV.snapshotEverySec) { try { R.snap = E.snapshot(); } catch (e) { R.snap = null; } R.dts = []; R.snapAge = 0; }
+      if (R.t >= R.nextAt) {
+        R.nextAt = R.t + STEP; const f = frame(); R.ring.push(f);
+        while (R.ring.length && R.ring[0].t < R.t - RV.leadSec - STEP) R.ring.shift();
+        for (const m of R.open) if (R.t - m.at.t <= RV.afterSec) m.frames.push(f);
+      }
+      R.open = R.open.filter(m => {
+        if (!m.outcome) {
+          const t = teams[m.team], c = counts(t), b = m.before;
+          m.outcome = c.score > b.score ? 'goal' : c.blocked > b.blocked ? 'blocked' : c.shots > b.shots ? 'saved' : c.missed > b.missed ? 'missed' : R.t - m.at.t > 4 ? 'loose' : null;
+        }
+        return !m.outcome || R.t - m.at.t <= RV.afterSec;
+      });
+    }
+    // a goal settles the scoring team's latest shot: the engine counts a shot on goal when it beats the goalie, a few
+    // frames before it crosses the line, so the 'saved' read from the counts is only provisional until then
+    E.on('fx', (kind, d) => {
+      if (kind !== 'goal') return;
+      const team = teams.findIndex(t => t.score > R.scores[t.id]); R.scores = teams.map(t => t.score); if (team < 0) return;
+      for (let i = R.moments.length - 1; i >= 0; i--) { const m = R.moments[i]; if (R.t - m.at.t > 4) break; if (m.team === team && (!d.scorer || m.shooter === d.scorer)) { m.outcome = 'goal'; break; } }
+    });
+    E.on('reset', fresh);
+    E.on('final', () => {
+      R.open.forEach(m => { if (!m.outcome) m.outcome = 'loose'; }); R.open = [];
+      onFinal({ moments: R.moments, teams: teams.map(t => ({ name: t.name, abbr: t.abbr })), final: teams.map(t => t.score), end: game.shootout ? 'SO' : game.overtime ? 'OT' : 'REG' });
+    });
+    return { step };
+  }
   // a better pass: worth passMustBeatBy times his shot and at least minGapXg more; a close call: worth more, not by that much
   function judge(read) {
     if (!read) return 'none';
@@ -44,32 +83,92 @@ export function installReview(kit) {
     if (read.best && read.bestV > read.myV) return 'close';
     return 'right';
   }
-  // after every tick on the Watch page: sample the play, and settle what became of each open shot
-  function step(dt) {
-    R.t += dt; R.dts.push(dt); R.snapAge += dt;
-    if (!R.snap || R.snapAge >= RV.snapshotEverySec) { try { R.snap = sim.snapshot(); } catch (e) { R.snap = null; } R.dts = []; R.snapAge = 0; }
-    if (R.t >= R.nextAt) {
-      R.nextAt = R.t + STEP; const f = frame(); R.ring.push(f);
-      while (R.ring.length && R.ring[0].t < R.t - RV.leadSec - STEP) R.ring.shift();
-      for (const m of R.open) if (R.t - m.at.t <= RV.afterSec) m.frames.push(f);
-    }
-    R.open = R.open.filter(m => {
-      if (!m.outcome) {
-        const t = teams[m.team], c = counts(t), b = m.before;
-        m.outcome = c.score > b.score ? 'goal' : c.blocked > b.blocked ? 'blocked' : c.shots > b.shots ? 'saved' : c.missed > b.missed ? 'missed' : R.t - m.at.t > 4 ? 'loose' : null;
-      }
-      return !m.outcome || R.t - m.at.t <= RV.afterSec;
+
+  // ---------- Recent games: the Watch rink's finished games, and lab games played here from their recipe ----------
+  // An entry: { key, label, kind ('watch' or 'lab'), final, end, recipe (lab games only), lab (the lab's own final, to
+  // check against), data (the recorded game, kept for the few most recently opened) }. Lab entries are saved in this
+  // browser as recipes for this sim version; a Watch game cannot be played again exactly, so it lasts until a reload.
+  const H = { list: [], cur: null, busy: null, watchN: 0 };
+  const KEEP = 8, KEEP_DATA = 4;   // a recording is about 10 MB, mostly the frames around each shot
+  try {
+    const saved = JSON.parse(localStorage.getItem('rink.reviews') || 'null');
+    if (saved && saved.v === VERSION && Array.isArray(saved.list)) H.list = saved.list.filter(e => e && e.recipe && e.key && e.label).map(e => ({ ...e, data: null }));
+  } catch (e) {}
+  function saveH() {
+    try { localStorage.setItem('rink.reviews', JSON.stringify({ v: VERSION, list: H.list.filter(e => e.recipe).map(({ data, ...e }) => e) })); } catch (e) {}
+  }
+  function addEntry(e) {
+    H.list = [e, ...H.list.filter(x => x.key !== e.key)].slice(0, KEEP);
+    trimData(); saveH();
+  }
+  // only a few games keep their recording: the one on screen, then Watch games (they cannot be played again), then the
+  // most recently opened lab games; a lab game without one is played again when reopened
+  function trimData() {
+    const rec = (a, b) => (b.opened || 0) - (a.opened || 0), has = H.list.filter(e => e.data && e !== H.cur);
+    const keep = new Set([H.cur, ...has.filter(e => !e.recipe).sort(rec), ...has.filter(e => e.recipe).sort(rec)].filter(Boolean).slice(0, KEEP_DATA));
+    for (const e of H.list) if (!keep.has(e)) e.data = null;
+    H.list = H.list.filter(e => e.data || e.recipe);
+  }
+  const scoreText = e => e.final ? `${e.teamsAbbr[0]} ${e.final[0]}, ${e.teamsAbbr[1]} ${e.final[1]}${e.end !== 'REG' ? ' ' + e.end : ''}` : '';
+  // the Watch rink's recorder: a finished game goes on the list, and opens here unless another game is on screen
+  const watchRec = makeRecorder(sim, d => {
+    const lg = kit.labGame && kit.labGame();
+    const e = lg ? { key: 'lab:' + JSON.stringify(lg.recipe), label: lg.label, kind: 'lab', recipe: lg.recipe, lab: lg.final }
+      : { key: 'watch:' + Date.now(), label: `Watch game ${++H.watchN}`, kind: 'watch' };
+    Object.assign(e, { final: d.final, end: d.end, teamsAbbr: d.teams.map(t => t.abbr), data: d, opened: Date.now() });
+    addEntry(e);
+    if (!kit.reviewShown() || !H.cur) openEntry(e);
+    $('reviewSoon').innerHTML = d.moments.length ? `Final. <button type="button" class="linkish" id="rvGo">Review this game: all ${d.moments.length} shots</button>` : 'Final.';
+    const go = $('rvGo'); if (go) go.addEventListener('click', () => { openEntry(e); kit.goReview(); });
+  });
+  sim.on('reset', () => { $('reviewSoon').textContent = 'After the final horn, review every shot of this game in Review a game: what the shooter saw, and whether a pass was worth more.'; });
+  // a lab game played here at full speed, a few thousand ticks a frame so the page stays responsive
+  let PE = null, peDone = null;
+  function playRecipe(r, progress) {
+    if (!PE) { PE = makeSim(); PE.rec = makeRecorder(PE, d => { if (peDone) peDone(d); }); }
+    return new Promise(resolve => {
+      peDone = resolve;
+      Object.assign(PE.cfg, r.cfg); PE.setTactics(0, r.tacs[0]); PE.setTactics(1, r.tacs[1]); PE.newGame(r.seed);
+      const run = () => {
+        for (let k = 0; k < 4000 && !PE.game.over; k++) { PE.tick(0.03); PE.rec.step(0.03); }
+        if (!PE.game.over) { progress(PE.game.period); requestAnimationFrame(run); }
+      };
+      run();
     });
   }
-  // a goal settles the scoring team's latest shot: the engine counts a shot on goal when it beats the goalie, a few
-  // frames before it crosses the line, so the 'saved' read from the counts is only provisional until then
-  sim.on('fx', (kind, d) => {
-    if (kind !== 'goal') return;
-    const team = teams.findIndex(t => t.score > R.scores[t.id]); R.scores = teams.map(t => t.score); if (team < 0) return;
-    for (let i = R.moments.length - 1; i >= 0; i--) { const m = R.moments[i]; if (R.t - m.at.t > 4) break; if (m.team === team && (!d.scorer || m.shooter === d.scorer)) { m.outcome = 'goal'; break; } }
-  });
-  sim.on('reset', () => { R.t = 0; R.nextAt = 0; R.ring = []; R.moments = []; R.open = []; R.scores = [0, 0]; R.snap = null; R.dts = []; R.snapAge = 0; hide(); });
-  sim.on('final', () => { R.open.forEach(m => { if (!m.outcome) m.outcome = 'loose'; }); R.open = []; show(); });
+  async function openEntry(e) {
+    if (H.busy) return;
+    e.opened = Date.now();
+    if (!e.data && e.recipe) {
+      H.busy = e; renderPick();
+      try { e.data = await playRecipe(e.recipe, p => { $('rvBusyText').textContent = `Playing ${e.label}: ${PERIOD[p - 1] || 'OT'} period`; }); }
+      finally { H.busy = null; }
+      e.final = e.data.final; e.end = e.data.end; e.teamsAbbr = e.data.teams.map(t => t.abbr);
+    }
+    H.cur = e; trimData(); saveH();
+    G = e.data; renderPick(); show();
+  }
+  // a lab game to review: on the list (or found there) and opened
+  function reviewLab(recipe, label, final) {
+    const key = 'lab:' + JSON.stringify(recipe), have = H.list.find(x => x.key === key);
+    const e = have || { key, label, kind: 'lab', recipe, lab: final, data: null };
+    if (!have) addEntry(e); else e.label = label;
+    return openEntry(e);
+  }
+  // the card above the review: which game this is, the recent ones, or how to get one
+  function renderPick() {
+    const e = H.cur, busy = H.busy;
+    $('rvEmpty').hidden = !!(H.list.length || busy);
+    $('rvBusy').hidden = !busy; if (busy) $('rvBusyText').textContent = `Playing ${busy.label}`;
+    const check = e && e.lab ? (e.final[0] === e.lab[0] && e.final[1] === e.lab[1] ? ' <span class="lgcheck ok">Final matches the lab.</span>' : ' <span class="lgcheck bad">Final differs from the lab.</span>') : '';
+    $('rvNow').hidden = !!busy || (!e && !H.list.length);
+    if (!e) $('rvNow').textContent = 'Choose one of your recent games below to review it.';
+    else $('rvNow').innerHTML = `<b>${esc(e.label)}</b>: ${scoreText(e)}. ${e.kind === 'lab' ? 'Played at the NHL settings with the lab plans.' : 'The game you watched.'}${check}`;
+    const others = H.list;
+    $('rvRecent').hidden = others.length < 2;
+    $('rvRecent').innerHTML = `<span class="k">Recent games</span>` + others.map((x, i) => `<button type="button" data-entry="${i}" aria-pressed="${x === e}"${busy ? ' disabled' : ''}>${esc(x.label)}<small>${x.final ? scoreText(x) : 'not played here yet'}</small></button>`).join('');
+  }
+  $('rvRecent').addEventListener('click', ev => { const b = ev.target.closest('[data-entry]'); if (b) openEntry(H.list[+b.dataset.entry]); });
 
   // ---------- What if he passed: the moment rebuilt on another engine and played out both ways ----------
   let B = null; const BR = { on: false, shots: [] };
@@ -148,7 +247,8 @@ export function installReview(kit) {
     return out;
   }
 
-  // ---------- The panel ----------
+  // ---------- The panel: the game on screen (G) ----------
+  let G = null;
   const V = { kind: 'better', team: 'both', sel: null, tau: 0, playing: false, hold: 0, speed: 0.5, last: 0, alt: false, mid: false };   // mid: paused partway through a clip
   const fr = m => V.alt && m.what && m.what.frames ? m.what.frames : m.frames;   // the clip on screen: as played, or one run of the pass
   const box = $('review'), cv = $('rvCanvas'), rctx = cv.getContext('2d');
@@ -167,42 +267,39 @@ export function installReview(kit) {
     cv.width = Math.round(RW * S); cv.height = Math.round(RH * S * v.k);
     const ratio = (v.x1 - v.x0) / RH; cv.style.aspectRatio = `${ratio.toFixed(3)}`; cv.style.maxWidth = `min(100%, ${(70 * ratio).toFixed(1)}vh)`;   // never taller than 70% of the screen
   }
-  function hide() { box.hidden = true; $('reviewSoon').hidden = false; $('reviewSoon').innerHTML = 'After the final horn, review every shot of this game: what the shooter saw, and whether a pass was worth more.'; V.sel = null; V.playing = false; }
   function show() {
-    const n = R.moments.length; if (!n) return;
-    $('reviewSoon').innerHTML = `Final. <button type="button" class="linkish" id="rvGo">Review all ${n} shots of this game</button>`;
-    $('rvGo').addEventListener('click', () => box.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    box.hidden = false;
+    V.sel = null; V.playing = false; V.mid = false; V.team = 'both';
+    box.hidden = !G || !G.moments.length; if (box.hidden) return;
     renderTeams(); renderLine(); renderPlayers();
-    V.kind = R.moments.some(m => m.verdict === 'better') ? 'better' : 'all'; syncSeg();
-    renderList(); select(list()[0] || R.moments[0]);
+    V.kind = G.moments.some(m => m.verdict === 'better') ? 'better' : 'all'; syncSeg();
+    renderList(); select(list()[0] || G.moments[0]);
   }
-  const list = () => R.moments.filter(m => (V.team === 'both' || m.team === +V.team) && (V.kind === 'all' || (V.kind === 'goals' ? m.outcome === 'goal' : m.verdict === V.kind)))
+  const list = () => G.moments.filter(m => (V.team === 'both' || m.team === +V.team) && (V.kind === 'all' || (V.kind === 'goals' ? m.outcome === 'goal' : m.verdict === V.kind)))
     .sort((a, b) => V.kind === 'better' ? (b.read.bestV - b.read.myV) - (a.read.bestV - a.read.myV) : a.id - b.id);
   function teamSum(i) {
-    const ms = R.moments.filter(m => m.team === i), b = ms.filter(m => m.verdict === 'better'), judged = ms.filter(m => m.verdict !== 'none');
+    const ms = G.moments.filter(m => m.team === i), b = ms.filter(m => m.verdict === 'better'), judged = ms.filter(m => m.verdict !== 'none');
     return { n: ms.length, better: b.length, left: b.reduce((s, m) => s + m.read.bestV - m.read.myV, 0), right: judged.filter(m => m.verdict === 'right').length / (judged.length || 1), goals: ms.filter(m => m.outcome === 'goal').length };
   }
   function renderTeams() {
-    $('rvTeams').innerHTML = teams.map((t, i) => { const s = teamSum(i); return `<div class="rvt ${i ? 'mtl' : 'bos'}"><b>${t.name}</b><span class="big">${s.better} <small>of ${s.n} shots had a better pass</small></span><span>About ${s.left.toFixed(1)} goals left on the table. ${pct(s.right)} of shots were the right call. ${s.goals} goal${s.goals === 1 ? '' : 's'}.</span></div>`; }).join('');
+    $('rvTeams').innerHTML = G.teams.map((t, i) => { const s = teamSum(i); return `<div class="rvt ${i ? 'mtl' : 'bos'}"><b>${t.name}</b><span class="big">${s.better} <small>of ${s.n} shots had a better pass</small></span><span>About ${s.left.toFixed(1)} goals left on the table. ${pct(s.right)} of shots were the right call. ${s.goals} goal${s.goals === 1 ? '' : 's'}.</span></div>`; }).join('');
   }
   // the whole game on one strip: the Bruins' shots above the line, the Canadiens' below; tall amber marks are better passes missed
   function renderLine() {
-    const periods = Math.max(3, ...R.moments.map(m => m.period)), len = p => p > 3 ? 300 : 1200, total = Array.from({ length: periods }, (_, i) => len(i + 1)).reduce((a, b) => a + b, 0);
+    const periods = Math.max(3, ...G.moments.map(m => m.period)), len = p => p > 3 ? 300 : 1200, total = Array.from({ length: periods }, (_, i) => len(i + 1)).reduce((a, b) => a + b, 0);
     const x = m => { let s = 0; for (let p = 1; p < m.period; p++) s += len(p); return 100 * (s + len(m.period) - m.clock) / total; };
     let at = 0; const marks = [];
     for (let p = 1; p <= periods; p++) { marks.push(`<span class="per" style="left:${100 * at / total}%">${PERIOD[p - 1]}</span>`); at += len(p); }
-    const dots = R.moments.map(m => `<button type="button" class="mk ${m.team ? 'a' : 'h'} ${m.outcome === 'goal' ? 'goal' : m.verdict}" style="left:${x(m).toFixed(2)}%" data-m="${m.id}" title="${esc(`${when(m)} ${teams[m.team].abbr} ${who(m.shooter)}: ${VERDICT[m.verdict]}, ${(OUTCOME[m.outcome] || '').toLowerCase()}`)}" aria-label="${esc(`${when(m)} ${who(m.shooter)}`)}"></button>`).join('');
-    $('rvLine').innerHTML = `<div class="track"><span class="lbl h">${teams[0].abbr}</span><span class="lbl a">${teams[1].abbr}</span>${marks.join('')}${dots}</div>`;
+    const dots = G.moments.map(m => `<button type="button" class="mk ${m.team ? 'a' : 'h'} ${m.outcome === 'goal' ? 'goal' : m.verdict}" style="left:${x(m).toFixed(2)}%" data-m="${m.id}" title="${esc(`${when(m)} ${G.teams[m.team].abbr} ${who(m.shooter)}: ${VERDICT[m.verdict]}, ${(OUTCOME[m.outcome] || '').toLowerCase()}`)}" aria-label="${esc(`${when(m)} ${who(m.shooter)}`)}"></button>`).join('');
+    $('rvLine').innerHTML = `<div class="track"><span class="lbl h">${G.teams[0].abbr}</span><span class="lbl a">${G.teams[1].abbr}</span>${marks.join('')}${dots}</div>`;
   }
   function renderList() {
     const ms = list();
     $('rvList').innerHTML = ms.length ? ms.map(m => `<button type="button" class="rvrow${V.sel === m ? ' on' : ''}" data-m="${m.id}"><span class="dot ${m.team ? 'a' : 'h'}"></span><span class="when">${when(m)}</span><span class="who">${esc(who(m.shooter))}<small>${VERDICT[m.verdict]}${m.verdict === 'better' ? `, ${pct(m.read.bestV - m.read.myV)} more` : ''} · ${OUTCOME[m.outcome] || ''}</small></span></button>`).join('')
-      : `<p class="hint">No shots like that${V.team === 'both' ? '' : ` for the ${teams[+V.team].name}`}.</p>`;
+      : `<p class="hint">No shots like that${V.team === 'both' ? '' : ` for the ${G.teams[+V.team].name}`}.</p>`;
   }
   function renderPlayers() {
     const by = new Map();
-    for (const m of R.moments) { const k = m.shooter; if (!by.has(k)) by.set(k, { p: k, n: 0, right: 0, close: 0, better: 0, left: 0, goals: 0 }); const r = by.get(k); r.n++; r[m.verdict] = (r[m.verdict] || 0) + 1; if (m.verdict === 'better') r.left += m.read.bestV - m.read.myV; if (m.outcome === 'goal') r.goals++; }
+    for (const m of G.moments) { const k = m.shooter; if (!by.has(k)) by.set(k, { p: k, n: 0, right: 0, close: 0, better: 0, left: 0, goals: 0 }); const r = by.get(k); r.n++; r[m.verdict] = (r[m.verdict] || 0) + 1; if (m.verdict === 'better') r.left += m.read.bestV - m.read.myV; if (m.outcome === 'goal') r.goals++; }
     const rows = [...by.values()].sort((a, b) => b.left - a.left || b.n - a.n);
     $('rvPlayers').innerHTML = `<table><tr><th>Player</th><th>Shots</th><th>Right call</th><th>Close</th><th>Better pass missed</th><th>Goals left</th><th>Goals</th></tr>${rows.map(r => `<tr><td>${r.p.team.abbr} ${esc(who(r.p))}</td><td>${r.n}</td><td>${r.right}</td><td>${r.close}</td><td>${r.better}</td><td>${r.left.toFixed(2)}</td><td>${r.goals}</td></tr>`).join('')}</table>`;
   }
@@ -211,7 +308,7 @@ export function installReview(kit) {
     document.querySelectorAll('#rvLine .mk.on, #rvList .rvrow.on').forEach(e => e.classList.remove('on'));
     if (!m) { $('rvText').innerHTML = ''; paint(); return; }
     document.querySelectorAll(`#rvLine .mk[data-m="${m.id}"], #rvList .rvrow[data-m="${m.id}"]`).forEach(e => e.classList.add('on'));
-    const t = teams[m.team];
+    const t = G.teams[m.team];
     $('rvText').innerHTML = `<p class="rvwhen"><span class="dot ${m.team ? 'a' : 'h'}"></span>${when(m)} · ${t.abbr} ${esc(who(m.shooter))} · ${OUTCOME[m.outcome] || ''}</p><p class="headline sm">${esc(headline(m))}</p><span class="pill ${m.verdict === 'better' ? 'warn' : m.verdict === 'right' ? 'good' : 'flat'}">${VERDICT[m.verdict]}</span>`
       + `<dl class="rvdl">${details(m).map(([k, v, extra]) => `<dt>${k}</dt><dd>${esc(v)}${extra ? esc(extra) : ''}</dd>`).join('')}</dl><div class="rvwhat" id="rvWhat"></div>`;
     V.mid = false; playCtl(); renderWhat(m); sizeView(m); paint();
@@ -253,7 +350,7 @@ export function installReview(kit) {
   const syncSeg = () => { document.querySelectorAll('#rvKind [data-k]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === V.kind)); document.querySelectorAll('#rvTeam [data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === V.team)); };
   document.querySelectorAll('#rvKind [data-k]').forEach(b => b.addEventListener('click', () => { V.kind = b.dataset.k; syncSeg(); renderList(); const l = list(); if (!l.includes(V.sel)) select(l[0]); }));
   document.querySelectorAll('#rvTeam [data-t]').forEach(b => b.addEventListener('click', () => { V.team = b.dataset.t; syncSeg(); renderList(); const l = list(); if (!l.includes(V.sel)) select(l[0]); }));
-  for (const id of ['rvLine', 'rvList']) $(id).addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) select(R.moments[+b.dataset.m]); });
+  for (const id of ['rvLine', 'rvList']) $(id).addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) select(G.moments[+b.dataset.m]); });
   const move = d => { const l = list(); if (!l.length) return; const i = l.indexOf(V.sel); select(l[(i + d + l.length) % l.length]); const row = $('rvList').querySelector('.rvrow.on'); if (row) row.scrollIntoView({ block: 'nearest' }); };
   $('rvPrev').addEventListener('click', () => move(-1)); $('rvNext').addEventListener('click', () => move(1));
   // one button plays, pauses and resumes; after a pause, Play from the start runs the lead-up again
@@ -324,7 +421,8 @@ export function installReview(kit) {
     requestAnimationFrame(frameLoop);
   }
   requestAnimationFrame(frameLoop);
-  hide();
+  renderPick();
+  $('reviewSoon').textContent = 'After the final horn, review every shot of this game in Review a game: what the shooter saw, and whether a pass was worth more.';
 
-  return { step, R };
+  return { step: watchRec.step, reviewLab, H, get G() { return G; } };
 }
