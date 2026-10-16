@@ -510,7 +510,7 @@
  "defensiveZone": {
   "zone": {
    "label": "Zone (box + 1)",
-   "desc": "Nearest skater pressures; D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters. Any attacker who gets into the slot is picked up by the nearest free defender before anything else.",
+   "desc": "Nearest skater pressures, from the inside: about a stick length between the carrier and the net, so a drive to the net runs into him. D hold the top of the crease inside the posts and box out whoever is parked in front; the center owns the slot; wingers shade the point men and half-wall shooters. Any attacker who gets into the slot is picked up by the nearest free defender before anything else.",
    "spots": {
     "LD": [
      10,
@@ -541,6 +541,7 @@
     "insideFt": 1,
     "stickFt": 10
    },
+   "carrierGoalSideFt": 5,
    "dSpread": {
     "desc": "How far from the middle of the ice each defenseman stands at the net when he has nobody to box out: the strong-side D (the puck's side) at strongSideFt, the weak-side D at weakSideFt. Before sim 0.35 these were 9.5 and 5.5 ft, which left a lane between them at the top of the crease.",
     "strongSideFt": 6,

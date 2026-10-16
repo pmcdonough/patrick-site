@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.70 = sim 0.58 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.71 = sim 0.59 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.71
+- Sim 0.59 (zone coverage plays the carrier from the inside). References re-saved at both levels.
 
 ### 0.70
 - Sim 0.58 (man coverage plays the carrier from the inside). References re-saved at both levels.
@@ -173,6 +176,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.59
+- Zone coverage plays the puck carrier from the inside too, the same stick length as man coverage (`systems.json` `defensiveZone.zone.carrierGoalSideFt`, 5 ft). At the NHL settings, 100 games: Montreal's expected goals against Boston 4.97 to 4.09 and its medium-danger shots 16.8 to 12.2; both clubs now about a third above the league in expected goals (60 to 90% at sim 0.57). Boston 61% of the points (real 61%), Montreal 48% (real 65%). For Montreal, zone now gives up about 0.8 expected goals a game fewer than man.
+- Recalibrated: `goalie.tierGoalScale` 0.68 to 0.74 (goals 3.07 a team, league 3.08).
+- At the build defaults the points split evenly again (Boston 55%, Montreal 57%; Montreal had 77% in 0.58), but goals are low there, about 2.3 a team a game.
+- Shifts a little longer again: mean 52 s, p90 78 s at the build defaults (51 and 76 in 0.58; target 45 to 50 and 70 to 75).
 
 ### 0.58
 - Man-on-man coverage plays the puck carrier from the inside. The man on the carrier used to skate straight at the puck, and man coverage has no second defender stepping into the shooting lane, so a carrier who got by him had a clear path to the net: on Boston's medium-danger shots against Montreal's man coverage the shooter's own defender was goal-side only 22% of the time, and on high-danger shots 5%. Now he plays a stick length between the carrier and the net (`systems.json` `defensiveZone.man.carrierGoalSideFt`, 5 ft).

@@ -1,8 +1,8 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.58';
-import * as DM from './detmath.js?v=0.58';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.59';
+import * as DM from './detmath.js?v=0.59';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
@@ -389,8 +389,10 @@ export function install(S) {
             const vv = puck.vx * puck.vx + puck.vy * puck.vy || 1; const tau = clamp(((p.x - puck.x) * puck.vx + (p.y - puck.y) * puck.vy) / vv, 0, 1.5);
             p.target = onside({ x: puck.x + puck.vx * tau, y: puck.y + puck.vy * tau }); continue;
           }
-          if (!loose && t.marks) { // man-on-man: the man on the puck plays him from the inside, between him and our net, so a drive to the net runs into him
-            const MC = SYS.defensiveZone.man, n = ownNet(t), lx = carrier.x + carrier.vx * 0.25, ly = carrier.y + carrier.vy * 0.25; const d = dist(n, { x: lx, y: ly }) || 1; const k = Math.min(MC.carrierGoalSideFt, d * 0.5);
+          // in our zone the man on the puck plays him from the inside, between him and our net, so a drive to the net runs into him
+          const inside = situation === 'defense' && pz === 'own' && !(shorthanded(t) && !onPP(t)) ? (t.marks ? SYS.defensiveZone.man : SYS.defensiveZone.zone).carrierGoalSideFt : 0;
+          if (!loose && inside > 0) {
+            const n = ownNet(t), lx = carrier.x + carrier.vx * 0.25, ly = carrier.y + carrier.vy * 0.25; const d = dist(n, { x: lx, y: ly }) || 1; const k = Math.min(inside, d * 0.5);
             p.target = { x: lx + (n.x - lx) / d * k, y: ly + (n.y - ly) / d * k }; continue;
           }
           p.target = onside(loose ? { x: puck.x + puck.vx * 0.3, y: puck.y + puck.vy * 0.3 } : { x: carrier.x + carrier.vx * 0.25, y: carrier.y + carrier.vy * 0.25 }); continue;
