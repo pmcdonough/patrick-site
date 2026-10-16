@@ -3,14 +3,14 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.64';
-import { installReview } from './review.js?v=0.64';
-import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.64';
+import { createSim } from './engine/sim.js?v=0.65';
+import { installReview } from './review.js?v=0.65';
+import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.65';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.64';
+  const VERSION = '0.65';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -633,8 +633,8 @@ export function startSim(DATA) {
   function buildGrid(el, team, tag) {
     const p = LAB.plans[team];
     el.innerHTML = TKEYS.map(([k, label]) => k === 'Agg'
-      ? `<label class="agg" data-k="Agg"><span>${label} <b class="aggv" id="${tag}AggV"></b></span><input type="range" id="${tag}Agg" min="0" max="100" value="${p.Agg}"></label>`
-      : `<label data-k="${k}">${label}<select id="${tag}${k}">${optionsOf(k).map(([v, t]) => `<option value="${v}"${v === p[k] ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
+      ? `<label class="agg" data-k="Agg"><span class="lrow"><span class="lname">${label}</span><b class="aggv" id="${tag}AggV"></b></span><input type="range" id="${tag}Agg" min="0" max="100" value="${p.Agg}"></label>`
+      : `<label data-k="${k}"><span class="lrow"><span class="lname">${label}</span></span><select id="${tag}${k}">${optionsOf(k).map(([v, t]) => `<option value="${v}"${v === p[k] ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
     // compact: what each choice means is its hover text (the plan drawer on Watch and How it works spell them out)
     const SECTION = { Fore: 'forecheck', Break: 'breakout', Entry: 'entry', Oz: 'offensiveZone', Dz: 'defensiveZone', PP: 'powerPlay', PK: 'penaltyKill' };
     const describe = k => { const el = $(tag + k); if (k === 'Agg') { el.title = `${aggWord(el.value / 100)} aggression. ${SYS.coaching ? SYS.coaching.aggression.desc : ''}`; return; } const d = SYS[SECTION[k]][el.value]; el.title = d && d.desc ? d.desc : ''; for (const o of el.options) { const od = SYS[SECTION[k]][o.value]; if (od && od.desc) o.title = od.desc; } };
@@ -686,7 +686,7 @@ export function startSim(DATA) {
     // mark every choice that differs from the baseline
     for (const [grid, team] of [['myGrid', c], ['oppGrid', 1 - c]]) $(grid).querySelectorAll('label[data-k]').forEach(l => l.classList.toggle('changed', !!b && !sameChoice(l.dataset.k, b.plans[team][l.dataset.k], LAB.plans[team][l.dataset.k])));
     // each aggression slider says where it sits, and where the baseline had it once it moved
-    for (const [tag, team] of [['m', c], ['o', 1 - c]]) { const v = +LAB.plans[team].Agg, was = b && +b.plans[team].Agg; $(tag + 'AggV').textContent = `${aggWord(v / 100)}, ${v} of 100${b && !sameChoice('Agg', was, v) ? `, baseline ${was}` : ''}`; }
+    for (const [tag, team] of [['m', c], ['o', 1 - c]]) { const v = +LAB.plans[team].Agg, was = b && +b.plans[team].Agg; $(tag + 'AggV').textContent = `${aggWord(v / 100)}, ${v} of 100${b && !sameChoice('Agg', was, v) ? `, baseline ${was}` : ''}`; $(tag + 'Agg').style.setProperty('--fill', v + '%'); }
   }
   document.querySelectorAll('[data-coach]').forEach(b => b.addEventListener('click', () => { if (TEST.running || LAB.coach === +b.dataset.coach) return; LAB.coach = +b.dataset.coach; saveLab(); buildLab(); }));
   $('labReset').addEventListener('click', () => { if (TEST.running) return; LAB.plans = originalPlans(); saveLab(); buildLab(); });
@@ -923,6 +923,7 @@ export function startSim(DATA) {
     const txt = (side, k) => { const el = $(side + k); return el.selectedOptions ? el.selectedOptions[0].text : ''; };
     const lc = v => v.charAt(0).toLowerCase() + v.slice(1);
     for (const side of ['h', 'a']) {
+      $(side + 'Agg').style.setProperty('--fill', $(side + 'Agg').value + '%');   // the slider's track filled to its value
       $(side === 'h' ? 'planH' : 'planA').textContent = `${txt(side, 'Fore')} forecheck, ${lc(txt(side, 'Break'))} breakout, ${lc(txt(side, 'Entry'))} to get in. ${txt(side, 'Oz')} in the offensive zone, ${lc(txt(side, 'Dz'))} coverage in their own end.`;
       $(side === 'h' ? 'chipsH' : 'chipsA').innerHTML = [`Power play: ${txt(side, 'PP')}`, `Penalty kill: ${txt(side, 'PK')}`, `Aggression: ${lc(aggWord($(side + 'Agg').value / 100))}`].map(c => `<span class="chip">${c}</span>`).join('');
     }

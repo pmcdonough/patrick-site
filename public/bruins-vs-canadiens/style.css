@@ -52,8 +52,10 @@
   article.change h4 { margin: 0; font: 800 1.1rem var(--display); }
   article.change h4 small { font: 400 0.85rem var(--body); color: var(--fg-dim); margin-left: 6px; }
   .headline.sm { font-size: 1.15rem; }
-  .side .cgrid.lgrid { grid-template-columns: 1fr 1fr; gap: 8px 10px; }
-  .labflow { display: flex; flex-direction: column; gap: 14px; max-width: 1000px; width: 100%; margin-inline: auto; }
+  .side .cgrid.lgrid { grid-template-columns: 1fr 1fr; gap: 14px 14px; }
+  /* the lab spans the same width as the header and the Watch view; only its running text is held to a readable length */
+  .labflow { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+  .labflow .headline, .labflow .explain, .labflow .what, .labflow p.hint { max-width: 80ch; }
   .basehead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
   .basehead .vt { margin: 0; }
   .planpair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -68,8 +70,20 @@
   .actions .tools { gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
   .actions > .hint { margin: 0; }
   @media (max-width: 520px) { .actions .gfield { margin-left: 0; } }
-  .lgrid label.changed select, .lgrid label.changed input { outline: 2px solid var(--link); outline-offset: 1px; }
-  .lgrid label.changed::after { content: 'changed'; color: var(--link); font-size: 0.66rem; letter-spacing: 0.08em; }
+  /* a choice changed from the baseline: a tag beside its name (so both columns stay level) and a ring on the control */
+  .lgrid .lrow { display: flex; align-items: center; gap: 8px; min-height: 1.15rem; }
+  .lgrid label.agg .lrow { justify-content: space-between; }
+  .lgrid label { justify-content: end; }   /* a name that wraps on a phone pushes its label up, not its control down: the controls stay level */
+  .lgrid label.changed .lname::after { content: 'Changed'; display: inline-block; margin-left: 8px; padding: 0 6px; border-radius: 999px; line-height: 1.35; font-size: 0.6rem; letter-spacing: 0.06em; color: var(--link); background: color-mix(in srgb, var(--link) 15%, transparent); }
+  .lgrid label.changed select { border-color: var(--link); box-shadow: 0 0 0 1px var(--link); }
+  /* the aggression slider: a quiet track, filled to the value in the team's colour */
+  .side input[type=range] { -webkit-appearance: none; appearance: none; height: 22px; margin: 0; background: transparent; border: 0; --fill: 50%; --team: var(--away); }
+  .side.bos input[type=range] { --team: #d99a0b; }
+  .side input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--team) var(--fill), var(--line) var(--fill)); }
+  .side input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--line); }
+  .side input[type=range]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--team); }
+  .side input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--team); border: 2px solid var(--raised); box-shadow: 0 0 0 1px var(--team); }
+  .side input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--team); border: 2px solid var(--raised); box-shadow: 0 0 0 1px var(--team); }
   .tested article.change { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
   .tested .what { margin: 0; line-height: 1.5; }
   .tested .tnum { font: 600 0.72rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
@@ -211,12 +225,13 @@
   .scrim { position: fixed; inset: 0; background: rgb(10 14 20 / 0.4); z-index: 20; }
   .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); box-sizing: border-box; background: var(--panel); border-left: 1px solid var(--line); z-index: 21; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)); padding-inline: 18px max(18px, env(safe-area-inset-right, 0px)); }
   .drawer > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .side { border: 1px solid; border-radius: 12px; padding-block: 10px 12px; padding-inline: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .side { border: 1px solid; border-radius: 12px; padding-block: 14px 16px; padding-inline: 16px; display: flex; flex-direction: column; gap: 12px; }
   .side .who { display: flex; align-items: center; gap: 8px; font: 800 1.25rem var(--display); }
-  .side .cgrid { grid-template-columns: 1fr; gap: 10px; }
-  .side .cgrid label { font-size: 0.72rem; }
+  .side .cgrid { grid-template-columns: 1fr; gap: 20px; }
+  .side .cgrid label { font-size: 0.72rem; gap: 6px; }
+  .side select:focus-visible { outline-color: var(--link); }
   .side .cgrid select { font-size: 0.92rem; padding: 5px 6px; background: var(--raised); }
-  .side .cgrid small.desc { font-size: 0.8rem; color: var(--fg-dim); text-transform: none; letter-spacing: 0; line-height: 1.35; }
+  .side .cgrid small.desc { font-size: 0.82rem; color: var(--fg-dim); text-transform: none; letter-spacing: 0; line-height: 1.45; margin-top: 2px; }
   .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
   .cgrid label { display: flex; flex-direction: column; gap: 2px; font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); min-width: 0; }
   .cgrid select { font-size: 0.8rem; padding: 3px 4px; border-radius: 5px; }

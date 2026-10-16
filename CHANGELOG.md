@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.77 = sim 0.64 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.78 = sim 0.65 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.78
+- Sim 0.65 (room in the plan cards and the plan drawer, the lab as wide as the header). No change to play.
 
 ### 0.77
 - Sim 0.64 (fixes from an outside review of the Game plan lab). No change to play. The lab's headline and game order live in a small module of their own with a unit test (`tools/test/lab.test.js`, 15 tests now). `docs/ENGINE.md` explains the lopsided games under man-on-man.
@@ -194,6 +197,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.65
+- Game plan lab: the two plan cards have room. Each name sits clear of its dropdown, and the fields and the card itself have more space. A changed choice gets a small Changed tag beside its name instead of a line under its dropdown, so both columns stay level (on a phone too, where a long name wraps upward). The changed ring sits on the dropdown's own edge.
+- The aggression sliders, in the lab and in Watch's plan drawer, have a quiet track filled to the value in the team's color: gold for the Bruins, red for the Canadiens. The track was bright white in the dark theme.
+- The Game plan lab spans the same width as the header and the Watch view (it was held to a narrower centered column); its running text keeps a readable line length.
+- Watch's plan drawer: more space between a choice's name, its dropdown, its description and the next choice. The focus ring there is blue, not the red that read as an error.
 
 ### 0.64
 - Game plan lab: the baseline's headline leads with chances. When the two teams are even on chances it says so, and puts a points edge down to finishing and goaltending; a points share inside the normal swing from luck is called that. Chances and points are each judged by their 95% range, as the tests are, so the sentence never contradicts the record.
