@@ -1,11 +1,11 @@
 // Formations: the spot each skater wants for the situation, the system and the puck.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { clamp, dist, ownNet, toFx, toRink } from './rink.js?v=0.55';
-import * as DM from './detmath.js?v=0.55';
+import { clamp, dist, ownNet, toFx, toRink } from './rink.js?v=0.56';
+import * as DM from './detmath.js?v=0.56';
 
 export function install(S) {
-  const { SYS, active, drift, game, onPP, puck, shorthanded, teams } = S;
+  const { PH, SYS, active, drift, game, onPP, puck, shorthanded, teams } = S;
   let manMark, pkSlot;   // from other modules, bound by link()
 
   // ---------- Formations ----------
@@ -98,10 +98,10 @@ export function install(S) {
     }
     // gap control: a defenseman never lets an attacker get behind him while the other team has the puck
     if (p.isD && situation !== 'offense' && pz !== 'own') {
-      const opp = teams[1 - t.id];
+      const opp = teams[1 - t.id], GC = PH.gapControl;
       let deepest = 999;
-      for (const o of active(opp)) { const ofx = 178 - toFx(opp, o.x) - Math.max(0, -o.vx * t.dir) * 0.7; if (ofx < deepest) deepest = ofx; } // read the carrier's speed and back off early
-      if (deepest < 999) fx = Math.min(fx, deepest - 9);
+      for (const o of active(opp)) { const ofx = 178 - toFx(opp, o.x) - Math.max(0, -o.vx * t.dir) * GC.readAheadSec; if (ofx < deepest) deepest = ofx; } // read the carrier's speed and back off early
+      if (deepest < 999) fx = Math.min(fx, deepest - GC.gapFt);
     }
     return toRink(t, clamp(fx, 4, 174), clamp(fy, 5, 80));
   }

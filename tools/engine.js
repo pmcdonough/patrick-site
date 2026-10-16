@@ -35,11 +35,13 @@ async function load() {
   const controls = pageControls();
   const side = (sim, abbr) => { const i = sim.teams.findIndex(t => t.abbr === abbr); if (i < 0) throw new Error(`no club ${abbr}`); return i; };
 
-  // A sim as a fresh page has it. `params` overrides physics.json values ({ key: 'a.b.c', v }) for this sim only.
+  // A sim as a fresh page has it. `params` overrides physics.json values ({ key: 'a.b.c', v }), or systems.json values
+  // with a key starting 'systems.', for this sim only.
   function create({ nhl = false, params = [] } = {}) {
     const DATA = readData();
     for (const { key, v } of params) {
-      const ks = key.split('.'), last = ks.pop(); let o = DATA.physics;
+      // a key is a physics.json path, or a systems.json path written with a leading 'systems.'
+      const sys = key.startsWith('systems.'), ks = (sys ? key.slice(8) : key).split('.'), last = ks.pop(); let o = sys ? DATA.systems : DATA.physics;
       for (const k of ks) { o = o[k]; if (!o) throw new Error(`no physics key ${key}`); }
       if (!(last in o)) throw new Error(`no physics key ${key}`);
       o[last] = typeof o[last] === 'number' ? +v : v;

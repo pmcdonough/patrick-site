@@ -308,5 +308,18 @@
    "horizonSec": 5,
    "arrivedWithinSec": 1.5
   }
+ },
+ "gapControl": {
+  "desc": "Gap control in the neutral zone: a defenseman keeps gapFt ahead of the deepest attacker, reading the attacker's speed readAheadSec ahead, so nobody gets behind him while the other team has the puck. In his own zone the zone coverage takes over.",
+  "gapFt": 9,
+  "readAheadSec": 0.7
+ },
+ "angling": {
+  "desc": "On the entry and in the offensive zone, a defender who is goal-side of the puck carrier (at least goalSideFt closer to the net) and within engageFt of him, standing within laneFt of the carrier's route, takes away the inside: the carrier's route bends to the outside of him, wideFt past him toward the boards. Applies from fromFx (feet from the carrier's own end boards; the attacking blue line is at 114). Coaching references: a defenseman on the rush keeps the carrier to the outside and protects the middle.",
+  "fromFx": 100,
+  "engageFt": 12,
+  "goalSideFt": 1,
+  "laneFt": 5,
+  "wideFt": 6
  }
 }

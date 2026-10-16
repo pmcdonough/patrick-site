@@ -1,8 +1,8 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.55';
-import * as DM from './detmath.js?v=0.55';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.56';
+import * as DM from './detmath.js?v=0.56';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
@@ -303,6 +303,27 @@ export function install(S) {
     }
   }
 
+  // Angling: a defender who is goal-side of the carrier and in his way does not let him cut inside. The carrier's route
+  // bends to the outside of that defender, toward the boards, as it does when a defenseman takes away the middle on an
+  // entry. It changes where he skates, not what he decides; a defender who stays on him gets the usual poke-check chance.
+  function angleOff(p, t, tg) {
+    const AN = PH.angling, n = oppNet(t);
+    if (toFx(t, p.x) < AN.fromFx) return tg;
+    const dNet = dist(p, n), dx = tg.x - p.x, dy = tg.y - p.y, L2 = dx * dx + dy * dy;
+    if (L2 < 1) return tg;
+    let out = tg;
+    for (const o of active(teams[1 - t.id])) {
+      if (dist(o, p) > AN.engageFt || dist(o, n) > dNet - AN.goalSideFt) continue;
+      const u = ((o.x - p.x) * dx + (o.y - p.y) * dy) / L2;                         // where along his route the defender stands
+      const lateral = Math.abs((o.x - p.x) * dy - (o.y - p.y) * dx) / Math.sqrt(L2);
+      if (u <= 0 || lateral > AN.laneFt) continue;
+      const side = p.y === o.y ? (p.y < 42.5 ? -1 : 1) : Math.sign(p.y - o.y);    // the side of the defender he is already on
+      const y = side > 0 ? Math.max(out.y, o.y + AN.wideFt) : Math.min(out.y, o.y - AN.wideFt);
+      out = { x: out.x, y: clamp(y, 4, 81) };
+    }
+    return out;
+  }
+
   function assignTargets(dt) {
     // a pass on its way to a teammate is still that team's puck: both sides keep their structure and the defense
     // plays the receiver, instead of everyone treating it as a loose puck for the length of the pass
@@ -356,7 +377,7 @@ export function install(S) {
           const vv = puck.vx * puck.vx + puck.vy * puck.vy || 1; const tau = clamp(((p.x - puck.x) * puck.vx + (p.y - puck.y) * puck.vy) / vv, 0, 1.5);
           p.target = onside({ x: puck.x + puck.vx * tau, y: puck.y + puck.vy * tau }); continue;
         }
-        if (p === carrier) { p.target = carrierThink(p, dt); continue; }
+        if (p === carrier) { const tg = carrierThink(p, dt); p.target = tg && angleOff(p, t, tg); continue; }
         if (p.leaving) { const door = doorFor(t, p); p.target = { x: door + (p.x < door ? -1.5 : 1.5), y: 1.5 }; continue; }
         if (t.dumpT > 0 && loose && attacking && !p.isD && p !== chaser) { // dump and chase: the far-side forward sprints for the far corner where the rim arrives
           const farY = t.dumpSide === 'top' ? 78 : 7; if ((p.role === 'RW') === (t.dumpSide === 'top')) { const corner = toRink(t, 170, farY); p.target = onside(dist(puck, corner) < 30 ? { x: puck.x + puck.vx * 0.25, y: puck.y + puck.vy * 0.25 } : corner); p.sprint = true; continue; }

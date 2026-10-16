@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.66 = sim 0.55 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.67 = sim 0.56 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.67
+- Sim 0.56 (angling on the rush). `tools/lab.js --param` also takes systems.json values (`--param systems.defensiveZone.zone.slotCoverage.maxFx=44`). References re-saved at both levels.
 
 ### 0.66
 - Sim 0.55 (What if he passed). Under the hood describes snapshots and the what-if.
@@ -159,6 +162,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.56
+- Angling on the rush. A puck carrier could skate through a defenseman: skaters only nudge apart, so a defenseman standing up at the line did not stop or turn him, and most of the sim's extra chances were rushes that ended with the shooter inside every defender. Now, from just before the blue line, a defender who is goal-side of the carrier and in his way takes away the inside: the carrier's route bends to the outside of him (`physics.json` `angling`). A defender who stays with him gets the usual poke-check chance.
+- At the NHL settings, 100 games: expected goals Boston 5.99 to 5.68, Montreal 5.41 to 5.08; high-danger shots 5.95 to 4.97 and 4.86 to 4.06; goals 3.38 and 2.99 (league 3.08); offsides 9.2 to 6.2 a game (target about 6). At the build defaults, icings 20 to 17 a game. Shift lengths unchanged (mean 47 s, p90 72 s). References re-saved at both levels for this change.
+- The neutral-zone gap numbers moved to data (`physics.json` `gapControl`, unchanged values).
 
 ### 0.55
 - What if he passed, in the shot review: for a shot with a pass available, the game is rebuilt at the instant before the release on a separate engine, and the pass he passed up and the shot he took are each played out `review.whatIf.runs` (200) times for `horizonSec` (5) seconds or until the whistle, with the same fresh random numbers for both, so each pair differs only by the choice. The card gives net chances for each (expected goals for minus against), goals in the runs, how often the pass arrived and the receiver got a shot away, and a verdict from the 95% range of the paired difference. When the played-out pass is worth much less than the read said, it says why: the read prices an instant one-timer. If he passed, above the rink, replays one typical run of the pass. About two seconds a shot.

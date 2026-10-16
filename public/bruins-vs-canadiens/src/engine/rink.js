@@ -1,6 +1,6 @@
 // The rink: its size in feet, the nets and blue lines, and the helpers that turn a team's own frame (fx from its
 // own goal line, fy across the ice) into rink coordinates for whichever end it attacks. Pure: no state.
-import * as DM from './detmath.js?v=0.55';
+import * as DM from './detmath.js?v=0.56';
 
 export const RW = 200, RH = 85, GL = 11, NETW = 6, NETD = 4, CORNER = 28;
 export const RINK_Y = 13, BENCH_H = 12, BOX_H = 10; // feet above and below the ice for benches and penalty boxes
