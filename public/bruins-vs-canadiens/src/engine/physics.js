@@ -1,8 +1,8 @@
 // Movement and the puck: skating, fatigue, staying on the ice, goalies, the puck in flight, saves and rebounds.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.59';
-import * as DM from './detmath.js?v=0.59';
+import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.60';
+import * as DM from './detmath.js?v=0.60';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, PH, puck, random, rnd, shorthanded, skaters, SYS, teams, XG } = S;
@@ -137,8 +137,8 @@ export function install(S) {
         if (puck.shot && g.tiers && puck.xg !== undefined && MP) {
           // goal probability = the shot's expected goals, scaled by how this goalie's real save rate in the tier compares with the league's
           const lg = MP.league.dangerTiers[puck.tier].leagueSvPct; const q = (1 - g.tiers[puck.tier]) / (1 - lg);
-          // xG is per unblocked attempt; this check runs only on pucks that reach the goalie, so divide by the league share of unblocked shots that hit the net
-          saveP = clamp(1 - puck.xg / (XG.onNetShare || 0.65) * q * PH.goalie.tierGoalScale, 0.35, 0.995);
+          // xG is per unblocked attempt; this check runs only on pucks that reach the goalie, so divide by the league share of unblocked shots in this tier that hit the net
+          saveP = clamp(1 - puck.xg / ((XG.onNetByTier && XG.onNetByTier[puck.tier]) || XG.onNetShare || 0.65) * q * PH.goalie.tierGoalScale, 0.35, 0.995);
         } else saveP = (puck.shot && g.tiers) ? 1 - (1 - g.tiers[puck.tier]) * PH.goalie.tierGoalScale : hard ? PH.goalie.saveProb.hardBase + g.skill * PH.goalie.saveProb.hardPerRating : PH.goalie.saveProb.soft;
         const wide = puck.shot && !puck.onNet;
         if (puck.shot) { if (wide) puck.shooter.team.missed++; else puck.shooter.team.shots++; countUnblocked(puck.shooter.team); puck.shot = false; }

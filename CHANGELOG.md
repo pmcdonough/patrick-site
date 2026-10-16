@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.71 = sim 0.59 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.72 = sim 0.60 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.72
+- Sim 0.60 (shots hit the net at the league's rate). `tools/xg_fit.py` also writes the on-net share by danger tier (`onNetByTier`); re-run, the rest of `xg-model.json` is unchanged. References re-saved at both levels.
 
 ### 0.71
 - Sim 0.59 (zone coverage plays the carrier from the inside). References re-saved at both levels.
@@ -176,6 +179,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.60
+- Shots hit the net at the league's rate for their danger tier: 62.6% low, 68.5% medium, 78.1% high (MoneyPuck 2025-26, tiered by the sim's own expected-goal model; defensemen and forwards alike). A shot on net is aimed inside the posts, a miss goes just wide of one (`physics.json` `shot.aim`). Before, an aiming error that grew with distance put close forwards' shots on net 93 to 99% of the time and point shots 27 to 51%.
+- The save roll divides a shot's expected goals by its own tier's on-net share instead of the overall 65%. With the old aim, a close chance scored at about 1.4 times its expected rate and a point shot well under it, so a club that shot from in close (Boston) converted far better than one that shot from the point (Montreal): 0.80 against 0.68 goals per expected goal in 0.59, while the real clubs were 1.08 and 1.04. Now 0.73 and 0.70.
+- Recalibrated: `goalie.tierGoalScale` 0.74 to 0.92 (goals 3.06 a team at the NHL settings, league 3.08). It is above its original 0.72 because both clubs' goalies save more than the league, which the old accuracy hid.
+- At the NHL settings, 100 games: Boston 63% of the points, Montreal 43% (real 61% and 65%); expected-goal share 51 / 49. At the build defaults goals rise to 2.4 and 3.0 a game (2.3 in 0.59) and Montreal takes 67% of the points. A one-timer or a hurried shot no longer misses more often than any other; shot accuracy by shooter is now carried only by the finishing multiplier in expected goals.
 
 ### 0.59
 - Zone coverage plays the puck carrier from the inside too, the same stick length as man coverage (`systems.json` `defensiveZone.zone.carrierGoalSideFt`, 5 ft). At the NHL settings, 100 games: Montreal's expected goals against Boston 4.97 to 4.09 and its medium-danger shots 16.8 to 12.2; both clubs now about a third above the league in expected goals (60 to 90% at sim 0.57). Boston 61% of the points (real 61%), Montreal 48% (real 65%). For Montreal, zone now gives up about 0.8 expected goals a game fewer than man.

@@ -135,13 +135,14 @@
   "slap": {
    "baseFtPerSec": 118,
    "perShootRating": 28,
-   "usedWhen": "defenseman or 45+ ft from the net",
-   "extraError": 0.03
+   "usedWhen": "defenseman or 45+ ft from the net"
   },
-  "errorPerShootDeficit": 0.14,
-  "errorPerFt": 0.001111,
-  "oneTimerExtraError": 0.05,
-  "aimSpreadFt": 2.6,
+  "aim": {
+   "desc": "Whether a shot is on net comes from the league: the share of unblocked shots in its danger tier that hit the net in 2025-26 (in the expected-goal model's file, about 63% low, 69% medium, 78% high). A shot on net is aimed anywhere inside the posts but insidePostFt; a miss goes wide of one post by wideMinFt to wideMaxFt. Until sim 0.60 accuracy came from an aiming error that grew with distance, so close shots almost never missed and point shots mostly did.",
+   "insidePostFt": 0.4,
+   "wideMinFt": 0.5,
+   "wideMaxFt": 5
+  },
   "note": "wrist 58 to 85 mph, slap 80 to 100 mph",
   "xg": {
    "desc": "Context flags for the expected-goal model, matching MoneyPuck's definitions: a rebound is a shot within reboundWithinSec of the goalie's last save; a rush shot comes within rushWithinSec of the team's entry into the offensive zone.",
@@ -178,8 +179,8 @@
   },
   "bodyRadiusFt": 2.3,
   "reboundCoolSec": 0.55,
-  "tierGoalScale": 0.74,
-  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie. 0.74 lands goals per game at the league rate at the NHL-average settings (the two teams' average). It was 0.72 before sim 0.35, 0.39 from 0.35 to 0.56, 0.57 in 0.57 and 0.68 in 0.58: since 0.35 carriers shoot whenever the expected-goal model says the look is worth it, and the sim creates more expected goals than the league (too many medium-danger looks), so the scale came down; until 0.57 it was also absorbing about three goals in ten that went in with no save roll at all; and in 0.58 man-on-man coverage started playing the puck carrier from the inside, which cut Boston's expected goals against Montreal by about a quarter, and in 0.59 zone coverage did the same, which cut Montreal's against Boston by about a sixth. Until coverage closes the rest of the chance gap, this scale keeps scores realistic; expected goals in the reports stay unscaled so the gap stays visible.",
+  "tierGoalScale": 0.92,
+  "tierGoalScaleNote": "Multiplies the shot's expected goals (divided by the league on-net share) to get the goal probability against a league-average goalie. 0.92 lands goals per game at the league rate at the NHL-average settings (the two teams' average). It was 0.72 before sim 0.35, 0.39 from 0.35 to 0.56, 0.57 in 0.57, 0.68 in 0.58 and 0.74 in 0.59: since 0.35 carriers shoot whenever the expected-goal model says the look is worth it, and the sim creates more expected goals than the league (too many medium-danger looks), so the scale came down; until 0.57 it was also absorbing about three goals in ten that went in with no save roll at all; and in 0.58 man-on-man coverage started playing the puck carrier from the inside, which cut Boston's expected goals against Montreal by about a quarter, and in 0.59 zone coverage did the same, which cut Montreal's against Boston by about a sixth. In 0.60 it rose to 0.92 when shots started hitting the net at the league's rate for their danger tier: before, close shots almost never missed, so dividing by the league's 65% on-net share had been giving close chances about 1.4 times their goal rate. Above 0.72 now: both clubs' goalies are better than the league, which the old accuracy hid. Until coverage closes the rest of the chance gap, this scale keeps scores realistic; expected goals in the reports stay unscaled so the gap stays visible.",
   "desc": ""
  },
  "shotBlock": {

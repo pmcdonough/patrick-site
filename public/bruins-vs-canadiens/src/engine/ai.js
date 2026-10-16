@@ -1,11 +1,11 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.59';
-import * as DM from './detmath.js?v=0.59';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.60';
+import * as DM from './detmath.js?v=0.60';
 
 export function install(S) {
-  const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
+  const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, XG, xgModel, xgTier } = S;
   let doorFor, formationSpot, hands;   // from other modules, bound by link()
 
   // ---------- AI ----------
@@ -268,20 +268,22 @@ export function install(S) {
   // traffic, 'chance' the shot-rate roll, 'stuck' held too long with no clean option, 'breakaway', 'oneTimer')
   function shoot(from, oneTimer, why) {
     const t = from.team, n = oppNet(t);
-    const aimY = n.y + rnd(-PH.shot.aimSpreadFt, PH.shot.aimSpreadFt);
-    const slap = from.isD || dist(from, n) > 45; // point shots are slap or heavy wrist shots: faster, less accurate
-    const err = ((oneTimer ? PH.shot.oneTimerExtraError : 0) + (1 - from.shoot) * PH.shot.errorPerShootDeficit + dist(from, n) * PH.shot.errorPerFt + (slap ? PH.shot.slap.extraError : 0)) * hands(from);
-    const a = DM.atan2(aimY - from.y, n.x - from.x) + rnd(-err, err);
-    const sp = slap ? PH.shot.slap.baseFtPerSec + from.shoot * PH.shot.slap.perShootRating : PH.shot.wrist.baseFtPerSec + from.shoot * PH.shot.wrist.perShootRating;
-    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = t; puck.shot = true; puck.shooter = from; puck.cool = 0.25; puck.beaten = false; release(from);
-    const tGoal = (n.x - from.x) / (puck.vx || 1e-6); puck.onNet = tGoal > 0 && Math.abs(from.y + puck.vy * tGoal - n.y) < NETW / 2; // would it hit the net if nothing touched it?
-    t.attempts++;
+    const slap = from.isD || dist(from, n) > 45; // point shots are slap or heavy wrist shots: faster
     // expected goals from the shot's geometry and context (rebound, rush, strength, shot type), then the shooter's finishing;
     // the danger tier follows MoneyPuck's xG thresholds. Counted on unblocked attempts.
     const dN = dist(from, n), offY = Math.abs(from.y - n.y);
     const look = lookXg(from, t, oneTimer);
     if (look !== null) { puck.tier = xgTier(look.base); puck.xg = look.xg; }
     else { const TG = PH.dangerTiers; puck.tier = (dN <= TG.high.maxDistFt && offY <= TG.high.maxOffCenterFt) ? 'high' : (dN <= TG.medium.maxDistFt && offY <= TG.medium.maxOffCenterFt) ? 'medium' : 'low'; puck.xg = MP ? MP.league.dangerTiers[puck.tier].goalRate : 0.07; }
+    // on net or wide at the league's rate for the shot's danger tier (real shooters miss about as often from in close as
+    // from the point), then aimed inside the posts or just wide of one
+    const SA = PH.shot.aim, onRate = (XG && XG.onNetByTier) ? XG.onNetByTier[puck.tier] : 0.65;
+    const aimY = random() < onRate ? n.y + rnd(-1, 1) * (NETW / 2 - SA.insidePostFt) : n.y + (random() < 0.5 ? -1 : 1) * (NETW / 2 + rnd(SA.wideMinFt, SA.wideMaxFt));
+    const a = DM.atan2(aimY - from.y, n.x - from.x);
+    const sp = slap ? PH.shot.slap.baseFtPerSec + from.shoot * PH.shot.slap.perShootRating : PH.shot.wrist.baseFtPerSec + from.shoot * PH.shot.wrist.perShootRating;
+    puck.carrier = null; puck.vx = DM.cos(a) * sp; puck.vy = DM.sin(a) * sp; puck.lastTeam = t; puck.shot = true; puck.shooter = from; puck.cool = 0.25; puck.beaten = false; release(from);
+    const tGoal = (n.x - from.x) / (puck.vx || 1e-6); puck.onNet = tGoal > 0 && Math.abs(from.y + puck.vy * tGoal - n.y) < NETW / 2; // would it hit the net if nothing touched it?
+    t.attempts++;
     puck.tierCounted = false;
     emit('shot', { shooter: from, why: why || 'chance', oneTimer: !!oneTimer, xg: puck.xg, tier: puck.tier });   // before any block: the page reads the play as it stood at the release
     // shot block: a defender in the lane, close to the shooter, gets in front of it

@@ -125,6 +125,10 @@ def main(paths):
     shooters = {str(int(r.shooterPlayerId)): {'name': r.shooterName, 'shots': int(r.shots), 'goals': int(r.goals), 'xg': round(float(r.xg), 2),
                 'finishing': round(float(min(1.6, max(0.6, (r.goals + k) / (r.xg + k)))), 3)} for r in g.itertuples()}
 
+    def onnet_by_tier(f):
+        tier = np.where(f['pred'] >= 0.2, 'high', np.where(f['pred'] >= 0.08, 'medium', 'low'))
+        return {t: round(float(f.loc[tier == t, 'shotWasOnGoal'].mean()), 3) for t in ['low', 'medium', 'high']}
+
     out = {
         'schema': 'rink-sim-xg/1',
         'description': 'Expected-goal model fit on MoneyPuck unblocked shots. See tools/xg_fit.py for the method.',
@@ -132,6 +136,7 @@ def main(paths):
         'rowsUsed': int(len(d)), 'rowsIn': rows_in, 'exclusions': 'empty-net shots and shootout attempts',
         'goalRate': round(float(y.mean()), 4),
         'onNetShare': round(float(d.loc[d['season'] == seasons[-1], 'shotWasOnGoal'].mean()), 3), 'onNetShareNote': f'share of unblocked shots that hit the net in the {seasons[-1]}-{str(seasons[-1] + 1)[2:]} file; the engine divides xG by this when it scores a puck that has already reached the goalie',
+        'onNetByTier': onnet_by_tier(d[d['season'] == seasons[-1]]), 'onNetByTierNote': f'share of unblocked shots that hit the net in each danger tier (by this model\'s xG) in the {seasons[-1]}-{str(seasons[-1] + 1)[2:]} file; the engine puts a shot on net at this rate and divides xG by it when the puck reaches the goalie',
         'tiers': {'low': {'maxXg': 0.08}, 'medium': {'maxXg': 0.2}, 'high': {'minXg': 0.2},
                   'note': 'MoneyPuck danger tiers are defined by xG; these thresholds reproduce the league tier goal rates in moneypuck-2025.json'},
         'model': model,

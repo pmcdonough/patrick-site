@@ -52,14 +52,14 @@ The aggression dial (`t.tac.agg`, 0 to 1) feeds exactly four things: the steal r
 
 - Only the helpers above read direction. If something looks mirrored in the second period, a raw x slipped in.
 - Every puck that crosses the goal line between the posts, whoever touched it last, has beaten a save roll; a unit test fails otherwise. Until sim 0.57 a puck last touched by the defending team (a rebound drifting back, a deflection or block off a defender) went in with no roll: about three goals in ten.
-- Each shot gets exactly one save roll (`puck.beaten`), and whether it is on net is decided at release (`puck.onNet`). Every puck that reaches the goal line between the posts gets that roll, including one that slipped past where the goalie stood; before 0.35 those went in without one (about two goals per team per game at the 0.35 settings). Wide pucks the goalie touches are misses, not saves. The save roll divides xG by the league on-net share because xG is per unblocked attempt and the roll only sees pucks that reached the goalie.
+- Each shot gets exactly one save roll (`puck.beaten`), and whether it is on net is decided at release (`puck.onNet`). Every puck that reaches the goal line between the posts gets that roll, including one that slipped past where the goalie stood; before 0.35 those went in without one (about two goals per team per game at the 0.35 settings). Wide pucks the goalie touches are misses, not saves. The save roll divides xG by the league on-net share of the shot's danger tier because xG is per unblocked attempt and the roll only sees pucks that reached the goalie; `shoot()` puts shots on net at those same rates (`shot.aim`, since sim 0.60), so the division is exact.
 - A game depends only on its seed. `newGame(seed)` gives it its own generator (`rng.js`; every draw goes through `random()` or `rnd()`), rebuilds both teams, the puck and the clock from scratch (`buildTeams`, `freshPuck`, `freshGame`), and picks the opening lines only after that (the rotation reads the clock, the period, the score and both penalty boxes). `node --test tools/test` checks all three. Check with `tools/lab.js --workers 1` against `--workers 3`: the rows must be identical.
 - A player is never in two places: `onIce`, `leaving`, `entering`, `box` are mutually consistent; `rebuildOnIce` recomputes `t.players` after any change.
 - Formation spots are clamped to the ice and attackers are held onside at fx 106 until the puck crosses the far blue line.
 - `tick` must never throw. `tools/smoke.js` fails the check on any page error.
 - The engine's math is exact or comes from `detmath.js`; never `Math.sin`, `cos`, `atan2`, `exp`, `log`, `pow`, `hypot` or `**`, which differ in the last bit between browsers and Node.
 
-## Baselines (sim 0.59 references)
+## Baselines (sim 0.60 references)
 
 Measure with `tools/lab.js`: `node tools/lab.js --nhl` and `node tools/lab.js`, 100 games each from seed 1, eight at a time in Node. Each game plays its own seed (`newGame(seed)`), and the engine's trigonometry and logarithms come from `detmath.js`, so a run reproduces exactly, in Node and in any browser, and the report says "identical to the reference" until the engine changes. The references are in `tools/baselines.json`; re-save with `--save` only for an intended change. Each reference also keeps a fingerprint of every game, and `--order` replays the seeds in reverse order in one process to prove no state leaks between games, and `--pool` plays them in the page's own workers to prove the page and Node agree. To try a data value without editing the file: `--param shotDecision.xgChoice.minXg=0.14`. In the report "unblocked attempts" is a club's attempts minus the blocks against them (the engine's `blocked` counts blocks a team made, `blockedOwn` shots its own skaters caught in flight); it equals the three danger tiers added up.
 
@@ -67,17 +67,17 @@ At the NHL-average tick, per team per game, against the league (MoneyPuck 2025-2
 
 | | League | BOS | MTL |
 |---|---|---|---|
-| Goals | 3.08 | 3.36 | 2.77 |
-| Expected goals | 3.13 | 4.20 | 4.09 |
-| Shots on goal | 27.8 | 26.0 | 28.2 |
-| Unblocked attempts | 42.7 | 39.6 | 52.6 |
+| Goals | 3.08 | 3.17 | 2.94 |
+| Expected goals | 3.13 | 4.35 | 4.20 |
+| Shots on goal | 27.8 | 24.7 | 33.4 |
+| Unblocked attempts | 42.7 | 39.8 | 53.2 |
 | Low / medium / high danger | 31.2 / 8.1 / 3.4 | 20.6 / 15.7 / 3.4 | 37.2 / 12.2 / 3.1 |
-| Offsides | 3.0 | 2.3 | 5.6 |
-| Icings | 4.2 | 7.5 | 6.1 |
+| Offsides | 3.0 | 2.1 | 5.8 |
+| Icings | 4.2 | 7.6 | 6.5 |
 
-These are the references `tools/lab.js --nhl` compares against (`tools/baselines.json`), saved at sim 0.59 when zone coverage, like man coverage in 0.58, started playing the carrier from the inside. Boston takes 61% of the points and Montreal 48% (real 2025-26: 61% and 65%); Boston's share of expected goals is 51% (real 47%). Boston finishes its chances much better than Montreal (0.80 goals per expected goal against 0.68; the real clubs were 1.08 and 1.04), from the shooters' finishing and the goalies' tier save rates.
+These are the references `tools/lab.js --nhl` compares against (`tools/baselines.json`), saved at sim 0.60 when shots started hitting the net at the league's rate for their danger tier. Boston takes 63% of the points and Montreal 43% (real 2025-26: 61% and 65%; head to head the two cannot both be above .500, and the interval is about ±10); Boston's share of expected goals is 51% (real 47%). The clubs now turn expected goals into goals alike (0.73 and 0.70 a game; in 0.59 it was 0.80 and 0.68, because close shots almost never missed).
 
-Goals match the league because `goalie.tierGoalScale` is 0.74 (0.68 in sim 0.58, 0.57 in 0.57; 0.39 from 0.35 to 0.56, while about three goals in ten went in with no save roll). Everything else is honest: since 0.35 a carrier takes every look worth taking, so the sim's chance count shows how many looks its defense gives up, which is about a third too many (60 to 90% before sim 0.58), mostly medium-danger looks off passes into the slot: 12 to 16 a team a game against 8; high-danger looks are at the league rate. Montreal misses the net far more than the league and is offside nearly twice the league rate; icings run high. At build defaults (speed 1.3x, shot volume 2x) goals are about 2.3 a game on 3.6 and 4.2 expected, fewer than the league, and the points split about evenly; Boston ices it about 9 times a game.
+Goals match the league because `goalie.tierGoalScale` is 0.92 (0.74 in sim 0.59, 0.68 in 0.58, 0.57 in 0.57; 0.39 from 0.35 to 0.56, while about three goals in ten went in with no save roll). Everything else is honest: since 0.35 a carrier takes every look worth taking, so the sim's chance count shows how many looks its defense gives up, which is about a third too many (60 to 90% before sim 0.58), mostly medium-danger looks off passes into the slot: 12 to 16 a team a game against 8; high-danger looks are at the league rate. Montreal shoots far more than the league from the point and is offside nearly twice the league rate; icings run high. At build defaults (speed 1.3x, shot volume 2x) goals are 2.4 and 3.0 a game on 3.5 and 4.5 expected, and Montreal takes about two thirds of the points; Boston ices it about 9 times a game.
 
 How 0.35 got here, measured each step with `lab.js --nhl` (both clubs' expected goals): the expected-goal decision alone took the sim from about 4 to 12 a game, because open looks were everywhere and players had been passing them up; passes no longer turning the defense into a loose-puck scramble, man coverage that keeps its marks with a cushion, and the pass control time brought it back to 5 to 6. Several sensible changes measured almost nothing on their own (slot pick-up, sticks on passes, own-zone effort, defenseman spacing) and were kept because they are right, not because they moved the number.
 
