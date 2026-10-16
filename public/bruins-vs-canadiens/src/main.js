@@ -3,12 +3,12 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.51';
+import { createSim } from './engine/sim.js?v=0.52';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.51';
+  const VERSION = '0.52';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -527,6 +527,9 @@ export function startSim(DATA) {
   const AGG_STEPS = ['0', '25', '50', '75', '100'];
 
   const poolSize = () => clamp((navigator.hardwareConcurrency || 4) - 1, 1, 8);
+  const workersNow = () => TEST.poolFailed ? 1 : poolSize();
+  // the options a ranking plays besides the baseline's own (aggression in five steps)
+  const rankOptions = (k, cur) => (k === 'Agg' ? AGG_STEPS : optionsOf(k).map(([v]) => v)).filter(v => !(k === 'Agg' ? Math.abs(+v - +cur) < 13 : v === cur));
   function makePool() {
     if (TEST.poolFailed) return null;
     try {
@@ -627,7 +630,9 @@ export function startSim(DATA) {
     $('myDot').style.cssText = dotStyle(c); $('oppDot').style.cssText = dotStyle(1 - c);
     $('myBlock').className = 'side ' + (c ? 'mtl' : 'bos'); $('oppBlock').className = 'side ' + (c ? 'bos' : 'mtl');
     buildGrid($('myGrid'), c, 'm'); buildGrid($('oppGrid'), 1 - c, 'o');
-    $('rankDim').innerHTML = TKEYS.map(([k, label]) => `<option value="${k}">${label}</option>`).join('');
+    const keep = $('rankDim').value;
+    $('rankDim').innerHTML = TKEYS.map(([k, label]) => `<option value="${k}">${label} (${rankOptions(k, (LAB.base || LAB).plans[c][k]).length + 1} options)</option>`).join('');
+    if (keep) $('rankDim').value = keep;
     if (LAB.base) renderBaseline(); else labRefresh();
     renderTested();
   }
@@ -645,8 +650,15 @@ export function startSim(DATA) {
     $('labRun').title = $('labRun').disabled && !run ? 'These plans are the baseline. Change a choice or the number of games first.' : '';
     $('testRun').title = $('testRun').disabled && !run ? (offBase ? 'These plans are tested; the result is below. Change a choice to test something else.' : 'These are the baseline plans. Change a choice first.') : '';
     $('rankBox').hidden = !b; $('rankRun').disabled = run;
+    if (b) {   // the ranking: what it asks, for whom, and how long it takes
+      const k = $('rankDim').value || 'Fore', name = lc(choiceName(k)), m = rankOptions(k, b.plans[c][k]).length;
+      const rs = Math.ceil(m * b.seeds.length * TEST.secPerGame / workersNow()), rtime = rs < 90 ? rs + ' seconds' : Math.round(rs / 60) + ' minutes';
+      const ask = k === 'Agg' ? `Not sure how aggressive the ${me.name} should be? This plays five levels of aggression` : `Not sure which ${name} the ${me.name} should use? This plays every ${name}`;
+      $('rankIntro').innerHTML = `${ask} on the baseline's ${b.seeds.length} games against the ${op.name}' plan, with the rest of the ${me.name}' plan as in the baseline, and ranks them by net chances. It tells you which option helps most, and whether the choice matters at all against this plan. Changes made since the baseline are left out; to rank the ${op.name}' options, coach the ${op.name}.`;
+      $('rankRun').textContent = `Find the best ${name} (${m} more option${m === 1 ? '' : 's'}, about ${rtime})`;
+    }
     $('forWho').innerHTML = `<span class="dot" style="${dotStyle(c)}"></span><span>${b ? `The ${me.name}' plan against the ${op.name}' plan as run, ${b.seeds.length} games at the NHL settings` : `The ${me.name} against the ${op.name}`}</span>`;
-    const workers = TEST.poolFailed ? 1 : poolSize(), secs = Math.ceil((b ? b.seeds.length : n) * TEST.secPerGame / workers), time = secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes';
+    const workers = workersNow(), secs = Math.ceil((b ? b.seeds.length : n) * TEST.secPerGame / workers), time = secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes';
     const changed = b ? diffs(b.plans, LAB.plans) : [], tests = LAB.tested.filter(e => e.kind === 'test');
     const clears = LAB.tested.length ? ' (that clears the tests below)' : '';
     const mine = tests.findIndex(e => e.key === key), jump = mine >= 0 ? `<button type="button" class="linkish" data-jump="${mine}">Test ${tests.length - mine}</button>` : 'the result';
@@ -662,6 +674,7 @@ export function startSim(DATA) {
   document.querySelectorAll('[data-coach]').forEach(b => b.addEventListener('click', () => { if (TEST.running || LAB.coach === +b.dataset.coach) return; LAB.coach = +b.dataset.coach; saveLab(); buildLab(); }));
   $('labReset').addEventListener('click', () => { if (TEST.running) return; LAB.plans = originalPlans(); saveLab(); buildLab(); });
   $('labN').addEventListener('input', labRefresh);
+  $('rankDim').addEventListener('input', labRefresh);
   $('actHint').addEventListener('click', e => { const j = e.target.closest('[data-jump]'); if (!j) return; const el = $('tested').querySelectorAll('article.test')[+j.dataset.jump]; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   // copy the lab's plans to the Watch view and start a game there with them
   $('watchPlans').addEventListener('click', () => {
@@ -674,7 +687,7 @@ export function startSim(DATA) {
   const mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
   const ci95 = a => a.length > 1 ? 1.96 * Math.sqrt(a.reduce((x, y) => x + (y - mean(a)) ** 2, 0) / (a.length - 1)) / Math.sqrt(a.length) : 0;
   const pct = v => Math.round(100 * v) + '%';
-  const sgn = (v, d = 2) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d);
+  const sgn = (v, d = 2) => { const r = Math.abs(v).toFixed(d); return +r === 0 ? r : (v > 0 ? '+' : '−') + r; };   // a difference that rounds to zero shows no sign
   const perGame = (row, c) => { const me = row.teams[c], op = row.teams[1 - c], win = me.goals > op.goals; return { xgd: me.xg - op.xg, gd: me.goals - op.goals, xgf: me.xg, xga: op.xg, pts: win ? 1 : row.end !== 'REG' ? 0.5 : 0 }; };
   const verdict = (m, e) => m - e > 0 ? ['good', 'Clear edge'] : m + e < 0 ? ['bad', 'Clear cost'] : ['flat', 'Too close to call'];
   function rangeBar(m, e, scale) {
@@ -731,11 +744,28 @@ export function startSim(DATA) {
     return `<article class="change test"><span class="tnum">Test ${num}</span><p class="what">${what}</p><p class="headline sm">${head}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
       <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details></article>`;
   }
+  // a ranking's answer in one sentence: the best option if one clearly beats the baseline's, otherwise whether the choice matters
   function rankCard(e) {
-    const me = teams[e.c];
-    const rows = e.list.map(r => { const [cls, txt] = r.cur ? ['cur', 'Baseline'] : verdict(r.m, r.e); return `<div class="r"><div class="name">${optText(e.k, r.v)}${r.cur ? ' (baseline)' : ''}<small>${r.cur ? 'the baseline plan' : sgn(r.m) + ' net chances a game'}</small></div>${rangeBar(r.m, r.e, 2.5)}<span class="pill ${cls}">${txt}</span></div>`; }).join('');
-    return `<article class="change"><span class="tnum">Ranking</span><h4>Every option for ${lc(choiceName(e.k))} <small>for the ${me.name}, ${e.n} games each, everything else as in the baseline</small></h4><div class="rank">${rows}</div><p class="hint">The dot is the best estimate and the band the 95% range; right of the line is better for the ${me.name}.</p></article>`;
+    const me = teams[e.c], op = teams[1 - e.c], name = lc(choiceName(e.k)), txt = v => optText(e.k, v);
+    const The = e.k === 'Agg' ? 'Aggression' : 'The ' + name;
+    const cur = e.list.find(r => r.cur), others = e.list.filter(r => !r.cur);
+    const better = others.filter(r => r.m - r.e > 0), worse = others.filter(r => r.m + r.e < 0), best = better[0];
+    const head = best ? `${txt(best.v)} is the best ${name} for the ${me.name} here: about ${best.m.toFixed(1)} more net chances a game than ${lc(txt(cur.v))}, the baseline's.`
+      : worse.length === others.length ? `${txt(cur.v)}, the baseline's ${name}, is already the best: every other option gives the ${me.name} fewer net chances.`
+      : worse.length ? `No ${name} beats ${lc(txt(cur.v))}, the baseline's. ${worse.map(r => txt(r.v)).join(' and ')} ${worse.length === 1 ? 'costs' : 'cost'} the ${me.name} chances; the rest are too close to call.`
+      : `${The} barely matters against this ${op.name} plan: no option separates from ${lc(txt(cur.v))}, the baseline's, at ${e.n} games.`;
+    const rows = e.list.map(r => { const [cls, label] = r.cur ? ['cur', 'Baseline plan'] : verdict(r.m, r.e); return `<div class="r${r.cur ? ' cur' : ''}"><div class="name">${txt(r.v)}<small>${r.cur ? 'what the others are measured from' : sgn(r.m) + ' net chances a game'}</small></div>${r.cur ? '<div class="range" aria-hidden="true"><div class="axis"></div><div class="zero"></div></div>' : rangeBar(r.m, r.e, 2.5)}<span class="pill ${cls}">${label}</span></div>`; }).join('');
+    const inPlan = best && sameChoice(e.k, LAB.plans[e.c][e.k], best.v);
+    const use = best ? (inPlan ? `<p class="hint">${txt(best.v)} is in the ${me.name}' plan now. Test it against the baseline to see it with the rest of your changes.</p>` : `<div class="row"><button type="button" class="secondary" data-use="${e.c}|${e.k}|${best.v}">Put ${lc(txt(best.v))} in the ${me.name}' plan</button></div>`) : '';
+    return `<article class="change rankres"><span class="tnum">Best ${name}</span><p class="headline sm">${head}</p><p class="what">Every ${name} for the ${me.name} on the baseline's ${e.n} games, the rest of the plan as in the baseline.</p><div class="rank">${rows}</div>${use}<p class="hint">Each dot is the best estimate of net chances against the baseline's ${name}, and its band the 95% range. Right of the line is better for the ${me.name}. A band that crosses the line is too close to call.</p></article>`;
   }
+  // a ranking's best option, put into that team's plan
+  $('tested').addEventListener('click', ev => {
+    const u = ev.target.closest('[data-use]'); if (!u || TEST.running) return;
+    const [c, k, v] = u.dataset.use.split('|'); LAB.plans[+c][k] = v; saveLab(); buildLab();
+    const grid = +c === LAB.coach ? 'myGrid' : 'oppGrid', el = $(grid).querySelector(`[data-k="${k}"]`);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1900);
+  });
   function renderTested() {
     let n = LAB.tested.filter(e => e.kind === 'test').length + 1;
     $('tested').innerHTML = LAB.base ? LAB.tested.map(e => e.kind === 'rank' ? rankCard(e) : testCard(e, --n)).join('') : '';
@@ -747,7 +777,7 @@ export function startSim(DATA) {
     if (!on) $('labBar').style.width = '0%';
     labRefresh();
   }
-  const progress = (done, total, what) => { $('labBar').style.width = (100 * done / total) + '%'; $('labNote').textContent = `${what}: game ${done} of ${total}`; };
+  const progress = (done, total, what) => { $('labBar').style.width = (100 * done / total) + '%'; $('labNote').textContent = `${what}: game ${done} of ${total}`; if (TEST.rankNote) $('rankNote').textContent = $('labNote').textContent; };
   const timed = async (jobs, what) => {
     setRunning(true); const t0 = performance.now();
     const rows = await runJobs(jobs, (d, tot) => progress(d, tot, what));
@@ -784,11 +814,11 @@ export function startSim(DATA) {
   $('rankRun').addEventListener('click', async () => {
     if (TEST.running || !LAB.base) return;
     const c = LAB.coach, k = $('rankDim').value, b = LAB.base, cur = b.plans[c][k];
-    const opts = k === 'Agg' ? AGG_STEPS : optionsOf(k).map(([v]) => v), others = opts.filter(v => !(k === 'Agg' ? Math.abs(+v - +cur) < 13 : v === cur));
+    const others = rankOptions(k, cur);
     const plansFor = v => { const p = copyPlans(b.plans); p[c][k] = v; return p; };
     const jobs = others.flatMap(v => { const tacs = plansFor(v).map(tacOfPlan); return b.seeds.map(sd => ({ id: v + '|' + sd, seed: sd, tacs, cfg: NHL_CFG() })); });
-    const { rows } = await timed(jobs, `Ranking ${lc(choiceName(k))}`);
-    $('labNote').textContent = TEST.stop ? 'Stopped early.' : '';
+    TEST.rankNote = true; const { rows } = await timed(jobs, `Finding the best ${lc(choiceName(k))}`); TEST.rankNote = false;
+    $('labNote').textContent = $('rankNote').textContent = TEST.stop ? 'Stopped early.' : '';
     const list = [{ v: cur, m: 0, e: 0, cur: true }, ...others.map(v => {
       const idx = b.seeds.map((sd, i) => rows.has(v + '|' + sd) ? i : -1).filter(i => i >= 0); if (!idx.length) return null;
       const d = idx.map(i => perGame(rows.get(v + '|' + b.seeds[i]), c).xgd - perGame(b.rows[i], c).xgd);

@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.62 = sim 0.51 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.63 = sim 0.52 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.63
+- Sim 0.52 (Find the best option).
 
 ### 0.62
 - Sim 0.51 (the Game plan lab's results read more plainly; every shot attempt is filed). The page no longer scrolls sideways on a phone in the lab. `tools/lab.js` counts a teammate's block in unblocked attempts; both references re-saved for the block counts alone (every goal, shot and expected goal identical).
@@ -146,6 +149,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.52
+- Rank every option is now Find the best option, and says what it is for: which forecheck, breakout or other choice suits the coached team against this opponent, and whether the choice matters at all. The intro names both teams, says the rest of the baseline plan stays as it was and changes since the baseline are left out, and the button gives the option count and the time. The result leads with a sentence (the best option and by how much, the baseline's already best, or the choice barely matters), drops the repeated baseline labels, and a clear winner gets a button that puts it in the plan. Its progress shows beside the button.
+- A difference that rounds to zero shows no sign (0.00, not −0.00).
 
 ### 0.51
 - Every shot attempt is filed as on goal, missed or blocked. A shot a skater caught cleanly in flight was counted as an attempt and nothing else, about 1 a game for the Bruins and 3.5 for the Canadiens at the baseline plans. A defender's catch is now a blocked shot, and so is a teammate's in the lane, as NHL scoring counts it. Only the counts changed: every game plays exactly as before.
