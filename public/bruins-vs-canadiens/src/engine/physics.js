@@ -1,8 +1,8 @@
 // Movement and the puck: skating, fatigue, staying on the ice, goalies, the puck in flight, saves and rebounds.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.56';
-import * as DM from './detmath.js?v=0.56';
+import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.57';
+import * as DM from './detmath.js?v=0.57';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, PH, puck, random, rnd, shorthanded, skaters, SYS, teams, XG } = S;
@@ -126,8 +126,11 @@ export function install(S) {
       const crossesGoalie = segmentsCross(px, py, puck.x, puck.y, seg[0], seg[1], seg[2], seg[3]) || pointToSegment(g.x, g.y, px, py, puck.x, puck.y) < bodyR;
       const smothered = sp < 10 && dist(puck, g) < 2.6;
       // every puck that reaches the goal line between the posts gets its one save roll, even when it slipped past where he
-      // was standing (a deflection, a pass across the crease, a shot to the side he was leaving); before 0.35 those went in free
-      if ((crossesGoalie || smothered || (crossed && inY)) && puck.lastTeam !== t && !puck.beaten) {
+      // was standing (a deflection, a pass across the crease, a shot to the side he was leaving); before 0.35 those went in
+      // free. That includes a puck his own team touched last (a rebound drifting back, a deflection off a defender, a block):
+      // until 0.57 those went in free too, about three goals in ten. His own team's pucks do not stop on his line before it.
+      const ownPuck = puck.lastTeam === t;
+      if ((((crossesGoalie || smothered) && !ownPuck) || (crossed && inY)) && !puck.beaten) {
         const hard = sp > PH.goalie.saveProb.hardShotFtPerSec;
         // save probability: the goalie's 2025-26 save percentage for this shot's danger tier (MoneyPuck), else the generic model
         let saveP;

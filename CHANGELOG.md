@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.68 = sim 0.56 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.69 = sim 0.57 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.69
+- Sim 0.57 (every goal beats a save roll). Lab games open on the Watch rink. References re-saved at both levels. A unit test checks every goal beat a save roll (fails on 0.56).
 
 ### 0.68
 - A GitHub Action (`.github/workflows/checks.yml`) runs the checks on every push: unit tests and both reference levels (Node only), then the smoke test, the order and pool checks and Play Review's reference in headless Chromium.
@@ -167,6 +170,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.57
+- Fixed: a puck the defending team touched last (a rebound drifting back, a deflection or a block off a defender) crossed the goal line with no save roll. Found from a lab game that ended 12-3: five of the twelve went in that way. Over the 100 reference games at the NHL settings it was 192 of 627 goals, about three in ten. Now every puck that crosses the line gets its roll; one his own team touched last is saved like any loose puck (98.5% slow, about 95% hard).
+- Recalibrated: `goalie.tierGoalScale` 0.39 to 0.57, which lands goals at the league rate again (3.14 a team at the NHL settings, league 3.08). Part of what had pulled it down from 0.72 was these free goals. With every puck facing the goalie, the two teams split differently: at the NHL settings Boston 3.66 goals and Montreal 2.62, Boston 76% of the points; the comparison with the real teams shows it.
+- Any lab game opens on the Watch rink: the baseline card and every test card have a picker (a test's games sorted by how much the test changed them for the coached team) and open the game with the baseline or the test plans at the NHL settings, ticking at the lab's fixed step so it plays exactly as it did in the lab; a note says so and confirms the final matches. Sim to the final horn goes straight to its review. Touching the Watch plans or sliders, or New game, hands the rink back to them.
 
 ### 0.56
 - Angling on the rush. A puck carrier could skate through a defenseman: skaters only nudge apart, so a defenseman standing up at the line did not stop or turn him, and most of the sim's extra chances were rushes that ended with the shooter inside every defender. Now, from just before the blue line, a defender who is goal-side of the carrier and in his way takes away the inside: the carrier's route bends to the outside of him (`physics.json` `angling`). A defender who stays with him gets the usual poke-check chance.

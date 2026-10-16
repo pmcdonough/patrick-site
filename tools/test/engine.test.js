@@ -100,3 +100,12 @@ test('a forced decision happens on the next tick, once, and a reseed changes wha
   const ends = new Set(); for (let s = 1; s <= 5; s++) { sim.restore(snap); sim.reseed(s); for (let j = 0; j < 300; j++) sim.tick(0.03); ends.add(snapshot(sim)); }
   assert.ok(ends.size > 1, 'different seeds from the same moment play differently');
 });
+
+test('every goal beat a save roll, whoever touched the puck last', async () => {
+  const E = await load();
+  const sim = E.create({ nhl: true }); let goals = 0, free = 0;
+  sim.on('fx', kind => { if (kind === 'goal') { goals++; if (!sim.puck.beaten) free++; } });
+  for (const s of [1, 2, 3, 4]) E.play(sim, s);
+  assert.ok(goals > 10, 'enough goals to check');
+  assert.equal(free, 0, `${free} of ${goals} goals went in without a save roll`);
+});

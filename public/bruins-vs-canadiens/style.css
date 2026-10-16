@@ -365,3 +365,10 @@
   .rvcmp .c.pass { border-color: #3b82f6; }
   .rvcmp .c b { font-weight: 600; } .rvcmp .c .g { font: 800 1.6rem/1.1 var(--display); }
   .rvcmp .c small { color: var(--fg-dim); font-size: 0.8rem; margin-top: 4px; }
+  /* a lab game on the rink, and the pickers that open one */
+  .labgame { margin: 0; padding: 8px 12px; border: 1px solid var(--link); border-radius: 10px; background: var(--panel); font-size: 0.9rem; line-height: 1.5; }
+  .labgame .linkish { margin-left: 4px; }
+  .lgcheck { margin-left: 8px; font-weight: 600; } .lgcheck.ok { color: #1f7a4a; } .lgcheck.bad { color: #a3241b; }
+  .gamepick { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+  .gamepick label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--fg-dim); flex: 1 1 280px; min-width: 0; }
+  .gamepick select { background: var(--raised); }

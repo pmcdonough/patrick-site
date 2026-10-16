@@ -3,13 +3,13 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.56';
-import { installReview } from './review.js?v=0.56';
+import { createSim } from './engine/sim.js?v=0.57';
+import { installReview } from './review.js?v=0.57';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.56';
+  const VERSION = '0.57';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -103,7 +103,8 @@ export function startSim(DATA) {
   sim.on('reset', () => { $('log').innerHTML = ''; });
   sim.on('final', () => recordResult());
   // every Watch game is seeded (a fresh random seed each time), so the shot review can rebuild any moment of it
-  const watchGame = () => newGame(1 + Math.floor(Math.random() * 2147483646));
+  let LABGAME = null, labAcc = 0;   // a lab game on the rink (see playLabGame)
+  const watchGame = () => { leaveLabGame(); newGame(1 + Math.floor(Math.random() * 2147483646)); };
   watchGame();
 
 
@@ -731,7 +732,7 @@ export function startSim(DATA) {
     const g = b.rows.map(r => perGame(r, c)), pts = mean(g.map(x => x.pts));
     $('baseHeadline').textContent = `The ${me.name} take ${pct(pts)} of the points against this ${op.name} plan, on ${mean(g.map(x => x.xgf)).toFixed(1)} chances a game for and ${mean(g.map(x => x.xga)).toFixed(1)} against.`;
     $('baseExplain').hidden = true;
-    $('baseRecord').innerHTML = recordTable(b.rows);
+    $('baseRecord').innerHTML = recordTable(b.rows) + gamePicker('base', b.rows.map((_, i) => i), b.rows);
     renderCalib(b.rows);
     labRefresh();
   }
@@ -755,8 +756,9 @@ export function startSim(DATA) {
     ].map(([k, big, sub, [cls, label], bar]) => `<div class="v ${cls}"><div class="k">${k}</div><div class="big">${big}</div><div class="sub">${sub}</div>${bar}<span class="pill ${cls}">${label}</span></div>`).join('');
     const explain = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${r.n} games. The points difference is not yet: points swing about ${Math.round(r.pe * 100)} points either way from luck alone${tip('close', 'What does too close to call mean?')}. Chances are the number to trust here.`
       : vx[0] === 'flat' ? `Neither number separates it from the baseline at ${r.n} games${tip('close', 'What does too close to call mean?')}. Run more games, or treat them as even.` : `Both chances and points separate it from the baseline at ${r.n} games.`;
+    const ti = LAB.tested.indexOf(e);
     return `<article class="change test"><span class="tnum">Test ${num}</span><p class="what">${what}</p><p class="headline sm">${head}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
-      <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details></article>`;
+      <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details>${gamePicker('test', e.idx, rowsA, e.rowsB, ti)}</article>`;
   }
   // a ranking's answer in one sentence: the best option if one clearly beats the baseline's, otherwise whether the choice matters
   function rankCard(e) {
@@ -779,6 +781,22 @@ export function startSim(DATA) {
     const [c, k, v] = u.dataset.use.split('|'); LAB.plans[+c][k] = v; saveLab(); buildLab();
     const grid = +c === LAB.coach ? 'myGrid' : 'oppGrid', el = $(grid).querySelector(`[data-k="${k}"]`);
     el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1900);
+  });
+  // a picker for the games of a run: each with its score, sorted by how much the test changed it for the coached team
+  function gamePicker(kind, idxs, rowsA, rowsB, testIndex) {
+    const c = LAB.coach, me = teams[c], sc = r => `${teams[0].abbr} ${r.teams[0].goals}, ${teams[1].abbr} ${r.teams[1].goals}${r.end !== 'REG' ? ' ' + r.end : ''}`;
+    const items = idxs.map((bi, k) => ({ bi, k, seed: LAB.base.seeds[bi], swing: rowsB ? perGame(rowsB[k], c).xgd - perGame(rowsA[k], c).xgd : 0 }));
+    if (rowsB) items.sort((a, b) => b.swing - a.swing);
+    const opts = items.map(x => `<option value="${x.k}">Game ${x.seed}: ${rowsB ? `baseline ${sc(rowsA[x.k])}, test ${sc(rowsB[x.k])}, ${sgn(x.swing, 1)} net chances` : sc(rowsA[x.k])}</option>`).join('');
+    return `<div class="gamepick"><label>${rowsB ? `Open a game, the biggest swings for the ${me.name} first` : 'Open a baseline game'}<select data-pick="${kind}" data-test="${testIndex === undefined ? '' : testIndex}">${opts}</select></label><div class="row">${rowsB ? '<button type="button" data-open="base">Watch it with the baseline plans</button><button type="button" data-open="test">Watch it with the test plans</button>' : '<button type="button" data-open="base">Watch and review it</button>'}</div></div>`;
+  }
+  // opening a lab game on the Watch rink, from the baseline card or a test card
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-open]'); if (!b || TEST.running || !LAB.base) return;
+    const box = b.closest('.gamepick'), sel = box.querySelector('select'), k = +sel.value, ti = sel.dataset.test;
+    if (ti === '') { const bi = k; playLabGame(LAB.base.seeds[bi], LAB.base.plans, `Baseline game ${LAB.base.seeds[bi]}`, LAB.base.rows[bi]); return; }
+    const e2 = LAB.tested[+ti], bi = e2.idx[k], seed = LAB.base.seeds[bi], test = b.dataset.open === 'test';
+    playLabGame(seed, test ? e2.plans : LAB.base.plans, `${test ? 'Test' : 'Baseline'} game ${seed}${test ? ', the test plans' : ', the baseline plans'}`, test ? e2.rowsB[k] : LAB.base.rows[bi]);
   });
   function renderTested() {
     let n = LAB.tested.filter(e => e.kind === 'test').length + 1;
@@ -951,10 +969,38 @@ export function startSim(DATA) {
   sim.on('reset', () => { $('simEnd').disabled = false; });
   sim.on('final', () => { if (!SIM_END.on) $('simEnd').disabled = true; });
 
+  // ---------- A lab game on the rink ----------
+  // Any game the lab played can be opened here: its seed, the plans it was played with and the NHL settings, ticking at
+  // the lab's fixed 0.03 s, so it plays exactly as it did in the lab and its shots can be reviewed. The Watch plans and
+  // sliders are not touched; leaving the lab game (New game, or the link in the note) puts them back in charge.
+  function playLabGame(seed, plans, label, row) {
+    LABGAME = { seed, label, row }; labAcc = 0;
+    plans.forEach((p, i) => sim.setTactics(i, tacOfPlan(p)));
+    Object.keys(cfg).forEach(k => { cfg[k] = 1; });
+    newGame(seed); game.paused = false; $('pause').textContent = 'Pause';
+    const r = row.teams;
+    $('labGameNote').innerHTML = `<b>${label}</b>, at the NHL settings: it plays exactly as it did in the lab, where it ended ${teams[0].abbr} ${r[0].goals}, ${teams[1].abbr} ${r[1].goals}${row.end !== 'REG' ? ` (${row.end})` : ''}. Sim to the final horn to go straight to its review. <button type="button" class="linkish" id="labGameLeave">Back to my own game</button>`;
+    $('labGameNote').hidden = false; $('labGameLeave').addEventListener('click', watchGame);
+    showView('watch'); window.scrollTo(0, 0);
+  }
+  function leaveLabGame() {
+    if (!LABGAME) return; LABGAME = null; $('labGameNote').hidden = true;
+    ADMIN.forEach(([k]) => { const i = $('adm_' + k); if (i) cfg[k] = +i.value; });
+    readTactics();
+  }
+  // touching the Watch plans or sliders hands the rink back to them: the game is no longer the lab's
+  ['planDrawer', 'setDrawer'].forEach(id => $(id).addEventListener('input', () => { if (LABGAME) leaveLabGame(); }));
+  sim.on('final', () => {
+    if (!LABGAME) return;
+    const r = LABGAME.row.teams, same = teams[0].score === r[0].goals && teams[1].score === r[1].goals;
+    $('labGameNote').insertAdjacentHTML('beforeend', `<span class="lgcheck ${same ? 'ok' : 'bad'}">${same ? 'Final matches the lab.' : 'Final differs from the lab.'}</span>`);
+  });
+
   let last = performance.now();
   function frame(now) {
     const real = Math.min(0.05, (now - last) / 1000); last = now;
-    if (!game.paused && !SIM_END.on) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); REVIEW.step(d); g -= d; } moveOfficials(real * game.speed); }
+    if (!game.paused && !SIM_END.on && LABGAME) { labAcc += real * game.speed; while (labAcc >= 0.03) { fxTick(0.03); tick(0.03); REVIEW.step(0.03); labAcc -= 0.03; } moveOfficials(real * game.speed); }
+    else if (!game.paused && !SIM_END.on) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); REVIEW.step(d); g -= d; } moveOfficials(real * game.speed); }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawRink(); drawBenches(); drawOfficials(); drawPlayers(); drawWhistle(); updateHud(); updateSheets(now);
     requestAnimationFrame(frame);
