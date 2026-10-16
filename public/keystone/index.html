@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>Keystone: Notre-Dame, stone by stone</title>
-<meta name="description" content="Build the whole nave of Notre-Dame in 3D, piece by piece, the way the masons did. Every stone carries real load.">
+<meta name="description" content="Build the nave and west front of Notre-Dame in 3D, piece by piece, the way the masons did. Every stone carries real load.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.3">
+<link rel="stylesheet" href="style.css?v=0.4">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
   <div class="brand">
     <h1>Keystone</h1>
     <p class="matchup">Notre-Dame, stone by stone</p>
-    <p>The nave of Notre-Dame, built the way the masons did: footings, piers, arcade, walls, flying buttresses, the vault on its timber centering, then the oak roof. Every piece is a separate stone or timber, and every one carries real load.</p>
+    <p>The nave and west front of Notre-Dame, built the way the masons did: footings, piers, arcades, walls, flying buttresses, the vault on its timber centering and the oak roof, then the portals, the rose and the towers. Every piece is a separate stone or timber, and every one carries real load.</p>
   </div>
   <nav class="views" aria-label="Pages">
     <a href="./" aria-current="page">Build Notre-Dame</a>
@@ -30,7 +30,7 @@
     <div class="keys">
       <div class="legend" id="fkey" hidden>
         <b><i class="swatch"></i>Line of thrust</b>
-        <span>The path the vault's weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.</span>
+        <span id="fkeyMsg">The path the vault's weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.</span>
       </div>
       <div class="legend" id="legend" hidden>
         <b>Pressure on each stone, MPa</b><div class="ramp"></div>
@@ -68,8 +68,9 @@
 
   <section class="notes">
     <div class="card"><h2>What you're building</h2>
-      <p>The whole nave: ten bays, 60 m from the crossing to where the west front will stand. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.</p>
-      <p>Simplified: the vault's crown is about 35 m up here (33 m in the real nave); the chapels built between the buttresses in 1235 to 1245 are left out; every bay line carries the same share of the vault. The west front, the transept and the choir come next.</p></div>
+      <p>The whole nave: ten bays, 60 m from the crossing to the west front. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.</p>
+      <p>Then the west front, 43.5 m wide: two square towers 69 m tall over the ends of the aisles, three portals, the Gallery of Kings, the rose 9.6 m across behind the Gallery of the Virgin, the grand gallery, and Emmanuel, the great bell, in the south tower. Between the towers the last bay of the nave gets a four-part vault.</p>
+      <p>Simplified: the vault's crown is about 35 m up here (33 m in the real nave); the chapels built between the buttresses in 1235 to 1245 are left out; every bay line carries the same share of the vault; the sculpture is plain shapes and the chimeras are left out. The transept and the choir come next.</p></div>
     <div class="card"><h2>The forces</h2>
       <p>The red line is the line of thrust through the vault's ribs, down the wall, along each flyer and through each buttress pier, worked out the same way as in the arch lab. They appear when the vault's centering is struck, the moment the vault starts carrying itself.</p>
       <p>Color by load follows each piece's weight down to the ground and divides by the area it rests on. It ignores the sideways push, so it shows how load piles up, not exact stresses.</p></div>
@@ -79,6 +80,6 @@
 </main>
 
 <footer class="version">Keystone <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.3"></script>
+<script type="module" src="src/main.js?v=0.4"></script>
 </body>
 </html>

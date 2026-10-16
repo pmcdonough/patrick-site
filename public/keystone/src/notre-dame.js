@@ -1,9 +1,9 @@
-// The nave of Notre-Dame de Paris as a kit: every piece with its geometry, weight, bearing area and what it rests on,
+// The nave and west front of Notre-Dame de Paris as a kit: every piece with its geometry, weight, bearing area and what it rests on,
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
-import * as THREE from './vendor/three.module.js?v=0.3';
-import * as Solver from './solver.js?v=0.3';
+import * as THREE from './vendor/three.module.js?v=0.4';
+import * as Solver from './solver.js?v=0.4';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead
@@ -22,7 +22,7 @@ const ZS = Array.from({ length: NB + 1 }, (_, i) => Z0 + L * i), ZC = b => ZS[b]
 const SIDES = [-1, 1], SN = s => s < 0 ? 'north' : 'south', X = (s, x) => s < 0 ? x : -x;
 const lr = (s, a, b) => s < 0 ? [a, b] : [-b, -a];                  // an x range on the north side, mirrored to the south
 const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, gallery, band, clerestory courses, cornice
-export const KIT = { place: 'Notre-Dame de Paris', title: 'The nave', bays: NB, length: NB * L };
+export const KIT = { place: 'Notre-Dame de Paris', title: 'The nave and the west front', bays: NB, length: NB * L };
 
 // ---------- Pieces and steps ----------
 const pieces = [], byId = {}, steps = [];
@@ -361,13 +361,194 @@ for (const s of SIDES) for (let b = 0; b < NB; b++) {
   leadSheet(X(s, XM - 0.45), LEV[1] + 0.3, X(s, XA - 0.6), AWT + 0.2, ZS[b] + 0.7, ZS[b + 1] - 0.7, pid('LA', s, b), `Outer aisle roof, ${SN(s)} bay ${b + 1}`, [[pid('AW', s, b), 0.5], [pid('PM', s, b, 0), 0.5]]);
 }
 
-// ---------- Bag 9: Finishing ----------
-bag(9, 'Finishing');
-step('Glazing', 'Glass in every window: the outer aisles, the gallery, the round band windows by the crossing, and the clerestory.');
+// ---------- The west front ----------
+// Two square towers 16 m on a side over the west ends of the aisles, flush with the nave's inner walls, and between them
+// the central wall with the main portal and the rose. Four buttresses divide the front into three. Levels: the portals,
+// the Gallery of Kings, the rose storey behind the Gallery of the Virgin, the grand gallery, the top band at 45 m, then
+// the belfries alone to 69 m. Between the towers the last bay of the nave gets a four-part vault.
+const TX0 = -21.75, TX1 = XI, TZ0 = 30.7, TZ1 = 46.8, TW = 2.6, TZC = (TZ0 + TZ1) / 2, PX = (TX0 + TX1) / 2, WB = 42;
+const TL = [0.6, 14, 18, 31, 42, 45, 67.5], TOP = 69;
+const SECTIONS = [[-19.15, -8.25], [TX1, -TX1], [8.25, 19.15]];          // the three parts of the front between buttresses
+const rect = (a0, a1, y0, y1) => [[a0, y0], [a1, y0], [a1, y1], [a0, y1]];
+const mirror = (s, pts) => pts.map(([x, y]) => [X(s, x), y]);
+// a wall panel: a profile in (x, y) extruded along z (face 'x'), or in (z, y) extruded along x (face 'z')
+function wall(id, kind, name, along, pts, holes, depth, at, sup, o = {}) {
+  const [dx, dz, ox, oz] = along === 'x' ? [1, 0, 0, at] : [0, 1, at, 0];
+  const xs = pts.map(p => p[0]), width = Math.max(...xs) - Math.min(...xs);
+  return add(id, kind, name, extr(pts, holes, depth, ox, oz, dx, dz), { w: extrVol(pts, holes, depth) * GAMMA, bear: width * depth * 0.85, sup, ...o });
+}
+const TOWER = s => s < 0 ? 'north tower' : 'south tower';
+const LEVEL = ['ground storey', 'kings storey', 'rose storey', 'gallery storey', 'top band', 'belfry'];
+// each tower face's openings, by level: west (the front), east (toward the aisles), outer and inner (toward the last bay)
+const FACE_HOLES = {
+  west: [[lancet(PX, 0.6, 5.6, 6.4)], [], [lancet(PX - 2.6, 21, 2.6, 5), lancet(PX + 2.6, 21, 2.6, 5)], [-3.3, -1.1, 1.1, 3.3].map(d => lancet(PX + d, 32, 1.4, 6.5)), [], [lancet(PX - 3, 47, 2.6, 12), lancet(PX + 3, 47, 2.6, 12)]],
+  east: [[lancet((XO + XM) / 2, 0.6, 3.6, 5.4), lancet((XM + XA) / 2, 0.6, 3.6, 5.4)], [], [lancet(PX - 2.6, 21, 2.6, 5), lancet(PX + 2.6, 21, 2.6, 5)], [lancet(PX - 2.5, 33, 2.2, 4.5), lancet(PX + 2.5, 33, 2.2, 4.5)], [], [lancet(PX - 3, 47, 2.6, 12), lancet(PX + 3, 47, 2.6, 12)]],
+  outer: [[lancet(TZC, 3, 2, 5)], [], [lancet(TZC - 2.4, 21, 2.2, 5), lancet(TZC + 2.4, 21, 2.2, 5)], [lancet(TZC - 2.4, 33, 2.2, 4.5), lancet(TZC + 2.4, 33, 2.2, 4.5)], [], [lancet(TZC - 2.4, 47, 2.4, 12), lancet(TZC + 2.4, 47, 2.4, 12)]],
+  inner: [[lancet(TZC - 2, 0.6, 5.6, 5)], [], [], [lancet(TZC - 2.4, 33, 2.2, 4.5), lancet(TZC + 2.4, 33, 2.2, 4.5)], [], [lancet(TZC - 2.4, 47, 2.4, 12), lancet(TZC + 2.4, 47, 2.4, 12)]],
+};
+const fid = (s, face, k) => `TW-${s < 0 ? 'N' : 'S'}-${face}-${k}`;
+function towerLevel(k) {
+  for (const s of SIDES) {
+    const y0 = TL[k], y1 = TL[k + 1], below = f => k ? [[fid(s, f, k - 1), 1]] : [[`TF-${s < 0 ? 'N' : 'S'}`, 1]];
+    const nm = f => `${TOWER(s)}, ${f} face, ${LEVEL[k]}`;
+    wall(fid(s, 'west', k), 'tower wall', nm('west'), 'x', mirror(s, rect(TX0, TX1, y0, y1)), FACE_HOLES.west[k].map(h => mirror(s, h)), TW, TZ1 - TW / 2, below('west'));
+    wall(fid(s, 'east', k), 'tower wall', nm('east'), 'x', mirror(s, rect(TX0, TX1, y0, y1)), FACE_HOLES.east[k].map(h => mirror(s, h)), TW, TZ0 + TW / 2, below('east'));
+    wall(fid(s, 'outer', k), 'tower wall', nm(s < 0 ? 'north' : 'south'), 'z', rect(TZ0 + TW, TZ1 - TW, y0, y1), FACE_HOLES.outer[k], TW, X(s, TX0 + TW / 2), below('outer'));
+    wall(fid(s, 'inner', k), 'tower wall', nm('inner'), 'z', rect(TZ0 + TW, TZ1 - TW, y0, y1), FACE_HOLES.inner[k], TW, X(s, TX1 - TW / 2), below('inner'));
+  }
+}
+const CENTRE = [[0.6, 14, WB, TZ1, [lancet(0, 0.6, 6.4, 6.4)]], [14, 18, WB, TZ1, []], [18, 31, WB, TZ1, [circle(0, 24.6, 4.8, 64)]], [31, 42, TZ1 - 1.2, TZ1, [-3.3, -1.1, 1.1, 3.3].map(d => lancet(d, 32, 1.4, 6.5))], [42, 44, TZ1 - 1.2, TZ1, []]];
+const centreLevel = k => { const [y0, y1, z0, z1, holes] = CENTRE[k];
+  wall(`CW-${k}`, 'wall stone', `Central wall, ${LEVEL[k]}`, 'x', rect(TX1, -TX1, y0, y1), holes, z1 - z0, (z0 + z1) / 2, [[k ? `CW-${k - 1}` : 'CF', 1]]); };
+const BUTX = [-20.45, -6.95, 6.95, 20.45];
+
+bag(9, 'West front');
+const STEP_WF = steps.length;
+step('Footings for the west front', '');
+for (const s of SIDES) add(`TF-${s < 0 ? 'N' : 'S'}`, 'footing', `Footing, ${TOWER(s)}`, boxG(...lr(s, TX0 - 1, TX1), -0.6, 0.65, TZ0, TZ1 + 2.2), { w: 17.1 * 18.3 * 1.25 * GAMMA, bear: 17.1 * 18.3 });
+add('CF', 'footing', 'Footing, central wall', boxG(TX1, -TX1, -0.6, 0.65, WB - 0.5, TZ1 + 2.2), { w: 11.3 * 7.5 * 1.25 * GAMMA, bear: 11.3 * 7.5 });
+step('The ground storey', 'The towers\' walls rise 2.6 m thick, with the three portals cut through them: the Virgin on the north, the Last Judgement in the middle, Saint Anne on the south. Four big buttresses divide the front into three.');
+towerLevel(0); centreLevel(0);
+const STEP_FRONT = cur;
+BUTX.forEach((x, i) => add(`WBU-${i}-0`, 'buttress stone', `West buttress ${i + 1}, course 1`, boxG(x - 1.3, x + 1.3, 0.65, TL[1], TZ1, TZ1 + 2), { w: 2.6 * 2 * 13.35 * GAMMA, bear: 2.6 * 2, sup: [[x < 0 ? 'TF-N' : 'TF-S', 1]] }));
+// the portals: three arches one inside the other, stepping out from the wall, each on its own pair of jamb columns
+const PORTALS = [[-1, PX, 5.6, 'Portal of the Virgin'], [0, 0, 6.4, 'Portal of the Last Judgement'], [1, -PX, 5.6, 'Portal of Saint Anne']];
+const RINGS = [0, 1, 2], ringZ = i => TZ1 + 0.3 + 0.6 * i, ringOf = (w, i) => Solver.build({ shape: 'pointed', span: w + 0.9 * i, thick: 0.45, count: 9 });
+const wallBelow = sd => sd < 0 ? fid(-1, 'west', 0) : sd > 0 ? fid(1, 'west', 0) : 'CW-0';
+PORTALS.forEach(([sd, cx, w, nm], p) => {
+  for (const side of [-1, 1]) {
+    add(`PJ-${p}-${side}`, 'jamb stone', `${nm}, jamb`, boxG(...(side < 0 ? [cx - w / 2 - 1.6, cx - w / 2] : [cx + w / 2, cx + w / 2 + 1.6]), 0.65, 7, TZ1, TZ1 + 1.8), { w: 1.6 * 1.8 * 6.35 * GAMMA, bear: 1.6 * 1.8, sup: [[sd < 0 ? 'TF-N' : sd > 0 ? 'TF-S' : 'CF', 1]] });
+    RINGS.forEach(i => add(`PC-${p}-${side}-${i}`, 'jamb column', `${nm}, column`, cylG(0.22, 0.22, 0.65, 7, cx + side * ((w + 0.9 * i) / 2 + 0.225), ringZ(i), 16), { w: Math.PI * 0.05 * 6.35 * GAMMA, bear: Math.PI * 0.05, sup: [[`PJ-${p}-${side}`, 1]] }));
+  }
+});
+step('Centering for the portals', 'Each portal is framed by three arches, each one a step further out than the last. Every ring gets its own centering.');
+PORTALS.forEach(([, cx, w], p) => RINGS.forEach(i => placeCentering(`PCN-${p}-${i}`, ringOf(w, i), { y0: 7, ox: cx, oz: ringZ(i), dx: 1, dz: 0 })));
+const STEP_PORTAL_CEN = cur;
+step('Portal arches', 'Nine stones to each ring, springing from slender columns set into the jambs. A lintel spans each doorway, and over it sits the tympanum, the carved stone that fills the arch.');
+PORTALS.forEach(([sd, cx, w, nm], p) => {
+  RINGS.forEach(i => placeArch(`PR-${p}-${i}`, ringOf(w, i), { y0: 7, depth: 0.6, ox: cx, oz: ringZ(i), dx: 1, dz: 0, springL: [[`PC-${p}--1-${i}`, 1]], springR: [[`PC-${p}-1-${i}`, 1]], name: `${nm}, arch ${i + 1}`, kind: 'archivolt stone' }));
+  add(`PL-${p}`, 'lintel', `${nm}, lintel`, boxG(cx - w / 2, cx + w / 2, 6.2, 6.6, TZ1 - 0.8, TZ1), { w: w * 0.4 * 0.8 * GAMMA, bear: 0.8 * 0.8, sup: [[`PJ-${p}--1`, 0.5], [`PJ-${p}-1`, 0.5]] });
+  const head = lancet(cx, 6.6, w, 0.4);
+  add(`PT-${p}`, 'tympanum', `${nm}, tympanum`, extr(head, [], 0.4, 0, TZ1 - 0.4, 1, 0), { w: extrVol(head, [], 0.4) * GAMMA, bear: w * 0.4, sup: [[`PL-${p}`, 1]] });
+});
+add('PTR', 'trumeau', 'Portal of the Last Judgement, central post', cylG(0.35, 0.35, 0.65, 6.2, 0, TZ1 - 0.6, 24), { w: Math.PI * 0.12 * 5.6 * GAMMA, bear: Math.PI * 0.12, sup: [['CF', 1]] });
+step('Strike the portal centering', 'The portal arches stand on their columns. The weight of the wall above will rest on them from now on.');
+removeAt(p => p.step === STEP_PORTAL_CEN);
+const KING = new THREE.LatheGeometry([[0, 0], [0.4, 0], [0.38, 0.2], [0.34, 1.6], [0.38, 2.1], [0.16, 2.35], [0.14, 2.45], [0.27, 2.62], [0.25, 2.85], [0.22, 2.95], [0.26, 3.12], [0, 3.12]].map(([r, y]) => new THREE.Vector2(r, y)), 20);
+step('Gallery of Kings', 'The walls rise another 4 m, and across the front a row of 28 kings stands on a ledge: the kings of Judah, Christ\'s ancestors. In 1793 revolutionaries pulled them down, taking them for kings of France. The ones you see were carved in the 1800s; 21 of the old heads turned up in 1977.');
+towerLevel(1); centreLevel(1);
+SECTIONS.forEach(([x0, x1], i) => {
+  const under = i === 1 ? 'CW-1' : fid(i ? 1 : -1, 'west', 1);
+  add(`KL-${i}`, 'ledge stone', 'Kings\' ledge', boxG(x0, x1, TL[1], TL[1] + 0.4, TZ1, TZ1 + 1), { w: (x1 - x0) * 0.4 * GAMMA, bear: (x1 - x0), sup: [[under, 1]] });
+  const n = i === 1 ? 10 : 9, gap = (x1 - x0) / n;
+  for (let k = 0; k < n; k++) { const g = KING.clone(); g.translate(x0 + gap * (k + 0.5), TL[1] + 0.4, TZ1 + 0.55); add(`KG-${i}-${k}`, 'king', 'King of Judah', g, { w: 3.5 * 9.81, bear: 0.45, sup: [[`KL-${i}`, 1]] }); }
+});
+
+bag(10, 'The rose');
+step('Gallery of the Virgin', 'Above the kings, a terrace with an open stone railing runs across the front: the Gallery of the Virgin. The buttresses carry on up, thinner now.');
+const RAIL = (x0, x1, y0, h) => { const pts = rect(x0, x1, y0, y0 + h), holes = []; for (let x = x0 + 0.6; x < x1 - 0.4; x += 0.8) holes.push(circle(x, y0 + h / 2, h * 0.3, 24)); return [pts, holes]; };
+SECTIONS.forEach(([x0, x1], i) => {
+  add(`VT-${i}`, 'terrace stone', 'Gallery of the Virgin, terrace', boxG(x0, x1, TL[2] - 0.4, TL[2], TZ1, TZ1 + 1), { w: (x1 - x0) * 0.4 * GAMMA, bear: (x1 - x0), sup: [[`KL-${i}`, 1]] });
+  const [pts, holes] = RAIL(x0, x1, TL[2], 1);
+  wall(`VR-${i}`, 'railing', 'Gallery of the Virgin, railing', 'x', pts, holes, 0.15, TZ1 + 0.92, [[`VT-${i}`, 1]]);
+});
+BUTX.forEach((x, i) => add(`WBU-${i}-1`, 'buttress stone', `West buttress ${i + 1}, course 2`, boxG(x - 1.1, x + 1.1, TL[1], TL[3], TZ1, TZ1 + 0.8), { w: 2.2 * 0.8 * 17 * GAMMA, bear: 2.2 * 0.8, sup: [[`WBU-${i}-0`, 1]] }));
+step('The rose storey', 'The towers rise past 30 m, each face pierced by tall twin windows. In the middle, the wall is left with a great round opening, 9.6 m across.');
+towerLevel(2); centreLevel(2);
+step('Rose window tracery', 'Stone rings and spokes, like a wheel, fill the round opening. They have to hold the glass up and stand in the wind. The west rose was made around 1225.');
+const RY0 = 24.6, RZ = TZ1 - 0.35, ring = (r0, r1, id, nm) => { const g = extr(circle(0, RY0, r1, 64), [circle(0, RY0, r0, 64)], 0.4, 0, RZ, 1, 0); add(id, 'rose tracery', nm, g, { w: Math.PI * (r1 * r1 - r0 * r0) * 0.4 * GAMMA, bear: 0.4 * (r1 - r0), sup: [['CW-2', 1]] }); };
+ring(4.35, 4.8, 'RS-out', 'Rose, outer ring'); ring(2.35, 2.7, 'RS-mid', 'Rose, middle ring');
+add('RS-hub', 'rose tracery', 'Rose, hub', extr(circle(0, RY0, 1, 32), [], 0.4, 0, RZ, 1, 0), { w: Math.PI * 0.4 * GAMMA, sup: [['RS-mid', 1]] });
+const spoke = (r0, r1, a, id, sup) => { const g = new THREE.BoxGeometry(r1 - r0, 0.16, 0.3); g.translate((r0 + r1) / 2, 0, 0); g.rotateZ(a); g.translate(0, RY0, RZ); add(id, 'rose tracery', 'Rose, spoke', g, { w: (r1 - r0) * 0.05 * GAMMA, sup: [[sup, 1]] }); };
+for (let k = 0; k < 12; k++) spoke(0.95, 2.4, Math.PI * 2 * k / 12, `RS-i${k}`, 'RS-mid');
+for (let k = 0; k < 24; k++) spoke(2.65, 4.4, Math.PI * 2 * (k + 0.5) / 24, `RS-o${k}`, 'RS-out');
+// the last bay of the nave, between the towers: a four-part vault 12 m square, its west rib against the front
+const WRZ = WB - 0.3, P3W = s => [[fid(s, 'inner', 2), 1]], ZWC = 36;
+step('Centering for the last bay', 'Between the towers, the last bay of the nave is vaulted now: a four-part vault, with two diagonals and a rib against the west front.');
+placeCentering('WC', ARCH, { y0: H0, ox: 0, oz: WRZ, dx: 1, dz: 0 });
+for (const [n, dir] of [['a', D1], ['b', D2]]) placeCentering(`WDC${n}`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZWC, dx: dir[0], dz: dir[1] });
+const STEP_WEST_CEN = cur;
+step('The last vault', 'The rib against the front, the two diagonals and a boss where they meet, and a wall rib along each tower. The towers\' walls stand in for the flying buttresses here: they are thick enough to take the push.');
+placeArch('TRW', ARCH, { y0: H0, depth: RIBW, ox: 0, oz: WRZ, dx: 1, dz: 0, springL: P3W(-1), springR: P3W(1), name: 'West rib' });
+placeArch('DAW', ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: ZWC, dx: D1[0], dz: D1[1], springL: P3(-1, NB), springR: P3W(1), name: 'Diagonal rib, last bay', withKey: false });
+placeArch('DBW', ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: ZWC, dx: D2[0], dz: D2[1], springL: P3W(-1), springR: P3(1, NB), name: 'Diagonal rib, last bay', withKey: false });
+{ const k = ARCH.k - 1, top = ARCH.extrados.at(-1)[1] + H0;
+  add('BOSSW', 'boss', 'Boss, last bay', cylG(0.55, 0.55, top - 1.05, top + 0.05, 0, ZWC, 32), { w: Math.PI * 0.3 * 1.1 * GAMMA, sup: [[`DAW-L${k}`, 0.25], [`DAW-R${k}`, 0.25], [`DBW-L${k}`, 0.25], [`DBW-R${k}`, 0.25]] }); }
+for (const s of SIDES) placeArch(pid('WRW', s, 0), ARCH, { y0: H0, depth: 0.35, ox: X(s, XI + 0.18), oz: ZWC, dx: 0, dz: 1, springL: P3(s, NB), springR: P3W(s), name: `Wall rib, ${TOWER(s)}`, kind: 'voussoir' });
+step('Webbing for the last bay', 'Three rounds of thin courses close the four cells, from the springing to the boss.');
+{
+  const Tz = (z, h) => q => { const [x, y] = trv(q); return V3(h < 0 ? x : -x, y, z); };
+  const Dg = (dir, h) => q => { const [x, y] = dia(q); const s = h < 0 ? x : -x; return V3(s * dir[0], y, ZWC + s * dir[1]); };
+  const Wl = (side, h) => q => { const [x, y] = trv(q); return V3(X(side, XI + 0.2), y, ZWC + (h < 0 ? x : -x)); };
+  const C = [[Tz(ZS[NB], -1), Dg(D1, -1), `TR${NB}`, 'DAW'], [Tz(ZS[NB], 1), Dg(D2, 1), `TR${NB}`, 'DBW'], [Tz(WRZ, -1), Dg(D2, -1), 'TRW', 'DBW'], [Tz(WRZ, 1), Dg(D1, 1), 'TRW', 'DAW'],
+    [Wl(-1, -1), Dg(D1, -1), pid('WRW', -1, 0), 'DAW'], [Wl(-1, 1), Dg(D2, -1), pid('WRW', -1, 0), 'DBW'], [Wl(1, -1), Dg(D2, 1), pid('WRW', 1, 0), 'DBW'], [Wl(1, 1), Dg(D1, 1), pid('WRW', 1, 0), 'DAW']];
+  [[0, 0.38], [0.38, 0.72], [0.72, 1]].forEach(([q0, q1], c) => C.forEach(([A, B, r1, r2], k) => {
+    const r = ruled(A, B, q0, q1, 6, 12), a = ribPieces(r1), b = ribPieces(r2);
+    add(`WEBW-${k}-${c}`, 'web panel', 'Vault web, last bay', r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(id => [id, 0.5 / a.length]), ...b.map(id => [id, 0.5 / b.length])] });
+  }));
+}
+step('Strike the centering of the last bay', 'The last vault carries itself. The nave is closed at the west.');
+removeAt(p => p.step === STEP_WEST_CEN);
+
+bag(11, 'Towers');
+step('Grand gallery', 'An open arcade of tall, slim arches runs across the front at 31 m, the grand gallery. Viollet-le-Duc lined it with the chimeras in the 1800s.');
+towerLevel(3); centreLevel(3);
+step('Top of the front', 'The front closes at 45 m: a band of stone, and between the towers an open railing.');
+towerLevel(4); centreLevel(4);
+{ const [pts, holes] = RAIL(TX1, -TX1, 44, 1); wall('TR-rail', 'railing', 'Railing between the towers', 'x', pts, holes, 0.3, TZ1 - 0.6, [['CW-4', 1]]); }
+step('Roof over the last bay', 'The oak frame and the lead roof carry on over the last bay, to the back of the front, between the towers.');
+{
+  const T = Array.from({ length: 8 }, (_, i) => ZS[NB] + 1.5 * (i + 1)), on = T.map((_, i) => [`TBW${i}`, 1 / T.length]);
+  T.forEach((z, i) => {
+    beam(V3(-RX, RY + 0.18, z), V3(RX, RY + 0.18, z), 0.36, `TBW${i}`, 'tie beam', 'Tie beam, last bay', [[fid(-1, 'inner', 3), 0.5], [fid(1, 'inner', 3), 0.5]]);
+    beam(V3(-RX + 0.1, RY + 0.36, z), V3(0, RIDGE, z), 0.3, `RFW${i}a`, 'rafter', 'Rafter, last bay', [[`TBW${i}`, 1]]);
+    beam(V3(RX - 0.1, RY + 0.36, z), V3(0, RIDGE, z), 0.3, `RFW${i}b`, 'rafter', 'Rafter, last bay', [[`TBW${i}`, 1]]);
+    beam(V3(0, RY + 0.36, z), V3(0, RIDGE - 0.2, z), 0.26, `KPW${i}`, 'king post', 'King post, last bay', [[`TBW${i}`, 1]]);
+  });
+  beam(V3(0, RIDGE + 0.1, ZS[NB]), V3(0, RIDGE + 0.1, WB), 0.3, 'RIDGEW', 'ridge beam', 'Ridge beam, last bay', on);
+  for (const s of SIDES) leadSheet(s * (RX + 0.25), RY + 0.2, 0, RIDGE + 0.42, ZS[NB], WB, pid('LDW', s, 0), `Lead roof, last bay, ${SN(s)}`, on);
+}
+step('Belfries', 'The towers go on alone, square, with two tall openings in every face so the bells can be heard across Paris.');
+towerLevel(5);
+for (const s of SIDES) [[TX0, TZ0], [TX0, TZ1], [TX1, TZ0], [TX1, TZ1]].forEach(([x, z], k) => {
+  const cx = X(s, x), face = z === TZ1 ? 'west' : 'east';
+  add(`TB-${s < 0 ? 'N' : 'S'}-${k}`, 'buttress stone', `${TOWER(s)}, corner buttress`, boxG(cx - 0.8, cx + 0.8, TL[5], TL[6] - 1.5, z - 0.8, z + 0.8), { w: 1.6 * 1.6 * 21 * GAMMA, bear: 1.6 * 1.6, sup: [[fid(s, face, 4), 1]] });
+});
+step('The bells', 'Emmanuel, the great bell, hangs in the south tower on a frame of oak. It weighs about 13 tonnes.');
+{
+  const bx = X(1, PX), by = 52, bz = TZC, post = (dx, dz, k) => add(`BF-${k}`, 'bell frame', 'Bell frame, post', boxG(bx + dx - 0.2, bx + dx + 0.2, TL[5], by + 3.4, bz + dz - 0.2, bz + dz + 0.2), { mat: 'oak', w: 0.16 * (by + 3.4 - TL[5]) * OAK, bear: 0.16, sup: [[fid(1, 'east', 4), 1]] });
+  [[-2.6, -2.6], [2.6, -2.6], [-2.6, 2.6], [2.6, 2.6]].forEach(([dx, dz], k) => post(dx, dz, k));
+  add('BF-beam', 'bell frame', 'Bell frame, beam', boxG(bx - 2.8, bx + 2.8, by + 3.4, by + 3.9, bz - 0.3, bz + 0.3), { mat: 'oak', w: 5.6 * 0.15 * OAK, bear: 0.3, sup: [0, 1, 2, 3].map(k => [`BF-${k}`, 0.25]) });
+  const bell = new THREE.LatheGeometry([[0, 3.2], [0.55, 3.2], [0.75, 3.0], [0.85, 2.5], [0.95, 1.6], [1.15, 0.8], [1.45, 0.25], [1.55, 0], [1.4, 0], [1.3, 0.25], [1.0, 0.8], [0.82, 1.6], [0.72, 2.5], [0.6, 2.95], [0, 3.05]].map(([r, y]) => new THREE.Vector2(r, y)), 40);
+  bell.translate(bx, by, bz);
+  add('BELL', 'bell', 'Emmanuel, the great bell', bell, { mat: 'bronze', w: 13 * 9.81, sup: [['BF-beam', 1]] });
+}
+step('Tower tops', 'A terrace covered in lead and an open railing finish each tower at 69 m. Spires were planned for the towers but never built.');
+for (const s of SIDES) {
+  const t = s < 0 ? 'N' : 'S';
+  add(`TT-${t}`, 'lead sheet', `${TOWER(s)}, terrace`, boxG(...lr(s, TX0, TX1), TL[6], TL[6] + 0.3, TZ0, TZ1), { mat: 'lead', w: 16.1 * 16.1 * 0.3 * 0.5 * GAMMA, bear: 40, sup: ['west', 'east', 'outer', 'inner'].map(f => [fid(s, f, 5), 0.25]) });
+  const [pw, hw] = RAIL(TX0, TX1, TL[6] + 0.3, 1.2), [pz, hz] = RAIL(TZ0, TZ1, TL[6] + 0.3, 1.2);
+  wall(`TR-${t}-w`, 'railing', `${TOWER(s)}, railing`, 'x', mirror(s, pw), hw.map(h => mirror(s, h)), 0.3, TZ1 - 0.15, [[`TT-${t}`, 1]]);
+  wall(`TR-${t}-e`, 'railing', `${TOWER(s)}, railing`, 'x', mirror(s, pw), hw.map(h => mirror(s, h)), 0.3, TZ0 + 0.15, [[`TT-${t}`, 1]]);
+  wall(`TR-${t}-o`, 'railing', `${TOWER(s)}, railing`, 'z', pz, hz, 0.3, X(s, TX0 + 0.15), [[`TT-${t}`, 1]]);
+  wall(`TR-${t}-i`, 'railing', `${TOWER(s)}, railing`, 'z', pz, hz, 0.3, X(s, TX1 - 0.15), [[`TT-${t}`, 1]]);
+}
+
+{ const t = pieces.filter(p => /^(TW|TB|TT|TR)-N/.test(p.id)).reduce((a, p) => a + p.w, 0) / 9.81;
+  steps[STEP_WF].note = `The towers will weigh about ${Math.round(t / 1000) * 1000} tonnes each, so they get the biggest footings of all: a solid slab under the whole of each tower, wider than its walls.`; }
+
+// ---------- Bag 12: Finishing ----------
+bag(12, 'Finishing');
+step('Glazing', 'Glass in every window: the outer aisles, the gallery, the round band windows by the crossing, the clerestory, and the west rose.');
 const ALL = [...Array(NB).keys()];
 const GLASS = [['aislewin', XA, [AWIN], ALL], ['gallery', XM, GWIN, ALL], ['oculus', XW, [circle(0, 21.8, 0.9)], [0]], ['clere', XW, [CWIN], [0]], ['clereT', XW, [CWIN_T], LATE]];
 GLASS.forEach(([g, x0, shapes, bays]) => { for (const s of SIDES) for (const b of bays) shapes.forEach((pts, k) => add(`GL-${g}-${s}${b}${k}`, 'glass panel', 'Stained glass', extr(pts, [], 0.05, X(s, x0), ZC(b), 0, 1), { mat: 'glass', tint: (b + k + (s > 0 ? 1 : 0)) % 3 })); });
-step('Paving', 'Stone paving for the nave and all four aisles. The nave of Notre-Dame, finished.');
+add('GL-rose-in', 'glass panel', 'Rose window glass', extr(circle(0, RY0, 2.7, 64), [], 0.05, 0, RZ - 0.3, 1, 0), { mat: 'glass', tint: 0 });
+add('GL-rose-out', 'glass panel', 'Rose window glass', extr(circle(0, RY0, 4.8, 64), [circle(0, RY0, 2.7, 64)], 0.05, 0, RZ - 0.3, 1, 0), { mat: 'glass', tint: 1 });
+step('Doors', 'Oak doors for the three portals, two leaves each, hung behind the lintels.');
+PORTALS.forEach(([, cx, w, nm], p) => [-1, 1].forEach(side => add(`DR-${p}-${side}`, 'door leaf', `${nm}, door`, boxG(...(side < 0 ? [cx - w / 2 + 0.05, cx - 0.04] : [cx + 0.04, cx + w / 2 - 0.05]), 0.65, 6.2, TZ1 - 1.4, TZ1 - 1.25), { mat: 'oak', w: (w / 2) * 5.5 * 0.15 * OAK })));
+step('Paving', 'Stone paving for the nave, all four aisles and the last bay between the towers. The nave and the west front of Notre-Dame, finished.');
+add('PV-W', 'paving slab', 'Paving, last bay', boxG(XI, -XI, 0, 0.08, ZS[NB], WB), { mat: 'pave' });
 for (let b = 0; b < NB; b++) {
   add(`PV-N${b}`, 'paving slab', `Nave paving, bay ${b + 1}`, boxG(XI, -XI, 0, 0.08, ZS[b], ZS[b + 1]), { mat: 'pave' });
   for (const s of SIDES) {
@@ -406,4 +587,6 @@ export function computeLoads(n) {
   pieces.forEach(p => { p.load = live(p, n) ? carried(p) : 0; p.stress = p.bear ? p.load / p.bear / 1000 : 0; });
 }
 
+// the front hides the nave's line of thrust from anyone standing west of it, once its walls are up
+export const FRONT = { step: STEP_FRONT, z: TZ0 };
 export { pieces, steps, STEP_STRUCK };

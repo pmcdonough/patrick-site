@@ -3,16 +3,19 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.3';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.3';
-import { pieces, steps, STEP_STRUCK, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.3';
+import * as THREE from './vendor/three.module.js?v=0.4';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.4';
+import { pieces, steps, STEP_STRUCK, FRONT, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.4';
 
-const VERSION = '0.3';
+const VERSION = '0.4';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const on = id => $(id).getAttribute('aria-pressed') === 'true';
+// The scene is drawn only when something has changed, so a still model costs nothing: on a phone that is the battery.
+let dirty = true;
+const redraw = () => { dirty = true; };
 const press = (id, v) => $(id).setAttribute('aria-pressed', String(v));
 
 // ---------- Scene ----------
@@ -48,6 +51,7 @@ const MATS = {
   lead: () => new THREE.MeshStandardMaterial({ color: lin(0x8a949d), roughness: 0.7, metalness: 0.1, side: THREE.DoubleSide }),
   glass: t => new THREE.MeshStandardMaterial({ color: lin([0x3d6db5, 0xb2404f, 0x4b8a66][t]), roughness: 0.3, transparent: true, opacity: 0.8, emissive: lin([0x1c3f80, 0x6e1f2b, 0x1d4d33][t]), side: THREE.DoubleSide }),
   pave: () => new THREE.MeshStandardMaterial({ color: lin(0xd2c9b7), roughness: 0.95 }),
+  bronze: () => new THREE.MeshStandardMaterial({ color: lin(0x8c6a3c), roughness: 0.45, metalness: 0.6 }),
 };
 // ---------- Batches ----------
 // Thousands of pieces can't each be their own object on a phone, so the pieces that come and go together (same step, same
@@ -126,7 +130,7 @@ function pickBayLine() {
   const cut = on('v-cut') ? cutPlane.constant : null;
   const score = g => cut != null ? (g.userData.z <= cut + 1e-6 ? cut - g.userData.z : Infinity) : Math.abs(camera.position.z - g.userData.z);
   const best = bayLines.reduce((a, g) => score(g) < score(a) ? g : a);
-  bayLines.forEach(g => g.visible = g === best);
+  bayLines.forEach(g => { if (g.visible !== (g === best)) { g.visible = g === best; redraw(); } });
 }
 forceGroup.visible = false;
 
@@ -171,8 +175,17 @@ function recolor() {
     if (B.mat !== 'glass') B.mesh.material.emissive.copy(B.fresh && !state.loadView ? FRESH : NONE);
     if (B.group === 'roof') B.mesh.visible = roofOn && live(B.pieces[0], state.n);
   }
-  forceGroup.visible = on('v-forces') && state.n > STEP_STRUCK;
-  $('fkey').hidden = !forceGroup.visible;
+  redraw();
+  state.forces = on('v-forces') && state.n > STEP_STRUCK;
+  $('fkey').hidden = !state.forces;
+  showForces();
+}
+// From the west, once the front stands, the line of thrust would be drawn over the towers, where it means nothing, so it
+// waits until you go round to the side or cut the building open; the key says so.
+function showForces() {
+  const hidden = state.forces && state.n > FRONT.step && camera.position.z > FRONT.z && !on('v-cut');
+  if (forceGroup.visible !== (state.forces && !hidden)) { forceGroup.visible = state.forces && !hidden; redraw(); }
+  if (hidden !== state.fHidden) { state.fHidden = hidden; $('fkeyMsg').textContent = hidden ? 'From the west, the front hides the vault. Go round to the side, or turn on Cutaway.' : 'The path the vault\'s weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.'; }
 }
 
 // ---------- Camera ----------
@@ -201,7 +214,7 @@ function frameAll() {
 const BOUNDS = new THREE.Box3(); pieces.forEach(p => BOUNDS.union(p.box)); BOUNDS.expandByScalar(2);
 function clampTarget() {
   const before = controls.target.clone(); controls.target.clamp(BOUNDS.min, BOUNDS.max);
-  camera.position.add(controls.target.clone().sub(before));
+  if (!before.equals(controls.target)) { camera.position.add(controls.target.clone().sub(before)); redraw(); }
 }
 function stopFollow() { state.camT = null; if (state.follow) { state.follow = false; press('v-follow', false); } }
 const ray = new THREE.Raycaster(), tri = [V3(), V3(), V3()], at = V3(), entry = V3();
@@ -238,22 +251,25 @@ $('stage').addEventListener('wheel', e => {
   const p = pointUnder(e);
   camera.position.sub(p).multiplyScalar(f).add(p);
   controls.target.sub(p).multiplyScalar(f).add(p);
-  clampTarget();
+  clampTarget(); redraw();
 }, { capture: true, passive: false });
 $('fit').onclick = frameAll;
 const ease = t => t < 0 ? 0 : t > 1 ? 1 : 1 - (1 - t) * (1 - t) * (1 - t);
 function tick(now) {
   requestAnimationFrame(tick);
+  let busy = false;
   for (const B of batches) if (B.anim) {
-    const t = (now - B.anim.t0) / 1000; B.u.uTime.value = t;
+    const t = (now - B.anim.t0) / 1000; B.u.uTime.value = t; busy = true;
     if (t > B.last) { if (B.anim.mode === 2) B.mesh.visible = false; B.anim = null; B.u.uMode.value = 0; }
   }
-  if (state.camT) { const t = ease((now - state.camT.t0) / (reduce ? 1 : 900)); controls.target.lerpVectors(state.camT.fromT, state.camT.toT, t); camera.position.lerpVectors(state.camT.fromP, state.camT.toP, t); if (t >= 1) state.camT = null; }
-  controls.update(); if (!state.camT) clampTarget();
-  if (forceGroup.visible) pickBayLine();
-  renderer.render(scene, camera);
+  if (state.camT) { const t = ease((now - state.camT.t0) / (reduce ? 1 : 900)); controls.target.lerpVectors(state.camT.fromT, state.camT.toT, t); camera.position.lerpVectors(state.camT.fromP, state.camT.toP, t); if (t >= 1) state.camT = null; busy = true; }
+  if (controls.update()) busy = true;
+  if (!state.camT) clampTarget();
+  if (state.forces) { showForces(); if (forceGroup.visible) pickBayLine(); }
+  if (busy || dirty) { renderer.render(scene, camera); dirty = false; }
 }
 controls.addEventListener('start', stopFollow);
+controls.addEventListener('change', redraw);
 
 // ---------- Booklet and controls ----------
 const plural = (k, n) => n === 1 ? k : k.endsWith('s') ? `${k}es` : `${k}s`;
@@ -310,7 +326,7 @@ toggle('v-forces', recolor);
 toggle('v-load', v => { state.loadView = v; recolor(); syncUI(); });
 toggle('v-roof', recolor);
 toggle('v-follow', v => { state.follow = v; if (v && state.n) frameStep(state.n - 1); });
-const setCut = () => { const v = on('v-cut'); $('cutpos').hidden = !v; cutPlane.constant = v ? +$('v-cutz').value : 99; };
+const setCut = () => { const v = on('v-cut'); $('cutpos').hidden = !v; cutPlane.constant = v ? +$('v-cutz').value : 99; redraw(); };
 toggle('v-cut', v => {
   setCut();
   if (v) state.camT = { t0: performance.now(), fromT: controls.target.clone(), toT: V3(0, 18, +$('v-cutz').value), fromP: camera.position.clone(), toP: V3(-6, 24, +$('v-cutz').value + 80) };
@@ -340,10 +356,11 @@ function theme() {
   scene.background = sky; ground.material.color.copy(css('--ground'));
   scene.fog = new THREE.Fog(sky, 320, 800);
   forceMat.color.copy(css('--thrust'));
+  redraw();
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme);
 new MutationObserver(theme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-function resize() { const r = $('stage').getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); }
+function resize() { const r = $('stage').getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); redraw(); }
 new ResizeObserver(resize).observe($('stage'));
 theme(); resize();
 // open on the finished model, like the picture on the box

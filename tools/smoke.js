@@ -43,11 +43,14 @@ const { open, openPage } = require('./harness');
     else console.log(`keystone/ draws ${shown.pieces} pieces in ${shown.steps} steps (Keystone ${v}).`);
     const al = await openPage(browser, srv, 'keystone/arch-lab/', () => !!window.archLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
     if (al.page && await al.page.evaluate(() => window.archLab.VERSION) !== v) errors.push('keystone/arch-lab/: its VERSION differs from the 3D page');
+    // close pages when done: an open 3D page keeps the CPU busy on a machine with no graphics card, and slows the next one
+    await ks.page.close(); if (al.page) await al.page.close();
   }
   for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['keystone/', () => !!window.keystone], ['keystone/arch-lab/', () => !!window.archLab && document.readyState === 'complete']]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);
+    if (p.page) await p.page.close();
   }
   console.log('ERRORS:', errors);
   await close();

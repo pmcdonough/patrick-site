@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.87 = sim 0.71 + Play Review 0.10 + Keystone 0.3. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.88 = sim 0.71 + Play Review 0.10 + Keystone 0.4. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.88
+- Keystone 0.4 (the west front and its towers). The home card says so. No change to the sim or Play Review.
 
 ### 0.87
 - Keystone 0.3 (the whole nave). The home card says so. No change to the sim or Play Review.
@@ -188,6 +191,13 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Keystone
+
+### 0.4
+- The west front, in three new bags (West front, The rose, Towers): 3,748 pieces in 61 steps in all. Two square towers 16 m on a side over the west ends of the aisles, built storey by storey to 69 m; the central wall between them; four buttresses dividing the front into three, 43.5 m wide. Three portals (the Virgin, the Last Judgement, Saint Anne), each with three arches stepping out from the wall on jamb columns, built on centering and struck, with a lintel, a tympanum and oak doors. The Gallery of Kings, 28 statues on a ledge; the Gallery of the Virgin with its open railing; the rose, 9.6 m, with stone rings and spokes and its glass; the grand gallery; the top band at 45 m; belfries with two tall openings in every face; Emmanuel, the 13-tonne bell, on its oak frame in the south tower; lead terraces and railings on the towers.
+- The last bay of the nave, between the towers, gets a four-part vault on its own centering, with a rib against the front, wall ribs along the towers and the roof carried on over it.
+- Each tower weighs about 18,000 tonnes in the model and presses about 1.5 MPa on its base, twice a nave pier: Color by load shows it.
+- From the west, once the front stands, the line of thrust is not drawn over the towers; its key says to go round to the side or turn on Cutaway.
+- The scene is drawn only when something changes (the camera moves, a step goes in, a toggle), not 60 times a second: a still model costs nothing, which matters for a phone's battery. That also fixes the failed check on site 0.87: on GitHub's machines, with no graphics card, an open 3D page kept the processor busy and the next page took more than 15 s to start. `tools/smoke.js` now closes each page when it is done with it.
 
 ### 0.3
 - The whole nave instead of three bays: ten bays, 60 m, 3,265 pieces in 41 steps. Double aisles each side with a second row of piers between them, a gallery over the inner aisle with its own outer wall and windows, six-part vaults over each pair of bays (heavy and intermediate transverse ribs, diagonals 17 m apart at their feet, one boss for six ribs, a wall rib in each bay), and at every bay line a flyer leaping both aisles in a single flight, about 11 m, to a buttress pier 21 m tall. The bay next to the crossing keeps the band of round windows; elsewhere the clerestory windows run down over it, as they were lengthened in the 1220s.

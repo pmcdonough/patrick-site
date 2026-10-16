@@ -2,7 +2,7 @@
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.3 (site 0.87). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.4 (site 0.88). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -35,7 +35,7 @@ The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m 
 
 ## Buildings
 
-1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m, 3,265 pieces in 41 steps in 9 bags. Next, one part per version: the west front and its towers; the transept, crossing and spire; the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
+1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers, 3,748 pieces in 61 steps in 12 bags. Next, one part per version: the transept, crossing and spire; the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
 2. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
 3. Later: the Taj Mahal as a double-dome comparison.
 
@@ -47,12 +47,19 @@ The flyers: one at every bay line, in a single flight over both aisles and the g
 
 The elevation: the bay next to the crossing keeps the band of round openings Viollet-le-Duc restored; in the others the clerestory windows run down over the band, as they were lengthened in the 1220s.
 
+## The west front as built (0.4)
+
+From the official and Friends of Notre-Dame descriptions: 43.5 m wide, 45 m to the top of the front, towers 69 m; four buttresses and two towers divide it vertically; from the bottom, the three portals (the Virgin north, the Last Judgement centre, Saint Anne south), the Gallery of Kings (28 kings of Judah), the Gallery of the Virgin with the rose (9.6 m, about 1225), the grand gallery, then the towers, square, each face with two tall openings, lead terraces with railings, spires planned and never built.
+
+In the model: towers 16.1 m square, flush with the nave's inner walls (x from 5.65 to 21.75 m each side) and from z = 30.7 to 46.8; walls 2.6 m; storeys at 0.6, 14, 18, 31, 42, 45 and 67.5 m, terrace and railing to 69. The central wall is 4.8 m thick to 31 m, then a 1.2 m screen. Each portal has three rings of nine voussoirs on jamb columns, each ring 0.6 m further out, on its own centering. The last bay of the nave (z 30 to 42) has a four-part vault 12 m square: the west rib, two diagonals, a boss, wall ribs along the towers; the towers take its push instead of flyers (not computed). Each tower comes to about 18,000 tonnes and 1.5 MPa at its base in the load model.
+
 ## Current simplifications in the 3D build
 
 - The vault's crown is about 35 m up (33 m in the real nave).
 - Every bay line takes the same share of the vault. In a real six-part vault the heavy transverse lines carry more than the intermediate ones; Notre-Dame's nave piers are nevertheless all round.
 - The chapels built between the buttresses in 1235 to 1245, the gallery's own vaults and floor, and the triforium are left out; the gallery has a plain lean-to roof.
 - The flyer is a strut carrying all the vault's horizontal thrust; its own weight is not in the thrust line.
+- The west front's sculpture is plain shapes (the kings are simple turned figures); the chimeras and gargoyles, the spiral stairs and the tower floors are left out; the portals' arches stand in front of the wall rather than in a deep splay.
 - The drop-in animation is scripted, not physics.
 
 Each is said on the page.
@@ -76,6 +83,7 @@ public/keystone/
 - The solver and the building never touch the page. Unlike the hockey engine, nothing replays a seed, so Keystone uses `Math.sin` and friends freely; the hockey engine's `detmath.js` rule does not apply.
 - The camera: scroll or pinch zooms toward the point under the pointer (the page catches the wheel before the orbit controls, which only zoom toward their target); a double tap flies to a piece or, on the sky, to the whole building; the target is kept inside the building's bounds. The line of thrust is drawn for one bay line at a time (the one nearest the camera, or just behind the cut), over the stone and without tone mapping.
 - Batches: the pieces that come and go together (same step, same removal, same material, same roof group) are merged into one mesh, about 40 for the nave, about 60 draw calls a frame with shadows. Each piece keeps its range of vertices and triangles: its colors are rewritten only when they change, picking tests a ray against piece boxes and then that piece's triangles, and the drop into place runs in the vertex shader with a delay per piece.
+- Drawn on demand: the render loop draws only when something changed (the camera, an animation, a step, a toggle, a resize). Anything that changes the scene calls `redraw()`.
 - `window.keystone` (the 3D page) and `window.archLab` are the hooks the smoke check waits on.
 
 ## The look
