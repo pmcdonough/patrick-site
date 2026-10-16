@@ -69,6 +69,15 @@
   .card.soon { border-style: dashed; background: transparent; justify-content: center; align-items: center; min-height: 180px; color: var(--dim); font-size: 0.92rem; }
   .card.soon:hover { transform: none; border-color: var(--line); }
 
+  /* the main project spans the grid, its picture a banner across the top */
+  .card.feature { grid-column: 1 / -1; }
+  .card.feature .thumb { aspect-ratio: auto; height: clamp(170px, 30vw, 260px); }
+  .card.feature .body { padding: 18px 20px 20px; }
+  .card .lead { color: var(--fg); font-size: 0.98rem; }
+  .parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px 20px; margin-top: 6px; }
+  .parts h4 { margin: 0 0 2px; font-size: 0.9rem; font-weight: 600; }
+  .parts p { font-size: 0.88rem; }
+
   footer { margin-top: 64px; color: var(--dim); font-size: 0.82rem; }
   /* the easter egg: the site version opens the architecture page; it looks like plain footer text until you hover it */
   footer .egg { color: inherit; text-decoration: none; cursor: default; transition: color .2s; }
@@ -91,7 +100,7 @@
     <p class="intro">Interactive models and side projects, mostly built with AI coding tools. Each one runs in your browser, no install, and the data and models behind it are open to inspection.</p>
     <div class="grid">
 
-      <div class="card">
+      <div class="card feature">
         <div class="thumb" aria-hidden="true">
           <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
             <rect width="320" height="180" fill="#0f1b2b"/>
@@ -159,42 +168,15 @@
         </div>
         <div class="body">
           <h3>Bruins vs Canadiens <span class="ver">v0.60</span></h3>
-          <p>Test hockey strategies before game day. In the Game plan lab, set both teams' plans, from the forecheck and breakout to the penalty kill, run 100 simulated games as the baseline, then change either plan and test it through the same games. You get a plain answer: a clear edge, too close to call, or a clear cost, and how the games compare with what the real teams did. Watch any game on the rink with real 2025-26 rosters, turn on sight lines to see what the puck carrier sees, and after the final horn review every shot: what the shooter saw, and whether a pass was worth more. How it works explains every model behind it, and what full tracking data would change.</p>
+          <p class="lead">A hockey simulation for testing game plans. Every player is a real 2025-26 Bruin or Canadien, rated from public data, and every decision on the ice comes from what the player can see.</p>
+          <div class="parts">
+            <div><h4>Game plan lab</h4><p>Set each team's plan: forecheck, breakout, entry, coverage in both zones, power play, penalty kill and aggression. Run 100 games as the baseline, change a plan, and test it through the same 100 games. The answer is plain: a clear edge, too close to call, or a clear cost. Find the best option ranks every choice for one part of the plan, and any of the games opens on the rink.</p></div>
+            <div><h4>Watch a game</h4><p>A full game on the rink with real lines, line changes, penalties, offsides and icings. Turn on sight lines to see what the puck carrier sees: his shot, his passes and what each one is worth. Sim to the final horn when you only want the result.</p></div>
+            <div><h4>Review this game</h4><p>After the final horn, every shot is judged by the shooter's own read: was there a better pass? Replay the moment, then play out the pass he passed up 200 times to see whether it would really have been better.</p></div>
+            <div><h4>How it is built</h4><p>Shots are scored by an expected-goal model fit on two seasons of NHL shots. Ratings come from MoneyPuck, skating speeds from NHL EDGE, and each goalie's save rates from his real numbers by shot danger. A game depends only on its seed, so any result replays exactly, in any browser. The sim is calibrated at NHL settings and compared with the real teams in plain view, misses included: it still creates about a third more chances than real defenses allow.</p></div>
+          </div>
           <div class="tags"><span>Strategy</span><span>Game plan lab</span><span>Game sim</span><span>Expected goals</span><span>Real rosters</span><span>MoneyPuck</span><span>NHL EDGE</span></div>
-          <div class="card-links"><a class="open" href="/bruins-vs-canadiens/">Open it</a><a class="src" href="/bruins-vs-canadiens/#lab">Game plan lab</a><a class="src" href="https://github.com/pmcdonough/patrick-site/tree/main/public/bruins-vs-canadiens" target="_blank" rel="noopener">Source on GitHub</a></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="thumb" aria-hidden="true">
-          <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
-            <rect width="320" height="180" fill="#0f1b2b"/>
-            <rect x="20" y="30" width="280" height="120" rx="30" fill="#eef5fb"/>
-            <line x1="252" y1="36" x2="252" y2="144" stroke="#c8102e" stroke-width="1"/>
-            <line x1="60" y1="30" x2="60" y2="150" stroke="#0b4ea2" stroke-width="2.4"/>
-            <circle cx="200" cy="62" r="18" fill="none" stroke="#c8102e" stroke-width="0.8"/>
-            <circle cx="200" cy="118" r="18" fill="none" stroke="#c8102e" stroke-width="0.8"/>
-            <rect x="252" y="84" width="6" height="12" fill="#c8102e" opacity=".5"/>
-            <line x1="110" y1="60" x2="250" y2="90" stroke="#111" stroke-width="1.2" stroke-dasharray="4 3"/>
-            <line x1="110" y1="60" x2="232" y2="100" stroke="#0d8a5a" stroke-width="2" stroke-dasharray="4 3"/>
-            <g stroke-width="2">
-              <circle cx="110" cy="60" r="7" fill="#000" stroke="#ffb81c"/>
-              <circle cx="232" cy="100" r="7" fill="#000" stroke="#ffb81c"/>
-              <circle cx="160" cy="110" r="6" fill="#000" stroke="#ffb81c"/>
-              <circle cx="238" cy="112" r="6" fill="#af1e2d" stroke="#192168"/>
-              <circle cx="180" cy="78" r="6" fill="#af1e2d" stroke="#192168"/>
-              <circle cx="130" cy="96" r="6" fill="#af1e2d" stroke="#192168"/>
-            </g>
-            <circle cx="232" cy="100" r="11" fill="none" stroke="#0d8a5a" stroke-width="1.8"/>
-            <text x="120" y="142" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#16202c">2.4%</text>
-            <text x="200" y="142" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#0d8a5a">11%</text>
-          </svg>
-        </div>
-        <div class="body">
-          <h3>Play Review <span class="ver">v0.10</span></h3>
-          <p>Every shot in a real game, asked one question: was there a better play? The model prices the shot that was taken, then the pass or the drive that was available from the same spot, and shows the gap in a replay you can scrub through in slow motion, the real play with the alternative ghosted over it. Built from the NHL's own play-by-play and the same expected-goal model as the sim. The positions are inferred and the page says so; what it points at is which clips are worth pulling. An early prototype on one real game: the shot review after every Watch game in Bruins vs Canadiens is where it is going next.</p>
-          <div class="tags"><span>Play review</span><span>Expected goals</span><span>Replay</span><span>NHL data</span><span>Analytics</span></div>
-          <div class="card-links"><a class="open" href="/play-review/">Open the review</a><a class="src" href="https://github.com/pmcdonough/patrick-site/tree/main/public/play-review" target="_blank" rel="noopener">Source on GitHub</a></div>
+          <div class="card-links"><a class="open" href="/bruins-vs-canadiens/">Open it</a><a class="src" href="/bruins-vs-canadiens/#lab">Game plan lab</a><a class="src" href="https://github.com/pmcdonough/patrick-site/tree/main/public/bruins-vs-canadiens" target="_blank" rel="noopener">Source on GitHub</a><a class="src" href="/play-review/">The first prototype, on a real game</a></div>
         </div>
       </div>
 
@@ -203,7 +185,7 @@
     </div>
   </section>
 
-  <footer>&copy; 2026 Patrick McDonough &middot; <a class="egg" href="/under-the-hood/" title="Under the hood">Site v0.72</a></footer>
+  <footer>&copy; 2026 Patrick McDonough &middot; <a class="egg" href="/under-the-hood/" title="Under the hood">Site v0.73</a></footer>
 </main>
 </body>
 </html>

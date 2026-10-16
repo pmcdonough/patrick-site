@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.72 = sim 0.60 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.73 = sim 0.60 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.73
+- Home page: Play Review's card is gone (the page stays at its address, linked from the sim's card as the first prototype). The sim's card spans the page, its picture a banner, with a short section each on the Game plan lab, Watch a game, Review this game and how it is built.
 
 ### 0.72
 - Sim 0.60 (shots hit the net at the league's rate). `tools/xg_fit.py` also writes the on-net share by danger tier (`onNetByTier`); re-run, the rest of `xg-model.json` is unchanged. References re-saved at both levels.

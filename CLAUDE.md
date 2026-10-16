@@ -6,12 +6,12 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. It has two views that share nothing but the engine: Watch a game (scoreboard, rink, each team's game plan as a sentence with its drawer, the Watch settings drawer with the sliders, box score, play by play and rosters, a strip that explains the lab and links to it, and Review this game once a game ends: every shot judged by the shooter's own read, with a replay) and the Game plan lab, read top to bottom (the baseline of 100 games at the NHL settings with the comparison with the real 2025-26 teams folded under it; both teams' plans, its own, side by side; Rerun the baseline and Test against the baseline, each enabled only after an edit; the tests of the edited plans on the same games; Find the best option, which ranks every option of one choice; all kept in the browser; and a button that sends both plans to Watch). The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.72, sim 0.60, Play Review 0.10.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (the sim's card badge on the home page, its page footer and `VERSION` constant; Play Review's `VERSION`). As of this writing: site 0.73, sim 0.60, Play Review 0.10.
 
 ## Layout
 
 ```
-public/index.html                  home page (a card for each project, version badges, link preview tags; the footer's site version is the easter egg to Under the hood)
+public/index.html                  home page (one wide card for the sim with its version badge, then More coming soon; link preview tags; the footer's site version is the easter egg to Under the hood). Play Review has no card since site 0.73: the sim card links it as the first prototype
 public/under-the-hood/index.html   Under the hood: the architecture and stack, for the curious; linked only from the easter egg, noindex. Update it when the stack or the checks change
 public/assets/share.png            the 1200x630 link preview image
 public/bruins-vs-canadiens/
@@ -111,7 +111,7 @@ The site has its own version (the home page footer and the Site section of the c
 
 1. Bump the version of each project that changed with `node tools/bump.js sim 0.xx` or `node tools/bump.js review 0.x`: it sets `VERSION` in the project's `src/main.js` and every `?v=` stamp that carries it (for the sim, also Play Review's imports from the sim's engine).
 2. Add a section to `CHANGELOG.md` and update the summary line at its top (`Site 0.xx = sim 0.yy + Play Review 0.z`).
-3. Update `public/index.html`: the card badge of any project that changed (`<span class="ver">v0.xx</span>`) and the footer's site version (inside the easter-egg link).
+3. Update `public/index.html`: the sim card's badge if the sim changed (`<span class="ver">v0.xx</span>`), and the footer's site version (inside the easter-egg link). When the sim gains or loses a feature, update the card's four short sections too.
 4. Update the version in "What this repo is" above, the "State" section below and the first line of `docs/ROADMAP.md`.
 5. Run the checks above for what changed; `smoke.js` always.
 6. One commit with what changed and the version numbers in the subject, for example `Shots decided by the expected-goal model (sim 0.34, site 0.42)`, then push. The live site updates about a minute later; check its footer.
@@ -124,6 +124,6 @@ The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`,
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.72)
+## State (site 0.73)
 
 All checks pass. References in `tools/baselines.json` are from sim 0.60 (re-saved when shots started hitting the net at the league's rate for their danger tier, so both clubs turn expected goals into goals alike, and `tierGoalScale` went from 0.74 to 0.92; expected goals are about a third above the league since the coverage fixes in 0.58 and 0.59), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`).
