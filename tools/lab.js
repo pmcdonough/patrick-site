@@ -45,6 +45,7 @@ function args() {
   for (let i = 0; i < a.length; i++) {
     const k = a[i].replace(/^--/, '');
     if (k === 'nhl' || k === 'save' || k === 'order' || k === 'pool') o[k] = true;
+    else if (k === 'param') o.param = o.param ? `${o.param},${a[++i]}` : a[++i];   // repeated --param flags add up
     else if (k in o) o[k] = typeof o[k] === 'number' ? +a[++i] : a[++i];
     else { console.error(`unknown option ${a[i]}`); process.exit(2); }
   }
@@ -181,6 +182,8 @@ function baselineTable(T, level, o) {
     });
     lines.push(`${label} | ${f2(L[k])} | ${cells.join(' | ')}`);
   }
+  // the same games as the reference but a different result fails the run (exit 1), unless it is being re-saved: CI relies on it
+  if (same && (changed || differ.length) && !o.save && !(o.params && o.params.length)) process.exitCode = 1;
   const games = differ.length ? ` ${differ.length} of ${o.rows.length} games finished differently (seeds ${differ.slice(0, 8).join(', ')}${differ.length > 8 ? ', ...' : ''}).` : '';
   lines.push('', !ref ? '' : changed || differ.length ? `${changed} cell(s) changed from the reference.${games} If the engine change was intended, re-run with --save.`
     : same && prints ? `Identical to the reference: all ${prints.length} games finished exactly as before.`

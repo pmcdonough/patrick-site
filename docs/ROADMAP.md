@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.67 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.68 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -8,7 +8,7 @@ A hockey engine whose decisions are tuned to public data is only a toy until it 
 
 ## Bruins vs Canadiens (sim 0.56)
 
-1. Defense that allows the real number of chances. At sim 0.56, at the NHL settings, expected goals are about 70% above the league (Boston 5.7, Montreal 5.1, league 3.1), mostly medium-danger looks: 17 to 22 per team per game against 8. Measured in 0.56 (`docs/ENGINE.md`): about two thirds of the medium-danger shots come within 4 seconds of a zone entry, most after a clean breakout with the other team's defensemen already back, and on most of them no defender is closer to the net than the shooter. The first cause, a carrier skating through a defenseman, is fixed (angling, 0.56: high-danger chances down about 16%, offsides at the NHL settings from 9.2 to 6.2 a game). Ruled out: a wider neutral-zone gap or holding it into our own zone (no effect; the zone spots are already deeper), reading the carrier earlier (worse), a bigger slot box (small), and a slower puck carrier (the engine's 95% already matches the one published figure, about 5% slower with the puck in youth sprint tests). Still open, in order: the receiver gets the puck in the slot with nobody within 6 ft (a stick on the receiver at the catch; defenders collapsing to the slot as the entry happens), and the offensive systems put too many attackers in the medium-danger band. `tierGoalScale` 0.39 keeps goals realistic in the meantime and should climb back toward 0.72 as the gap closes.
+1. Defense that allows the real number of chances. At sim 0.56, at the NHL settings, expected goals are about 70% above the league (Boston 5.7, Montreal 5.1, league 3.1), mostly medium-danger looks: 17 to 22 per team per game against 8. Measured in 0.56 (`docs/ENGINE.md`): about two thirds of the medium-danger shots come within 4 seconds of a zone entry, most after a clean breakout with the other team's defensemen already back, and on most of them no defender is closer to the net than the shooter. The first cause, a carrier skating through a defenseman, is fixed (angling, 0.56: high-danger chances down about 16%, offsides at the NHL settings from 9.2 to 6.2 a game). Ruled out, measured on top of angling: a wider neutral-zone gap (14 ft: expected goals within 1%), a wider gap read earlier (no better, more offsides), a bigger slot box (34 to 44 ft deep and 16 to 22 ft wide: slightly worse), and a slower puck carrier (the engine's 95% already matches the one published figure, about 5% slower with the puck in youth sprint tests). Not yet measured: holding the gap into our own zone for the first seconds of a rush (the first try passed two `--param` flags and only the last one applied, a `tools/lab.js` bug fixed in site 0.68). Still open, in order: the receiver gets the puck in the slot with nobody within 6 ft (a stick on the receiver at the catch; defenders collapsing to the slot as the entry happens), and the offensive systems put too many attackers in the medium-danger band. `tierGoalScale` 0.39 keeps goals realistic in the meantime and should climb back toward 0.72 as the gap closes.
 2. System effects that are still wrong (`docs/ENGINE.md`, System effects): man-on-man gives up about two expected goals a game more than zone; crashing the net lowers expected goals for; aggression and the power-play systems do nothing measurable. Each has a `tools/lab.js --sweep` command to re-check it.
 3. Icings run high at the build defaults (Boston about 10 a game), a side effect of the extra pressure in its own zone.
 4. Overtime at three-on-three. Overtime is five minutes at full strength now; the lab's OTL counts would shift a little.
@@ -45,7 +45,7 @@ From the brief, in order:
 
 Follow-ons from the restructure (`docs/RESTRUCTURE.md`), none urgent:
 
-1. A GitHub Action that runs `node --test tools/test` and `node tools/lab.js --nhl` on every push, so a change that alters games without a re-saved reference is caught before it is live. The engine checks need only Node.
+1. Done in site 0.68: a GitHub Action (`.github/workflows/checks.yml`) runs the unit tests, both reference levels, the smoke test, the order and pool checks and Play Review's reference on every push; a game that differs from its saved fingerprint fails it.
 2. The two unit tests step 3 left unwritten: one save roll per shot, and the penalty-kill clear distance. Both need a small hook inside `movePuck` (an `fx`-style event for a save roll and for a clear would do).
 
 ## Known weaknesses

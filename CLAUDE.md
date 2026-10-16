@@ -6,7 +6,7 @@ Project memory for anyone (or any Claude session) working on this repo. Read thi
 
 A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Bruins vs Canadiens hockey engine at `public/bruins-vs-canadiens/`: plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. It has two views that share nothing but the engine: Watch a game (scoreboard, rink, each team's game plan as a sentence with its drawer, the Watch settings drawer with the sliders, box score, play by play and rosters, a strip that explains the lab and links to it, and Review this game once a game ends: every shot judged by the shooter's own read, with a replay) and the Game plan lab, read top to bottom (the baseline of 100 games at the NHL settings with the comparison with the real 2025-26 teams folded under it; both teams' plans, its own, side by side; Rerun the baseline and Test against the baseline, each enabled only after an edit; the tests of the edited plans on the same games; Find the best option, which ranks every option of one choice; all kept in the browser; and a button that sends both plans to Watch). The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.67, sim 0.56, Play Review 0.10.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (card badge; the sim's page footer and `VERSION` constant). As of this writing: site 0.68, sim 0.56, Play Review 0.10.
 
 ## Layout
 
@@ -90,6 +90,8 @@ Engine:
 
 ## Checks
 
+GitHub runs the engine checks (unit tests, both reference levels) and the page checks (smoke, order and pool, Play Review) on every push (`.github/workflows/checks.yml`); a red run means something changed play without a re-saved reference, or a page broke. Run them locally before pushing anyway.
+
 The engine checks run in Node; the page checks start their own server and load the pages in headless Chromium (`LOCAL-SETUP.md` has the setup).
 
 | Run | When | Passes when |
@@ -122,6 +124,6 @@ The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`,
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.67)
+## State (site 0.68)
 
 All checks pass. References in `tools/baselines.json` are from sim 0.56 (re-saved for angling on the rush, which lowered chances about 5% and offsides at the NHL settings to the target), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`).

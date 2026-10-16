@@ -1,0 +1,41 @@
+# The repo's checks on every push and pull request (the table in CLAUDE.md). The engine job needs only Node: the unit
+# tests and both saved reference levels, 100 seeded games each; a game that finishes differently from its saved
+# fingerprint fails the run, so a change that alters play without a re-saved reference cannot go unnoticed. The pages
+# job loads every page in headless Chromium, checks the version stamps, plays seeded games in the page's own workers
+# (they must match Node), and scores Play Review's shots against its reference.
+name: checks
+on:
+  push:
+  pull_request:
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+      - name: Unit tests
+        run: node --test tools/test
+      - name: Reference games at the NHL settings
+        run: node tools/lab.js --nhl
+      - name: Reference games at the build defaults
+        run: node tools/lab.js
+  pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+      - name: Install Playwright and Chromium
+        working-directory: tools
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Smoke test (all three pages, version stamps)
+        run: node tools/smoke.js
+      - name: Order and pool checks (Node against the page's workers)
+        run: node tools/lab.js --games 20 --order --pool
+      - name: Play Review against its reference
+        run: node tools/review.js

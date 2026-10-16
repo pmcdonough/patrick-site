@@ -1,8 +1,13 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.67 = sim 0.56 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.68 = sim 0.56 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.68
+- A GitHub Action (`.github/workflows/checks.yml`) runs the checks on every push: unit tests and both reference levels (Node only), then the smoke test, the order and pool checks and Play Review's reference in headless Chromium.
+- `tools/lab.js` exits 1 when the same games as the reference finish differently (not with `--save` or `--param`), so CI fails on an unannounced change to play. Repeated `--param` flags now add up; before, only the last applied, which invalidated two of the experiments behind sim 0.56's notes (corrected in `docs/ROADMAP.md`; re-measured, the conclusions held except one that is now marked untested).
+- Under the hood mentions the GitHub checks.
 
 ### 0.67
 - Sim 0.56 (angling on the rush). `tools/lab.js --param` also takes systems.json values (`--param systems.defensiveZone.zone.slotCoverage.maxFx=44`). References re-saved at both levels.

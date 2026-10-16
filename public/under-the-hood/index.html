@@ -113,7 +113,7 @@
     <div class="layer"><div class="name">Hosting<small>how it gets to you</small></div><div class="chips"><span class="chip">Cloudflare Workers, static assets</span><span class="chip">every file revalidated on each visit</span><span class="chip">version stamps on every file</span><span class="chip">live about a minute after a push</span></div></div>
     <div class="layer"><div class="name">Source<small>where it lives</small></div><div class="chips"><span class="chip">GitHub, one repo</span><span class="chip">one commit per site version</span><span class="chip">a changelog per project</span></div></div>
     <div class="layer"><div class="name">Data pipeline<small>run offline, output committed</small></div><div class="chips"><span class="chip">Python</span><span class="chip">pandas</span><span class="chip">scikit-learn</span><span class="chip">MoneyPuck shot and team data</span><span class="chip">NHL play-by-play and shift API</span><span class="chip">NHL EDGE tracking aggregates</span></div></div>
-    <div class="layer"><div class="name">Checks<small>run before every push</small></div><div class="chips"><span class="chip">Node test runner</span><span class="chip">Playwright: Chromium, Firefox, WebKit</span><span class="chip">200 saved reference games</span><span class="chip">a fingerprint per game</span></div></div>
+    <div class="layer"><div class="name">Checks<small>run before every push</small></div><div class="chips"><span class="chip">Node test runner</span><span class="chip">Playwright: Chromium, Firefox, WebKit</span><span class="chip">GitHub Actions on every push</span><span class="chip">200 saved reference games</span><span class="chip">a fingerprint per game</span></div></div>
     <div class="layer"><div class="name">Built with<small>who wrote the code</small></div><div class="chips"><span class="chip">Claude, in claude.ai chat, then Claude Code in the terminal</span><span class="chip">directed, reviewed and tested by me</span></div></div>
   </div>
 
@@ -178,7 +178,7 @@
   </table></div>
 
   <h2>How it is kept honest</h2>
-  <p class="sub">A seeded run reproduces exactly, so any change in the results is the code's doing. Every change goes through these before it ships.</p>
+  <p class="sub">A seeded run reproduces exactly, so any change in the results is the code's doing. Every change goes through these before it ships, and GitHub runs them again on every push.</p>
   <div class="tablewrap"><table>
     <tr><th>Check</th><th>What it proves</th></tr>
     <tr><td class="n">Smoke test</td><td>All three pages load over HTTP in a real browser, a full game plays without an error, and every file and import carries the same version stamp</td></tr>
