@@ -8,7 +8,7 @@ A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The
 
 Names: the project is the Hockey Strategy Lab (page title, home card, footer); Bruins vs Canadiens is the matchup it plays, the line under the title. It was called Bruins vs Canadiens until sim 0.66; the folder and its address keep that name so links keep working, and older changelog entries keep the name they had. Inside the repo "the sim" is still the short name. The Game plan lab is one of its two views.
 
-Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (the sim's card badge on the home page, its page footer and `VERSION` constant; Play Review's `VERSION`; Keystone's card badge and the `VERSION` on both its pages). As of this writing: site 0.85, sim 0.71, Play Review 0.10, Keystone 0.1.
+Versions: the site has one (home page footer, `CHANGELOG.md` Site section) and each project has its own (the sim's card badge on the home page, its page footer and `VERSION` constant; Play Review's `VERSION`; Keystone's card badge and the `VERSION` on both its pages). As of this writing: site 0.86, sim 0.71, Play Review 0.10, Keystone 0.2.
 
 ## Layout
 
@@ -135,6 +135,6 @@ The engine is about 1,500 lines across `src/engine/` (the biggest file, `ai.js`,
 
 The context that matters is in this file, `docs/ENGINE.md`, `docs/MODELING.md` and `docs/ROADMAP.md`. Until site 0.40 the repo was built in claude.ai chat and each version arrived as a full-repo zip, so the history is one commit per site version with a few upload-splitting commits around 0.39 and 0.40. Keep the one-commit-per-version habit.
 
-## State (site 0.85)
+## State (site 0.86)
 
-All checks pass. References in `tools/baselines.json` are from sim 0.71 (re-saved when attackers stopped standing in the crease and on the goalie; `tierGoalScale` went from 1.02 to 0.98; expected goals are 25 to 40% above the league after the coverage fixes in 0.58 to 0.61 and the shot accuracy in 0.60), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`). Keystone 0.1 shipped in site 0.85 from two chat prototypes; its solver tests pass and both pages load clean in Chromium at desktop and phone widths, light and dark; its next steps are in `docs/KEYSTONE.md`.
+All checks pass. References in `tools/baselines.json` are from sim 0.71 (re-saved when attackers stopped standing in the crease and on the goalie; `tierGoalScale` went from 1.02 to 0.98; expected goals are 25 to 40% above the league after the coverage fixes in 0.58 to 0.61 and the shot accuracy in 0.60), 100 games at each level, saved from Node; the page's workers play all 200 identically, and the live site plays seeded games identically in Chromium, Firefox and WebKit. The restructure in `docs/RESTRUCTURE.md` is complete, and the long-shift bug it turned up is fixed. The next engine work, by priority, is defense that allows the real number of chances (`docs/ROADMAP.md`). Keystone 0.1 shipped in site 0.85 from two chat prototypes, and 0.2 (zoom where you point, one whole line of thrust) in 0.86; its solver tests pass and both pages load clean in Chromium at desktop and phone widths, light and dark; its next steps are in `docs/KEYSTONE.md`.

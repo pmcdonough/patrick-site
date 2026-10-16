@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.85 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.86 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -46,7 +46,7 @@ From the brief, in order:
 4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
 
-## Keystone (0.1)
+## Keystone (0.2)
 
 Three bays of Notre-Dame's nave in 3D and the 2D arch lab, on one masonry solver. Next, in order (`docs/KEYSTONE.md`):
 

@@ -2,7 +2,7 @@
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.1 (site 0.85). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.2 (site 0.86). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -60,6 +60,7 @@ public/keystone/
 - Same rules as the rest of the site: plain ES modules, no build step, every file and import carries a `?v=` stamp with Keystone's version, and `node tools/smoke.js` fails if one disagrees. `node tools/bump.js keystone 0.x` sets `VERSION` on both pages and every stamp, the vendored Three.js included.
 - Three.js is the site's only library. It is served from the site, not a CDN, like everything else. The one change to the vendored files is OrbitControls' import of `three`, pointed at `./three.module.js` with the version stamp so both load the same copy; `src/vendor/README.md` says how to upgrade.
 - The solver and the building never touch the page. Unlike the hockey engine, nothing replays a seed, so Keystone uses `Math.sin` and friends freely; the hockey engine's `detmath.js` rule does not apply.
+- The camera: scroll or pinch zooms toward the point under the pointer (the page catches the wheel before the orbit controls, which only zoom toward their target); a double tap flies to a piece or, on the sky, to the whole building; the target is kept inside the building's bounds. The line of thrust is drawn for one bay line at a time (the one nearest the camera, or just behind the cut), over the stone and without tone mapping.
 - `window.keystone` (the 3D page) and `window.archLab` are the hooks the smoke check waits on.
 
 ## The look

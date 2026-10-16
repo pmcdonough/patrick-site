@@ -81,7 +81,11 @@ input[type=range] { accent-color: var(--link); min-width: 0; }
 .insp .nm { font: 800 1.15rem var(--display); }
 .insp dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin: 0; }
 .insp dt { color: var(--fg-dim); } .insp dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.legend { position: absolute; right: 12px; top: 12px; padding: 9px 12px; font-size: 0.78rem; color: var(--fg-dim); display: flex; flex-direction: column; gap: 4px; width: 210px; }
+.keys { position: absolute; right: 12px; top: 12px; width: 230px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.legend { padding: 9px 12px; font-size: 0.78rem; color: var(--fg-dim); display: flex; flex-direction: column; gap: 4px; }
+.legend .swatch { display: inline-block; width: 20px; height: 5px; border-radius: 999px; background: var(--thrust); vertical-align: middle; margin-right: 8px; }
+.fit { position: absolute; left: 12px; bottom: 12px; background: color-mix(in srgb, var(--panel) 94%, transparent); box-shadow: 0 4px 18px rgb(0 0 0 / 0.07); }
+.hint { margin: -6px 0 0; font-size: 0.85rem; color: var(--fg-dim); }
 .legend b { color: var(--fg); font-weight: 600; }
 .legend .ramp { height: 8px; border-radius: 999px; background: linear-gradient(90deg, #6f8fb5, #9cbfaa, #ead77a, #e9995a, #d0454b); }
 .legend .ticks { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
@@ -104,9 +108,15 @@ input[type=range] { accent-color: var(--link); min-width: 0; }
 .labpromo a { font: 700 1.05rem var(--display); letter-spacing: 0.03em; }
 @media (max-width: 640px) {
   .stage { height: 72vh; min-height: 420px; }
-  .page { padding: 10px 12px; } .page h2 { font-size: 1.3rem; } .page p { font-size: 0.85rem; }
-  .legend { top: auto; bottom: 12px; left: 12px; right: auto; width: 180px; }
-  .insp { bottom: auto; top: 12px; }
+  .page { padding: 10px 12px; cursor: pointer; } .page h2 { font-size: 1.3rem; } .page p { font-size: 0.85rem; }
+  .page .top::after { content: 'Tap to fold'; font-weight: 500; color: var(--fg-dim); }
+  .page.min .top::after { content: 'Tap to open'; }
+  .page.min p, .page.min .parts { display: none; }
+  .page .top .stepno { margin-left: auto; }
+  .keys { top: auto; bottom: 58px; left: 12px; right: auto; width: 210px; }
+  .legend span:not(.ticks span) { display: none; }
+  .insp { bottom: auto; top: 12px; left: 12px; width: auto; }
+  .stage:has(.insp:not([hidden])) .page { display: none; }   /* a selected piece takes the booklet's place */
 }
 
 /* ---------- the arch lab: the section drawing on the left, the panel on the right; stacked on phones ---------- */

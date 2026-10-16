@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.85 = sim 0.71 + Play Review 0.10 + Keystone 0.1. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.86 = sim 0.71 + Play Review 0.10 + Keystone 0.2. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.86
+- Keystone 0.2 (the camera and the line of thrust). No change to the sim or Play Review.
 
 ### 0.85
 - Keystone 0.1, a new app: Notre-Dame, stone by stone. A card on the home page, between the hockey lab and More coming soon. Under the hood names Three.js, Keystone's 3D library and the site's only one, served from the site. `tools/bump.js keystone`, and `tools/smoke.js` loads both Keystone pages and checks their stamps. The solver's tests run with the others (`tools/test/keystone.test.js`). No change to the sim or Play Review.
@@ -182,6 +185,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Keystone
+
+### 0.2
+- Zoom goes where you point. Scroll or pinch zooms toward what is under the pointer, so zooming in on the roof keeps the roof in view; before, it zoomed toward the middle of the building and pushed the top off screen. Double-click or double-tap a piece to fly to it, or the sky to see everything; a Whole building button does the same. The point the camera turns around stays inside the building, so a drag can't lose it. A line under the model says how to move around.
+- The line of thrust reads as one path. It was drawn at every bay line inside the stone, so only a loop on the front rib showed, and the renderer's tone mapping washed its red to pink. Now one whole path shows, from the crown through the rib, down both walls, along both flyers and through both buttresses to the ground: at the bay line facing you, or at the cut with Cutaway on. It is drawn over the stone in its true red, with a key that says what it is.
+- On a phone, a tap folds the booklet page to its title, so it stops covering the top of the building.
 
 ### 0.1
 - First version, from two prototypes built in a chat session. The 3D build: three bays of Notre-Dame's nave, 871 pieces in 39 steps in 9 bags, with a booklet page per step, Forces (the line of thrust through the ribs, walls, flyers and buttress piers once the vault's centering is struck), Color by load, Roof, Cutaway, Follow the build, and Inspect on any piece. The arch lab: one arch in section on its centering, with its walls and optional flying buttresses, a pinnacle, the numbers, a gauge for each base, Inspect and five experiments under Try this.

@@ -7,7 +7,7 @@
 <title>Keystone: Notre-Dame, stone by stone</title>
 <meta name="description" content="Build three bays of Notre-Dame's nave in 3D, piece by piece, the way the masons did. Every stone carries real load.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.1">
+<link rel="stylesheet" href="style.css?v=0.2">
 </head>
 <body>
 
@@ -27,13 +27,21 @@
   <div class="stage" id="stage">
     <canvas id="gl" aria-label="3D model of three nave bays of Notre-Dame under construction"></canvas>
     <div class="page" id="page" aria-live="polite"></div>
-    <div class="legend" id="legend" hidden>
-      <b>Pressure on each stone, MPa</b><div class="ramp"></div>
-      <div class="ticks"><span>0.05</span><span>0.3</span><span>1</span><span>4</span></div>
-      <span>From weight alone, along a simplified load path</span>
+    <div class="keys">
+      <div class="legend" id="fkey" hidden>
+        <b><i class="swatch"></i>Line of thrust</b>
+        <span>The path the vault's weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.</span>
+      </div>
+      <div class="legend" id="legend" hidden>
+        <b>Pressure on each stone, MPa</b><div class="ramp"></div>
+        <div class="ticks"><span>0.05</span><span>0.3</span><span>1</span><span>4</span></div>
+        <span>From weight alone, along a simplified load path</span>
+      </div>
     </div>
     <div class="insp" id="insp" hidden></div>
+    <button class="fit" id="fit">Whole building</button>
   </div>
+  <p class="hint">Drag to turn. Scroll or pinch to zoom in where you point. Right-drag, or drag with two fingers, to slide. Double-click a piece to go to it, and the sky to see it all.</p>
 
   <div class="bar">
     <button id="prev" aria-label="Previous step">Back</button>
@@ -70,6 +78,6 @@
 </main>
 
 <footer class="version">Keystone <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.1"></script>
+<script type="module" src="src/main.js?v=0.2"></script>
 </body>
 </html>

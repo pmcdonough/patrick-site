@@ -2,8 +2,8 @@
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave.
-import * as THREE from './vendor/three.module.js?v=0.1';
-import * as Solver from './solver.js?v=0.1';
+import * as THREE from './vendor/three.module.js?v=0.2';
+import * as Solver from './solver.js?v=0.2';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead
@@ -276,7 +276,7 @@ const ribPieces = pre => pieces.filter(p => p.id.startsWith(pre + '-')).map(p =>
     add(`WEB${b}-${k}-${c}`, 'web panel', `Vault web, bay ${b + 1}`, r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(id => [id, 0.5 / a.length]), ...d.map(id => [id, 0.5 / d.length])] });
   });
 });
-step('Strike the centering', 'The moment of truth. The timber comes out and the vault carries itself, pushing out on the walls. The flyers catch that push and carry it to the buttresses. Turn on Show forces to see the path.', { focus: 'forces' });
+step('Strike the centering', 'The moment of truth. The timber comes out and the vault carries itself, pushing out on the walls. The flyers catch that push and carry it to the buttresses. The red line is that path, the line of thrust, from the crown of the vault to the ground.', { focus: 'forces' });
 removeAt(p => p.step === STEP_VAULT_CEN);
 const STEP_STRUCK = cur;
 
@@ -318,21 +318,21 @@ for (let b = 0; b < NB; b++) {
 }
 
 // ---------- Force lines ----------
-// The line of thrust through each transverse rib, down each wall, along each flyer and through each buttress pier,
-// at every bay line, both sides: lists of points, plus the point where each base resultant meets the ground.
+// The line of thrust at each bay line: through the transverse rib, down both walls, along both flyers and through both
+// buttress piers, as lists of points, plus the points where each base resultant meets the ground. One entry per bay line,
+// so the page can show one whole path at a time.
 export function forceLines() {
-  const lines = [], bases = [];
   const tp = Solver.thrustPoints(ARCH, SOL.state);
-  ZS.forEach(z => {
-    lines.push({ pts: [...tp.slice().reverse(), ...tp.slice(1).map(([x, y]) => [-x, y])].map(([x, y]) => V3(x, y + H0, z + RIBW / 2 + 0.02)), r: 0.12 });
+  return ZS.map(z => {
+    const lines = [{ pts: [...tp.slice().reverse(), ...tp.slice(1).map(([x, y]) => [-x, y])].map(([x, y]) => V3(x, y + H0, z)), r: 0.14 }], bases = [];
     for (const s of SIDES) {
-      lines.push({ pts: SUP.wall.line.filter(p => isFinite(p[0])).map(([x, y]) => V3(X(s, x), y, z)), r: 0.1 });
-      lines.push({ pts: [V3(X(s, XO), FL.yA, z), V3(X(s, FL.xbI), FL.yB, z)], r: 0.12 });
-      lines.push({ pts: SUP.buttress.line.filter(p => isFinite(p[0])).map(([x, y]) => V3(s < 0 ? x : -x, y, z)), r: 0.1 });
+      lines.push({ pts: SUP.wall.line.filter(p => isFinite(p[0])).map(([x, y]) => V3(X(s, x), y, z)), r: 0.12 });
+      lines.push({ pts: [V3(X(s, XO), FL.yA, z), V3(X(s, FL.xbI), FL.yB, z)], r: 0.14 });
+      lines.push({ pts: SUP.buttress.line.filter(p => isFinite(p[0])).map(([x, y]) => V3(s < 0 ? x : -x, y, z)), r: 0.12 });
       for (const c of [SUP.wall, SUP.buttress]) bases.push(V3(X(s, c.x0), 0.2, z));
     }
+    return { z, lines, bases };
   });
-  return { lines, bases };
 }
 
 // ---------- Load model ----------
