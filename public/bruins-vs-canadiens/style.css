@@ -417,3 +417,43 @@
   .rvrecent button small { color: var(--fg-dim); font-size: 0.76rem; }
   .rvrecent button[aria-pressed="true"] { background: var(--raised); color: var(--fg); border-color: var(--link); box-shadow: 0 0 0 1px var(--link); }
   .gamepick .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .rvpickhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+
+  /* ---------- Print or save as PDF: only the report, in the light colors, whatever the theme ---------- */
+  .printout { display: none; }
+  @media print {
+    :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+      --bg: #ffffff; --panel: #ffffff; --fg: #16202c; --fg-dim: #4d5967; --line: #c9d0d8; --raised: #ffffff; --home: #000000;
+      --bos-tint: #fff5dc; --bos-edge: #e9b84d; --mtl-tint: #f9e6e8; --mtl-edge: #d9a0a7; --link: #0b4ea2; color-scheme: light; }
+    :root .pill.good, :root:not([data-theme="light"]) .pill.good { background: #e2f2e9; color: #1f7a4a; }
+    :root .pill.bad, :root:not([data-theme="light"]) .pill.bad { background: #f8e1df; color: #a3241b; }
+    :root .pill.warn, :root:not([data-theme="light"]) .pill.warn { background: #fbefd6; color: #8a5a00; }
+    @page { margin: 14mm 12mm; }
+    body { background: #fff; padding: 0; font-size: 10.5pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body.printing > :not(#printOut) { display: none !important; }
+    body.printing .printout { display: block; }
+    /* printing without a report (the Watch view): the page without its controls */
+    nav.views, .rinkbar, .labpromo, .drawer, .scrim, button { display: none !important; }
+    .printout section { margin-top: 14pt; }
+    .printout h2 { font: 800 14pt var(--display); margin: 0 0 6pt; break-after: avoid; }
+    .printout h2 small { font: 400 9.5pt var(--body); color: var(--fg-dim); margin-left: 6pt; }
+    .pr-head { border-bottom: 1.5pt solid var(--fg); padding-bottom: 8pt; }
+    .pr-kicker { font: 700 8.5pt var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-dim); }
+    .pr-head h1 { font: 800 22pt/1.1 var(--display); margin: 2pt 0 4pt; }
+    .pr-head p { margin: 0; color: var(--fg-dim); }
+    .pr-foot { margin-top: 18pt; padding-top: 6pt; border-top: 0.75pt solid var(--line); font-size: 8.5pt; color: var(--fg-dim); }
+    .printout .headline { font-size: 13pt; margin: 0 0 8pt; max-width: none; }
+    .printout table { border-collapse: collapse; width: 100%; max-width: none; font-size: 9pt; }
+    .printout th, .printout td { padding: 2.5pt 6pt; border-bottom: 0.5pt solid var(--line); text-align: left; }
+    .printout tr { break-inside: avoid; }
+    .pr-plans td:first-child { color: var(--fg-dim); width: 28%; }
+    .printout article.change { border: 0.75pt solid var(--line); border-radius: 6pt; padding: 8pt 10pt; margin-bottom: 8pt; break-inside: avoid; }
+    .printout .verdicts { grid-template-columns: repeat(3, 1fr); }
+    .printout .rvteams { grid-template-columns: 1fr 1fr; }
+    .pr-shot { display: grid; grid-template-columns: 38% 1fr; gap: 10pt; margin: 0 0 8pt; padding-bottom: 8pt; border-bottom: 0.5pt solid var(--line); break-inside: avoid; }
+    .pr-shot img { width: 100%; max-height: 62mm; object-fit: contain; object-position: left top; border-radius: 4pt; }
+    .pr-shot figcaption p { margin: 0 0 3pt; font-size: 9pt; line-height: 1.35; }
+    .pr-shot .pr-when { color: var(--fg-dim); }
+    .pr-break { break-before: page; }
+    .printout .hint { font-size: 8.5pt; color: var(--fg-dim); }
+  }

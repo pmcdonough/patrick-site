@@ -1,8 +1,8 @@
 // The officiating crew: where the referee and linesmen skate, and who blows the whistle.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { GL, RW, dist, toFx } from './rink.js?v=0.68';
-import * as DM from './detmath.js?v=0.68';
+import { GL, RW, dist, toFx } from './rink.js?v=0.69';
+import * as DM from './detmath.js?v=0.69';
 
 export function install(S) {
   const { PH, cfg, game, puck, shorthanded } = S;

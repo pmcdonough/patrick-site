@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.81 = sim 0.68 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.82 = sim 0.69 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.82
+- Sim 0.69 (Print or save as PDF). No change to play.
 
 ### 0.81
 - Sim 0.68 (Review a game, its own view). The home card's Review section and the lab line say so; Under the hood mentions the review's own engine. No change to play.
@@ -208,6 +211,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ## Hockey Strategy Lab
 
 Called Bruins vs Canadiens until 0.66; entries before it keep that name.
+
+### 0.69
+- Print or save as PDF, in the Game plan lab and in Review a game. Each builds a report for paper and opens the browser's print dialog, which prints it or saves it as a PDF; the page makes no PDF itself. It prints in light colors whatever the theme, without the buttons and controls. Printing from the browser's own menu gives the same report.
+- The lab report: the baseline plans, the baseline's headline and record, its comparison with the real 2025-26 teams, and every test and ranking, unfolded with its records.
+- The game report: the score and where the game came from, each team's summary, a picture at the release of every better pass missed and every goal with its read (and the played-out pass when there is one), then every shot and every shooter.
 
 ### 0.68
 - Review a game is its own view, between Watch a game and the Game plan lab, instead of a panel between the rink and the game plans. When a Watch game ends, the Watch view links to its review.

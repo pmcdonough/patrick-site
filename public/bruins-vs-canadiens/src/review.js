@@ -161,13 +161,40 @@ export function installReview(kit) {
     $('rvEmpty').hidden = !!(H.list.length || busy);
     $('rvBusy').hidden = !busy; if (busy) $('rvBusyText').textContent = `Playing ${busy.label}`;
     const check = e && e.lab ? (e.final[0] === e.lab[0] && e.final[1] === e.lab[1] ? ' <span class="lgcheck ok">Final matches the lab.</span>' : ' <span class="lgcheck bad">Final differs from the lab.</span>') : '';
-    $('rvNow').hidden = !!busy || (!e && !H.list.length);
+    $('rvNow').hidden = !!busy || (!e && !H.list.length); $('rvPrint').hidden = !e || !!busy;
     if (!e) $('rvNow').textContent = 'Choose one of your recent games below to review it.';
     else $('rvNow').innerHTML = `<b>${esc(e.label)}</b>: ${scoreText(e)}. ${e.kind === 'lab' ? 'Played at the NHL settings with the lab plans.' : 'The game you watched.'}${check}`;
     const others = H.list;
     $('rvRecent').hidden = others.length < 2;
     $('rvRecent').innerHTML = `<span class="k">Recent games</span>` + others.map((x, i) => `<button type="button" data-entry="${i}" aria-pressed="${x === e}"${busy ? ' disabled' : ''}>${esc(x.label)}<small>${x.final ? scoreText(x) : 'not played here yet'}</small></button>`).join('');
   }
+  // ---------- The game on paper: the report Print or save as PDF hands to the browser ----------
+  // a still of a shot at the release, with his sight lines, drawn on the replay canvas and read back as an image
+  function still(m) {
+    const keep = { sel: V.sel, tau: V.tau, alt: V.alt, playing: V.playing };
+    V.sel = m; V.tau = 0; V.alt = false; V.playing = false; sizeView(m); paint();
+    // on white: the ice's rounded corners are transparent, which a JPEG would turn black
+    const w = document.createElement('canvas'); w.width = cv.width; w.height = cv.height;
+    const wc = w.getContext('2d'); wc.fillStyle = '#ffffff'; wc.fillRect(0, 0, w.width, w.height); wc.drawImage(cv, 0, 0);
+    const url = w.toDataURL('image/jpeg', 0.85);
+    Object.assign(V, keep); if (V.sel) sizeView(V.sel); paint();
+    return url;
+  }
+  function report() {
+    const e = H.cur; if (!e || !G || !G.moments.length) return null;
+    const T = G.teams, ms = G.moments;
+    const second = ms.filter(m => m.verdict === 'better' || m.outcome === 'goal').sort((a, b) => a.id - b.id);
+    const shotWhat = m => m.what && !m.what.failed ? `<p><b>Played out:</b> ${esc(m.what.mean - m.what.e > 0 ? `the pass was better, about ${m.what.mean.toFixed(2)} more net chances than the shot` : m.what.mean + m.what.e < 0 ? `the shot was better, about ${(-m.what.mean).toFixed(2)} more net chances than the pass` : 'about even, the two choices are not separated')} in ${m.what.n} runs each way.</p>` : '';
+    const card = m => `<figure class="pr-shot"><img src="${still(m)}" alt="${esc(`${when(m)} ${who(m.shooter)} at the release`)}"><figcaption><p class="pr-when">${when(m)} · ${T[m.team].abbr} ${esc(who(m.shooter))} · ${OUTCOME[m.outcome] || ''} · <b>${VERDICT[m.verdict]}</b></p><p>${esc(headline(m))}</p>${details(m).slice(0, 3).map(([k, v]) => `<p><b>${k}:</b> ${esc(v)}</p>`).join('')}${shotWhat(m)}</figcaption></figure>`;
+    const rows = ms.map(m => `<tr><td>${when(m)}</td><td>${T[m.team].abbr}</td><td>${esc(who(m.shooter))}</td><td>${VERDICT[m.verdict]}</td><td>${OUTCOME[m.outcome] || ''}</td><td>${m.read ? pct(m.read.myV) : ''}</td><td>${m.read && m.read.best ? `${pct(m.read.bestV)} to ${esc(who(m.read.best))}` : ''}</td></tr>`).join('');
+    return kit.prHead('Game review', esc(e.label), `${scoreText(e)}. ${e.kind === 'lab' ? 'Played at the NHL settings with the lab plans.' : 'A game watched on the rink.'} ${ms.length} shots, each judged by what the shooter saw when he let it go: his own look at the net against his best pass.`)
+      + `<section><div class="rvteams">${$('rvTeams').innerHTML}</div></section>`
+      + `<section><h2>Worth a second look <small>${second.length} shots: every better pass missed, and every goal</small></h2><p class="hint">Each picture is the play at the release. Yellow: the part of the net he could shoot at. Dark: what a defender blocked. Blue dash: his best pass, to the ringed teammate.</p>${second.length ? second.map(card).join('') : '<p>None in this game.</p>'}</section>`
+      + `<section class="pr-break"><h2>Every shot</h2><table class="pr-shots"><tr><th>When</th><th>Team</th><th>Shooter</th><th>Call</th><th>Result</th><th>His shot</th><th>Best pass</th></tr>${rows}</table><p class="hint">His shot and the best pass are each one's chance of becoming a goal, from his read at the release.</p></section>`
+      + `<section><h2>Every shooter</h2><div class="calib lab">${$('rvPlayers').innerHTML}</div></section>`
+      + kit.prFoot();
+  }
+  $('rvPrint').addEventListener('click', () => { const h = report(); if (h) kit.print(h); });
   $('rvRecent').addEventListener('click', ev => { const b = ev.target.closest('[data-entry]'); if (b) openEntry(H.list[+b.dataset.entry]); });
 
   // ---------- What if he passed: the moment rebuilt on another engine and played out both ways ----------
@@ -424,5 +451,5 @@ export function installReview(kit) {
   renderPick();
   $('reviewSoon').textContent = 'After the final horn, review every shot of this game in Review a game: what the shooter saw, and whether a pass was worth more.';
 
-  return { step: watchRec.step, reviewLab, H, get G() { return G; } };
+  return { step: watchRec.step, reviewLab, report, H, get G() { return G; } };
 }

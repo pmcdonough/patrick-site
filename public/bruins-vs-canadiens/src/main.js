@@ -3,14 +3,14 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.68';
-import { installReview } from './review.js?v=0.68';
-import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.68';
+import { createSim } from './engine/sim.js?v=0.69';
+import { installReview } from './review.js?v=0.69';
+import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.69';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.68';
+  const VERSION = '0.69';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -418,7 +418,7 @@ export function startSim(DATA) {
   const REVIEW = installReview({ sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim: () => createSim(DATA), VERSION,
     labGame: () => LABGAME && { label: LABGAME.label, recipe: LABGAME.recipe, final: LABGAME.row.teams.map(t => t.goals) },
     reviewShown: () => !document.querySelector('section.view[data-view="review"]').hidden,
-    goReview: () => { showView('review'); window.scrollTo(0, 0); } });
+    goReview: () => { showView('review'); window.scrollTo(0, 0); }, print: html => printReport(html), prHead: (...a) => prHead(...a), prFoot: () => prFoot() });
 
   // ---------- Roster sheets ----------
   const mmss = v => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, '0')}`;
@@ -669,7 +669,7 @@ export function startSim(DATA) {
     $('testRun').textContent = b && offBase && !edited ? 'Tested' : 'Test against the baseline';
     $('labRun').title = $('labRun').disabled && !run ? 'These plans are the baseline. Change a choice or the number of games first.' : '';
     $('testRun').title = $('testRun').disabled && !run ? (offBase ? 'These plans are tested; the result is below. Change a choice to test something else.' : 'These are the baseline plans. Change a choice first.') : '';
-    $('rankBox').hidden = !b; $('rankRun').disabled = run;
+    $('rankBox').hidden = !b; $('rankRun').disabled = run; $('labPrint').disabled = !b || run; $('labPrint').title = b ? 'A report of the baseline, its comparison with the real teams and every test, for your printer or a PDF' : 'Run the baseline first: the report is of its results.';
     if (b) {   // the ranking: what it asks, for whom, and how long it takes
       const k = $('rankDim').value || 'Fore', name = lc(choiceName(k)), m = rankOptions(k, b.plans[c][k]).length;
       const rs = Math.ceil(m * b.seeds.length * TEST.secPerGame / workersNow()), rtime = rs < 90 ? rs + ' seconds' : Math.round(rs / 60) + ' minutes';
@@ -893,6 +893,48 @@ export function startSim(DATA) {
     $('tested').firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('labStop').addEventListener('click', () => { TEST.stop = true; if (TEST.finish) TEST.finish(); });
+
+  // ---------- Print or save as PDF: a report built for paper, printed by the browser ----------
+  // The report goes into #printOut and the print styles show only it, in the light colors, whatever the theme. The
+  // browser's own dialog prints it or saves it as a PDF. Printing from the browser's menu builds the same report.
+  const today = () => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const prHead = (kind, title, sub) => `<header class="pr-head"><div class="pr-kicker">Hockey Strategy Lab · ${kind}</div><h1>${title}</h1><p>${sub}</p></header>`;
+  const prFoot = () => `<p class="pr-foot">Printed ${today()} from pmcdonough.com/bruins-vs-canadiens/. Every game is a simulation that depends only on its seed and both plans, so the same plans play the same games.</p>`;
+  let printing = false;
+  async function printReport(html) {
+    const o = $('printOut'); o.innerHTML = html; printing = true; document.body.classList.add('printing');
+    await Promise.all([...o.querySelectorAll('img')].map(i => i.decode().catch(() => {})));
+    window.print();
+  }
+  window.addEventListener('afterprint', () => { if (!printing) return; printing = false; document.body.classList.remove('printing'); $('printOut').innerHTML = ''; });
+  // the browser's own Print: the report for the view on screen, if it has one
+  window.addEventListener('beforeprint', () => {
+    if (printing) return;
+    const v = document.querySelector('nav.views [aria-pressed="true"]').dataset.view;
+    const html = v === 'lab' ? labReport() : v === 'review' ? REVIEW.report() : null; if (!html) return;
+    $('printOut').innerHTML = html; printing = true; document.body.classList.add('printing');
+  });
+  // a result card as it reads on paper: unfolded, its details open, without the buttons and pickers
+  function paperCard(el) {
+    const c = el.cloneNode(true); c.classList.remove('folded');
+    c.querySelectorAll('.cbtns, .gamepick, button.tip, [data-use], .row').forEach(x => x.remove());
+    c.querySelectorAll('details').forEach(d => d.setAttribute('open', ''));
+    return c.outerHTML.replace(/ (?=[.,;:])/g, '');   // the space a removed help button leaves before a full stop
+  }
+  function labReport() {
+    const b = LAB.base; if (!b) return null;
+    const c = LAB.coach, me = teams[c], plans = b.plans;
+    const planRows = TKEYS.map(([k, label]) => `<tr><td>${label}</td>${teams.map((t, i) => `<td>${optText(k, plans[i][k])}</td>`).join('')}</tr>`).join('');
+    const cards = [...$('tested').querySelectorAll('article.change')].map(paperCard).join('');
+    const calib = $('realBox').hidden ? '' : `<section><h2>How the baseline compares with the real 2025-26 teams <small>${$('realScore').textContent}</small></h2><div class="calib real">${$('calib').innerHTML}</div><p class="hint">On target means within 15% of that team's real 2025-26 number; well above or well below means off by more than half. It grades the baseline only.</p></section>`;
+    return prHead('Game plan lab report', `${teams[0].name} vs ${teams[1].name}`, `You coach the ${me.name}. The baseline: ${b.seeds.length} games at the NHL settings.`)
+      + `<section><h2>Baseline plans</h2><table class="pr-plans"><tr><th></th>${teams.map(t => `<th>${t.name}</th>`).join('')}</tr>${planRows}</table></section>`
+      + `<section><h2>Baseline</h2><p class="headline">${$('baseHeadline').textContent}</p><div class="calib lab">${recordTable(b.rows)}</div></section>`
+      + calib
+      + `<section><h2>Tests</h2>${cards || '<p>No tests yet.</p>'}${cards ? '<p class="hint">Each test plays the baseline games with the plans changed, game for game. Net chances are chances for minus chances against, per game. A clear edge or clear cost means the whole 95% range is on one side of zero; too close to call means it is not, at this many games.</p>' : ''}</section>`
+      + prFoot();
+  }
+  $('labPrint').addEventListener('click', () => { const h = labReport(); if (h) printReport(h); });
 
   // ---------- Views, steps, drawers and game plans ----------
   const VIEWS = ['watch', 'review', 'lab'];
