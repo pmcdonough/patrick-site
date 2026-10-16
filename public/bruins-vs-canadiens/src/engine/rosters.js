@@ -1,7 +1,7 @@
 // Rosters and ratings: each club's lines, pairs and goalies from data/rosters.json, rated from the stat lines and
 // MoneyPuck (data/ratings.json, moneypuck-2025.json), with skating speed from physics.json. newGame calls buildTeams
 // again for every game, refilling the same two team objects from scratch, so nothing from one game reaches the next.
-import { clamp } from './rink.js?v=0.69';
+import { clamp } from './rink.js?v=0.70';
 
 export function buildTeams(DATA, XGF, teams = [{}, {}]) {
   const RT = DATA.ratings, PH = DATA.physics, MP = DATA['moneypuck-2025'];

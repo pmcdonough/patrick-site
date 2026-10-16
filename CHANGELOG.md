@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.82 = sim 0.69 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.83 = sim 0.70 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.83
+- Sim 0.70 (Review a game prints the shot on screen). No change to play.
 
 ### 0.82
 - Sim 0.69 (Print or save as PDF). No change to play.
@@ -211,6 +214,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ## Hockey Strategy Lab
 
 Called Bruins vs Canadiens until 0.66; entries before it keep that name.
+
+### 0.70
+- Review a game: Print or save as PDF prints the shot you are viewing on one page, instead of the whole game: the play at the release with his sight lines, the call, his whole read, and What if he passed with its numbers when it has been played out. The button shows once a shot is chosen; printing from the browser's menu gives the same page.
 
 ### 0.69
 - Print or save as PDF, in the Game plan lab and in Review a game. Each builds a report for paper and opens the browser's print dialog, which prints it or saves it as a PDF; the page makes no PDF itself. It prints in light colors whatever the theme, without the buttons and controls. Printing from the browser's own menu gives the same report.

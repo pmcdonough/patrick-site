@@ -161,7 +161,7 @@ export function installReview(kit) {
     $('rvEmpty').hidden = !!(H.list.length || busy);
     $('rvBusy').hidden = !busy; if (busy) $('rvBusyText').textContent = `Playing ${busy.label}`;
     const check = e && e.lab ? (e.final[0] === e.lab[0] && e.final[1] === e.lab[1] ? ' <span class="lgcheck ok">Final matches the lab.</span>' : ' <span class="lgcheck bad">Final differs from the lab.</span>') : '';
-    $('rvNow').hidden = !!busy || (!e && !H.list.length); $('rvPrint').hidden = !e || !!busy;
+    $('rvNow').hidden = !!busy || (!e && !H.list.length); $('rvPrint').hidden = !e || !!busy || !V.sel;
     if (!e) $('rvNow').textContent = 'Choose one of your recent games below to review it.';
     else $('rvNow').innerHTML = `<b>${esc(e.label)}</b>: ${scoreText(e)}. ${e.kind === 'lab' ? 'Played at the NHL settings with the lab plans.' : 'The game you watched.'}${check}`;
     const others = H.list;
@@ -180,18 +180,20 @@ export function installReview(kit) {
     Object.assign(V, keep); if (V.sel) sizeView(V.sel); paint();
     return url;
   }
+  // the shot on screen on one page: the play at the release, the call, his whole read, and the played-out pass if run
   function report() {
-    const e = H.cur; if (!e || !G || !G.moments.length) return null;
-    const T = G.teams, ms = G.moments;
-    const second = ms.filter(m => m.verdict === 'better' || m.outcome === 'goal').sort((a, b) => a.id - b.id);
-    const shotWhat = m => m.what && !m.what.failed ? `<p><b>Played out:</b> ${esc(m.what.mean - m.what.e > 0 ? `the pass was better, about ${m.what.mean.toFixed(2)} more net chances than the shot` : m.what.mean + m.what.e < 0 ? `the shot was better, about ${(-m.what.mean).toFixed(2)} more net chances than the pass` : 'about even, the two choices are not separated')} in ${m.what.n} runs each way.</p>` : '';
-    const card = m => `<figure class="pr-shot"><img src="${still(m)}" alt="${esc(`${when(m)} ${who(m.shooter)} at the release`)}"><figcaption><p class="pr-when">${when(m)} · ${T[m.team].abbr} ${esc(who(m.shooter))} · ${OUTCOME[m.outcome] || ''} · <b>${VERDICT[m.verdict]}</b></p><p>${esc(headline(m))}</p>${details(m).slice(0, 3).map(([k, v]) => `<p><b>${k}:</b> ${esc(v)}</p>`).join('')}${shotWhat(m)}</figcaption></figure>`;
-    const rows = ms.map(m => `<tr><td>${when(m)}</td><td>${T[m.team].abbr}</td><td>${esc(who(m.shooter))}</td><td>${VERDICT[m.verdict]}</td><td>${OUTCOME[m.outcome] || ''}</td><td>${m.read ? pct(m.read.myV) : ''}</td><td>${m.read && m.read.best ? `${pct(m.read.bestV)} to ${esc(who(m.read.best))}` : ''}</td></tr>`).join('');
-    return kit.prHead('Game review', esc(e.label), `${scoreText(e)}. ${e.kind === 'lab' ? 'Played at the NHL settings with the lab plans.' : 'A game watched on the rink.'} ${ms.length} shots, each judged by what the shooter saw when he let it go: his own look at the net against his best pass.`)
-      + `<section><div class="rvteams">${$('rvTeams').innerHTML}</div></section>`
-      + `<section><h2>Worth a second look <small>${second.length} shots: every better pass missed, and every goal</small></h2><p class="hint">Each picture is the play at the release. Yellow: the part of the net he could shoot at. Dark: what a defender blocked. Blue dash: his best pass, to the ringed teammate.</p>${second.length ? second.map(card).join('') : '<p>None in this game.</p>'}</section>`
-      + `<section class="pr-break"><h2>Every shot</h2><table class="pr-shots"><tr><th>When</th><th>Team</th><th>Shooter</th><th>Call</th><th>Result</th><th>His shot</th><th>Best pass</th></tr>${rows}</table><p class="hint">His shot and the best pass are each one's chance of becoming a goal, from his read at the release.</p></section>`
-      + `<section><h2>Every shooter</h2><div class="calib lab">${$('rvPlayers').innerHTML}</div></section>`
+    const e = H.cur, m = V.sel; if (!e || !G || !m) return null;
+    const T = G.teams, w = m.what && !m.what.failed ? m.what : null, f2 = v => v.toFixed(2), net = x => x.xg - x.xga;
+    const what = w ? `<section><h2>What if he passed?</h2><p class="headline">${esc(w.mean - w.e > 0 ? `The pass was better: about ${f2(w.mean)} more net chances than the shot.` : w.mean + w.e < 0 ? `The shot was better: about ${f2(-w.mean)} more net chances than the pass.` : 'About even: the two choices are not separated in these runs.')}</p>
+      <table><tr><th></th><th>Net chances</th><th>For</th><th>Against</th><th>Goals in ${w.n} runs</th></tr>
+      <tr><td>Pass to ${esc(who(m.read.best))}</td><td>${f2(net(w.pass))}</td><td>${f2(w.pass.xg)}</td><td>${f2(w.pass.xga)}</td><td>${w.pass.goals}${w.pass.against ? `, ${w.pass.against} against` : ''}</td></tr>
+      <tr><td>The shot he took</td><td>${f2(net(w.shot))}</td><td>${f2(w.shot.xg)}</td><td>${f2(w.shot.xga)}</td><td>${w.shot.goals}${w.shot.against ? `, ${w.shot.against} against` : ''}</td></tr></table>
+      <p class="hint">Each run starts at the instant before he shot and plays ${WI.horizonSec} seconds or until the whistle, both choices with the same random numbers. The pass got there ${pct(w.pass.arrived)} of the time; he got a shot away in ${pct(w.pass.hisShot)}. The 95% range of the difference is ${f2(w.mean - w.e)} to ${f2(w.mean + w.e)}.</p></section>` : '';
+    return kit.prHead('Shot review', `${when(m)} · ${T[m.team].abbr} ${esc(who(m.shooter))}`, `${esc(e.label)}: ${scoreText(e)}. ${e.kind === 'lab' ? 'Played at the NHL settings with the lab plans.' : 'A game watched on the rink.'}`)
+      + `<section class="pr-one"><img src="${still(m)}" alt="${esc(`${who(m.shooter)} at the release`)}"><p class="hint">The play at the release. Yellow: the part of the net he could shoot at. Dark: what a defender blocked. Blue dash: his best pass, to the ringed teammate.</p></section>`
+      + `<section><p class="pr-call">${VERDICT[m.verdict]} · ${OUTCOME[m.outcome] || ''}</p><p class="headline">${esc(headline(m))}</p><dl class="rvdl">${details(m).map(([k, v, extra]) => `<dt>${k}</dt><dd>${esc(v)}${extra ? esc(extra) : ''}</dd>`).join('')}</dl></section>`
+      + what
+      + `<p class="hint">The review judges the choice by what he saw when he let it go, not the result: a shot's value is its chance of becoming a goal after the defenders in his lane and on him; a pass's is the receiver's look times the chance it gets there.</p>`
       + kit.prFoot();
   }
   $('rvPrint').addEventListener('click', () => { const h = report(); if (h) kit.print(h); });
@@ -332,6 +334,7 @@ export function installReview(kit) {
   }
   function select(m) {
     V.sel = m || null; V.playing = false; V.tau = 0; V.hold = 0; V.alt = false;
+    $('rvPrint').hidden = !V.sel || !!H.busy;   // it prints the shot on screen
     document.querySelectorAll('#rvLine .mk.on, #rvList .rvrow.on').forEach(e => e.classList.remove('on'));
     if (!m) { $('rvText').innerHTML = ''; paint(); return; }
     document.querySelectorAll(`#rvLine .mk[data-m="${m.id}"], #rvList .rvrow[data-m="${m.id}"]`).forEach(e => e.classList.add('on'));

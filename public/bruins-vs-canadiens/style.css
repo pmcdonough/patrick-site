@@ -449,11 +449,8 @@
     .pr-plans td:first-child { color: var(--fg-dim); width: 28%; }
     .printout article.change { border: 0.75pt solid var(--line); border-radius: 6pt; padding: 8pt 10pt; margin-bottom: 8pt; break-inside: avoid; }
     .printout .verdicts { grid-template-columns: repeat(3, 1fr); }
-    .printout .rvteams { grid-template-columns: 1fr 1fr; }
-    .pr-shot { display: grid; grid-template-columns: 38% 1fr; gap: 10pt; margin: 0 0 8pt; padding-bottom: 8pt; border-bottom: 0.5pt solid var(--line); break-inside: avoid; }
-    .pr-shot img { width: 100%; max-height: 62mm; object-fit: contain; object-position: left top; border-radius: 4pt; }
-    .pr-shot figcaption p { margin: 0 0 3pt; font-size: 9pt; line-height: 1.35; }
-    .pr-shot .pr-when { color: var(--fg-dim); }
-    .pr-break { break-before: page; }
+    .pr-one img { display: block; width: 100%; max-height: 84mm; object-fit: contain; object-position: left top; border-radius: 4pt; }
+    .pr-call { margin: 0 0 4pt; font: 700 11pt var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-dim); }
+    .printout .rvdl { display: grid; grid-template-columns: 28mm 1fr; gap: 3pt 10pt; margin: 0; font-size: 10pt; } .printout .rvdl dt { color: var(--fg-dim); } .printout .rvdl dd { margin: 0; }
     .printout .hint { font-size: 8.5pt; color: var(--fg-dim); }
   }
