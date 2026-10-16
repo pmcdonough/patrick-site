@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.76 = sim 0.63 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.77 = sim 0.64 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.77
+- Sim 0.64 (fixes from an outside review of the Game plan lab). No change to play. The lab's headline and game order live in a small module of their own with a unit test (`tools/test/lab.test.js`, 15 tests now). `docs/ENGINE.md` explains the lopsided games under man-on-man.
 
 ### 0.76
 - Sim 0.63 (Game plan lab: test titles, fold and remove, the run card). No change to play.
@@ -191,6 +194,13 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.64
+- Game plan lab: the baseline's headline leads with chances. When the two teams are even on chances it says so, and puts a points edge down to finishing and goaltending; a points share inside the normal swing from luck is called that. Chances and points are each judged by their 95% range, as the tests are, so the sentence never contradicts the record.
+- A test's game list starts with the games that show its verdict: a clear cost lists the games where the change hurt most first, a clear edge the ones where it helped most.
+- After a reload the Games count matches the saved baseline, and its time comes back until a test replaces it.
+- Watch: the penalty box and scorekeeper labels narrow to fit when the condensed font has not loaded.
+- Checked, no change: two 10-goal games for Montreal in 50 when the Bruins played man-on-man. Nothing runs away in a blowout; man-on-man gives up too many chances, and the engine never pulls a starter or plays score effects (`docs/ENGINE.md`, Lopsided games).
 
 ### 0.63
 - Game plan lab: a test is named for what it changed instead of Test 1, Test 2: the choice itself for one change (Bruins forecheck: 1-3-1 trap), the choices for two or three, a count past that (Bruins: 7 changes to the plan); both teams' changes when both plans changed. The hint above the buttons names it too.

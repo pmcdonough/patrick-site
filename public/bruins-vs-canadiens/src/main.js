@@ -3,13 +3,14 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.63';
-import { installReview } from './review.js?v=0.63';
+import { createSim } from './engine/sim.js?v=0.64';
+import { installReview } from './review.js?v=0.64';
+import { mean, ci95, verdict, baseHeadline, pickerOrder, pickerLabel } from './lab/read.js?v=0.64';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.63';
+  const VERSION = '0.64';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -275,7 +276,7 @@ export function startSim(DATA) {
       ctx.fillStyle = s.getPropertyValue('--panel').trim(); ctx.strokeStyle = s.getPropertyValue('--line').trim();
       ctx.beginPath(); ctx.roundRect(pb.x0, y0, pb.x1 - pb.x0, BOX_H - 1.4, 1.2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = s.getPropertyValue('--fg-dim').trim(); ctx.textAlign = 'left'; ctx.font = '800 3.2px "Barlow Condensed", "Arial Narrow", sans-serif';
-      ctx.fillText(`${t.abbr} PENALTY BOX`, pb.x0 + 1.2, y0 + 2.4);
+      ctx.fillText(`${t.abbr} PENALTY BOX`, pb.x0 + 1.2, y0 + 2.4, pb.x1 - pb.x0 - 2.4);   // narrowed to fit if the condensed font has not loaded
       const boxed = t.all.filter(p => p.box > 0);
       boxed.forEach((p, i) => {
         const x = pb.x0 + 4 + i * 9, y = y0 + 6;
@@ -287,7 +288,8 @@ export function startSim(DATA) {
     }
     // timekeeper's bench between the boxes
     ctx.fillStyle = s.getPropertyValue('--fg-dim').trim(); ctx.textAlign = 'center'; ctx.font = '800 3.2px "Barlow Condensed", "Arial Narrow", sans-serif';
-    ctx.fillText('SCOREKEEPER', 100, RINK_Y + RH + 5.5);
+    const room = 2 * Math.min(...teams.map(t => Math.min(Math.abs(t.pbox.x0 - 100), Math.abs(t.pbox.x1 - 100)))) - 2;
+    ctx.fillText('SCOREKEEPER', 100, RINK_Y + RH + 5.5, room);
     ctx.restore();
   }
   // Sight lines: what the puck carrier sees in the offensive zone. A lit wedge from him to the posts, a shadow behind every
@@ -699,12 +701,9 @@ export function startSim(DATA) {
   });
 
   // ---------- statistics and the results ----------
-  const mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
-  const ci95 = a => a.length > 1 ? 1.96 * Math.sqrt(a.reduce((x, y) => x + (y - mean(a)) ** 2, 0) / (a.length - 1)) / Math.sqrt(a.length) : 0;
   const pct = v => Math.round(100 * v) + '%';
   const sgn = (v, d = 2) => { const r = Math.abs(v).toFixed(d); return +r === 0 ? r : (v > 0 ? '+' : '−') + r; };   // a difference that rounds to zero shows no sign
   const perGame = (row, c) => { const me = row.teams[c], op = row.teams[1 - c], win = me.goals > op.goals; return { xgd: me.xg - op.xg, gd: me.goals - op.goals, xgf: me.xg, xga: op.xg, pts: win ? 1 : row.end !== 'REG' ? 0.5 : 0 }; };
-  const verdict = (m, e) => m - e > 0 ? ['good', 'Clear edge'] : m + e < 0 ? ['bad', 'Clear cost'] : ['flat', 'Too close to call'];
   function rangeBar(m, e, scale) {
     const x = v => clamp(50 + (v / scale) * 50, 0, 100), col = m - e > 0 ? '#1f7a4a' : m + e < 0 ? '#a3241b' : 'var(--fg-dim)';
     return `<div class="range" aria-hidden="true"><div class="axis"></div><div class="zero"></div><div class="span" style="left:${x(m - e)}%;width:${x(m + e) - x(m - e)}%;background:${col}"></div><div class="pt" style="left:${x(m)}%;background:${col}"></div></div>`;
@@ -729,8 +728,7 @@ export function startSim(DATA) {
   }
   function renderBaseline() {
     const b = LAB.base, c = LAB.coach, me = teams[c], op = teams[1 - c];
-    const g = b.rows.map(r => perGame(r, c)), pts = mean(g.map(x => x.pts));
-    $('baseHeadline').textContent = `The ${me.name} take ${pct(pts)} of the points against this ${op.name} plan, on ${mean(g.map(x => x.xgf)).toFixed(1)} chances a game for and ${mean(g.map(x => x.xga)).toFixed(1)} against.`;
+    $('baseHeadline').textContent = baseHeadline(me.name, op.name, b.rows.map(r => perGame(r, c)));
     $('baseExplain').hidden = true;
     $('baseRecord').innerHTML = recordTable(b.rows) + gamePicker('base', b.rows.map((_, i) => i), b.rows);
     renderCalib(b.rows);
@@ -769,7 +767,7 @@ export function startSim(DATA) {
       : vx[0] === 'flat' ? `Neither number separates it from the baseline at ${r.n} games${tip('close', 'What does too close to call mean?')}. Run more games, or treat them as even.` : `Both chances and points separate it from the baseline at ${r.n} games.`;
     const ti = LAB.tested.indexOf(e);
     return `<article class="change test${e.folded ? ' folded' : ''}">${cardHead(e, testTitle(e))}<p class="headline sm">${head}</p><p class="what">${what}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
-      <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details>${gamePicker('test', e.idx, rowsA, e.rowsB, ti)}</article>`;
+      <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details>${gamePicker('test', e.idx, rowsA, e.rowsB, ti, vx[0])}</article>`;
   }
   // a ranking's answer in one sentence: the best option if one clearly beats the baseline's, otherwise whether the choice matters
   function rankCard(e) {
@@ -793,13 +791,13 @@ export function startSim(DATA) {
     const grid = +c === LAB.coach ? 'myGrid' : 'oppGrid', el = $(grid).querySelector(`[data-k="${k}"]`);
     el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1900);
   });
-  // a picker for the games of a run: each with its score, sorted by how much the test changed it for the coached team
-  function gamePicker(kind, idxs, rowsA, rowsB, testIndex) {
+  // a picker for the games of a run: each with its score; a test's sorted by how much it changed each game for the coached team, the games that show its verdict first
+  function gamePicker(kind, idxs, rowsA, rowsB, testIndex, cls) {
     const c = LAB.coach, me = teams[c], sc = r => `${teams[0].abbr} ${r.teams[0].goals}, ${teams[1].abbr} ${r.teams[1].goals}${r.end !== 'REG' ? ' ' + r.end : ''}`;
-    const items = idxs.map((bi, k) => ({ bi, k, seed: LAB.base.seeds[bi], swing: rowsB ? perGame(rowsB[k], c).xgd - perGame(rowsA[k], c).xgd : 0 }));
-    if (rowsB) items.sort((a, b) => b.swing - a.swing);
+    let items = idxs.map((bi, k) => ({ bi, k, seed: LAB.base.seeds[bi], swing: rowsB ? perGame(rowsB[k], c).xgd - perGame(rowsA[k], c).xgd : 0 }));
+    if (rowsB) items = pickerOrder(items, cls);
     const opts = items.map(x => `<option value="${x.k}">Game ${x.seed}: ${rowsB ? `baseline ${sc(rowsA[x.k])}, test ${sc(rowsB[x.k])}, ${sgn(x.swing, 1)} net chances` : sc(rowsA[x.k])}</option>`).join('');
-    return `<div class="gamepick"><label>${rowsB ? `Open a game, the biggest swings for the ${me.name} first` : 'Open a baseline game'}<select data-pick="${kind}" data-test="${testIndex === undefined ? '' : testIndex}">${opts}</select></label><div class="row">${rowsB ? '<button type="button" data-open="base">Watch it with the baseline plans</button><button type="button" data-open="test">Watch it with the test plans</button>' : '<button type="button" data-open="base">Watch and review it</button>'}</div></div>`;
+    return `<div class="gamepick"><label>${rowsB ? pickerLabel(me.name, cls) : 'Open a baseline game'}<select data-pick="${kind}" data-test="${testIndex === undefined ? '' : testIndex}">${opts}</select></label><div class="row">${rowsB ? '<button type="button" data-open="base">Watch it with the baseline plans</button><button type="button" data-open="test">Watch it with the test plans</button>' : '<button type="button" data-open="base">Watch and review it</button>'}</div></div>`;
   }
   // opening a lab game on the Watch rink, from the baseline card or a test card
   document.addEventListener('click', e => {
@@ -838,14 +836,15 @@ export function startSim(DATA) {
     const secs = (performance.now() - t0) / 1000; if (rows.size) TEST.secPerGame = secs * (TEST.pool ? poolSize() : 1) / rows.size;
     setRunning(false); return { rows, secs };
   };
+  const baseNote = (n, stopped, secs) => `Baseline: ${n} games${stopped ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`;
   $('labRun').addEventListener('click', async () => {
     if (TEST.running) return;
     const n = +$('labN').value, seeds = Array.from({ length: n }, (_, i) => i + 1), plans = copyPlans(LAB.plans), tacs = plans.map(tacOfPlan);
     const { rows, secs } = await timed(seeds.map(sd => ({ id: sd, seed: sd, tacs, cfg: NHL_CFG() })), 'Baseline');
     const done = seeds.filter(sd => rows.has(sd));
-    note(`Baseline: ${done.length} games${TEST.stop ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`);
+    note(baseNote(done.length, TEST.stop, secs));
     if (!done.length) return;
-    LAB.base = { key: keyOf(plans), plans, seeds: done, rows: done.map(sd => rows.get(sd)) }; LAB.tested = []; LAB.lastRun = LAB.base.key;
+    LAB.base = { key: keyOf(plans), plans, seeds: done, rows: done.map(sd => rows.get(sd)), asked: n, secs: Math.round(secs), stopped: !!TEST.stop }; LAB.tested = []; LAB.lastRun = LAB.base.key;
     saveLab(); renderBaseline(); renderTested();
   });
   // plays the given plans on the baseline's seeds; returns the baseline indexes it finished and those rows
@@ -930,6 +929,12 @@ export function startSim(DATA) {
   }
   document.querySelectorAll('#planDrawer select, #planDrawer input[type=range]').forEach(el => el.addEventListener('input', renderPlans));
   renderPlans();
+  // a saved baseline brings back its game count and, until a test replaces it, how long it took
+  if (LAB.base) {
+    const b = LAB.base, asked = String(b.asked || b.seeds.length);
+    if ([...$('labN').options].some(o => o.value === asked)) $('labN').value = asked;
+    if (!LAB.tested.length && b.secs !== undefined) note(baseNote(b.seeds.length, b.stopped, b.secs));
+  }
   buildLab();
   // short explainers for the numbers a newcomer will not know
   const TERMS = {
