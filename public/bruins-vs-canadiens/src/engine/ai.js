@@ -1,8 +1,8 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.52';
-import * as DM from './detmath.js?v=0.52';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.53';
+import * as DM from './detmath.js?v=0.53';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
@@ -110,17 +110,17 @@ export function install(S) {
         const { myV, best, bestV } = read;
         if (myV >= XC.minXg && myV * XC.passMustBeatBy >= bestV) {
           const rate = XC.shootRatePerSec * clamp((myV - XC.minXg) / (XC.cleanXg - XC.minXg), 0.15, 1);
-          if (random() < dt * rate) { shoot(p); return null; }
+          if (random() < dt * rate) { shoot(p, false, 'read'); return null; }
           p.lookingToShoot = true;
         } else if (best && bestV > myV * XC.passMustBeatBy && bestV >= XC.minXg && (puck.holdT || 0) >= PH.pass.controlSec && random() < dt * XC.passRatePerSec) { pass(p, best); return null; }
       }
       const PE = SD.perimeter; const dNet = dist(p, n);
       const throughTraffic = laneClear(p, n, opp, 2.2) && pressure > 4; // a body in the lane is fine, a stick on the puck is not
-      if (throughTraffic && dNet >= PE.minDistFt && dNet <= PE.maxDistFt && q > 0.05 && random() < dt * PE.ratePerSec * cfg.shots) { shoot(p); return null; }
+      if (throughTraffic && dNet >= PE.minDistFt && dNet <= PE.maxDistFt && q > 0.05 && random() < dt * PE.ratePerSec * cfg.shots) { shoot(p, false, 'perimeter'); return null; }
       const PR = SD.probabilistic, PS = SD.pointShot;
       const pointShot = p.isD || toFx(t, p.x) < 135;
       const rate = cfg.shots * PR.baseRate * (DM.pow(q, PR.qualityPower) * (0.9 + agg * PR.aggressionWeight) * (0.6 + p.shoot * PR.shooterWeight) + (open && q > PR.openLookMinQuality ? PR.openLookBonus : 0) + (pressure < PR.pressureWithinFt ? PR.pressureBonus * q : 0)) + (pointShot && q > PS.minQuality ? PS.baseRate + (open ? PS.openBonus : 0) : 0);
-      if (random() < dt * rate) { shoot(p); return null; }
+      if (random() < dt * rate) { shoot(p, false, 'chance'); return null; }
     }
     // a skater heading for a change gets the puck deep and goes: dump and change
     if (p.leaving && pz !== 'off') {
@@ -135,7 +135,7 @@ export function install(S) {
     if ((p.breakaway || (pfx > 92 && pfx < 106 && headedIn)) && oppAhead.length === 0 && pz !== 'own' && pfx < 172) {
       if (!p.breakaway) { p.breakaway = true; game.note = `Breakaway, ${p.name}!`; log(`Breakaway: ${t.abbr} #${p.num} ${p.name} is in alone.`); }
       const n = oppNet(t); const dn = dist(p, n);
-      if (dn < 16 + p.shoot * 8 && random() < dt * 6) { shoot(p); return null; }
+      if (dn < 16 + p.shoot * 8 && random() < dt * 6) { shoot(p, false, 'breakaway'); return null; }
       return { x: n.x - t.dir * 5, y: n.y + (p.y < 42 ? -2 : 2) };
     }
     p.breakaway = false;
@@ -177,7 +177,7 @@ export function install(S) {
       const deep = mates.filter(m => toFx(t, m.x) > 124);
       const loose = deep.filter(m => laneClear(p, m, opp, 2.4) && dist(p, m) > 6).sort((a, b) => shotQuality(b, t) - shotQuality(a, t));
       if (loose.length && random() < dt * 2) { pass(p, loose[0]); return null; }
-      if (q > 0.15 && laneClear(p, oppNet(t), opp, 1.6) && random() < dt * PH.shotDecision.stuckShotRatePerSec) { shoot(p); return null; }
+      if (q > 0.15 && laneClear(p, oppNet(t), opp, 1.6) && random() < dt * PH.shotDecision.stuckShotRatePerSec) { shoot(p, false, 'stuck'); return null; }
       const n2 = oppNet(t); const towardMid = { x: p.x + (n2.x - p.x) * 0.25, y: p.y + (n2.y - p.y) * 0.35 };
       if (deep.length && random() < dt * 2) { pass(p, deep.sort((a, b) => dist(a, p) - dist(b, p))[0]); return null; } // or just give it to the nearest man and reset
       return towardMid;
@@ -247,19 +247,24 @@ export function install(S) {
   function readLook(p, t, opp, mates, pressure) {
     const XC = PH.shotDecision.xgChoice, n = oppNet(t), mine = lookXg(p, t, false);
     if (!mine) return null;
-    const myV = mine.xg * (laneClear(p, n, opp, XC.laneWidthFt) ? 1 : XC.blockedLaneFactor) * (pressure < XC.tightCoverFt ? XC.tightCoverFactor : 1);
-    let best = null, bestV = 0;
+    const laneOpen = laneClear(p, n, opp, XC.laneWidthFt), tight = pressure < XC.tightCoverFt;
+    const myV = mine.xg * (laneOpen ? 1 : XC.blockedLaneFactor) * (tight ? XC.tightCoverFactor : 1);
+    let best = null, bestV = 0, bestWhy = null;
     for (const m of mates) {
       if (zone(t, m.x) !== 'off' || !laneClear(p, m, opp)) continue;
       const room = Math.min(...opp.map(o => dist(o, m))), d = dist(p, m);
       const look = lookXg(m, t, Math.abs(m.y - p.y) > XC.oneTimerCrossFt && room > XC.openFt);
       if (!look) continue;
-      const v = look.xg * clamp(XC.passCompleteBase - d * XC.passCompletePerFt, XC.passCompleteMin, 1) * (room > XC.openFt ? 1 : XC.coveredFactor);
-      if (v > bestV) { bestV = v; best = m; }
+      const arrive = clamp(XC.passCompleteBase - d * XC.passCompletePerFt, XC.passCompleteMin, 1), open = room > XC.openFt;
+      const v = look.xg * arrive * (open ? 1 : XC.coveredFactor);
+      if (v > bestV) { bestV = v; best = m; bestWhy = { xg: look.xg, arrive, open, oneTimer: Math.abs(m.y - p.y) > XC.oneTimerCrossFt && open }; }
     }
-    return { myV, best, bestV };
+    // the parts of each value, for the page to explain: his look before the lane and the pressure, and what the pass was made of
+    return { myV, best, bestV, myXg: mine.xg, laneOpen, tight, bestWhy };
   }
-  function shoot(from, oneTimer) {
+  // why: what made him shoot, for the shot event ('read' his look beat his best pass, 'perimeter' a throw at the net through
+  // traffic, 'chance' the shot-rate roll, 'stuck' held too long with no clean option, 'breakaway', 'oneTimer')
+  function shoot(from, oneTimer, why) {
     const t = from.team, n = oppNet(t);
     const aimY = n.y + rnd(-PH.shot.aimSpreadFt, PH.shot.aimSpreadFt);
     const slap = from.isD || dist(from, n) > 45; // point shots are slap or heavy wrist shots: faster, less accurate
@@ -276,6 +281,7 @@ export function install(S) {
     if (look !== null) { puck.tier = xgTier(look.base); puck.xg = look.xg; }
     else { const TG = PH.dangerTiers; puck.tier = (dN <= TG.high.maxDistFt && offY <= TG.high.maxOffCenterFt) ? 'high' : (dN <= TG.medium.maxDistFt && offY <= TG.medium.maxOffCenterFt) ? 'medium' : 'low'; puck.xg = MP ? MP.league.dangerTiers[puck.tier].goalRate : 0.07; }
     puck.tierCounted = false;
+    emit('shot', { shooter: from, why: why || 'chance', oneTimer: !!oneTimer, xg: puck.xg, tier: puck.tier });   // before any block: the page reads the play as it stood at the release
     // shot block: a defender in the lane, close to the shooter, gets in front of it
     const ot = teams[1 - t.id];
     const dx = DM.cos(a), dy = DM.sin(a); const L = dist(from, n);

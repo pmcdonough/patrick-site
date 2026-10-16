@@ -1,12 +1,12 @@
 # Roadmap
 
-Where each project stands at site 0.63 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.64 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
 A hockey engine whose decisions are tuned to public data is only a toy until it can be checked against what real players did. The path is: real game events in (done, from the NHL play-by-play and shift chart), the model's alternative for each decision out (done for shots versus passes and drives), then validation of those alternatives against a season of real decisions, then tracking data so the positions stop being inferred. Each step makes the Game plan lab more believable, because the lab is only as good as the decision model under it.
 
-## Bruins vs Canadiens (sim 0.52)
+## Bruins vs Canadiens (sim 0.53)
 
 1. Defense that allows the real number of chances. Since 0.35 the carrier takes every look the expected-goal model says is worth it, so the sim's chance volume is now honest, and it is 60 to 90% above the league (mostly medium-danger looks off passes into the slot); `tierGoalScale` 0.39 keeps goals realistic in the meantime. What is left is not one bug: defenders already outnumber attackers in the slot when the pass goes; they lose the receiver on the catch and on the rush. Candidates: a stick on the receiver at the catch, rush defense (backcheckers picking up the late man), and box-out battles at the net. Each step is measured with `tools/lab.js --nhl` against the league column; `tierGoalScale` should climb back toward 0.72 as the gap closes.
 2. System effects that are still wrong (`docs/ENGINE.md`, System effects): man-on-man gives up about two expected goals a game more than zone; crashing the net lowers expected goals for; aggression and the power-play systems do nothing measurable. Each has a `tools/lab.js --sweep` command to re-check it.
@@ -23,7 +23,15 @@ Since 0.48 the lab is its own view with its own plans, and since 0.49 it reads t
 1. Two-dimension sweeps (our forecheck against each of their breakouts) as a grid of net chances.
 2. A per-game log for a run (score, OT or SO, shots) that can be exported, so a result can be checked outside the page.
 
-## Play Review (0.10)
+## Review this game (in the sim since 0.53)
+
+Play Review is moving into the sim: after a Watch game, every shot judged by the shooter's own read, with exact positions (`src/review.js`). Next, in order:
+
+1. What if he passed. Make a Watch game repeatable (a seed, a fixed 0.03 s step, and a log of plan and slider changes with their tick), then branch it at a shot: replay to the release on an engine of its own, force the pass he passed up, reseed, and play the next few seconds a few hundred times in the lab's workers. The card gains what the pass would have produced (goals and good chances per hundred), with a ghost replay of one typical result. Needs a `reseed` on the engine and a forced-action hook in `carrierThink`.
+2. Other decisions: entries (carry, chip, dump against who was back), passes that were picked off, and holds that ended in a turnover, each judged the same way.
+3. A per-player view across games in a session, and the review for the lab's games (any seeded lab game opened on the Watch rink).
+
+## Play Review (0.10, the real-game prototype)
 
 From the brief, in order:
 

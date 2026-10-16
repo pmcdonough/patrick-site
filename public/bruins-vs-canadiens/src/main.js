@@ -3,19 +3,23 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.52';
+import { createSim } from './engine/sim.js?v=0.53';
+import { installReview } from './review.js?v=0.53';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.52';
+  const VERSION = '0.53';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
     ROSTERS, SYS, PH, MP, XG, clamp, dist, active, shorthanded, oppNet, zone, readLook, buildUnit, peekLine, shiftTarget, fDoor, dDoor, doorFor,
     fatigueLevel, goalieLine } = sim;
   const ADMIN = [['accel', 'Acceleration', 0.5, 2.5], ['speed', 'Top speed', 0.6, 1.6], ['cruise', 'Cruise effort', 0.5, 1.4], ['passSpd', 'Pass speed', 0.6, 1.6], ['passAcc', 'Pass accuracy', 0.5, 2], ['glide', 'Puck glide', 0.5, 2], ['goalie', 'Goalie coverage', 0.6, 1.4], ['shots', 'Shot volume', 0.4, 2.5]];
-  const canvas = $('c'), ctx = canvas.getContext('2d');
+  const canvas = $('c');
+  let ctx = canvas.getContext('2d');
+  // draw onto another canvas with the same functions (the shot review's rink)
+  const withCtx = (c2, f) => { const was = ctx; ctx = c2; try { f(); } finally { ctx = was; } };
   const S = canvas.width / RW; // px per ft
   const css = () => getComputedStyle(document.documentElement);
 
@@ -291,7 +295,15 @@ export function startSim(DATA) {
     const t = c.team; if (zone(t, c.x) !== 'off') return;
     const opp = active(teams[1 - t.id]), mates = active(t).filter(m => m !== c && !m.leaving);
     const read = readLook(c, t, opp, mates, Math.min(...opp.map(o => dist(o, c)))); if (!read) return;
-    const n = oppNet(t), posts = [{ x: n.x, y: n.y - NETW / 2 }, { x: n.x, y: n.y + NETW / 2 }];
+    // what he will do with it, by the same rule carrierThink uses: shoot a look worth taking unless a pass is clearly better
+    const XC = PH.shotDecision.xgChoice;
+    const reads = read.myV >= XC.minXg && read.myV * XC.passMustBeatBy >= read.bestV ? 'shoot' : read.best && read.bestV > read.myV * XC.passMustBeatBy && read.bestV >= XC.minXg ? 'pass' : 'hold';
+    paintSight(c, oppNet(t), opp, read, reads === 'shoot' ? 'Shooting' : reads === 'pass' ? 'Passing' : 'Holding for a better play', reads === 'pass', reads === 'hold');
+  }
+  // the sight lines for a carrier c (any {x, y}), the net he attacks, the defenders (any {x, y}) and his read; label is the
+  // tag's last word, strongPass draws the pass line bold, quiet greys the label. The shot review paints the same picture.
+  function paintSight(c, n, opp, read, label, strongPass, quiet) {
+    const posts = [{ x: n.x, y: n.y - NETW / 2 }, { x: n.x, y: n.y + NETW / 2 }];
     const far = q => ({ x: c.x + (q.x - c.x) * 1.04, y: c.y + (q.y - c.y) * 1.04 });
     ctx.save();
     ctx.beginPath(); ctx.moveTo(c.x, c.y); const f0 = far(posts[0]), f1 = far(posts[1]); ctx.lineTo(f0.x, f0.y); ctx.lineTo(f1.x, f1.y); ctx.closePath();
@@ -310,18 +322,15 @@ export function startSim(DATA) {
       ctx.lineTo(o.x + Math.cos(a - Math.PI / 2 - h) * r, o.y + Math.sin(a - Math.PI / 2 - h) * r); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
-    // what he will do with it, by the same rule carrierThink uses: shoot a look worth taking unless a pass is clearly better
-    const XC = PH.shotDecision.xgChoice;
-    const reads = read.myV >= XC.minXg && read.myV * XC.passMustBeatBy >= read.bestV ? 'shoot' : read.best && read.bestV > read.myV * XC.passMustBeatBy && read.bestV >= XC.minXg ? 'pass' : 'hold';
     if (read.best) {
-      const strong = reads === 'pass';
+      const strong = strongPass;
       ctx.save(); ctx.strokeStyle = '#0b4ea2'; ctx.globalAlpha = strong ? 0.95 : 0.55; ctx.lineWidth = strong ? 0.7 : 0.45; ctx.setLineDash([1.6, 1.2]);
       ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(read.best.x, read.best.y); ctx.stroke();
       ctx.setLineDash([]); ctx.lineWidth = 0.45; ctx.beginPath(); ctx.arc(read.best.x, read.best.y, 3.2, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     }
     // the tag: a yellow wedge mark with his shot, a blue dash with the pass and who it goes to, and his read
     const pctv = v => Math.round(v * 100) + '%';
-    const parts = [['wedge', `Shot ${pctv(read.myV)}`], ...(read.best ? [['dash', `Pass to #${read.best.num} ${pctv(read.bestV)}`]] : []), ['read', reads === 'shoot' ? 'Shooting' : reads === 'pass' ? 'Passing' : 'Holding for a better play']];
+    const parts = [['wedge', `Shot ${pctv(read.myV)}`], ...(read.best ? [['dash', `Pass to #${read.best.num} ${pctv(read.bestV)}`]] : []), ['read', label]];
     ctx.save(); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
     const fontN = '600 2.1px Barlow, "Segoe UI", sans-serif', fontB = '800 2.1px Barlow, "Segoe UI", sans-serif', icon = 2.2, gap = 1.3;
     const widths = parts.map(([k, txt]) => { ctx.font = k === 'read' ? fontB : fontN; return ctx.measureText(txt).width + (k === 'read' ? 0 : icon + 0.6); });
@@ -331,7 +340,7 @@ export function startSim(DATA) {
     parts.forEach(([k, txt], i) => {
       if (k === 'wedge') { ctx.fillStyle = 'rgba(255, 200, 60, 0.95)'; ctx.beginPath(); ctx.moveTo(cx, my); ctx.lineTo(cx + icon, my - 0.9); ctx.lineTo(cx + icon, my + 0.9); ctx.closePath(); ctx.fill(); cx += icon + 0.6; }
       if (k === 'dash') { ctx.strokeStyle = '#7fb0ee'; ctx.lineWidth = 0.45; ctx.setLineDash([0.6, 0.45]); ctx.beginPath(); ctx.moveTo(cx, my); ctx.lineTo(cx + icon, my); ctx.stroke(); ctx.setLineDash([]); cx += icon + 0.6; }
-      ctx.font = k === 'read' ? fontB : fontN; ctx.fillStyle = k === 'read' ? (reads === 'hold' ? '#c9d3de' : '#ffd166') : '#fff';
+      ctx.font = k === 'read' ? fontB : fontN; ctx.fillStyle = k === 'read' ? (quiet ? '#c9d3de' : '#ffd166') : '#fff';
       ctx.fillText(txt, cx, my + 0.1); cx += ctx.measureText(txt).width + gap;
     });
     ctx.restore();
@@ -399,6 +408,9 @@ export function startSim(DATA) {
     ctx.setLineDash([]); ctx.beginPath(); ctx.arc(w.at.x, w.at.y, 2, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
+
+  // the shot review under the rink once a game ends (review.js): it records as the game plays and draws with the functions above
+  const REVIEW = installReview({ sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW });
 
   // ---------- Roster sheets ----------
   const mmss = v => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, '0')}`;
@@ -923,14 +935,14 @@ export function startSim(DATA) {
   let last = performance.now();
   function frame(now) {
     const real = Math.min(0.05, (now - last) / 1000); last = now;
-    if (!game.paused) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); g -= d; } moveOfficials(real * game.speed); }
+    if (!game.paused) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); REVIEW.step(d); g -= d; } moveOfficials(real * game.speed); }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawRink(); drawBenches(); drawOfficials(); drawPlayers(); drawWhistle(); updateHud(); updateSheets(now);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
   // debug and test hook: lets a harness step the engine headlessly
-  window.rinkSim = { sim, tick, teams, game, puck, DATA, cfg, newGame, teamSample, runJobs, TEST, LAB };
+  window.rinkSim = { sim, tick, teams, game, puck, DATA, cfg, newGame, teamSample, runJobs, TEST, LAB, REVIEW };
 }
 // ---------- Data loading: the JSON files next to this page ----------
 (async () => {

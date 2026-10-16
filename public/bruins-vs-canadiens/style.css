@@ -306,3 +306,52 @@
   .view > *, .labflow > *, .results > *, .tested > *, article.change > * { min-width: 0; }
   @media (max-width: 600px) { .calib.real td.m span { display: none; } .calib.real td.m { min-width: 7.5em; } }
   .calib.real td.r { padding-right: 12px; }
+  /* the shot review under the rink once a game ends */
+  .rvsoon { margin: 0; }
+  .rvsoon:empty { display: none; }
+  .review { display: flex; flex-direction: column; gap: 12px; }
+  .review > * { min-width: 0; }
+  .rvhead .vt { margin: 0; } .rvhead .hint { margin: 4px 0 0; max-width: 80ch; }
+  .rvteams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 600px) { .rvteams { grid-template-columns: 1fr; } }
+  .rvt { border: 1px solid; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; font-size: 0.88rem; }
+  .rvt.bos { background: var(--bos-tint); border-color: var(--bos-edge); } .rvt.mtl { background: var(--mtl-tint); border-color: var(--mtl-edge); }
+  .rvt b { font: 800 1.1rem var(--display); } .rvt .big { font: 800 1.6rem/1.1 var(--display); } .rvt .big small { font: 500 0.9rem var(--body); }
+  .rvline .track { position: relative; height: 54px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line); margin-inline: 2px; }
+  .rvline .track::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--line); }
+  .rvline .per { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--line); font-size: 0.66rem; color: var(--fg-dim); padding-left: 3px; letter-spacing: 0.06em; }
+  .rvline .lbl { position: absolute; right: 4px; font: 700 0.62rem var(--body); color: var(--fg-dim); } .rvline .lbl.h { top: 2px; } .rvline .lbl.a { bottom: 2px; }
+  .mk { display: inline-block; width: 4px; padding: 0; border: 0; border-radius: 2px; background: var(--fg-dim); opacity: 0.45; }
+  .rvline .mk { position: absolute; margin-left: -2px; z-index: 1; cursor: pointer; }
+  .rvline .mk.h { bottom: 50%; } .rvline .mk.a { top: 50%; }
+  .mk.right, .mk.none { height: 8px; } .mk.close { height: 12px; background: #c99a2e; opacity: 0.7; }
+  .mk.better { height: 20px; background: #f0a500; opacity: 1; }
+  .mk.goal { height: 22px; width: 6px; background: #d62828; opacity: 1; }
+  .rvline .mk.goal { margin-left: -3px; }
+  .rvline .mk.on { outline: 2px solid var(--link); outline-offset: 1px; z-index: 2; }
+  .rvkey { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8rem; color: var(--fg-dim); margin: -4px 0 0; }
+  .rvkey span { display: inline-flex; align-items: center; gap: 6px; } .rvkey .mk { height: 12px; }
+  .rvbody { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .rvbody { grid-template-columns: 1fr; } }
+  .rvview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  #rvCanvas { width: 100%; aspect-ratio: 200 / 85; border-radius: 12px; display: block; margin-inline: auto; }
+  .rvctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .rvctl .secondary { font-size: 0.95rem; padding: 6px 14px; }
+  .rvclock { font-size: 0.85rem; color: var(--fg-dim); font-variant-numeric: tabular-nums; margin-left: 4px; flex: 1; }
+  .rvtext { display: flex; flex-direction: column; gap: 6px; }
+  .rvtext .headline { margin: 0; }
+  .rvwhen { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; }
+  .review .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; border: 3px solid; box-sizing: border-box; }
+  .review .dot.h { background: var(--home); border-color: var(--home-2); } .review .dot.a { background: var(--away); border-color: var(--away-3); }
+  .rvdl { display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr); gap: 5px 12px; margin: 4px 0 0; font-size: 0.9rem; line-height: 1.45; }
+  .rvdl dt { font-weight: 600; color: var(--fg-dim); } .rvdl dd { margin: 0; }
+  @media (max-width: 600px) { .rvdl { grid-template-columns: 1fr; } .rvdl dd { margin-bottom: 4px; } }
+  .rvside { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .rvside .seg { display: flex; } .rvside .seg button { flex: 1; padding: 5px 6px; font-size: 0.8rem; }
+  .rvlist { display: flex; flex-direction: column; gap: 2px; max-height: 520px; overflow-y: auto; }
+  .rvrow { display: grid; grid-template-columns: auto 4.6em minmax(0, 1fr); align-items: center; gap: 8px; text-align: left; background: none; border: 1px solid transparent; padding: 6px 8px; font-weight: 500; }
+  .rvrow:hover { background: var(--raised); }
+  .rvrow.on { background: var(--raised); border-color: var(--link); }
+  .rvrow .when { font-size: 0.8rem; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+  .rvrow .who { display: flex; flex-direction: column; min-width: 0; } .rvrow .who small { color: var(--fg-dim); font-size: 0.76rem; font-weight: 400; }
+  #rvPlayers table td:first-child { white-space: nowrap; }

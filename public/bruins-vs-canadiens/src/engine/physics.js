@@ -1,8 +1,8 @@
 // Movement and the puck: skating, fatigue, staying on the ice, goalies, the puck in flight, saves and rebounds.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.52';
-import * as DM from './detmath.js?v=0.52';
+import { CORNER, GL, NETD, NETW, RH, RW, clamp, dist, endDot, ownNet, toFx, toRink, zone } from './rink.js?v=0.53';
+import * as DM from './detmath.js?v=0.53';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, PH, puck, random, rnd, shorthanded, skaters, SYS, teams, XG } = S;
@@ -218,7 +218,7 @@ export function install(S) {
       puck.carrier = best; puck.shot = false; puck.rim = false; puck.beaten = false;
       if (!ownPass && puck.lastTeam) best.team.take++;
       const wasReceiver = puck.receiver === best; const ot1 = puck.oneTimer; puck.receiver = null; puck.oneTimer = false;
-      if (wasReceiver && ot1 && shotQuality(best, best.team) > 0.5 && random() < 0.05) { best.oneTimers = (best.oneTimers || 0) + 1; shoot(best, true); return; }
+      if (wasReceiver && ot1 && shotQuality(best, best.team) > 0.5 && random() < 0.05) { best.oneTimers = (best.oneTimers || 0) + 1; shoot(best, true, 'oneTimer'); return; }
     }
   }
 

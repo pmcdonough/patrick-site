@@ -294,5 +294,12 @@
     "url": "https://morehockeystats.com/teams/offsides"
    }
   ]
+ },
+ "review": {
+  "desc": "The shot review after a Watch game. Every shot is judged by the carrier's own read at the moment he let it go, the same values his decisions and the sight lines use. A pass counts as a better option when it was worth passMustBeatBy times his shot (shotDecision.xgChoice) and at least minGapXg more; it is a close call when a pass was worth more but not by that much, and the right call otherwise. Each shot keeps leadSec of play before the release and afterSec after it, sampled sampleHz times a second, for the replay.",
+  "minGapXg": 0.02,
+  "leadSec": 6,
+  "afterSec": 2,
+  "sampleHz": 10
  }
 }
