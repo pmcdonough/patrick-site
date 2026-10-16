@@ -3,13 +3,13 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.62';
-import { installReview } from './review.js?v=0.62';
+import { createSim } from './engine/sim.js?v=0.63';
+import { installReview } from './review.js?v=0.63';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.62';
+  const VERSION = '0.63';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -536,7 +536,7 @@ export function startSim(DATA) {
   }
 
   const TKEYS = [['Fore', 'Forecheck', 'fore'], ['Break', 'Breakout', 'brk'], ['Entry', 'Entry', 'entry'], ['Oz', 'Offensive zone', 'oz'], ['Dz', 'Defensive zone', 'dz'], ['PP', 'Power play', 'pp'], ['PK', 'Penalty kill', 'pk'], ['Agg', 'Aggression', 'agg']];
-  const TEST = { running: false, stop: false, pool: null, poolFailed: false, secPerGame: 2.4 };
+  const TEST = { running: false, stop: false, pool: null, poolFailed: false, secPerGame: 2.4, removed: null };
   const pre = i => i ? 'a' : 'h';
   const NHL_CFG = () => Object.fromEntries(Object.keys(cfg).map(k => [k, 1]));
   const AGG_STEPS = ['0', '25', '50', '75', '100'];
@@ -676,7 +676,7 @@ export function startSim(DATA) {
     const workers = workersNow(), secs = Math.ceil((b ? b.seeds.length : n) * TEST.secPerGame / workers), time = secs < 90 ? secs + ' seconds' : Math.round(secs / 60) + ' minutes';
     const changed = b ? diffs(b.plans, LAB.plans) : [], tests = LAB.tested.filter(e => e.kind === 'test');
     const clears = LAB.tested.length ? ' (that clears the tests below)' : '';
-    const mine = tests.findIndex(e => e.key === key), jump = mine >= 0 ? `<button type="button" class="linkish" data-jump="${mine}">Test ${tests.length - mine}</button>` : 'the result';
+    const mine = tests.findIndex(e => e.key === key), jump = mine >= 0 ? `<button type="button" class="linkish" data-jump="${mine}">${testTitle(tests[mine])}</button>` : 'the result';
     $('actHint').innerHTML = !b ? `Edit either plan if you like, then run the baseline: ${n} games, about ${time} on this computer.`
       : !offBase ? 'These are the baseline plans. Change a choice in either plan to test it against the baseline.'
       : !edited ? `These plans are tested: see ${jump} below. Change a choice to test something else, or rerun the baseline to make these plans the new baseline${clears}.`
@@ -743,8 +743,19 @@ export function startSim(DATA) {
     const [xm, xe] = S('xg'), [gm, ge] = S('gd'), [pm, pe] = S('pts'), [fm] = S('xgf'), [am] = S('xga');
     return { xm, xe, gm, ge, pm, pe, fm, am, pA: mean(rowsA.map(r => perGame(r, c).pts)), pB: mean(rowsB.map(r => perGame(r, c).pts)), n: rowsA.length };
   }
+  // a test is named for what it changed from the baseline: the choice itself for one change, the choices for two or three, a count past that
+  const andList = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+  function testTitle(e) {
+    return teams.map((t, i) => ({ t, i, ks: TKEYS.map(([k]) => k).filter(k => !sameChoice(k, LAB.base.plans[i][k], e.plans[i][k])) })).filter(d => d.ks.length)
+      .map(({ t, i, ks }) => ks.length === 1 ? `${t.name} ${lc(choiceName(ks[0]))}: ${lc(optText(ks[0], e.plans[i][ks[0]]))}` : ks.length <= 3 ? `${t.name}: ${andList(ks.map(k => lc(choiceName(k))))}` : `${t.name}: ${ks.length} changes to the plan`).join('; ');
+  }
+  // every result card has a title and can be folded to its headline or removed (with an undo until the next run)
+  function cardHead(e, title) {
+    const i = LAB.tested.indexOf(e);
+    return `<div class="chead"><span class="tnum">${title}</span><span class="cbtns"><button type="button" class="linkish" data-fold="${i}" aria-expanded="${!e.folded}">${e.folded ? 'Show' : 'Hide'}</button><button type="button" class="linkish" data-del="${i}">Remove</button></span></div>`;
+  }
   const tip = (term, what) => ` <button type="button" class="tip" data-term="${term}" aria-label="${what}">?</button>`;
-  function testCard(e, num) {
+  function testCard(e) {
     const c = LAB.coach, me = teams[c], rowsA = e.idx.map(i => LAB.base.rows[i]), r = compare(rowsA, e.rowsB, c);
     const vx = verdict(r.xm, r.xe), vg = verdict(r.gm, r.ge), vp = verdict(r.pm, r.pe);
     const what = diffs(LAB.base.plans, e.plans).map(d => `<b>${d.team.name}:</b> ${d.list.join(', ')}`).join('<br>');
@@ -757,7 +768,7 @@ export function startSim(DATA) {
     const explain = vx[0] !== 'flat' && vp[0] === 'flat' ? `The chance difference is real at ${r.n} games. The points difference is not yet: points swing about ${Math.round(r.pe * 100)} points either way from luck alone${tip('close', 'What does too close to call mean?')}. Chances are the number to trust here.`
       : vx[0] === 'flat' ? `Neither number separates it from the baseline at ${r.n} games${tip('close', 'What does too close to call mean?')}. Run more games, or treat them as even.` : `Both chances and points separate it from the baseline at ${r.n} games.`;
     const ti = LAB.tested.indexOf(e);
-    return `<article class="change test"><span class="tnum">Test ${num}</span><p class="what">${what}</p><p class="headline sm">${head}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
+    return `<article class="change test${e.folded ? ' folded' : ''}">${cardHead(e, testTitle(e))}<p class="headline sm">${head}</p><p class="what">${what}</p><div class="verdicts">${tiles}</div><p class="hint">${explain}</p>
       <details class="more"><summary>Records</summary><div class="calib lab">${changeTable(rowsA, e.rowsB, c)}</div><p class="hint">Points change in percentage points. Differences are this test minus the baseline, game for game: both play the same games, with the same bounces until a change makes play go another way. A 95% range that includes zero means the two are not separated at this many games.</p></details>${gamePicker('test', e.idx, rowsA, e.rowsB, ti)}</article>`;
   }
   // a ranking's answer in one sentence: the best option if one clearly beats the baseline's, otherwise whether the choice matters
@@ -773,7 +784,7 @@ export function startSim(DATA) {
     const rows = e.list.map(r => { const [cls, label] = r.cur ? ['cur', 'Baseline plan'] : verdict(r.m, r.e); return `<div class="r${r.cur ? ' cur' : ''}"><div class="name">${txt(r.v)}<small>${r.cur ? 'what the others are measured from' : sgn(r.m) + ' net chances a game'}</small></div>${r.cur ? '<div class="range" aria-hidden="true"><div class="axis"></div><div class="zero"></div></div>' : rangeBar(r.m, r.e, 2.5)}<span class="pill ${cls}">${label}</span></div>`; }).join('');
     const inPlan = best && sameChoice(e.k, LAB.plans[e.c][e.k], best.v);
     const use = best ? (inPlan ? `<p class="hint">${txt(best.v)} is in the ${me.name}' plan now. Test it against the baseline to see it with the rest of your changes.</p>` : `<div class="row"><button type="button" class="secondary" data-use="${e.c}|${e.k}|${best.v}">Put ${lc(txt(best.v))} in the ${me.name}' plan</button></div>`) : '';
-    return `<article class="change rankres"><span class="tnum">Best ${name}</span><p class="headline sm">${head}</p><p class="what">Every ${name} for the ${me.name} on the baseline's ${e.n} games, the rest of the plan as in the baseline.</p><div class="rank">${rows}</div>${use}<p class="hint">Each dot is the best estimate of net chances against the baseline's ${name}, and its band the 95% range. Right of the line is better for the ${me.name}. A band that crosses the line is too close to call.</p></article>`;
+    return `<article class="change rankres${e.folded ? ' folded' : ''}">${cardHead(e, 'Best ' + name)}<p class="headline sm">${head}</p><p class="what">Every ${name} for the ${me.name} on the baseline's ${e.n} games, the rest of the plan as in the baseline.</p><div class="rank">${rows}</div>${use}<p class="hint">Each dot is the best estimate of net chances against the baseline's ${name}, and its band the 95% range. Right of the line is better for the ${me.name}. A band that crosses the line is too close to call.</p></article>`;
   }
   // a ranking's best option, put into that team's plan
   $('tested').addEventListener('click', ev => {
@@ -799,16 +810,27 @@ export function startSim(DATA) {
     playLabGame(seed, test ? e2.plans : LAB.base.plans, `${test ? 'Test' : 'Baseline'} game ${seed}${test ? ', the test plans' : ', the baseline plans'}`, test ? e2.rowsB[k] : LAB.base.rows[bi]);
   });
   function renderTested() {
-    let n = LAB.tested.filter(e => e.kind === 'test').length + 1;
-    $('tested').innerHTML = LAB.base ? LAB.tested.map(e => e.kind === 'rank' ? rankCard(e) : testCard(e, --n)).join('') : '';
+    if (!LAB.base) { $('tested').innerHTML = ''; return; }
+    const cards = LAB.tested.map(e => e.kind === 'rank' ? rankCard(e) : testCard(e)), R = TEST.removed;
+    if (R) cards.splice(Math.min(R.i, cards.length), 0, `<div class="removed">Removed: ${R.title}. <button type="button" class="linkish" data-undo>Undo</button></div>`);
+    $('tested').innerHTML = cards.join('');
   }
+  $('tested').addEventListener('click', ev => {
+    const f = ev.target.closest('[data-fold]'), d = ev.target.closest('[data-del]'), u = ev.target.closest('[data-undo]');
+    if (f) { const e = LAB.tested[+f.dataset.fold]; e.folded = !e.folded; saveLab(); renderTested(); }
+    else if (d) { const i = +d.dataset.del, e = LAB.tested[i]; TEST.removed = { e, i, lastRun: LAB.lastRun, title: e.kind === 'rank' ? 'Best ' + lc(choiceName(e.k)) : testTitle(e) }; LAB.tested.splice(i, 1); if (e.key && e.key === LAB.lastRun) LAB.lastRun = null; saveLab(); renderTested(); labRefresh(); }
+    else if (u && TEST.removed) { const { e, i, lastRun } = TEST.removed; TEST.removed = null; LAB.tested.splice(Math.min(i, LAB.tested.length), 0, e); if (lastRun === e.key) LAB.lastRun = lastRun; saveLab(); renderTested(); labRefresh(); }
+  });
 
   // ---------- running ----------
   function setRunning(on) {
     TEST.running = on; TEST.stop = false; $('labStop').hidden = !on;
+    if (on) TEST.removed = null;
     if (!on) $('labBar').style.width = '0%';
+    $('labBar').parentElement.hidden = !on; $('labRunning').hidden = !on && !$('labNote').textContent;
     labRefresh();
   }
+  const note = text => { $('labNote').textContent = text; $('labRunning').hidden = !TEST.running && !text; };
   const progress = (done, total, what) => { $('labBar').style.width = (100 * done / total) + '%'; $('labNote').textContent = `${what}: game ${done} of ${total}`; if (TEST.rankNote) $('rankNote').textContent = $('labNote').textContent; };
   const timed = async (jobs, what) => {
     setRunning(true); const t0 = performance.now();
@@ -821,7 +843,7 @@ export function startSim(DATA) {
     const n = +$('labN').value, seeds = Array.from({ length: n }, (_, i) => i + 1), plans = copyPlans(LAB.plans), tacs = plans.map(tacOfPlan);
     const { rows, secs } = await timed(seeds.map(sd => ({ id: sd, seed: sd, tacs, cfg: NHL_CFG() })), 'Baseline');
     const done = seeds.filter(sd => rows.has(sd));
-    $('labNote').textContent = `Baseline: ${done.length} games${TEST.stop ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`;
+    note(`Baseline: ${done.length} games${TEST.stop ? ', stopped early' : ''}, ${Math.round(secs)} seconds.`);
     if (!done.length) return;
     LAB.base = { key: keyOf(plans), plans, seeds: done, rows: done.map(sd => rows.get(sd)) }; LAB.tested = []; LAB.lastRun = LAB.base.key;
     saveLab(); renderBaseline(); renderTested();
@@ -837,7 +859,7 @@ export function startSim(DATA) {
     if (TEST.running || !LAB.base) return;
     const plans = copyPlans(LAB.plans), key = keyOf(plans);
     const { idx, rowsB } = await playOnBase(plans, 'Test');
-    $('labNote').textContent = TEST.stop ? 'Stopped early.' : '';
+    note(TEST.stop ? 'Stopped early.' : '');
     if (!idx.length) return;
     LAB.tested.unshift({ kind: 'test', key, plans, idx, rowsB }); LAB.lastRun = key;
     saveLab(); renderTested(); labRefresh();
@@ -850,7 +872,7 @@ export function startSim(DATA) {
     const plansFor = v => { const p = copyPlans(b.plans); p[c][k] = v; return p; };
     const jobs = others.flatMap(v => { const tacs = plansFor(v).map(tacOfPlan); return b.seeds.map(sd => ({ id: v + '|' + sd, seed: sd, tacs, cfg: NHL_CFG() })); });
     TEST.rankNote = true; const { rows } = await timed(jobs, `Finding the best ${lc(choiceName(k))}`); TEST.rankNote = false;
-    $('labNote').textContent = $('rankNote').textContent = TEST.stop ? 'Stopped early.' : '';
+    note($('rankNote').textContent = TEST.stop ? 'Stopped early.' : '');
     const list = [{ v: cur, m: 0, e: 0, cur: true }, ...others.map(v => {
       const idx = b.seeds.map((sd, i) => rows.has(v + '|' + sd) ? i : -1).filter(i => i >= 0); if (!idx.length) return null;
       const d = idx.map(i => perGame(rows.get(v + '|' + b.seeds[i]), c).xgd - perGame(b.rows[i], c).xgd);

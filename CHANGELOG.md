@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.75 = sim 0.62 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.76 = sim 0.63 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.76
+- Sim 0.63 (Game plan lab: test titles, fold and remove, the run card). No change to play.
 
 ### 0.75
 - Sim 0.62 (Watch balance, pinned shifts). `tools/lab.js --param cfg.accel=1.5` tries a multiplier. References re-saved at both levels.
@@ -188,6 +191,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.63
+- Game plan lab: a test is named for what it changed instead of Test 1, Test 2: the choice itself for one change (Bruins forecheck: 1-3-1 trap), the choices for two or three, a count past that (Bruins: 7 changes to the plan); both teams' changes when both plans changed. The hint above the buttons names it too.
+- Every test and ranking card can be folded to its title and one-line answer, or removed, with an undo until the next run. Folding is remembered with the results; removing the test of the current plans lets them be tested again.
+- The run card has room to breathe: what to do next on top in normal text, the run buttons (Test first once there is a baseline), the progress bar only while something runs, then Watch these plans and Reset below a divider.
 
 ### 0.62
 - Watch is balanced again: the build default for acceleration comes down from 2.3 to 1.8 times the NHL rate. At 2.3 every defender recovered almost at once, man coverage gained the most from it, and Montreal took 74% of the points. Each multiplier set back to 1 in turn showed acceleration was the cause (the others moved the split by a few points). At 1.5 Boston led 60 to 46 and games ran over 4 goals a team. Skaters get up to speed a little less suddenly; top speed and the rest are unchanged.

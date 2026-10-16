@@ -58,14 +58,25 @@
   .basehead .vt { margin: 0; }
   .planpair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 700px) { .planpair { grid-template-columns: 1fr; } }
-  .actions .row { flex-wrap: wrap; align-items: center; }
+  /* the run card: what to do next, the run buttons, progress only while running, then the other actions */
+  .card.actions { display: flex; flex-direction: column; gap: 14px; }
+  .actions .status { margin: 0; font-size: 0.95rem; line-height: 1.5; max-width: 80ch; }
+  .actions .row { flex-wrap: wrap; align-items: center; gap: 10px; }
   .actions .gfield { margin-left: auto; }
-  .smallrow { gap: 12px; }
+  .actions .running { display: flex; flex-direction: column; gap: 6px; }
+  .actions .running .hint { margin: 0; }
+  .actions .tools { gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .actions > .hint { margin: 0; }
+  @media (max-width: 520px) { .actions .gfield { margin-left: 0; } }
   .lgrid label.changed select, .lgrid label.changed input { outline: 2px solid var(--link); outline-offset: 1px; }
   .lgrid label.changed::after { content: 'changed'; color: var(--link); font-size: 0.66rem; letter-spacing: 0.08em; }
   .tested article.change { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
   .tested .what { margin: 0; line-height: 1.5; }
   .tested .tnum { font: 600 0.72rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
+  .tested .chead { display: flex; flex-wrap: wrap; align-self: stretch; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  .tested .cbtns { display: flex; gap: 16px; font-size: 0.85rem; margin-left: auto; }
+  .tested article.change.folded > :not(.chead):not(.headline) { display: none; }
+  .tested .removed { border: 1px dashed var(--line); border-radius: 12px; padding: 10px 14px; font-size: 0.88rem; color: var(--fg-dim); }
   .lgrid select { background: var(--raised); }
   @media (max-width: 380px) { .side .cgrid.lgrid { grid-template-columns: 1fr; } }
   .steps { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; font-size: 0.9rem; color: var(--fg-dim); }
