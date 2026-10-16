@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Under the hood · Patrick McDonough</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="How pmcdonough.com and its hockey engine are built: architecture, tech stack, models and the checks behind them.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316202c'/%3E%3Ctext x='16' y='22' font-family='Inter,Arial,sans-serif' font-size='14' font-weight='700' fill='%23f3efe6' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  /* The site's architecture and stack, for the curious. Reached from the easter egg in the home page footer; not linked anywhere else. */
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --fg: #16202c; --dim: #5f6b78; --line: #e2ded5; --accent: #1f5f9e; --tag: #eef1f5;
+    --ice: #eef5fb; --gold: #ffb81c; --red: #af1e2d; --green: #1f7a4a; --code: #f0ede6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #12161c; --card: #1a2029; --fg: #e9edf2; --dim: #95a1ae; --line: #2a323d; --accent: #7fb2e5; --tag: #232b36; --ice: #1f2a36; --green: #6fd19b; --code: #232b36; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #12161c; --card: #1a2029; --fg: #e9edf2; --dim: #95a1ae; --line: #2a323d; --accent: #7fb2e5; --tag: #232b36; --ice: #1f2a36; --green: #6fd19b; --code: #232b36; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 Inter, system-ui, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 56px 16px 64px; }
+  a { color: var(--accent); }
+  code { font: 0.86em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code); padding: 1px 5px; border-radius: 4px; }
+
+  .back { font-size: 0.88rem; font-weight: 500; text-decoration: none; }
+  .eyebrow { margin: 28px 0 6px; font: 600 0.75rem/1 Inter, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  h1 { font: 600 clamp(2rem, 5.5vw, 3rem)/1.05 Inter, system-ui, sans-serif; margin: 0 0 14px; letter-spacing: -0.025em; }
+  .lede { font-size: 1.12rem; color: var(--dim); margin: 0; max-width: 62ch; }
+  h2 { font: 600 1.35rem/1.2 Inter, sans-serif; letter-spacing: -0.01em; margin: 64px 0 6px; }
+  h2 + .sub { color: var(--dim); margin: 0 0 20px; max-width: 64ch; }
+  h3 { font: 600 1rem/1.3 Inter, sans-serif; margin: 0 0 4px; }
+  p { margin: 0 0 12px; }
+
+  /* at a glance */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 32px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .stat b { display: block; font: 700 1.9rem/1.1 Inter, sans-serif; letter-spacing: -0.02em; }
+  .stat span { color: var(--dim); font-size: 0.86rem; }
+
+  /* the stack, as layers */
+  .stack { display: flex; flex-direction: column; gap: 8px; }
+  .layer { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  .layer .name { font-weight: 600; font-size: 0.92rem; }
+  .layer .name small { display: block; color: var(--dim); font-weight: 400; font-size: 0.78rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 0.8rem; font-weight: 500; background: var(--tag); padding: 3px 9px; border-radius: 6px; }
+  .chip.no { text-decoration: line-through; color: var(--dim); background: transparent; border: 1px dashed var(--line); }
+  @media (max-width: 620px) { .layer { grid-template-columns: 1fr; gap: 6px; } }
+
+  /* the architecture diagram */
+  .arch { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; overflow-x: auto; }
+  .arch-grid { display: grid; grid-template-columns: 1fr 70px 1.15fr 70px 1fr; align-items: center; min-width: 760px; gap: 0; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .box { border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); font-size: 0.84rem; line-height: 1.4; }
+  .box b { display: block; font-size: 0.92rem; }
+  .box span { color: var(--dim); }
+  .box.engine { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--bg)); }
+  .box.engine ul { margin: 6px 0 0; padding-left: 1.1em; columns: 2; column-gap: 16px; }
+  .box.engine li { break-inside: avoid; }
+  .box.data { border-style: dashed; }
+  .box.page { border-color: var(--accent); }
+  .arrow { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--dim); text-align: center; }
+  .arrow i { display: block; width: 100%; height: 2px; background: var(--dim); position: relative; opacity: 0.6; }
+  .arrow i::after { content: ''; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left: 7px solid var(--dim); border-right: 0; }
+  .arrow i.l::after { right: auto; left: -1px; border-left: 0; border-right: 7px solid var(--dim); }
+  .caption { color: var(--dim); font-size: 0.84rem; margin: 10px 2px 0; }
+
+  /* cards of prose */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .cardx { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .cardx p { color: var(--dim); font-size: 0.92rem; margin: 0; }
+  .cardx p + p { margin-top: 8px; }
+
+  /* the tick */
+  .tick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tick .s { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 0.84rem; font-weight: 500; }
+  .tick .to { color: var(--dim); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.n { white-space: nowrap; font-weight: 600; }
+
+  .quote { border-left: 3px solid var(--gold); padding: 4px 0 4px 16px; margin: 18px 0; color: var(--dim); font-size: 0.98rem; }
+  footer { margin-top: 72px; color: var(--dim); font-size: 0.82rem; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="/">&larr; pmcdonough.com</a>
+  <p class="eyebrow">You found the back room</p>
+  <h1>Under the hood</h1>
+  <p class="lede">How this site and its hockey engine are built: a full game simulation, a strategy lab and a shot review, all running in your browser from plain JavaScript and a folder of data files. No framework, no build step, no server code.</p>
+
+  <div class="stats">
+    <div class="stat"><b>0</b><span>runtime dependencies, frameworks or build steps</span></div>
+    <div class="stat"><b>~1,500</b><span>lines in the hockey engine, across 12 modules</span></div>
+    <div class="stat"><b>7</b><span>data files drive it: rosters, ratings, systems, physics, models</span></div>
+    <div class="stat"><b>237k</b><span>real NHL shots behind the expected-goal model</span></div>
+    <div class="stat"><b>4</b><span>engines that play every seeded game identically: Node, Chrome, Firefox, Safari</span></div>
+  </div>
+
+  <h2>The stack</h2>
+  <p class="sub">Deliberately small. Everything a visitor runs is a static file; everything that needs heavier tools runs once, offline, and commits its output as data.</p>
+  <div class="stack">
+    <div class="layer"><div class="name">In the browser<small>what a visitor runs</small></div><div class="chips"><span class="chip">HTML</span><span class="chip">CSS with light and dark themes</span><span class="chip">JavaScript ES modules</span><span class="chip">Canvas 2D</span><span class="chip">Web Workers</span><span class="chip">localStorage</span><span class="chip no">React</span><span class="chip no">bundler</span><span class="chip no">npm packages</span></div></div>
+    <div class="layer"><div class="name">Hosting<small>how it gets to you</small></div><div class="chips"><span class="chip">Cloudflare Workers, static assets</span><span class="chip">every file revalidated on each visit</span><span class="chip">version stamps on every file</span><span class="chip">live about a minute after a push</span></div></div>
+    <div class="layer"><div class="name">Source<small>where it lives</small></div><div class="chips"><span class="chip">GitHub, one repo</span><span class="chip">one commit per site version</span><span class="chip">a changelog per project</span></div></div>
+    <div class="layer"><div class="name">Data pipeline<small>run offline, output committed</small></div><div class="chips"><span class="chip">Python</span><span class="chip">pandas</span><span class="chip">scikit-learn</span><span class="chip">MoneyPuck shot and team data</span><span class="chip">NHL play-by-play and shift API</span><span class="chip">NHL EDGE tracking aggregates</span></div></div>
+    <div class="layer"><div class="name">Checks<small>run before every push</small></div><div class="chips"><span class="chip">Node test runner</span><span class="chip">Playwright: Chromium, Firefox, WebKit</span><span class="chip">200 saved reference games</span><span class="chip">a fingerprint per game</span></div></div>
+    <div class="layer"><div class="name">Built with<small>who wrote the code</small></div><div class="chips"><span class="chip">Claude, in claude.ai chat, then Claude Code in the terminal</span><span class="chip">directed, reviewed and tested by me</span></div></div>
+  </div>
+
+  <h2>The architecture</h2>
+  <p class="sub">One rule holds it together: the engine never touches the page. It keeps the game state and announces what happens; the page draws it, the lab plays it in bulk, and the review listens to it.</p>
+  <div class="arch">
+    <div class="arch-grid">
+      <div class="col">
+        <div class="box data"><b>Data files</b><span>rosters and ratings, game-plan systems, physics and thresholds, the expected-goal model, real 2025-26 benchmarks, build defaults</span></div>
+        <div class="box data"><b>Offline scripts</b><span>fit the expected-goal model, extract ratings, build a real game file; reproduce their outputs byte for byte</span></div>
+      </div>
+      <div class="arrow"><span>fetched once</span><i></i></div>
+      <div class="col">
+        <div class="box engine"><b>The engine</b><span>createSim(data): game state, newGame(seed), tick(0.03 s)</span>
+          <ul><li>rink and geometry</li><li>expected goals</li><li>rosters and ratings</li><li>officials</li><li>lines and changes</li><li>formations</li><li>decisions (AI)</li><li>physics</li><li>rules</li><li>seeded random</li><li>exact math</li></ul>
+        </div>
+        <div class="box"><b>Events out</b><span>play-by-play line, effects, shot released, final, reset</span></div>
+      </div>
+      <div class="arrow"><span>state and events</span><i></i><i class="l"></i><span>plans, settings</span></div>
+      <div class="col">
+        <div class="box page"><b>Watch</b><span>draws the rink at 60 frames a second, sight lines, controls, box score</span></div>
+        <div class="box page"><b>Game plan lab</b><span>hundreds of seeded games in background workers, one engine per CPU core</span></div>
+        <div class="box page"><b>Shot review</b><span>records every shot and the shooter's read, replays it</span></div>
+        <div class="box page"><b>Play Review</b><span>the real-game prototype; imports the engine's model and math</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">The engine is 12 small modules. Each one installs its functions into one shared object and then links to the others, so they can call each other freely while each file stays about one subject.</p>
+
+  <h2>One tick of the game</h2>
+  <p class="sub">Every 0.03 seconds of game time, the engine runs the same sequence. A full game is more than 120,000 ticks and plays in about two seconds when nothing is drawn.</p>
+  <div class="tick">
+    <span class="s">Clock and penalties</span><span class="to">&rarr;</span>
+    <span class="s">Line changes</span><span class="to">&rarr;</span>
+    <span class="s">Each skater picks a target</span><span class="to">&rarr;</span>
+    <span class="s">The carrier reads: shoot, pass, carry</span><span class="to">&rarr;</span>
+    <span class="s">Skating physics</span><span class="to">&rarr;</span>
+    <span class="s">Puck physics, saves, blocks</span><span class="to">&rarr;</span>
+    <span class="s">Offside, icing, whistles</span>
+  </div>
+  <p class="caption">Skaters move with real acceleration and top speeds from NHL EDGE. Their decisions are rules written from coaching references, and the carrier's choice between shooting and passing is priced by the same expected-goal model the stats use.</p>
+
+  <h2>Same seed, same game, everywhere</h2>
+  <p class="sub">Comparing two game plans fairly means playing them through the same luck. That only works if a game is exactly repeatable, which took two pieces of engineering.</p>
+  <div class="cards">
+    <div class="cardx"><h3>A seeded generator</h3><p>Every random draw in a game comes from one generator seeded by the game's number. Nothing in the engine may call the browser's own random function, and a unit test fails if anything does.</p></div>
+    <div class="cardx"><h3>Exact math</h3><p>Browsers and Node compute sine, cosine, logarithms and powers differently in the last binary digit. That was enough to change how 2 of 20 games ended. The engine now uses its own ports of the standard fdlibm routines, built from exact arithmetic.</p></div>
+    <div class="cardx"><h3>Proven, not assumed</h3><p>Seeded games are played in Node and in Chromium, Firefox and WebKit, and every final number must match to the last digit. Games also replay in reverse order and in the page's own workers to prove no state leaks between them.</p></div>
+  </div>
+
+  <h2>The models</h2>
+  <p class="sub">Every number a hockey person might question lives in a data file with a written description and its source, not in the code.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Model</th><th>What it is</th><th>Where it comes from</th></tr>
+    <tr><td class="n">Expected goals</td><td>Logistic regression on distance, angle, shot type, rebound, rush and strength</td><td>237,055 MoneyPuck shots from two seasons; holdout log loss 0.226 against MoneyPuck's own 0.218</td></tr>
+    <tr><td class="n">Saves</td><td>One roll per shot that reaches the goalie, from the shot's expected goals and the goalie's record by danger tier</td><td>MoneyPuck goalie data, with one calibration factor</td></tr>
+    <tr><td class="n">Skating</td><td>Bounded speed and acceleration, cruise and sprint, fatigue by shift length</td><td>NHL EDGE skating aggregates</td></tr>
+    <tr><td class="n">Ratings</td><td>Shooting, passing, defense, skating and faceoffs per player</td><td>2025-26 MoneyPuck player stats</td></tr>
+    <tr><td class="n">Decisions</td><td>Rules for each role in each system: forecheck, breakout, entry, zone play, special teams</td><td>Coaching references, written as data</td></tr>
+    <tr><td class="n">The lab's verdicts</td><td>Paired differences over the same seeded games, with 95% intervals</td><td>Common random numbers, a standard variance-reduction method</td></tr>
+  </table></div>
+
+  <h2>How it is kept honest</h2>
+  <p class="sub">A seeded run reproduces exactly, so any change in the results is the code's doing. Every change goes through these before it ships.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Check</th><th>What it proves</th></tr>
+    <tr><td class="n">Smoke test</td><td>All three pages load over HTTP in a real browser, a full game plays without an error, and every file and import carries the same version stamp</td></tr>
+    <tr><td class="n">Unit tests</td><td>A seed plays the same game whatever ran before it, a new game keeps nothing from the last, every random draw is seeded, play never freezes, the math matches to one unit in the last place</td></tr>
+    <tr><td class="n">Reference games</td><td>200 saved games, 100 at each level, each with a fingerprint: a change that moves even one game is caught and has to be explained</td></tr>
+    <tr><td class="n">Order and pool</td><td>Games are identical played backwards in one process and in the page's own background workers</td></tr>
+    <tr><td class="n">Calibration</td><td>Shift lengths, offsides and icings, and 28 per-team numbers against the real 2025-26 teams</td></tr>
+    <tr><td class="n">Cross-browser</td><td>The same seeded games in Node, Chromium, Firefox and WebKit, identical to the last digit</td></tr>
+  </table></div>
+
+  <h2>Shipping</h2>
+  <div class="cards">
+    <div class="cardx"><h3>Versions</h3><p>The site has a version, and each project has its own. A small script sets a project's version and every version stamp that carries it; a test fails if any file disagrees.</p></div>
+    <div class="cardx"><h3>Never half a deploy</h3><p>Every file and import is loaded with its version in the URL, and the host makes browsers check each file on every visit, so a visitor never runs new code against an old module.</p></div>
+    <div class="cardx"><h3>One commit per version</h3><p>Each version is one commit with a changelog entry. The live site updates about a minute after a push.</p></div>
+  </div>
+
+  <h2>Built with AI</h2>
+  <p>Nearly all of the code was written by Claude: first in claude.ai chat, one full-repo version at a time, then in Claude Code from the terminal, where it runs the checks itself and commits each version. My part is the product: what to build, how a coach would use it, what a number should mean, and whether the result is right. The checks above are how both of us know a change did what it said.</p>
+  <p class="quote">The engine is about 1,500 lines. The tests, tools and documentation around it are about as large again, and they are the reason it can keep changing safely.</p>
+
+  <footer>Thanks for looking around. <a href="/">Back to the front door</a>.</footer>
+</main>
+</body>
+</html>

@@ -3,13 +3,13 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.53';
-import { installReview } from './review.js?v=0.53';
+import { createSim } from './engine/sim.js?v=0.54';
+import { installReview } from './review.js?v=0.54';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.53';
+  const VERSION = '0.54';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -930,12 +930,29 @@ export function startSim(DATA) {
   // ---------- Controls ----------
   $('pause').addEventListener('click', () => { game.paused = !game.paused; $('pause').textContent = game.paused ? 'Resume' : 'Pause'; });
   document.querySelectorAll('.spd').forEach(b => b.addEventListener('click', () => { game.speed = +b.dataset.s; document.querySelectorAll('.spd').forEach(o => o.setAttribute('aria-pressed', o === b)); }));
-  $('newgame').addEventListener('click', newGame);
+  $('newgame').addEventListener('click', () => { if (!SIM_END.on) newGame(); });
+  // Sim to the final horn: the rest of this game at once, the same ticks the rink would play, a few thousand per frame
+  // so the page stays responsive; then the review opens
+  const SIM_END = { on: false };
+  $('simEnd').addEventListener('click', () => {
+    if (SIM_END.on || game.over) return;
+    SIM_END.on = true; const b = $('simEnd'); b.disabled = $('newgame').disabled = true;
+    const run = () => {
+      for (let k = 0; k < 4000 && !game.over; k++) { tick(0.03); REVIEW.step(0.03); }
+      b.textContent = game.over ? 'Sim to the final horn' : `Simming: ${['1st', '2nd', '3rd', 'OT'][game.period - 1] || 'OT'} period`;
+      if (!game.over) { requestAnimationFrame(run); return; }
+      SIM_END.on = false; b.disabled = true; $('newgame').disabled = false; FX.rings = []; FX.goalLight = null;
+      const rv = $('review'); if (!rv.hidden) rv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    requestAnimationFrame(run);
+  });
+  sim.on('reset', () => { $('simEnd').disabled = false; });
+  sim.on('final', () => { if (!SIM_END.on) $('simEnd').disabled = true; });
 
   let last = performance.now();
   function frame(now) {
     const real = Math.min(0.05, (now - last) / 1000); last = now;
-    if (!game.paused) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); REVIEW.step(d); g -= d; } moveOfficials(real * game.speed); }
+    if (!game.paused && !SIM_END.on) { let g = real * game.speed; while (g > 0) { const d = Math.min(g, 0.03); fxTick(d); tick(d); REVIEW.step(d); g -= d; } moveOfficials(real * game.speed); }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawRink(); drawBenches(); drawOfficials(); drawPlayers(); drawWhistle(); updateHud(); updateSheets(now);
     requestAnimationFrame(frame);

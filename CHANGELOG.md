@@ -1,8 +1,12 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.64 = sim 0.53 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.65 = sim 0.54 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.65
+- Sim 0.54 (Sim to the final horn).
+- Under the hood (`public/under-the-hood/`): the site's architecture and stack, the engine's tick, how a seed plays the same game everywhere, the models, the checks, shipping, and how it was built with Claude. Reached only from an easter egg, the site version in the home page footer, and kept out of search engines.
 
 ### 0.64
 - Sim 0.53 (Review this game). Home page: the sim's card mentions the review; Play Review's card calls itself the early prototype the review grew from.
@@ -152,6 +156,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.54
+- Sim to the final horn, beside New game: plays the rest of the game at once, the same ticks the rink would play, a few thousand a frame (about two seconds), then scrolls to the shot review.
 
 ### 0.53
 - Review this game, Play Review's first step into the sim. When a Watch game ends, a panel under the rink judges every shot by the shooter's own read at the release: his look at the net (after a defender in his lane or on him) against his best pass, the values he decided with. Verdicts: better pass missed (a pass worth `shotDecision.xgChoice.passMustBeatBy` times the shot and at least `review.minGapXg` more), close call, right call. Each team gets a count, the goals left on the table and its share of right calls; a strip shows every shot of the game, Bruins above and Canadiens below; a list filters by verdict, goals and team. A shot opens on its own rink, zoomed to the ice the play used, frozen at the release with the sight lines, why he shot (his look beat his passes, a throw from the outside, the shot he had, held too long, breakaway, one-timer), his shot's value and what cut it, the best pass and what it was made of, and what happened. Play the lead-up runs the six seconds before at 0.5x or 1x, holds on the release, then two seconds after. Every shooter folds out a table. The review only listens: the game plays exactly as before (both references identical).
