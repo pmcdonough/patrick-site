@@ -554,7 +554,7 @@
    "stickFt": 15,
    "cushionPerFt": 0.5,
    "minCushionFt": 2,
-   "maxCushionFt": 15.0,
+   "maxCushionFt": 20,
    "carrierGoalSideFt": 5
   }
  },

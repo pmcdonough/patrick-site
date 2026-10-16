@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.73 = sim 0.60 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.74 = sim 0.61 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.74
+- Sim 0.61 (pass coverage, first pass). The home page says a quarter more chances, not a third. References re-saved at both levels.
 
 ### 0.73
 - Home page: Play Review's card is gone (the page stays at its address, linked from the sim's card as the first prototype). The sim's card spans the page, its picture a banner, with a short section each on the Game plan lab, Watch a game, Review this game and how it is built.
@@ -182,6 +185,14 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.61
+- Measured first: 70 to 80% of medium- and high-danger shots come off a pass caught within 2.5 s, and when the pass leaves, the receiver's nearest defender is a median 12 to 14 ft away. The biggest single source for both clubs is a forward 10 to 20 ft out at even strength, about 5 a game each.
+- Man coverage sags further toward the net off a man far out: up to 20 ft between him and the net instead of 15 (`systems.json` `defensiveZone.man.maxCushionFt`). At the NHL settings Boston's expected goals 4.35 to 3.76 and medium-danger shots 16.3 to 13.1. Playing men tighter (6 and 9 ft) was much worse; 25 ft reached the league rate but cut Boston's shots on goal to 20 a game.
+- Zone coverage picks up a defenseman who comes down: the center's slot man and the defensemen's net-front man can be a defenseman (before, only forwards counted). No measurable change on its own; kept because it is right.
+- Recalibrated: `goalie.tierGoalScale` 0.92 to 1.05 (goals 3.03 a team at the NHL settings, league 3.08). Above 1 because both clubs' goalies allowed about 10% fewer goals than expected in 2025-26.
+- At the NHL settings, 100 games: expected goals 3.76 and 4.03 (league 3.13); Boston 66% of the points, Montreal 44%. At the build defaults Montreal takes 74% of the points.
+- Shifts: mean 51 s, p90 78 s at the build defaults (target 45 to 50 and 70 to 75).
 
 ### 0.60
 - Shots hit the net at the league's rate for their danger tier: 62.6% low, 68.5% medium, 78.1% high (MoneyPuck 2025-26, tiered by the sim's own expected-goal model; defensemen and forwards alike). A shot on net is aimed inside the posts, a miss goes just wide of one (`physics.json` `shot.aim`). Before, an aiming error that grew with distance put close forwards' shots on net 93 to 99% of the time and point shots 27 to 51%.

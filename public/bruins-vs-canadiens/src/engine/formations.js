@@ -1,8 +1,8 @@
 // Formations: the spot each skater wants for the situation, the system and the puck.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { clamp, dist, ownNet, toFx, toRink } from './rink.js?v=0.60';
-import * as DM from './detmath.js?v=0.60';
+import { clamp, dist, ownNet, toFx, toRink } from './rink.js?v=0.61';
+import * as DM from './detmath.js?v=0.61';
 
 export function install(S) {
   const { PH, SYS, active, drift, game, onPP, puck, shorthanded, teams } = S;
@@ -66,17 +66,18 @@ export function install(S) {
         const strong = pfy < 42;
         [fx, fy] = SYS.defensiveZone.zone.spots[p.role];
         if (p.isD) { const ZD = SYS.defensiveZone.zone.dSpread; const off = (p.role === 'LD') === strong ? ZD.strongSideFt : ZD.weakSideFt; fy = p.role === 'LD' ? 42.5 - off : 42.5 + off; }
-        // the center owns the slot: he takes the most dangerous uncovered forward between the dots and plays goal-side of him
+        // the center owns the slot: he takes the most dangerous attacker between the dots, a defenseman who has come down
+        // included (before sim 0.61 only forwards counted), and plays goal-side of him
         if (p.role === 'C') {
           const opp = teams[1 - t.id];
-          const slotMen = active(opp).filter(o => o !== puck.carrier && !o.isD).map(o => ({ o, fx: 178 - toFx(opp, o.x) })).filter(h => h.fx > 12 && h.fx < 42 && Math.abs(h.o.y - 42.5) < 18).sort((a, b) => a.fx - b.fx);
+          const slotMen = active(opp).filter(o => o !== puck.carrier).map(o => ({ o, fx: 178 - toFx(opp, o.x) })).filter(h => h.fx > 12 && h.fx < 42 && Math.abs(h.o.y - 42.5) < 18).sort((a, b) => a.fx - b.fx);
           if (slotMen.length) { const h = slotMen[0]; fx = clamp(h.fx - 3.5, 6, 40); fy = h.o.y + (h.o.y < 42.5 ? 1.5 : -1.5); }
         }
         if (pfx < 12) { if (p.role === (strong ? 'LD' : 'RD')) [fx, fy] = [4, strong ? 22 : 63]; }
-        // defensemen box out the net-front man: whoever is parked in front gets a defender on his hip, goal-side
+        // defensemen box out the net-front man: whoever is parked in front, forward or defenseman, gets a defender on his hip, goal-side
         if (p.isD) {
           const opp = teams[1 - t.id];
-          const front = active(opp).filter(o => !o.isD && o !== t.pressurer).map(o => ({ o, fx: 178 - toFx(opp, o.x) })).filter(h => h.fx < 26 && Math.abs(h.o.y - 42.5) < 16).sort((a, b) => a.fx - b.fx)[0];
+          const front = active(opp).filter(o => o !== puck.carrier && o !== t.pressurer).map(o => ({ o, fx: 178 - toFx(opp, o.x) })).filter(h => h.fx < 26 && Math.abs(h.o.y - 42.5) < 16).sort((a, b) => a.fx - b.fx)[0];
           if (front) {
             const other = active(t).find(q => q.isD && q !== p);
             const mine = !other || other === t.pressurer || Math.abs(other.y - front.o.y) > Math.abs(p.y - front.o.y);
