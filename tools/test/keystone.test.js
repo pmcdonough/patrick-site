@@ -49,6 +49,18 @@ test('a thin tall wall tips under a pointed vault, and a flying buttress saves i
   assert.ok(Math.abs(braced.flyer.C - st.H * Math.hypot(1, braced.flyer.slope)) < 1e-9);
 });
 
+test('a flyer leaping two aisles to a tall buttress still holds a nave wall up', async () => {
+  const S = await imp();
+  const a = S.build({ shape: 'pointed', span: 12, thick: 0.7, count: 11 }), st = S.solve(a).state;
+  const s = S.supports(a, st, { height: 24, width: 1.2, flyer: true, bdepth: 3.8, pinnacle: true, gap: 10.9, bheight: 21 });
+  assert.ok(Math.abs(s.flyer.g - 10.9) < 1e-12 && s.flyer.hb === 21);
+  assert.equal(s.wall.verdict, 'solid');
+  assert.equal(s.buttress.verdict, 'solid');
+  // the defaults are unchanged: one aisle, a buttress at 0.8 of the wall
+  const d = S.supports(a, st, { height: 24, width: 1.2, flyer: true, bdepth: 3.8, pinnacle: true });
+  assert.ok(Math.abs(d.flyer.g - 4.8) < 1e-12 && Math.abs(d.flyer.hb - 19.2) < 1e-12);
+});
+
 test('a pier with no load but its own weight stands with its resultant at the middle', async () => {
   const S = await imp();
   const c = S.pierCheck(0, 2, 10, []);

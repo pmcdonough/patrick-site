@@ -3,11 +3,11 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.2';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.2';
-import { pieces, steps, STEP_STRUCK, forceLines, computeLoads, live } from './notre-dame.js?v=0.2';
+import * as THREE from './vendor/three.module.js?v=0.3';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.3';
+import { pieces, steps, STEP_STRUCK, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.3';
 
-const VERSION = '0.2';
+const VERSION = '0.3';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -25,14 +25,14 @@ catch (e) { $('stage').insertAdjacentHTML('beforeend', '<div class="nogl">This b
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.localClippingEnabled = true;
-const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.5, 600);
-const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 8; controls.maxDistance = 220;
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.5, 1400);
+const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 8; controls.maxDistance = 320;
 camera.position.set(-60, 34, 66); controls.target.set(0, 16, 0);
 const lin = h => new THREE.Color(h).convertSRGBToLinear();
 const hemi = new THREE.HemisphereLight(lin(0xeef2f6), lin(0xb9b1a3), 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(lin(0xfff3e2), 1.15); sun.position.set(-40, 70, 45); sun.castShadow = true;
-Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 55, bottom: -10, near: 10, far: 200 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
-const ground = new THREE.Mesh(new THREE.CircleGeometry(400, 96), new THREE.MeshLambertMaterial()); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 70, bottom: -40, near: 10, far: 300 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(1000, 96), new THREE.MeshLambertMaterial()); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
 // a person for scale, by the west end of the nave
 const person = new THREE.Group(), pm = new THREE.MeshStandardMaterial({ color: lin(0x4a5a6c), roughness: 0.8 });
 const pb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.45, 16), pm); pb.position.y = 0.73;
@@ -49,13 +49,54 @@ const MATS = {
   glass: t => new THREE.MeshStandardMaterial({ color: lin([0x3d6db5, 0xb2404f, 0x4b8a66][t]), roughness: 0.3, transparent: true, opacity: 0.8, emissive: lin([0x1c3f80, 0x6e1f2b, 0x1d4d33][t]), side: THREE.DoubleSide }),
   pave: () => new THREE.MeshStandardMaterial({ color: lin(0xd2c9b7), roughness: 0.95 }),
 };
-const meshes = [];
-pieces.forEach((p, i) => {
-  const m = new THREE.Mesh(p.geo, MATS[p.mat](p.tint)); m.material.clippingPlanes = [cutPlane];
-  m.castShadow = p.mat !== 'glass'; m.receiveShadow = true; m.visible = false; m.userData.i = i;
-  p.mesh = m; p.base = m.material.color.clone(); scene.add(m); meshes.push(m);
-  p.geo.computeBoundingBox(); p.box = p.geo.boundingBox.clone();
-});
+// ---------- Batches ----------
+// Thousands of pieces can't each be their own object on a phone, so the pieces that come and go together (same step, same
+// removal, same material, same roof group) are merged into one mesh. Each piece keeps the range of vertices and triangles
+// it occupies in its batch: that is how it is colored, picked and dropped into place (the drop runs on the graphics card,
+// each piece with its own delay, so a step still goes in stone by stone).
+const DUR = reduce ? 0.001 : 0.52, batches = [], meshes = [];
+{
+  const byKey = new Map();
+  pieces.forEach(p => {
+    const key = [p.step, p.until, p.mat, p.tint, p.group].join('|');
+    if (!byKey.has(key)) { const B = { step: p.step, until: p.until, mat: p.mat, group: p.group, pieces: [] }; byKey.set(key, B); batches.push(B); }
+    byKey.get(key).pieces.push(p);
+  });
+  for (const B of batches) {
+    let nv = 0, ni = 0;
+    for (const { geo: g } of B.pieces) { nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = new Float32Array(nv * 3), dly = new Float32Array(nv), idx = new Uint32Array(ni);
+    const mat = MATS[B.mat](B.pieces[0].tint), base = mat.color.clone(), stagger = Math.min(0.045, 1.1 / B.pieces.length);
+    mat.color.set(0xffffff); mat.vertexColors = true; mat.clippingPlanes = [cutPlane];
+    let v = 0, i = 0;
+    B.pieces.forEach((p, k) => {
+      const g = p.geo, n = g.attributes.position.count, m = g.index ? g.index.count : n;
+      if (!g.attributes.normal) g.computeVertexNormals();
+      pos.set(g.attributes.position.array, v * 3); nor.set(g.attributes.normal.array, v * 3); dly.fill(k * stagger, v, v + n);
+      for (let j = 0; j < n; j++) col.set([base.r, base.g, base.b], (v + j) * 3);
+      if (g.index) for (let j = 0; j < m; j++) idx[i + j] = g.index.array[j] + v; else for (let j = 0; j < m; j++) idx[i + j] = v + j;
+      g.computeBoundingBox(); p.box = g.boundingBox.clone();
+      Object.assign(p, { batch: B, v0: v, vn: n, i0: i, in: m, base, shown: base.clone() });
+      v += n; i += m; g.dispose(); p.geo = null;
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.setAttribute('aDelay', new THREE.BufferAttribute(dly, 1));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeBoundingSphere();
+    B.u = { uTime: { value: 0 }, uMode: { value: 0 } };
+    mat.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, B.u);
+      sh.vertexShader = 'attribute float aDelay;\nuniform float uTime;\nuniform int uMode;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+        if (uMode != 0) {
+          float k = clamp((uTime - aDelay) / ${DUR.toFixed(3)}, 0.0, 1.0), e = 1.0 - (1.0 - k) * (1.0 - k) * (1.0 - k);
+          transformed.y += uMode == 1 ? (1.0 - e) * 3.2 : -e * 1.2;
+        }`);
+    };
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = B.mat !== 'glass'; mesh.receiveShadow = true; mesh.visible = false;
+    B.mesh = mesh; B.last = (B.pieces.length - 1) * stagger + DUR; scene.add(mesh); meshes.push(mesh);
+  }
+}
 
 // ---------- Force lines ----------
 // One whole path at a time: the line of thrust at the bay line facing you (or at the cut), from the crown of the vault
@@ -98,33 +139,38 @@ function rampColor(mpa) {
 }
 
 // ---------- State and animation ----------
-const NSTEPS = steps.length;
-const state = { n: NSTEPS, anim: [], follow: true, playing: false, sel: null, camT: null, loadView: false, started: false };
+const NSTEPS = steps.length, NBAGS = new Set(steps.map(s => s.bag)).size;
+const state = { n: NSTEPS, follow: true, playing: false, sel: null, camT: null, loadView: false, started: false };
 function applyStep(n, animate) {
-  const prevN = state.n; state.n = n; state.anim = [];
-  const now = performance.now();
-  pieces.forEach(p => {
-    const show = live(p, n), wasShown = live(p, prevN);
-    if (animate && show && !wasShown && p.step === n - 1) { state.anim.push({ p, t0: now, kind: 'in' }); p.mesh.visible = true; }
-    else if (animate && !show && wasShown && p.until === n - 1) { state.anim.push({ p, t0: now, kind: 'out' }); }
-    else { p.mesh.visible = show; p.mesh.position.set(0, 0, 0); }
-  });
-  const incoming = state.anim.filter(a => a.kind === 'in');
-  incoming.forEach((a, k) => a.t0 = now + k * Math.min(45, 1100 / Math.max(1, incoming.length)));
-  pieces.forEach(p => p.fresh = p.step === n - 1 && live(p, n));
+  const prevN = state.n, now = performance.now(); state.n = n;
+  for (const B of batches) {
+    const p = B.pieces[0], show = live(p, n), was = live(p, prevN);
+    B.anim = null; B.u.uMode.value = 0;
+    if (animate && show && !was && B.step === n - 1) { B.anim = { t0: now, mode: 1 }; B.u.uMode.value = 1; B.u.uTime.value = 0; B.mesh.visible = true; }
+    else if (animate && !show && was && B.until === n - 1) { B.anim = { t0: now, mode: 2 }; B.u.uMode.value = 2; B.u.uTime.value = 0; }
+    else B.mesh.visible = show;
+    B.fresh = B.step === n - 1 && show;
+  }
   computeLoads(n); recolor(); syncUI();
   if (animate && state.follow && n > 0) frameStep(n - 1);
 }
-const FRESH = lin(0xe8a23a).multiplyScalar(0.28), SEL = lin(0x2f6fd0).multiplyScalar(0.45), NONE = new THREE.Color(0);
+const FRESH = lin(0xe8a23a).multiplyScalar(0.28), SEL = lin(0x5b8fe0), NONE = new THREE.Color(0), want = new THREE.Color();
 function recolor() {
-  pieces.forEach(p => {
-    const m = p.mesh.material;
-    if (state.loadView && p.bear > 0 && p.mat === 'stone') m.color.copy(rampColor(Math.max(0.01, p.stress)));
-    else m.color.copy(p.base);
-    if (p.mat !== 'glass') m.emissive.copy(state.sel === p ? SEL : p.fresh && !state.loadView ? FRESH : NONE);
-  });
+  // a piece's vertex colors are rewritten only when its color changes, so stepping through the build stays cheap
+  for (const p of pieces) {
+    if (state.loadView && p.bear > 0 && p.mat === 'stone' && live(p, state.n)) want.copy(rampColor(Math.max(0.01, p.stress))); else want.copy(p.base);
+    if (state.sel === p) want.lerp(SEL, 0.55);
+    if (want.equals(p.shown)) continue;
+    p.shown.copy(want);
+    const a = p.batch.mesh.geometry.attributes.color;
+    for (let j = p.v0; j < p.v0 + p.vn; j++) { a.array[j * 3] = want.r; a.array[j * 3 + 1] = want.g; a.array[j * 3 + 2] = want.b; }
+    a.needsUpdate = true;
+  }
   const roofOn = on('v-roof');
-  pieces.forEach(p => { if (p.group === 'roof') p.mesh.visible = roofOn && live(p, state.n); });
+  for (const B of batches) {
+    if (B.mat !== 'glass') B.mesh.material.emissive.copy(B.fresh && !state.loadView ? FRESH : NONE);
+    if (B.group === 'roof') B.mesh.visible = roofOn && live(B.pieces[0], state.n);
+  }
   forceGroup.visible = on('v-forces') && state.n > STEP_STRUCK;
   $('fkey').hidden = !forceGroup.visible;
 }
@@ -136,7 +182,7 @@ function recolor() {
 function frameBox(box, minDist = 26) {
   const c = box.getCenter(V3()), size = box.getSize(V3()).length();
   const dir = camera.position.clone().sub(controls.target).normalize();
-  const dist = Math.min(170, Math.max(minDist, size * 1.25) * Math.max(1, 1.3 / camera.aspect));
+  const dist = Math.min(controls.maxDistance - 10, Math.max(minDist, size * 1.25) * Math.max(1, 1.3 / camera.aspect));
   state.camT = { t0: performance.now(), fromT: controls.target.clone(), toT: c, fromP: camera.position.clone(), toP: c.clone().add(dir.multiplyScalar(dist)) };
   if (state.camT.toP.y < 3) state.camT.toP.y = 3;
 }
@@ -148,7 +194,7 @@ function frameStep(i) {
 }
 function frameAll() {
   const box = new THREE.Box3();
-  pieces.forEach(p => { if (p.mesh.visible) box.union(p.box); });
+  pieces.forEach(p => { if (p.batch.mesh.visible) box.union(p.box); });
   if (box.isEmpty()) box.set(V3(-17, 0, -10), V3(17, 6, 10));
   frameBox(box);
 }
@@ -158,11 +204,23 @@ function clampTarget() {
   camera.position.add(controls.target.clone().sub(before));
 }
 function stopFollow() { state.camT = null; if (state.follow) { state.follow = false; press('v-follow', false); } }
-const ray = new THREE.Raycaster();
+const ray = new THREE.Raycaster(), tri = [V3(), V3(), V3()], at = V3(), entry = V3();
+// The piece under the pointer: a ray against each visible piece's box first, then against its own triangles in its batch.
 function hitAt(e) {
-  const r = cv.getBoundingClientRect();
+  const r = cv.getBoundingClientRect(), R = ray.ray;
   ray.setFromCamera({ x: (e.clientX - r.left) / r.width * 2 - 1, y: -(e.clientY - r.top) / r.height * 2 + 1 }, camera);
-  return ray.intersectObjects(meshes.filter(m => m.visible)).find(h => cutPlane.distanceToPoint(h.point) >= 0) || null;
+  let best = null;
+  for (const p of pieces) {
+    if (!p.batch.mesh.visible || !R.intersectBox(p.box, entry) || (best && R.origin.distanceTo(entry) > best.d)) continue;
+    const g = p.batch.mesh.geometry, pos = g.attributes.position.array, idx = g.index.array;
+    for (let t = p.i0; t < p.i0 + p.in; t += 3) {
+      for (let q = 0; q < 3; q++) { const v = idx[t + q] * 3; tri[q].set(pos[v], pos[v + 1], pos[v + 2]); }
+      if (!R.intersectTriangle(tri[0], tri[1], tri[2], false, at) || cutPlane.distanceToPoint(at) < 0) continue;
+      const d = R.origin.distanceTo(at);
+      if (!best || d < best.d) best = { d, point: at.clone(), piece: p };
+    }
+  }
+  return best;
 }
 function pointUnder(e) {
   const hit = hitAt(e); if (hit) return hit.point;
@@ -186,10 +244,9 @@ $('fit').onclick = frameAll;
 const ease = t => t < 0 ? 0 : t > 1 ? 1 : 1 - (1 - t) * (1 - t) * (1 - t);
 function tick(now) {
   requestAnimationFrame(tick);
-  for (const a of state.anim) {
-    const t = (now - a.t0) / (reduce ? 1 : 520);
-    if (a.kind === 'in') a.p.mesh.position.y = (1 - ease(t)) * 3.2;
-    else { a.p.mesh.position.y = -ease(t) * 1.2; if (t >= 1) a.p.mesh.visible = false; }
+  for (const B of batches) if (B.anim) {
+    const t = (now - B.anim.t0) / 1000; B.u.uTime.value = t;
+    if (t > B.last) { if (B.anim.mode === 2) B.mesh.visible = false; B.anim = null; B.u.uMode.value = 0; }
   }
   if (state.camT) { const t = ease((now - state.camT.t0) / (reduce ? 1 : 900)); controls.target.lerpVectors(state.camT.fromT, state.camT.toT, t); camera.position.lerpVectors(state.camT.fromP, state.camT.toP, t); if (t >= 1) state.camT = null; }
   controls.update(); if (!state.camT) clampTarget();
@@ -208,7 +265,7 @@ function partsOf(i) {
 function syncUI() {
   const n = state.n, pg = $('page');
   if (n === 0) pg.innerHTML = `<div class="top"><span>Start</span><span class="stepno">${NSTEPS} steps</span></div><h2>An empty site on the Île de la Cité</h2><p>Bishop Maurice de Sully laid the first stone in 1163. Press Next step to set the first footing.</p>`;
-  else if (n === NSTEPS && !state.started) pg.innerHTML = `<div class="top"><span>Notre-Dame de Paris</span><span class="stepno">${pieces.length} pieces</span></div><h2>Three bays of the nave</h2><p>${NSTEPS} steps in 9 bags, from footings to stained glass. Every stone, rib and roof timber goes in on its own, in the order the masons used.</p><button class="primary" id="begin">Start building</button>`;
+  else if (n === NSTEPS && !state.started) pg.innerHTML = `<div class="top"><span>${KIT.place}</span><span class="stepno">${pieces.length} pieces</span></div><h2>${KIT.title}</h2><p>${NSTEPS} steps in ${NBAGS} bags, from footings to stained glass. Every stone, rib and roof timber goes in on its own, in the order the masons used.</p><button class="primary" id="begin">Start building</button>`;
   else { const s = steps[n - 1]; pg.innerHTML = `<div class="top"><span>Bag ${s.bag}: ${s.bagName}</span><span class="stepno">Step ${n} of ${NSTEPS}</span></div><h2>${s.title}</h2><p>${s.note}</p><div class="parts">${partsOf(n - 1)}</div>`; }
   const b = $('begin'); if (b) b.onclick = () => { state.started = true; go(0, false); setTimeout(() => go(1, true), 350); };
   $('prev').disabled = n === 0; $('next').disabled = n === NSTEPS;
@@ -246,7 +303,7 @@ $('play').onclick = () => {
 function loop() {
   if (!state.playing) return;
   if (state.n >= NSTEPS) { state.playing = false; $('play').textContent = 'Play'; return; }
-  go(state.n + 1, true); playT = setTimeout(loop, 1900 + Math.min(1200, state.anim.length * 30));
+  go(state.n + 1, true); playT = setTimeout(loop, 1900 + Math.min(1200, pieces.filter(p => p.step === state.n - 1).length * 30));
 }
 const toggle = (id, fn) => $(id).onclick = () => { press(id, !on(id)); fn(on(id)); };
 toggle('v-forces', recolor);
@@ -256,7 +313,7 @@ toggle('v-follow', v => { state.follow = v; if (v && state.n) frameStep(state.n 
 const setCut = () => { const v = on('v-cut'); $('cutpos').hidden = !v; cutPlane.constant = v ? +$('v-cutz').value : 99; };
 toggle('v-cut', v => {
   setCut();
-  if (v) state.camT = { t0: performance.now(), fromT: controls.target.clone(), toT: V3(0, 18, +$('v-cutz').value), fromP: camera.position.clone(), toP: V3(-6, 22, +$('v-cutz').value + 62) };
+  if (v) state.camT = { t0: performance.now(), fromT: controls.target.clone(), toT: V3(0, 18, +$('v-cutz').value), fromP: camera.position.clone(), toP: V3(-6, 24, +$('v-cutz').value + 80) };
 });
 $('v-cutz').oninput = setCut;
 
@@ -270,7 +327,7 @@ cv.addEventListener('pointerup', e => {
   const hit = hitAt(e), now = performance.now();
   const dbl = lastTap && now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 25;
   lastTap = dbl ? null : { t: now, x: e.clientX, y: e.clientY };
-  state.sel = hit ? pieces[hit.object.userData.i] : null; recolor(); syncInspect();
+  state.sel = hit ? hit.piece : null; recolor(); syncInspect();
   if (dbl) { stopFollow(); if (hit) frameBox(state.sel.box, 9); else frameAll(); }
 });
 
@@ -281,7 +338,7 @@ function theme() {
   // and the ground fades into the sky with no horizon
   const sky = new THREE.Color(cs.getPropertyValue('--sky').trim());
   scene.background = sky; ground.material.color.copy(css('--ground'));
-  scene.fog = new THREE.Fog(sky, 110, 300);
+  scene.fog = new THREE.Fog(sky, 320, 800);
   forceMat.color.copy(css('--thrust'));
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme);
@@ -290,6 +347,6 @@ function resize() { const r = $('stage').getBoundingClientRect(); renderer.setSi
 new ResizeObserver(resize).observe($('stage'));
 theme(); resize();
 // open on the finished model, like the picture on the box
-go(NSTEPS, false);
+go(NSTEPS, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.keystone = { go, state, steps, pieces, VERSION };
+window.keystone = { go, state, steps, pieces, batches, renderer, VERSION };

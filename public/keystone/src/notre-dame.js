@@ -1,22 +1,28 @@
-// Three bays of Notre-Dame's nave as a kit: every piece with its geometry, weight, bearing area and what it rests on,
+// The nave of Notre-Dame de Paris as a kit: every piece with its geometry, weight, bearing area and what it rests on,
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
-// Units: metres, kN. x runs across the nave (north negative), y up, z along the nave.
-import * as THREE from './vendor/three.module.js?v=0.2';
-import * as Solver from './solver.js?v=0.2';
+// Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
+import * as THREE from './vendor/three.module.js?v=0.3';
+import * as Solver from './solver.js?v=0.3';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead
 
-// ---------- Geometry of the bay, from the solver ----------
-const S = 12, T = 0.7, RIBW = 0.6, H0 = 24, WT = 1.2, L = 6.5, NB = 3;
+// ---------- The nave in section and in plan ----------
+// Ten bays of 6 m (five six-part vaults), a 12 m nave and two aisles each side, the inner one with a gallery over it.
+// One flying buttress at every bay line leaps both aisles in a single flight to a buttress pier outside the outer aisle.
+const S = 12, T = 0.7, RIBW = 0.6, H0 = 24, WT = 1.2, L = 6, NB = 10, ND = NB / 2, Z0 = -30;
 const ARCH = Solver.build({ shape: 'pointed', span: S, thick: T, count: 11 });
 const SOL = Solver.solve(ARCH);
-const SUP = Solver.supports(ARCH, SOL.state, { height: H0, width: WT, flyer: true, bdepth: 3.8, pinnacle: true });
-const XI = ARCH.joints[0].A[0], XO = XI - WT, XW = (XI + XO) / 2, FL = SUP.flyer;
-const ZS = [0, 1, 2, 3].map(i => -9.75 + L * i), ZC = b => ZS[b] + L / 2;
+const XI = ARCH.joints[0].A[0], XO = XI - WT, XW = (XI + XO) / 2;    // the nave wall: inner face, outer face, centre
+const XM = XW - L, XA = XM - L, AWT = 12.5;                          // aisle piers, outer aisle wall (centre), its top
+const SUP = Solver.supports(ARCH, SOL.state, { height: H0, width: WT, flyer: true, bdepth: 3.8, pinnacle: true, gap: XO - (XA + 0.5), bheight: 21 });
+const FL = SUP.flyer;
+const ZS = Array.from({ length: NB + 1 }, (_, i) => Z0 + L * i), ZC = b => ZS[b] + L / 2, HW = L / 2 - 0.7;
 const SIDES = [-1, 1], SN = s => s < 0 ? 'north' : 'south', X = (s, x) => s < 0 ? x : -x;
-const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];
+const lr = (s, a, b) => s < 0 ? [a, b] : [-b, -a];                  // an x range on the north side, mirrored to the south
+const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, gallery, band, clerestory courses, cornice
+export const KIT = { place: 'Notre-Dame de Paris', title: 'The nave', bays: NB, length: NB * L };
 
 // ---------- Pieces and steps ----------
 const pieces = [], byId = {}, steps = [];
@@ -101,122 +107,159 @@ function ruled(A, B, q0, q1, nq = 8, nr = 10) {
 }
 const pid = (k, s, i, c) => `${k}-${s < 0 ? 'N' : 'S'}${i}${c != null ? '-' + c : ''}`;
 
-// ---------- Bag 1: FOUNDATIONS ----------
+// ---------- Bag 1: Foundations ----------
 bag(1, 'Foundations');
-step('Footings under the nave piers', 'Every load in the building ends up here. Each round pier gets a square footing, wider than the pier so the weight spreads into the ground.');
-for (const s of SIDES) ZS.forEach((z, i) => add(pid('F', s, i), 'footing', `Footing, ${SN(s)} pier ${i + 1}`, boxG(X(s, XW) - 1.3, X(s, XW) + 1.3, 0, 0.6, z - 1.3, z + 1.3), { w: 2.6 * 2.6 * 0.6 * GAMMA, bear: 2.6 * 2.6 }));
+step('Footings under the nave piers', 'Every load in the building ends up here. Each of the 22 round piers of the nave gets a square footing, wider than the pier so the weight spreads into the ground.');
+for (const s of SIDES) ZS.forEach((z, i) => add(pid('F', s, i), 'footing', `Footing, ${SN(s)} nave pier ${i + 1}`, boxG(X(s, XW) - 1.3, X(s, XW) + 1.3, 0, 0.6, z - 1.3, z + 1.3), { w: 2.6 * 2.6 * 0.6 * GAMMA, bear: 2.6 * 2.6 }));
+step('Footings for the aisle piers', 'Notre-Dame has two aisles on each side of the nave. A second row of piers divides them, and each of those gets a footing too.');
+for (const s of SIDES) ZS.forEach((z, i) => add(pid('FM', s, i), 'footing', `Footing, ${SN(s)} aisle pier ${i + 1}`, boxG(X(s, XM) - 1.0, X(s, XM) + 1.0, 0, 0.6, z - 1.0, z + 1.0), { w: 2 * 2 * 0.6 * GAMMA, bear: 2 * 2 }));
 step('Footings for the outer walls and buttresses', 'The buttress footings are the biggest in the building. They will take the vault\'s sideways push, so they spread wide to the outside.');
 for (const s of SIDES) {
-  ZS.forEach((z, i) => add(pid('FB', s, i), 'footing', `Footing, ${SN(s)} buttress ${i + 1}`, boxG(...(s < 0 ? [FL.xbO - 0.4, FL.xbI + 0.3] : [-FL.xbI - 0.3, -FL.xbO + 0.4]), 0, 0.6, z - 1.0, z + 1.0), { w: 4.5 * 2 * 0.6 * GAMMA, bear: 4.5 * 2 }));
-  for (let b = 0; b < NB; b++) add(pid('FW', s, b), 'footing', `Footing, ${SN(s)} aisle wall ${b + 1}`, boxG(...(s < 0 ? [FL.xbI - 1.2, FL.xbI + 0.2] : [-FL.xbI - 0.2, -FL.xbI + 1.2]), 0, 0.6, ZS[b] + 1.0, ZS[b + 1] - 1.0), { w: 1.4 * 4.5 * 0.6 * GAMMA, bear: 1.4 * 4.5 });
+  ZS.forEach((z, i) => add(pid('FB', s, i), 'footing', `Footing, ${SN(s)} buttress ${i + 1}`, boxG(...lr(s, FL.xbO - 0.4, FL.xbI + 0.3), 0, 0.6, z - 1.0, z + 1.0), { w: 4.5 * 2 * 0.6 * GAMMA, bear: 4.5 * 2 }));
+  for (let b = 0; b < NB; b++) add(pid('FW', s, b), 'footing', `Footing, ${SN(s)} aisle wall ${b + 1}`, boxG(...lr(s, XA - 0.7, XA + 0.7), 0, 0.6, ZS[b] + 1.0, ZS[b + 1] - 1.0), { w: 1.4 * 4 * 0.6 * GAMMA, bear: 1.4 * 4 });
 }
 
-// ---------- Bag 2: PIERS ----------
-bag(2, 'Nave piers');
-step('Pier bases', 'Eight-sided plinths, set dead level. Any tilt here would be multiplied thirty metres up.');
-for (const s of SIDES) ZS.forEach((z, i) => add(pid('B', s, i), 'pier base', `Base, ${SN(s)} pier ${i + 1}`, cylG(1.08, 1.0, 0.6, 1.2, X(s, XW), z, 8), { w: Math.PI * 1.04 * 1.04 * 0.6 * GAMMA, bear: Math.PI, sup: [[pid('F', s, i), 1]] }));
-[[1.2, 3.6], [3.6, 6.0], [6.0, 8.4]].forEach(([y0, y1], c) => {
-  step(`Pier drums, course ${c + 1} of 3`, c === 0 ? 'Notre-Dame\'s nave stands on big round piers. Each is stacked from drums of limestone, about 1.5 m across.' : c === 1 ? 'Drums go on in level courses all the way around the building, so no pier gets ahead of its neighbours.' : 'The last drums. Each pier now carries nothing but itself: under a quarter of a megapascal at the base.');
-  for (const s of SIDES) ZS.forEach((z, i) => add(pid('D', s, i, c), 'drum', `Drum ${c + 1}, ${SN(s)} pier ${i + 1}`, cylG(0.75, 0.75, y0, y1, X(s, XW), z, 48), { w: Math.PI * 0.5625 * (y1 - y0) * GAMMA, bear: Math.PI * 0.5625, sup: [[c ? pid('D', s, i, c - 1) : pid('B', s, i), 1]] }));
-});
-step('Capitals and abacus blocks', 'The capital flares the round pier out to a square top, the abacus, wide enough for arches to land on from four directions.');
+// ---------- Bag 2: Piers ----------
+bag(2, 'Piers');
+step('Pier bases', 'Eight-sided plinths, set dead level, for the nave piers and the smaller aisle piers. Any tilt here would be multiplied thirty metres up.');
 for (const s of SIDES) ZS.forEach((z, i) => {
-  add(pid('C', s, i), 'capital', `Capital, ${SN(s)} pier ${i + 1}`, cylG(0.75, 1.02, 8.4, 8.9, X(s, XW), z, 48), { w: Math.PI * 0.8 * 0.5 * GAMMA, bear: Math.PI * 0.5625, sup: [[pid('D', s, i, 2), 1]] });
-  add(pid('AB', s, i), 'abacus block', `Abacus, ${SN(s)} pier ${i + 1}`, boxG(X(s, XW) - 0.85, X(s, XW) + 0.85, 8.9, 9.2, z - 0.85, z + 0.85), { w: 1.7 * 1.7 * 0.3 * GAMMA, bear: 1.7 * 1.7, sup: [[pid('C', s, i), 1]] });
+  add(pid('B', s, i), 'pier base', `Base, ${SN(s)} nave pier ${i + 1}`, cylG(1.08, 1.0, 0.6, 1.2, X(s, XW), z, 8), { w: Math.PI * 1.04 * 1.04 * 0.6 * GAMMA, bear: Math.PI, sup: [[pid('F', s, i), 1]] });
+  add(pid('BM', s, i), 'pier base', `Base, ${SN(s)} aisle pier ${i + 1}`, cylG(0.8, 0.74, 0.6, 1.2, X(s, XM), z, 8), { w: Math.PI * 0.6 * 0.6 * 0.6 * GAMMA, bear: Math.PI * 0.55, sup: [[pid('FM', s, i), 1]] });
+});
+[[1.2, 3.6], [3.6, 6.0], [6.0, 8.4]].forEach(([y0, y1], c) => {
+  step(`Pier drums, course ${c + 1} of 3`, c === 0 ? 'The nave stands on big round piers, each stacked from drums of limestone about 1.5 m across. The aisle piers are slimmer, 1.1 m.' : c === 1 ? 'Drums go on in level courses all the way around the building, so no pier gets ahead of its neighbours.' : 'The last drums. Each pier now carries nothing but itself: under a quarter of a megapascal at the base.');
+  for (const s of SIDES) ZS.forEach((z, i) => {
+    add(pid('D', s, i, c), 'drum', `Drum ${c + 1}, ${SN(s)} nave pier ${i + 1}`, cylG(0.75, 0.75, y0, y1, X(s, XW), z, 40), { w: Math.PI * 0.5625 * (y1 - y0) * GAMMA, bear: Math.PI * 0.5625, sup: [[c ? pid('D', s, i, c - 1) : pid('B', s, i), 1]] });
+    add(pid('DM', s, i, c), 'drum', `Drum ${c + 1}, ${SN(s)} aisle pier ${i + 1}`, cylG(0.55, 0.55, y0, y1, X(s, XM), z, 32), { w: Math.PI * 0.3025 * (y1 - y0) * GAMMA, bear: Math.PI * 0.3025, sup: [[c ? pid('DM', s, i, c - 1) : pid('BM', s, i), 1]] });
+  });
+});
+step('Capitals and abacus blocks', 'The capital flares each round pier out to a square top, the abacus, wide enough for arches to land on from four directions.');
+for (const s of SIDES) ZS.forEach((z, i) => {
+  add(pid('C', s, i), 'capital', `Capital, ${SN(s)} nave pier ${i + 1}`, cylG(0.75, 1.02, 8.4, 8.9, X(s, XW), z, 40), { w: Math.PI * 0.8 * 0.5 * GAMMA, bear: Math.PI * 0.5625, sup: [[pid('D', s, i, 2), 1]] });
+  add(pid('AB', s, i), 'abacus block', `Abacus, ${SN(s)} nave pier ${i + 1}`, boxG(X(s, XW) - 0.85, X(s, XW) + 0.85, 8.9, 9.2, z - 0.85, z + 0.85), { w: 1.7 * 1.7 * 0.3 * GAMMA, bear: 1.7 * 1.7, sup: [[pid('C', s, i), 1]] });
+  add(pid('CM', s, i), 'capital', `Capital, ${SN(s)} aisle pier ${i + 1}`, cylG(0.55, 0.74, 8.4, 8.9, X(s, XM), z, 32), { w: Math.PI * 0.42 * 0.5 * GAMMA, bear: Math.PI * 0.3025, sup: [[pid('DM', s, i, 2), 1]] });
+  add(pid('AM', s, i), 'abacus block', `Abacus, ${SN(s)} aisle pier ${i + 1}`, boxG(X(s, XM) - 0.65, X(s, XM) + 0.65, 8.9, 9.2, z - 0.65, z + 0.65), { w: 1.3 * 1.3 * 0.3 * GAMMA, bear: 1.3 * 1.3, sup: [[pid('CM', s, i), 1]] });
 });
 
-// ---------- Bag 3: ARCADE ----------
-bag(3, 'Arcade');
-const ARC = Solver.build({ shape: 'pointed', span: 5.4, thick: 0.6, count: 9 });
-step('Centering for the arcade', 'Before an arch can stand, it needs a timber frame to rest on. Carpenters build one under each opening between the piers.');
-for (const s of SIDES) for (let b = 0; b < NB; b++) placeCentering(pid('AC', s, b), ARC, { y0: 9.2, ox: X(s, XW), oz: ZC(b), dx: 0, dz: 1, ground: 0 });
+// ---------- Bag 3: Arcades ----------
+bag(3, 'Arcades');
+const ARC = Solver.build({ shape: 'pointed', span: L - 1.7, thick: 0.6, count: 9 });      // between nave piers
+const ARM = Solver.build({ shape: 'pointed', span: L - 1.3, thick: 0.5, count: 9 });      // between aisle piers
+step('Centering for the arcades', 'Before an arch can stand, it needs a timber frame to rest on. Carpenters build one under every opening between the piers, in both rows.');
+for (const s of SIDES) for (let b = 0; b < NB; b++) {
+  placeCentering(pid('AC', s, b), ARC, { y0: 9.2, ox: X(s, XW), oz: ZC(b), dx: 0, dz: 1 });
+  placeCentering(pid('MC', s, b), ARM, { y0: 9.2, ox: X(s, XM), oz: ZC(b), dx: 0, dz: 1 });
+}
 const STEP_ARC_CEN = cur;
-step('Arcade arches', 'Nine stones in each arch, laid from both piers at once and closed with a keystone. Until the keystone is in, the centering carries every stone.');
+step('Nave arcade', 'Nine stones in each arch, laid from both piers at once and closed with a keystone. Until the keystone is in, the centering carries every stone.');
 for (const s of SIDES) for (let b = 0; b < NB; b++)
-  placeArch(pid('A', s, b), ARC, { y0: 9.2, depth: WT, ox: X(s, XW), oz: ZC(b), dx: 0, dz: 1, springL: [[pid('AB', s, b), 1]], springR: [[pid('AB', s, b + 1), 1]], name: `Arcade arch, ${SN(s)} bay ${b + 1}` });
+  placeArch(pid('A', s, b), ARC, { y0: 9.2, depth: WT, ox: X(s, XW), oz: ZC(b), dx: 0, dz: 1, springL: [[pid('AB', s, b), 1]], springR: [[pid('AB', s, b + 1), 1]], name: `Nave arcade, ${SN(s)} bay ${b + 1}` });
+step('Aisle arcade', 'The same again on the row of piers between the two aisles. These arches will carry the outer wall of the gallery.');
+for (const s of SIDES) for (let b = 0; b < NB; b++)
+  placeArch(pid('AR', s, b), ARM, { y0: 9.2, depth: 0.8, ox: X(s, XM), oz: ZC(b), dx: 0, dz: 1, springL: [[pid('AM', s, b), 1]], springR: [[pid('AM', s, b + 1), 1]], name: `Aisle arcade, ${SN(s)} bay ${b + 1}` });
 step('Strike the arcade centering', 'Knock out the wedges and the frames drop away. The arches now carry themselves and push gently outward on the piers.');
 removeAt(p => p.step === STEP_ARC_CEN);
 step('Spandrels and wall piers', 'Solid masonry fills the corners above the arches, and square wall piers start up from each capital. This is the base of the upper walls.');
+const spandrel = (B, x0, depth, b) => {
+  const ext = B.extrados.map(([x, y]) => [x, y + 9.2]).filter(([x]) => x >= -HW);
+  const pts = [[-HW, ext[0][1]], ...ext, ...ext.slice().reverse().map(([x, y]) => [-x, y]), [HW, ext[0][1]], [HW, LEV[1]], [-HW, LEV[1]]];
+  return { g: extr(pts, [], depth, x0, ZC(b), 0, 1), w: extrVol(pts, [], depth) * GAMMA };
+};
 for (const s of SIDES) {
-  ZS.forEach((z, i) => add(pid('P', s, i, 0), 'wall-pier stone', `Wall pier, ${SN(s)} line ${i + 1}, course 1`, boxG(X(s, XW) - WT / 2, X(s, XW) + WT / 2, LEV[0], LEV[1], z - 0.7, z + 0.7), { w: WT * 1.4 * (LEV[1] - LEV[0]) * GAMMA, bear: WT * 1.4, sup: [[pid('AB', s, i), 1]] }));
+  ZS.forEach((z, i) => {
+    add(pid('P', s, i, 0), 'wall-pier stone', `Wall pier, ${SN(s)} line ${i + 1}, course 1`, boxG(X(s, XW) - WT / 2, X(s, XW) + WT / 2, LEV[0], LEV[1], z - 0.7, z + 0.7), { w: WT * 1.4 * (LEV[1] - LEV[0]) * GAMMA, bear: WT * 1.4, sup: [[pid('AB', s, i), 1]] });
+    add(pid('PM', s, i, 0), 'wall-pier stone', `Gallery pier, ${SN(s)} line ${i + 1}, course 1`, boxG(X(s, XM) - 0.4, X(s, XM) + 0.4, LEV[0], LEV[1], z - 0.6, z + 0.6), { w: 0.8 * 1.2 * (LEV[1] - LEV[0]) * GAMMA, bear: 0.8 * 1.2, sup: [[pid('AM', s, i), 1]] });
+  });
   for (let b = 0; b < NB; b++) {
-    const ext = ARC.extrados.map(([x, y]) => [x, y + 9.2]).filter(([x]) => x >= -2.55);
-    const pts = [[-2.55, ext[0][1]], ...ext, ...ext.slice().reverse().map(([x, y]) => [-x, y]), [2.55, ext[0][1]], [2.55, LEV[1]], [-2.55, LEV[1]]];
-    add(pid('SP', s, b), 'spandrel', `Spandrel, ${SN(s)} bay ${b + 1}`, extr(pts, [], WT, X(s, XW), ZC(b), 0, 1), { w: extrVol(pts, [], WT) * GAMMA, bear: 5.1 * WT, sup: [[pid('A', s, b) + '-K', 1]] });
+    const a = spandrel(ARC, X(s, XW), WT, b), m = spandrel(ARM, X(s, XM), 0.8, b);
+    add(pid('SP', s, b), 'spandrel', `Spandrel, ${SN(s)} nave arcade bay ${b + 1}`, a.g, { w: a.w, bear: 2 * HW * WT, sup: [[pid('A', s, b) + '-K', 1]] });
+    add(pid('SM', s, b), 'spandrel', `Spandrel, ${SN(s)} aisle arcade bay ${b + 1}`, m.g, { w: m.w, bear: 2 * HW * 0.8, sup: [[pid('AR', s, b) + '-K', 1]] });
   }
 }
 
-// ---------- Bag 4: AISLES ----------
+// ---------- Bag 4: Aisles ----------
 bag(4, 'Aisles');
-const BX0 = s => s < 0 ? FL.xbO : -FL.xbI, BX1 = s => s < 0 ? FL.xbI : -FL.xbO;
-step('Buttress piers, lower course', 'Outside the aisle, a deep pier rises at each bay line. For now it is just the aisle\'s outer support. Later it becomes the anchor for a flying buttress.');
-for (const s of SIDES) ZS.forEach((z, i) => add(pid('BU', s, i, 0), 'buttress stone', `Buttress, ${SN(s)} line ${i + 1}, course 1`, boxG(BX0(s), BX1(s), 0.6, 8, z - 0.7, z + 0.7), { w: 3.8 * 1.4 * 7.4 * GAMMA, bear: 3.8 * 1.4, sup: [[pid('FB', s, i), 1]] }));
-step('Aisle walls', 'The outer walls of the aisles, each with a tall window. They are thin because they carry little: the buttresses do the work.');
+const BX0 = s => s < 0 ? FL.xbO : -FL.xbI, BX1 = s => s < 0 ? FL.xbI : -FL.xbO, BD = FL.wb;
+step('Buttress piers, lower course', 'Outside the outer aisle, a deep pier rises at each bay line. For now it is just the aisle\'s outer support. Later it becomes the anchor for a flying buttress.');
+for (const s of SIDES) ZS.forEach((z, i) => add(pid('BU', s, i, 0), 'buttress stone', `Buttress, ${SN(s)} line ${i + 1}, course 1`, boxG(BX0(s), BX1(s), 0.6, LEV[0], z - 0.7, z + 0.7), { w: BD * 1.4 * (LEV[0] - 0.6) * GAMMA, bear: BD * 1.4, sup: [[pid('FB', s, i), 1]] }));
+step('Outer aisle walls', 'The outside walls, each with a tall window. They are thin because they carry little: the buttresses do the work.');
+const AWIN = lancet(0, 3.6, 1.8, 4.5);
 for (const s of SIDES) for (let b = 0; b < NB; b++) {
-  const pts = [[-2.55, 0.6], [2.55, 0.6], [2.55, 14.6], [-2.55, 14.6]], hole = lancet(0, 3.6, 1.8, 4.0);
-  const ox = s < 0 ? FL.xbI - 0.5 : -FL.xbI + 0.5;
-  add(pid('AW', s, b), 'wall stone', `Aisle wall, ${SN(s)} bay ${b + 1}`, extr(pts, [hole], 1.0, ox, ZC(b), 0, 1), { w: extrVol(pts, [hole], 1.0) * GAMMA, bear: 5.1, sup: [[pid('FW', s, b), 1]], group: 'aislewin' });
+  const pts = [[-HW, 0.6], [HW, 0.6], [HW, AWT], [-HW, AWT]];
+  add(pid('AW', s, b), 'wall stone', `Outer aisle wall, ${SN(s)} bay ${b + 1}`, extr(pts, [AWIN], 1.0, X(s, XA), ZC(b), 0, 1), { w: extrVol(pts, [AWIN], 1.0) * GAMMA, bear: 2 * HW, sup: [[pid('FW', s, b), 1]] });
 }
-const AA = Solver.build({ shape: 'pointed', span: 5.05, thick: 0.5, count: 7 });
-const AAX = s => s < 0 ? -9.375 : 9.375;
-step('Aisle arches', 'A pointed arch springs across the aisle at every bay line, from the nave pier to the buttress.');
+// arches across each aisle at every bay line: the inner aisle from nave pier to aisle pier, the outer from aisle pier to buttress
+const AIL = Solver.build({ shape: 'pointed', span: (XW - 0.85) - (XM + 0.65), thick: 0.5, count: 7 }), AIX = ((XW - 0.85) + (XM + 0.65)) / 2;
+const AOL = Solver.build({ shape: 'pointed', span: (XM - 0.65) - FL.xbI, thick: 0.5, count: 7 }), AOX = ((XM - 0.65) + FL.xbI) / 2;
+step('Aisle arches', 'A pointed arch springs across each aisle at every bay line: from the nave pier to the aisle pier, and from the aisle pier to the buttress.');
 for (const s of SIDES) ZS.forEach((z, i) => {
-  const toPier = [[pid('AB', s, i), 1]], toBut = [[pid('BU', s, i, 0), 1]];
-  placeArch(pid('AA', s, i), AA, { y0: 9.2, depth: 0.5, ox: AAX(s), oz: z, dx: 1, dz: 0, springL: s < 0 ? toBut : toPier, springR: s < 0 ? toPier : toBut, name: `Aisle arch, ${SN(s)} line ${i + 1}` });
+  const nave = [[pid('AB', s, i), 1]], mid = [[pid('AM', s, i), 1]], but = [[pid('BU', s, i, 0), 1]];
+  placeArch(pid('AI', s, i), AIL, { y0: 9.2, depth: 0.5, ox: X(s, AIX), oz: z, dx: 1, dz: 0, springL: s < 0 ? mid : nave, springR: s < 0 ? nave : mid, name: `Inner aisle arch, ${SN(s)} line ${i + 1}` });
+  placeArch(pid('AO', s, i), AOL, { y0: 9.2, depth: 0.5, ox: X(s, AOX), oz: z, dx: 1, dz: 0, springL: s < 0 ? but : mid, springR: s < 0 ? mid : but, name: `Outer aisle arch, ${SN(s)} line ${i + 1}` });
 });
-step('Aisle vaults', 'Between the arches, the masons lay curved courses of rubble stone to close the aisle ceiling.');
-for (const s of SIDES) for (let b = 0; b < NB; b++) {
-  const cl = AA.c, k = u => { const p = cl.p(u), n = cl.n(u); return [p[0] + n[0] * 0.2, p[1] + n[1] * 0.2 + 9.2]; };
+step('Aisle vaults', 'Between the arches, the masons lay curved courses of stone to close both aisle ceilings. The gallery floor will sit on the inner ones.');
+for (const s of SIDES) for (let b = 0; b < NB; b++) for (const [key, B, cx, sup] of [
+  ['AVI', AIL, AIX, [[pid('AB', s, b), 0.25], [pid('AB', s, b + 1), 0.25], [pid('AM', s, b), 0.25], [pid('AM', s, b + 1), 0.25]]],
+  ['AVO', AOL, AOX, [[pid('AM', s, b), 0.25], [pid('AM', s, b + 1), 0.25], [pid('BU', s, b, 0), 0.25], [pid('BU', s, b + 1, 0), 0.25]]]]) {
+  const cl = B.c, k = u => { const p = cl.p(u), n = cl.n(u); return [p[0] + n[0] * 0.2, p[1] + n[1] * 0.2 + 9.2]; };
   for (const h of [-1, 1]) {
-    const Apt = (q, z) => { const [x, y] = k(q * cl.uCrown); return V3(AAX(s) + (h < 0 ? x : -x), y, z); };
+    const Apt = (q, z) => { const [x, y] = k(q * cl.uCrown); return V3(X(s, cx) + (h < 0 ? x : -x), y, z); };
     const r = ruled(q => Apt(q, ZS[b] + 0.25), q => Apt(q, ZS[b + 1] - 0.25), 0, 1, 10, 12);
-    add(pid('AV', s, b, h < 0 ? 'a' : 'b'), 'web panel', `Aisle vault, ${SN(s)} bay ${b + 1}`, r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup: [[pid('AB', s, b), 0.25], [pid('AB', s, b + 1), 0.25], [pid('BU', s, b, 0), 0.25], [pid('BU', s, b + 1, 0), 0.25]] });
+    add(pid(key, s, b, h < 0 ? 'a' : 'b'), 'web panel', `${key === 'AVI' ? 'Inner' : 'Outer'} aisle vault, ${SN(s)} bay ${b + 1}`, r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup });
   }
 }
 
-// ---------- Bag 5: UPPER WALLS ----------
+// ---------- Bag 5: Upper walls ----------
 bag(5, 'Upper walls');
-const wallPier = (c, note) => { for (const s of SIDES) ZS.forEach((z, i) => add(pid('P', s, i, c), 'wall-pier stone', `Wall pier, ${SN(s)} line ${i + 1}, course ${c + 1}`, boxG(X(s, XW) - WT / 2, X(s, XW) + WT / 2, LEV[c], LEV[c + 1], z - 0.7, z + 0.7), { w: WT * 1.4 * (LEV[c + 1] - LEV[c]) * GAMMA, bear: WT * 1.4, sup: [[pid('P', s, i, c - 1), 1]] })); };
-const panel = (key, kind, nm, c, holes, glass) => { for (const s of SIDES) for (let b = 0; b < NB; b++) {
-  const pts = [[-2.55, LEV[c]], [2.55, LEV[c]], [2.55, LEV[c + 1] + (c === 3 ? 5.4 : 0)], [-2.55, LEV[c + 1] + (c === 3 ? 5.4 : 0)]];
-  add(pid(key, s, b), kind, `${nm}, ${SN(s)} bay ${b + 1}`, extr(pts, holes, WT, X(s, XW), ZC(b), 0, 1), { w: extrVol(pts, holes, WT) * GAMMA, bear: 5.1 * WT * 0.8, sup: [[pid('P', s, b, c), 0.5], [pid('P', s, b + 1, c), 0.5]], group: glass }); } };
-step('Gallery', 'Above the aisles runs a gallery, open to the nave through pairs of pointed openings.');
-wallPier(1); panel('G', 'wall stone', 'Gallery wall', 1, [lancet(-1.2, 15.0, 1.3, 2.6), lancet(1.2, 15.0, 1.3, 2.6)], 'gallery');
-step('The band and its round windows', 'A plain band of wall with a small round opening in each bay. Viollet-le-Duc restored round openings like these near the crossing in the 1800s.');
-wallPier(2); panel('BD', 'wall stone', 'Band wall', 2, [circle(0, 21.8, 0.9)], 'oculus');
+const wallPier = c => { for (const s of SIDES) ZS.forEach((z, i) => add(pid('P', s, i, c), 'wall-pier stone', `Wall pier, ${SN(s)} line ${i + 1}, course ${c + 1}`, boxG(X(s, XW) - WT / 2, X(s, XW) + WT / 2, LEV[c], LEV[c + 1], z - 0.7, z + 0.7), { w: WT * 1.4 * (LEV[c + 1] - LEV[c]) * GAMMA, bear: WT * 1.4, sup: [[pid('P', s, i, c - 1), 1]] })); };
+const panel = (key, kind, nm, x0, depth, y0, y1, c, holes, bays = [...Array(NB).keys()], pier = 'P') => { for (const s of SIDES) for (const b of bays) {
+  const pts = [[-HW, y0], [HW, y0], [HW, y1], [-HW, y1]];
+  add(pid(key, s, b), kind, `${nm}, ${SN(s)} bay ${b + 1}`, extr(pts, holes, depth, X(s, x0), ZC(b), 0, 1), { w: extrVol(pts, holes, depth) * GAMMA, bear: 2 * HW * depth * 0.8, sup: [[pid(pier, s, b, c), 0.5], [pid(pier, s, b + 1, c), 0.5]] }); } };
+const GOPEN = [lancet(-1.4, 15.0, 1.0, 2.4), lancet(0, 15.0, 1.0, 2.4), lancet(1.4, 15.0, 1.0, 2.4)];
+const GWIN = [lancet(-1.1, 15.1, 1.2, 2.2), lancet(1.1, 15.1, 1.2, 2.2)];
+step('Gallery', 'Above the inner aisle runs a gallery, open to the nave through triple arches. Its outer wall stands on the aisle arcade, with windows of its own.');
+wallPier(1);
+for (const s of SIDES) ZS.forEach((z, i) => add(pid('PM', s, i, 1), 'wall-pier stone', `Gallery pier, ${SN(s)} line ${i + 1}, course 2`, boxG(X(s, XM) - 0.4, X(s, XM) + 0.4, LEV[1], LEV[2], z - 0.6, z + 0.6), { w: 0.8 * 1.2 * (LEV[2] - LEV[1]) * GAMMA, bear: 0.8 * 1.2, sup: [[pid('PM', s, i, 0), 1]] }));
+panel('G', 'wall stone', 'Gallery arcade wall', XW, WT, LEV[1], LEV[2], 1, GOPEN);
+panel('GO', 'wall stone', 'Gallery outer wall', XM, 0.8, LEV[1], LEV[2], 1, GWIN, undefined, 'PM');
+step('The band', 'Next to the crossing, a plain band of wall with a round opening in each bay, the way the nave was first built. Viollet-le-Duc restored them in the 1800s. Elsewhere, in the 1220s, the windows above were lengthened down over the band.');
+wallPier(2);
+panel('BD', 'wall stone', 'Band wall', XW, WT, LEV[2], LEV[3], 2, [circle(0, 21.8, 0.9)], [0]);
 step('Vaulting shafts', 'Slender shafts run up the inside of each wall pier from the capitals to where the vault will begin, 24 m up. They will catch the vault\'s ribs.');
 for (const s of SIDES) ZS.forEach((z, i) => [-0.38, 0, 0.38].forEach((dz, k) => add(pid('SH', s, i, k), 'shaft', `Shaft, ${SN(s)} line ${i + 1}`, cylG(0.15, 0.15, 9.2, 24, X(s, XI + 0.16), z + dz, 16), { w: Math.PI * 0.0225 * 14.8 * GAMMA, bear: Math.PI * 0.0225, sup: [[pid('AB', s, i), 1]] })));
-step('Clerestory', 'The top of the wall, pierced by a tall lancet window in each bay. The higher the windows, the more light, and the more the walls depend on buttresses.');
+const CWIN = lancet(0, 24.5, 2.6, 2.0), CWIN_T = lancet(0, 20.6, 2.6, 5.9), LATE = [...Array(NB).keys()].filter(b => b > 0);
+step('Clerestory', 'The top of the wall, pierced by a tall window in each bay. The higher and bigger the windows, the more light, and the more the walls depend on buttresses.');
 wallPier(3); wallPier(4);
-panel('CL', 'wall stone', 'Clerestory wall', 3, [lancet(0, 24.5, 2.6, 2.0)], 'clere');
+panel('CL', 'wall stone', 'Clerestory wall', XW, WT, LEV[3], LEV[5], 3, [CWIN], [0]);
+panel('CL', 'wall stone', 'Clerestory wall', XW, WT, LEV[2], LEV[5], 2, [CWIN_T], LATE);
 step('Cornice', 'A projecting course of stone caps each wall. The roof timbers will sit on it.');
-for (const s of SIDES) for (let b = 0; b < NB; b++) add(pid('CO', s, b), 'cornice stone', `Cornice, ${SN(s)} bay ${b + 1}`, boxG(...(s < 0 ? [XO - 0.3, XI + 0.05] : [-XI - 0.05, -XO + 0.3]), 34.8, 35.2, ZS[b], ZS[b + 1]), { w: 1.55 * 0.4 * L * GAMMA, bear: 1.55 * L, sup: [[pid('CL', s, b), 1]] });
+for (const s of SIDES) for (let b = 0; b < NB; b++) add(pid('CO', s, b), 'cornice stone', `Cornice, ${SN(s)} bay ${b + 1}`, boxG(...lr(s, XO - 0.3, XI + 0.05), 34.8, 35.2, ZS[b], ZS[b + 1]), { w: 1.55 * 0.4 * L * GAMMA, bear: 1.55 * L, sup: [[pid('CL', s, b), 1]] });
 
-// ---------- Bag 6: BUTTRESSES ----------
+// ---------- Bag 6: Flying buttresses ----------
 bag(6, 'Flying buttresses');
-step('Buttress piers, upper courses', 'The outer piers rise to 19 m. Their depth, 3.8 m, is what will hold the vault up. Even with the vault\'s push, the resultant at their base stays inside the middle third.');
+step('Buttress piers, upper courses', `The outer piers rise to ${FL.hb} m, well above the aisle roofs. Their depth, ${BD} m, is what will hold the vault up: even with the vault's push, the resultant at their base stays inside the middle third.`);
 for (const s of SIDES) ZS.forEach((z, i) => {
-  add(pid('BU', s, i, 1), 'buttress stone', `Buttress, ${SN(s)} line ${i + 1}, course 2`, boxG(BX0(s), BX1(s), 8, 14, z - 0.7, z + 0.7), { w: 3.8 * 1.4 * 6 * GAMMA, bear: 3.8 * 1.4, sup: [[pid('BU', s, i, 0), 1]] });
-  add(pid('BU', s, i, 2), 'buttress stone', `Buttress, ${SN(s)} line ${i + 1}, course 3`, boxG(BX0(s), BX1(s), 14, FL.hb, z - 0.7, z + 0.7), { w: 3.8 * 1.4 * (FL.hb - 14) * GAMMA, bear: 3.8 * 1.4, sup: [[pid('BU', s, i, 1), 1]] });
+  add(pid('BU', s, i, 1), 'buttress stone', `Buttress, ${SN(s)} line ${i + 1}, course 2`, boxG(BX0(s), BX1(s), LEV[0], LEV[1], z - 0.7, z + 0.7), { w: BD * 1.4 * (LEV[1] - LEV[0]) * GAMMA, bear: BD * 1.4, sup: [[pid('BU', s, i, 0), 1]] });
+  add(pid('BU', s, i, 2), 'buttress stone', `Buttress, ${SN(s)} line ${i + 1}, course 3`, boxG(BX0(s), BX1(s), LEV[1], FL.hb, z - 0.7, z + 0.7), { w: BD * 1.4 * (FL.hb - LEV[1]) * GAMMA, bear: BD * 1.4, sup: [[pid('BU', s, i, 1), 1]] });
 });
-const flyerPolys = () => { // five stones along the strut, straight top, arched underside
-  const n = 5, d = 0.6, x0 = XO, x1 = FL.xbI, top = x => FL.yA + (FL.yB - FL.yA) * (x - x0) / (x1 - x0) + d / 2, sag = x => { const q = (x - x1) / (x0 - x1); return 0.9 * Math.sin(Math.PI * q); };
+const NFLY = 7, flyerPolys = () => { // straight top, arched underside, in NFLY stones
+  const d = 0.6, x0 = XO, x1 = FL.xbI, top = x => FL.yA + (FL.yB - FL.yA) * (x - x0) / (x1 - x0) + d / 2, sag = x => 1.0 * Math.sin(Math.PI * (x - x1) / (x0 - x1));
   const bot = x => top(x) - d - sag(x), out = [];
-  for (let i = 0; i < n; i++) { const a = x0 + (x1 - x0) * i / n, b = x0 + (x1 - x0) * (i + 1) / n, pts = [];
+  for (let i = 0; i < NFLY; i++) { const a = x0 + (x1 - x0) * i / NFLY, b = x0 + (x1 - x0) * (i + 1) / NFLY, pts = [];
     for (let k = 0; k <= 6; k++) { const x = a + (b - a) * k / 6; pts.push([x, top(x)]); }
     for (let k = 6; k >= 0; k--) { const x = a + (b - a) * k / 6; pts.push([x, bot(x)]); }
     out.push(pts); }
   return out;
 };
-step('Centering for the flyers', 'Each flyer is a half arch leaping over the aisle roof. It gets its own small centering.');
+step('Centering for the flyers', 'Each flyer is a half arch leaping over both aisles and the gallery roof. It gets its own long centering, propped on the gallery.');
 for (const s of SIDES) ZS.forEach((z, i) => {
-  const xa = X(s, XO), xb = X(s, FL.xbI), ya = FL.yA - 1.6, yb = FL.yB - 0.8;
+  const xa = X(s, XO), xb = X(s, FL.xbI), ya = FL.yA - 1.8, yb = FL.yB - 1.0;
   const tube = new THREE.CylinderGeometry(0.12, 0.12, Math.hypot(xb - xa, yb - ya), 10); tube.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), V3(xb - xa, yb - ya, 0).normalize()))); tube.translate((xa + xb) / 2, (ya + yb) / 2, z);
   add(pid('FC', s, i), 'centering timber', 'Flyer centering, rib', tube, { mat: 'timber' });
-  [0.3, 0.7].forEach((q, k) => { const x = xa + (xb - xa) * q, y = ya + (yb - ya) * q; add(pid('FC', s, i, k), 'centering timber', 'Flyer centering, prop', cylG(0.09, 0.09, 14.6, y, x, z, 10), { mat: 'timber' }); });
+  [0.25, 0.5, 0.75].forEach((q, k) => { const x = xa + (xb - xa) * q, y = ya + (yb - ya) * q; add(pid('FC', s, i, k), 'centering timber', 'Flyer centering, prop', cylG(0.09, 0.09, LEV[1], y, x, z, 10), { mat: 'timber' }); });
 });
 const STEP_FLY_CEN = cur;
-step('Flying buttresses', 'Five stones each, from the top of the nave wall down to the buttress pier. They will carry the vault\'s sideways push out over the aisle, about 50 kN for every metre of vault.');
+step('Flying buttresses', `${NFLY} stones each, from the top of the nave wall down to the buttress pier, ${Math.round(FL.g)} m away, in a single flight over both aisles. They will carry the vault's sideways push out over the aisles, about ${Math.round(FL.C / 5) * 5} kN for every metre of vault.`);
 for (const s of SIDES) ZS.forEach((z, i) => flyerPolys().forEach((poly, k) => {
   const pts = poly.map(([x, y]) => [X(s, x), y]);
   add(pid('FY', s, i, k), 'flyer stone', `Flyer, ${SN(s)} line ${i + 1}, stone ${k + 1}`, extr(pts, [], 0.8, 0, z, 1, 0), { w: extrVol(pts, [], 0.8) * GAMMA, bear: 0.8 * 0.6, sup: [[pid('BU', s, i, 2), 0.5], [pid('P', s, i, 2), 0.5]] });
@@ -233,60 +276,68 @@ for (const s of SIDES) ZS.forEach((z, i) => {
   add(pid('PN', s, i, 2), 'finial', `Finial, ${SN(s)} line ${i + 1}`, fin, { w: 1, sup: [[pid('PN', s, i, 1), 1]] });
 });
 
-// ---------- Bag 7: THE VAULT ----------
+// ---------- Bag 7: The vault ----------
+// Six-part vaults: each covers two bays. Major transverse ribs at every other bay line, a lighter transverse rib at the
+// line between, two diagonals corner to corner across the square, all meeting at one boss, and a wall rib in each bay.
 bag(7, 'The vault');
-const D = Math.hypot(S, L), D1 = [S / D, L / D], D2 = [S / D, -L / D];
-const FM = Solver.build({ shape: 'pointed', span: 5.9, thick: 0.35, count: 7 });
-step('Centering for the ribs', 'The big one. A timber frame goes up under every rib, 24 m above the floor, standing on the gallery and the floor of the nave.');
-ZS.forEach((z, i) => placeCentering(`TC${i}`, ARCH, { y0: H0, ox: 0, oz: z, dx: 1, dz: 0, ground: 0 }));
-for (let b = 0; b < NB; b++) { placeCentering(`DC${b}a`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZC(b), dx: D1[0], dz: D1[1], ground: 0 }); placeCentering(`DC${b}b`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZC(b), dx: D2[0], dz: D2[1], ground: 0 }); }
-const STEP_VAULT_CEN = cur;
-step('Transverse ribs', 'Eleven stones across the nave at each bay line, closed by a keystone. This is the arch from the arch lab, at full size.');
+const D = Math.hypot(S, 2 * L), D1 = [S / D, 2 * L / D], D2 = [S / D, -2 * L / D];
+const FM = Solver.build({ shape: 'pointed', span: L - 0.6, thick: 0.35, count: 7 });
 const P3 = (s, i) => [[pid('P', s, i, 2), 1]];
-ZS.forEach((z, i) => placeArch(`TR${i}`, ARCH, { y0: H0, depth: RIBW, ox: 0, oz: z, dx: 1, dz: 0, springL: P3(-1, i), springR: P3(1, i), name: `Transverse rib ${i + 1}` }));
-step('Diagonal ribs and bosses', 'Two ribs cross each bay corner to corner. Where they meet at the top, a carved boss locks them together.');
-for (let b = 0; b < NB; b++) {
-  placeArch(`DA${b}`, ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: ZC(b), dx: D1[0], dz: D1[1], springL: P3(-1, b), springR: P3(1, b + 1), name: `Diagonal rib, bay ${b + 1}`, withKey: false });
-  placeArch(`DB${b}`, ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: ZC(b), dx: D2[0], dz: D2[1], springL: P3(-1, b + 1), springR: P3(1, b), name: `Diagonal rib, bay ${b + 1}`, withKey: false });
-  const k = ARCH.k - 1, top = ARCH.extrados.at(-1)[1] + H0;
-  add(`BOSS${b}`, 'boss', `Boss, bay ${b + 1}`, cylG(0.55, 0.55, top - 1.05, top + 0.05, 0, ZC(b), 32), { w: Math.PI * 0.3 * 1.1 * GAMMA, sup: [[`DA${b}-L${k}`, 0.25], [`DA${b}-R${k}`, 0.25], [`DB${b}-L${k}`, 0.25], [`DB${b}-R${k}`, 0.25]] });
+step('Centering for the ribs', 'The big one. A timber frame goes up under every rib, 24 m above the floor: across the nave at every bay line, and corner to corner across each pair of bays.');
+ZS.forEach((z, i) => placeCentering(`TC${i}`, ARCH, { y0: H0, ox: 0, oz: z, dx: 1, dz: 0 }));
+for (let d = 0; d < ND; d++) for (const [n, dir] of [['a', D1], ['b', D2]]) placeCentering(`DC${d}${n}`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZS[2 * d + 1], dx: dir[0], dz: dir[1] });
+const STEP_VAULT_CEN = cur;
+step('Transverse ribs', 'Eleven stones across the nave at every bay line, the arch from the arch lab at full size. Every other one is a heavy rib between vaults, closed with a keystone; the lighter one between them runs to the boss.');
+ZS.forEach((z, i) => i % 2 === 0
+  ? placeArch(`TR${i}`, ARCH, { y0: H0, depth: RIBW, ox: 0, oz: z, dx: 1, dz: 0, springL: P3(-1, i), springR: P3(1, i), name: `Transverse rib ${i / 2 + 1}` })
+  : placeArch(`TR${i}`, ARCH, { y0: H0, depth: RIBW * 0.75, ox: 0, oz: z, dx: 1, dz: 0, springL: P3(-1, i), springR: P3(1, i), name: `Intermediate rib ${(i + 1) / 2}`, withKey: false }));
+step('Diagonal ribs and bosses', 'Two ribs cross each pair of bays corner to corner, 17 m apart at their feet. Where they meet the intermediate rib at the top, a carved boss locks all six together.');
+for (let d = 0; d < ND; d++) {
+  const z0 = 2 * d, z2 = 2 * d + 2, zc = ZS[2 * d + 1];
+  placeArch(`DA${d}`, ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: zc, dx: D1[0], dz: D1[1], springL: P3(-1, z0), springR: P3(1, z2), name: `Diagonal rib, vault ${d + 1}`, withKey: false });
+  placeArch(`DB${d}`, ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: zc, dx: D2[0], dz: D2[1], springL: P3(-1, z2), springR: P3(1, z0), name: `Diagonal rib, vault ${d + 1}`, withKey: false });
+  const k = ARCH.k - 1, top = ARCH.extrados.at(-1)[1] + H0, im = `TR${2 * d + 1}`;
+  add(`BOSS${d}`, 'boss', `Boss, vault ${d + 1}`, cylG(0.6, 0.6, top - 1.1, top + 0.05, 0, zc, 32), { w: Math.PI * 0.36 * 1.15 * GAMMA,
+    sup: [[`DA${d}-L${k}`, 1 / 6], [`DA${d}-R${k}`, 1 / 6], [`DB${d}-L${k}`, 1 / 6], [`DB${d}-R${k}`, 1 / 6], [`${im}-L${k}`, 1 / 6], [`${im}-R${k}`, 1 / 6]] });
 }
-step('Wall ribs', 'Smaller ribs run along each wall, framing the clerestory window. They give the vault a clean edge to build against.');
+step('Wall ribs', 'Smaller ribs run along each wall, one per bay, framing the clerestory window. They give the vault a clean edge to build against.');
 for (const s of SIDES) for (let b = 0; b < NB; b++) placeArch(pid('WR', s, b), FM, { y0: H0, depth: 0.35, ox: X(s, XI + 0.18), oz: ZC(b), dx: 0, dz: 1, springL: P3(s, b), springR: P3(s, b + 1), name: `Wall rib, ${SN(s)} bay ${b + 1}` });
-// the vault cells between the ribs
+// the six cells of each vault, each between two rib curves, as ruled surfaces from the springing (q = 0) to the crown
 const ribTop = (B, sx) => q => { const u = q * B.c.uCrown, p = B.c.p(u), n = B.c.n(u), e = B.t / 2 - 0.1; return [(p[0] + n[0] * e) * sx, p[1] + n[1] * e + H0]; };
 const trv = ribTop(ARCH, 1), dia = ribTop(ARCH, D / S), wal = ribTop(FM, 1);
-const curves = b => {
-  const z0 = ZS[b], z1 = ZS[b + 1], zc = ZC(b);
+const cells = d => {
+  const z0 = ZS[2 * d], z1 = ZS[2 * d + 1], z2 = ZS[2 * d + 2], zm0 = (z0 + z1) / 2, zm1 = (z1 + z2) / 2;
   const Tz = (z, h) => q => { const [x, y] = trv(q); return V3(h < 0 ? x : -x, y, z); };
-  const Dg = (d, h) => q => { const [x, y] = dia(q); const s = h < 0 ? x : -x; return V3(s * d[0], y, zc + s * d[1]); };
-  const Wl = (side, h) => q => { const [x, y] = wal(q); return V3(X(side, XI + 0.2), y, zc + (h < 0 ? x : -x)); };
+  const Dg = (dir, h) => q => { const [x, y] = dia(q); const s = h < 0 ? x : -x; return V3(s * dir[0], y, z1 + s * dir[1]); };
+  const Wl = (side, h, zm) => q => { const [x, y] = wal(q); return V3(X(side, XI + 0.2), y, zm + (h < 0 ? x : -x)); };
+  const T0 = `TR${2 * d}`, T1 = `TR${2 * d + 1}`, T2 = `TR${2 * d + 2}`, A = `DA${d}`, B = `DB${d}`, W = (s, b) => pid('WR', s, b);
   return [
-    ['transverse', Tz(z0, -1), Dg(D1, -1), `TR${b}`, `DA${b}`], ['transverse', Tz(z0, 1), Dg(D2, 1), `TR${b}`, `DB${b}`],
-    ['transverse', Tz(z1, -1), Dg(D2, -1), `TR${b + 1}`, `DB${b}`], ['transverse', Tz(z1, 1), Dg(D1, 1), `TR${b + 1}`, `DA${b}`],
-    ['side', Wl(-1, -1), Dg(D1, -1), pid('WR', -1, b), `DA${b}`], ['side', Wl(-1, 1), Dg(D2, -1), pid('WR', -1, b), `DB${b}`],
-    ['side', Wl(1, -1), Dg(D2, 1), pid('WR', 1, b), `DB${b}`], ['side', Wl(1, 1), Dg(D1, 1), pid('WR', 1, b), `DA${b}`],
+    [Tz(z0, -1), Dg(D1, -1), T0, A], [Tz(z0, 1), Dg(D2, 1), T0, B], [Tz(z2, -1), Dg(D2, -1), T2, B], [Tz(z2, 1), Dg(D1, 1), T2, A],
+    [Wl(-1, -1, zm0), Dg(D1, -1), W(-1, 2 * d), A], [Wl(-1, 1, zm0), Tz(z1, -1), W(-1, 2 * d), T1],
+    [Wl(-1, -1, zm1), Tz(z1, -1), W(-1, 2 * d + 1), T1], [Wl(-1, 1, zm1), Dg(D2, -1), W(-1, 2 * d + 1), B],
+    [Wl(1, -1, zm0), Dg(D2, 1), W(1, 2 * d), B], [Wl(1, 1, zm0), Tz(z1, 1), W(1, 2 * d), T1],
+    [Wl(1, -1, zm1), Tz(z1, 1), W(1, 2 * d + 1), T1], [Wl(1, 1, zm1), Dg(D1, 1), W(1, 2 * d + 1), A],
   ];
 };
 const ribPieces = pre => pieces.filter(p => p.id.startsWith(pre + '-')).map(p => p.id);
 [['lower', 0, 0.38], ['middle', 0.38, 0.72], ['top', 0.72, 1]].forEach(([nm, q0, q1], c) => {
-  step(`Webbing, ${nm} courses`, c === 0 ? 'Thin curved courses of light stone fill the spaces between the ribs. The masons start at the springing on all sides.' : c === 1 ? 'The webs are only about 30 cm thick. The ribs and their centering hold everything until the last course closes.' : 'The last courses close against the bosses. The vault is complete, but it is still sitting on its timber.');
-  for (let b = 0; b < NB; b++) curves(b).forEach(([, A, B, r1, r2], k) => {
-    const r = ruled(A, B, q0, q1, 6, 12), a = ribPieces(r1), d = ribPieces(r2);
-    add(`WEB${b}-${k}-${c}`, 'web panel', `Vault web, bay ${b + 1}`, r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(id => [id, 0.5 / a.length]), ...d.map(id => [id, 0.5 / d.length])] });
+  step(`Webbing, ${nm} courses`, c === 0 ? 'Thin curved courses of light stone fill the six cells between the ribs of each vault. The masons start at the springing on all sides.' : c === 1 ? 'The webs are only about 30 cm thick. The ribs and their centering hold everything until the last course closes.' : 'The last courses close against the bosses. The vault is complete, but it is still sitting on its timber.');
+  for (let d = 0; d < ND; d++) cells(d).forEach(([A, B, r1, r2], k) => {
+    const r = ruled(A, B, q0, q1, 6, 12), a = ribPieces(r1), b = ribPieces(r2);
+    add(`WEB${d}-${k}-${c}`, 'web panel', `Vault web, vault ${d + 1}`, r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(id => [id, 0.5 / a.length]), ...b.map(id => [id, 0.5 / b.length])] });
   });
 });
-step('Strike the centering', 'The moment of truth. The timber comes out and the vault carries itself, pushing out on the walls. The flyers catch that push and carry it to the buttresses. The red line is that path, the line of thrust, from the crown of the vault to the ground.', { focus: 'forces' });
+step('Strike the centering', 'The moment of truth. The timber comes out and the vault carries itself, pushing out on the walls. The flyers catch that push and carry it over the aisles to the buttresses. The red line is that path, the line of thrust, from the crown of the vault to the ground.', { focus: 'forces' });
 removeAt(p => p.step === STEP_VAULT_CEN);
 const STEP_STRUCK = cur;
 
-// ---------- Bag 8: ROOF ----------
+// ---------- Bag 8: Roof ----------
 bag(8, 'Roof');
-const RX = 7.3, RY = 35.2, RIDGE = 45.4, TRUSS = Array.from({ length: 13 }, (_, i) => -9.75 + i * 1.625);
-const bayOf = z => Math.min(NB - 1, Math.max(0, Math.floor((z + 9.75) / L)));
+const RX = 7.3, RY = 35.2, RIDGE = 45.4, TSP = 1.5, TRUSS = Array.from({ length: Math.round(NB * L / TSP) + 1 }, (_, i) => Z0 + i * TSP);
+const bayOf = z => Math.min(NB - 1, Math.max(0, Math.floor((z - Z0) / L)));
 const onCornice = z => [[pid('CO', -1, bayOf(z)), 0.5], [pid('CO', 1, bayOf(z)), 0.5]];
 const beam = (a, b, r, id, kind, nm, sup) => { const d = b.clone().sub(a), g = new THREE.BoxGeometry(r, d.length(), r); g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize()))); const m = a.clone().add(b).multiplyScalar(0.5); g.translate(m.x, m.y, m.z); add(id, kind, nm, g, { mat: 'oak', w: r * r * d.length() * OAK, sup, group: 'roof' }); };
-step('Tie beams', 'Oak beams span the nave, wall to wall, just above the vault. The oak frame of Notre-Dame was called the forest. It is what burned in 2019, while most of the stone vault below it held.');
+step('Tie beams', `${TRUSS.length} oak beams span the nave, wall to wall, just above the vault. The oak frame of Notre-Dame was called the forest. It is what burned in 2019, while most of the stone vault below it held.`);
 TRUSS.forEach((z, i) => beam(V3(-RX, RY + 0.18, z), V3(RX, RY + 0.18, z), 0.36, `TB${i}`, 'tie beam', `Tie beam ${i + 1}`, onCornice(z)));
 step('Rafters and king posts', 'Steep rafters pair up over each tie beam, braced by a king post and struts. The roof is about 55° steep, to shed Paris rain and snow.');
 TRUSS.forEach((z, i) => {
@@ -296,25 +347,33 @@ TRUSS.forEach((z, i) => {
   for (const s of SIDES) beam(V3(0, RY + 3.2, z), V3(s * RX * 0.45, RY + 0.36 + (RIDGE - RY) * 0.55, z), 0.2, `BR${i}${s < 0 ? 'a' : 'b'}`, 'brace', 'Brace', [[`KP${i}`, 1]]);
 });
 step('Purlins and ridge', 'Long timbers run the length of the roof, tying every truss to the next so the whole frame acts as one.');
-[0.33, 0.66].forEach((q, k) => SIDES.forEach(s => beam(V3(s * RX * (1 - q), RY + 0.36 + (RIDGE - RY - 0.36) * q + 0.2, -9.75), V3(s * RX * (1 - q), RY + 0.36 + (RIDGE - RY - 0.36) * q + 0.2, 9.75), 0.24, `PU${k}${s}`, 'purlin', 'Purlin', TRUSS.map((_, i) => [`TB${i}`, 1 / 13]))));
-beam(V3(0, RIDGE + 0.1, -9.75), V3(0, RIDGE + 0.1, 9.75), 0.3, 'RIDGE', 'ridge beam', 'Ridge beam', TRUSS.map((_, i) => [`TB${i}`, 1 / 13]));
-step('Lead roof and aisle roofs', 'Sheets of lead cover the frame. The aisles get their own lean-to roofs, tucked under the flyers.');
+for (let d = 0; d < ND; d++) {
+  const za = ZS[2 * d], zb = ZS[2 * d + 2], on = TRUSS.map((z, i) => [z, i]).filter(([z]) => z >= za - 1e-6 && z <= zb + 1e-6).map(([, i]) => [`TB${i}`, 1]);
+  on.forEach(x => x[1] = 1 / on.length);
+  [0.33, 0.66].forEach((q, k) => SIDES.forEach(s => beam(V3(s * RX * (1 - q), RY + 0.36 + (RIDGE - RY - 0.36) * q + 0.2, za), V3(s * RX * (1 - q), RY + 0.36 + (RIDGE - RY - 0.36) * q + 0.2, zb), 0.24, `PU${d}${k}${s}`, 'purlin', 'Purlin', on)));
+  beam(V3(0, RIDGE + 0.1, za), V3(0, RIDGE + 0.1, zb), 0.3, `RIDGE${d}`, 'ridge beam', 'Ridge beam', on);
+}
+step('Lead roofs', 'Sheets of lead cover the frame. The gallery and the outer aisle get their own lower roofs, tucked under the flyers.');
 const leadSheet = (x0, y0, x1, y1, z0, z1, id, nm, sup) => { const len = Math.hypot(x1 - x0, y1 - y0), g = new THREE.BoxGeometry(len, 0.08, z1 - z0); g.rotateZ(Math.atan2(y1 - y0, x1 - x0)); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); add(id, 'lead sheet', nm, g, { mat: 'lead', w: len * (z1 - z0) * 0.004 * LEAD, sup, group: 'roof' }); };
 for (const s of SIDES) for (let b = 0; b < NB; b++) {
   leadSheet(s * (RX + 0.25), RY + 0.2, 0, RIDGE + 0.42, ZS[b], ZS[b + 1], pid('LD', s, b), `Lead roof, ${SN(s)} bay ${b + 1}`, [[pid('CO', s, b), 1]]);
-  const xa = X(s, XO - 0.1), xb = s < 0 ? FL.xbI - 1.3 : -FL.xbI + 1.3;
-  leadSheet(xa, 19.4, xb, 14.6, ZS[b] + 0.7, ZS[b + 1] - 0.7, pid('LA', s, b), `Aisle roof, ${SN(s)} bay ${b + 1}`, [[pid('AW', s, b), 0.5], [pid('P', s, b, 1), 0.5]]);
+  leadSheet(X(s, XO - 0.1), LEV[2] + 1.5, X(s, XM - 0.45), LEV[2] + 0.3, ZS[b] + 0.6, ZS[b + 1] - 0.6, pid('LG', s, b), `Gallery roof, ${SN(s)} bay ${b + 1}`, [[pid('GO', s, b), 0.5], [pid('P', s, b, 1), 0.5]]);
+  leadSheet(X(s, XM - 0.45), LEV[1] + 0.3, X(s, XA - 0.6), AWT + 0.2, ZS[b] + 0.7, ZS[b + 1] - 0.7, pid('LA', s, b), `Outer aisle roof, ${SN(s)} bay ${b + 1}`, [[pid('AW', s, b), 0.5], [pid('PM', s, b, 0), 0.5]]);
 }
 
-// ---------- Bag 9: FINISHING ----------
+// ---------- Bag 9: Finishing ----------
 bag(9, 'Finishing');
-step('Glazing', 'Glass in every opening: aisle windows, gallery, the round band windows, and the tall clerestory lancets.');
-const GLASS = [['aislewin', s => s < 0 ? FL.xbI - 0.5 : -FL.xbI + 0.5, [lancet(0, 3.6, 1.8, 4.0)]], ['gallery', s => X(s, XW), [lancet(-1.2, 15.0, 1.3, 2.6), lancet(1.2, 15.0, 1.3, 2.6)]], ['oculus', s => X(s, XW), [circle(0, 21.8, 0.9)]], ['clere', s => X(s, XW), [lancet(0, 24.5, 2.6, 2.0)]]];
-GLASS.forEach(([g, xf, shapes]) => { for (const s of SIDES) for (let b = 0; b < NB; b++) shapes.forEach((pts, k) => add(`GL-${g}-${s}${b}${k}`, 'glass panel', 'Stained glass', extr(pts, [], 0.05, xf(s), ZC(b), 0, 1), { mat: 'glass', tint: (b + k + (s > 0 ? 1 : 0)) % 3 })); });
-step('Paving', 'Stone paving for the nave and aisle floors. Three bays of Notre-Dame\'s nave, finished.');
+step('Glazing', 'Glass in every window: the outer aisles, the gallery, the round band windows by the crossing, and the clerestory.');
+const ALL = [...Array(NB).keys()];
+const GLASS = [['aislewin', XA, [AWIN], ALL], ['gallery', XM, GWIN, ALL], ['oculus', XW, [circle(0, 21.8, 0.9)], [0]], ['clere', XW, [CWIN], [0]], ['clereT', XW, [CWIN_T], LATE]];
+GLASS.forEach(([g, x0, shapes, bays]) => { for (const s of SIDES) for (const b of bays) shapes.forEach((pts, k) => add(`GL-${g}-${s}${b}${k}`, 'glass panel', 'Stained glass', extr(pts, [], 0.05, X(s, x0), ZC(b), 0, 1), { mat: 'glass', tint: (b + k + (s > 0 ? 1 : 0)) % 3 })); });
+step('Paving', 'Stone paving for the nave and all four aisles. The nave of Notre-Dame, finished.');
 for (let b = 0; b < NB; b++) {
   add(`PV-N${b}`, 'paving slab', `Nave paving, bay ${b + 1}`, boxG(XI, -XI, 0, 0.08, ZS[b], ZS[b + 1]), { mat: 'pave' });
-  for (const s of SIDES) add(pid('PVA', s, b), 'paving slab', `Aisle paving, ${SN(s)} bay ${b + 1}`, boxG(...(s < 0 ? [FL.xbI, XO] : [-XO, -FL.xbI]), 0, 0.08, ZS[b], ZS[b + 1]), { mat: 'pave' });
+  for (const s of SIDES) {
+    add(pid('PVI', s, b), 'paving slab', `Inner aisle paving, ${SN(s)} bay ${b + 1}`, boxG(...lr(s, XM, XO), 0, 0.08, ZS[b], ZS[b + 1]), { mat: 'pave' });
+    add(pid('PVO', s, b), 'paving slab', `Outer aisle paving, ${SN(s)} bay ${b + 1}`, boxG(...lr(s, XA + 0.5, XM), 0, 0.08, ZS[b], ZS[b + 1]), { mat: 'pave' });
+  }
 }
 
 // ---------- Force lines ----------

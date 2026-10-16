@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>Keystone: Notre-Dame, stone by stone</title>
-<meta name="description" content="Build three bays of Notre-Dame's nave in 3D, piece by piece, the way the masons did. Every stone carries real load.">
+<meta name="description" content="Build the whole nave of Notre-Dame in 3D, piece by piece, the way the masons did. Every stone carries real load.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.2">
+<link rel="stylesheet" href="style.css?v=0.3">
 </head>
 <body>
 
@@ -55,7 +55,7 @@
     <button class="toggle" id="v-load" aria-pressed="false">Color by load</button>
     <button class="toggle" id="v-roof" aria-pressed="true">Roof</button>
     <button class="toggle" id="v-cut" aria-pressed="false">Cutaway</button>
-    <label class="cutpos" hidden id="cutpos">Cut at <input type="range" id="v-cutz" min="-9.75" max="9.75" step="0.05" value="3.6" aria-label="Cutaway position"></label>
+    <label class="cutpos" hidden id="cutpos">Cut at <input type="range" id="v-cutz" min="-30" max="30" step="0.1" value="1" aria-label="Cutaway position"></label>
     <span class="sep"></span>
     <button class="toggle" id="v-follow" aria-pressed="true">Follow the build</button>
   </div>
@@ -68,9 +68,10 @@
 
   <section class="notes">
     <div class="card"><h2>What you're building</h2>
-      <p>Three bays of the nave: round piers, the arcade, the gallery, the clerestory, a four-part rib vault in each bay, flying buttresses to outer piers topped with pinnacles, and the oak roof frame. Dimensions are close to the real nave (about a 12 m span and a vault crown near 35 m) but simplified: one aisle a side instead of two, and four-part vaults instead of the six-part ones Notre-Dame actually has.</p></div>
+      <p>The whole nave: ten bays, 60 m from the crossing to where the west front will stand. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.</p>
+      <p>Simplified: the vault's crown is about 35 m up here (33 m in the real nave); the chapels built between the buttresses in 1235 to 1245 are left out; every bay line carries the same share of the vault. The west front, the transept and the choir come next.</p></div>
     <div class="card"><h2>The forces</h2>
-      <p>The red lines are the line of thrust through the vault's ribs, down the wall, along each flyer and through each buttress pier, worked out the same way as in the arch lab. They appear when the vault's centering is struck, the moment the vault starts carrying itself.</p>
+      <p>The red line is the line of thrust through the vault's ribs, down the wall, along each flyer and through each buttress pier, worked out the same way as in the arch lab. They appear when the vault's centering is struck, the moment the vault starts carrying itself.</p>
       <p>Color by load follows each piece's weight down to the ground and divides by the area it rests on. It ignores the sideways push, so it shows how load piles up, not exact stresses.</p></div>
     <div class="card"><h2>Next</h2>
       <p>A treadwheel crane lifting each stone, real physics when something is removed, the cut face drawn as a solid section, and the dome of Florence built the same way.</p></div>
@@ -78,6 +79,6 @@
 </main>
 
 <footer class="version">Keystone <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.2"></script>
+<script type="module" src="src/main.js?v=0.3"></script>
 </body>
 </html>

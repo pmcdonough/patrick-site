@@ -3,9 +3,9 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and its import of the solver carries the same
 // stamp. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as Solver from '../../src/solver.js?v=0.2';
+import * as Solver from '../../src/solver.js?v=0.3';
 
-const VERSION = '0.2';
+const VERSION = '0.3';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const P = { shape: 'pointed', span: 12, thick: 0.8, count: 11, height: 8, width: 2.2, flyer: false, bdepth: 3.2, pinnacle: true };

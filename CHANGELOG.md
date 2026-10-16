@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.86 = sim 0.71 + Play Review 0.10 + Keystone 0.2. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.87 = sim 0.71 + Play Review 0.10 + Keystone 0.3. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.87
+- Keystone 0.3 (the whole nave). The home card says so. No change to the sim or Play Review.
 
 ### 0.86
 - Keystone 0.2 (the camera and the line of thrust). No change to the sim or Play Review.
@@ -185,6 +188,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Keystone
+
+### 0.3
+- The whole nave instead of three bays: ten bays, 60 m, 3,265 pieces in 41 steps. Double aisles each side with a second row of piers between them, a gallery over the inner aisle with its own outer wall and windows, six-part vaults over each pair of bays (heavy and intermediate transverse ribs, diagonals 17 m apart at their feet, one boss for six ribs, a wall rib in each bay), and at every bay line a flyer leaping both aisles in a single flight, about 11 m, to a buttress pier 21 m tall. The bay next to the crossing keeps the band of round windows; elsewhere the clerestory windows run down over it, as they were lengthened in the 1220s.
+- The solver's `supports()` takes the flyer's reach and the buttress height (`gap`, `bheight`); the defaults, and the arch lab, are unchanged. With the nave's numbers the wall's base resultant lands at 0.51 of its width and the buttress's at 0.39, both in the middle third. A unit test covers it.
+- Drawn in batches: the pieces that come and go together are one mesh, about 40 in all, so the nave draws in about 60 calls a frame where the three bays took about 1,800. Each piece keeps its own colors, its own pick and its own staggered drop into place.
 
 ### 0.2
 - Zoom goes where you point. Scroll or pinch zooms toward what is under the pointer, so zooming in on the roof keeps the roof in view; before, it zoomed toward the middle of the building and pushed the top off screen. Double-click or double-tap a piece to fly to it, or the sky to see everything; a Whole building button does the same. The point the camera turns around stays inside the building, so a drag can't lose it. A line under the model says how to move around.
