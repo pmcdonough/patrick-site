@@ -1,5 +1,5 @@
 // Expected goals from the fitted model in data/xg-model.json, and the finishing multiplier per shooter.
-import * as DM from './detmath.js?v=0.65';
+import * as DM from './detmath.js?v=0.66';
 
 export function makeXg(XG) {
   // Expected goals: the logistic model fit on MoneyPuck shots (see the data file's recipe). Angle is from the net's

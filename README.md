@@ -6,11 +6,12 @@ Personal site for sharing interactive models and side projects, mostly built wit
 public/
   index.html                       home page: simulations and experiments
   assets/share.png                 link preview image (Open Graph card)
-  bruins-vs-canadiens/
+  bruins-vs-canadiens/              the Hockey Strategy Lab (the folder keeps the matchup's name)
     index.html, style.css          the page's markup and styles, no build step
     src/engine/                    the engine, as plain ES modules that never touch the page (they also run in Node)
     src/main.js                    the page: Watch a game, and the Game plan lab
     src/lab/worker.js              the lab's background worker
+    src/lab/read.js                how the lab reads a run: ranges, verdicts, the baseline's headline
     data/                          the data that drives it (see below), including the expected-goal model
   play-review/
     index.html, style.css, src/    shot versus pass review of a real game, scored with the sim's own expected-goal model
@@ -31,9 +32,9 @@ CHANGELOG.md                       version history for the projects
 
 To run locally, serve `public/` with any static server, for example `node tools/serve.js` or `python3 -m http.server --directory public 8000`, and open http://localhost:8000/. The pages load their data over HTTP, so opening them straight from disk does not work.
 
-## Bruins vs Canadiens
+## Hockey Strategy Lab
 
-A 5-on-5 hockey engine, not a scripted animation. Real 2025-26 rosters rated from MoneyPuck data, an expected-goal model fit on two seasons of shots that scores every attempt by distance, angle, type and the shooter's finishing, goalies whose save rolls use their real 2025-26 save rates by danger tier, and skating calibrated to NHL EDGE tracking. Each team runs selectable systems that can be changed mid-game, and the Game plan lab tests a change of plan over 100 seeded games and grades those games against how the real teams played.
+Bruins vs Canadiens, the matchup it plays (it was called that until sim 0.66): a 5-on-5 hockey engine, not a scripted animation. Real 2025-26 rosters rated from MoneyPuck data, an expected-goal model fit on two seasons of shots that scores every attempt by distance, angle, type and the shooter's finishing, goalies whose save rolls use their real 2025-26 save rates by danger tier, and skating calibrated to NHL EDGE tracking. Each team runs selectable systems that can be changed mid-game, and the Game plan lab tests a change of plan over 100 seeded games and grades those games against how the real teams played.
 
 Plain HTML, CSS and JavaScript modules on a 2D canvas. No libraries, no build step. The current version number is shown in the page footer and in the `VERSION` constant at the top of `src/main.js`.
 

@@ -21,17 +21,17 @@
 // Trigonometry, exp, log and pow come from detmath.js, never from Math, so a seed plays the same game everywhere.
 // Random numbers: every draw goes through random(), one generator per game. newGame(seed) plays the seeded game
 // (rng.js); newGame() uses opts.rng, or Math.random. `drift: false` stops the small idle sway of players on their spots.
-import * as DM from './detmath.js?v=0.65';
-import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.65';
-import { makeXg } from './xg.js?v=0.65';
-import { seeded } from './rng.js?v=0.65';
-import { buildTeams } from './rosters.js?v=0.65';
-import * as officialsModule from './officials.js?v=0.65';
-import * as linesModule from './lines.js?v=0.65';
-import * as formationsModule from './formations.js?v=0.65';
-import * as aiModule from './ai.js?v=0.65';
-import * as physicsModule from './physics.js?v=0.65';
-import * as rulesModule from './rules.js?v=0.65';
+import * as DM from './detmath.js?v=0.66';
+import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.66';
+import { makeXg } from './xg.js?v=0.66';
+import { seeded } from './rng.js?v=0.66';
+import { buildTeams } from './rosters.js?v=0.66';
+import * as officialsModule from './officials.js?v=0.66';
+import * as linesModule from './lines.js?v=0.66';
+import * as formationsModule from './formations.js?v=0.66';
+import * as aiModule from './ai.js?v=0.66';
+import * as physicsModule from './physics.js?v=0.66';
+import * as rulesModule from './rules.js?v=0.66';
 
 export function createSim(DATA, opts = {}) {
   const drift = opts.drift !== false;

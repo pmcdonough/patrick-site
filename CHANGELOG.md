@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.78 = sim 0.65 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.79 = sim 0.66 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.79
+- Sim 0.66 (renamed the Hockey Strategy Lab). The home page card is titled Hockey Strategy Lab, with the matchup, Bruins vs Canadiens, under it. Under the hood names it. The address stays /bruins-vs-canadiens/, so links keep working.
 
 ### 0.78
 - Sim 0.65 (room in the plan cards and the plan drawer, the lab as wide as the header). No change to play.
@@ -196,7 +199,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ### 0.1
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
-## Bruins vs Canadiens
+## Hockey Strategy Lab
+
+Called Bruins vs Canadiens until 0.66; entries before it keep that name.
+
+### 0.66
+- Renamed: the page's title is Hockey Strategy Lab, and the matchup it plays, Bruins vs Canadiens, is the line under it (it was the title, with Hockey strategy lab as the small line above). The browser tab, How it works and the footer say Hockey Strategy Lab too. The address stays the same. No change to play.
 
 ### 0.65
 - Game plan lab: the two plan cards have room. Each name sits clear of its dropdown, and the fields and the card itself have more space. A changed choice gets a small Changed tag beside its name instead of a line under its dropdown, so both columns stay level (on a phone too, where a long name wraps upward). The changed ring sits on the dropdown's own edge.
