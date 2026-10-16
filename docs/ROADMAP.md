@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.84 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.85 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -45,6 +45,17 @@ From the brief, in order:
 3. A game picker (any game ID through `tools/game_load.py`, the file name as a query parameter) and a per-player view (one skater's shots across games).
 4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
+
+## Keystone (0.1)
+
+Three bays of Notre-Dame's nave in 3D and the 2D arch lab, on one masonry solver. Next, in order (`docs/KEYSTONE.md`):
+
+1. A treadwheel crane lifting each stone.
+2. The cut face drawn as a solid section, with the 2D thrust diagram on it.
+3. Real rigid-body collapse when a piece is removed; statics still decides whether it fails.
+4. Lab experiments in 3D: remove a flyer, thin a wall, strike the centering early.
+5. The Florence dome: drum, ribs, herringbone courses, two shells, chains, lantern; hoop forces in the solver.
+6. Shareable Lab results by link.
 
 ## Engineering
 

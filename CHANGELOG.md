@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.84 = sim 0.71 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.85 = sim 0.71 + Play Review 0.10 + Keystone 0.1. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.85
+- Keystone 0.1, a new app: Notre-Dame, stone by stone. A card on the home page, between the hockey lab and More coming soon. Under the hood names Three.js, Keystone's 3D library and the site's only one, served from the site. `tools/bump.js keystone`, and `tools/smoke.js` loads both Keystone pages and checks their stamps. The solver's tests run with the others (`tools/test/keystone.test.js`). No change to the sim or Play Review.
 
 ### 0.84
 - Sim 0.71 (attackers out of the crease and off the goalie). References re-saved at both levels.
@@ -177,6 +180,14 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 
 ### 0.30
 - Sim 0.30, Play Review 0.1.
+
+## Keystone
+
+### 0.1
+- First version, from two prototypes built in a chat session. The 3D build: three bays of Notre-Dame's nave, 871 pieces in 39 steps in 9 bags, with a booklet page per step, Forces (the line of thrust through the ribs, walls, flyers and buttress piers once the vault's centering is struck), Color by load, Roof, Cutaway, Follow the build, and Inspect on any piece. The arch lab: one arch in section on its centering, with its walls and optional flying buttresses, a pinnacle, the numbers, a gauge for each base, Inspect and five experiments under Try this.
+- One masonry solver for both pages (`src/solver.js`), checked against Milankovitch's 0.1075 for a semicircular arch.
+- The look follows the Hockey Strategy Lab instead of the prototypes' drafting style: its type, colors and round panels; in the arch lab, light seams between stones, no dimension lines and round line ends; in 3D, soft light, no grid, smoother curves and a ground that fades into the sky. The geometry and the numbers are the prototypes'.
+- Copy in plain words: the pressure on each stone, the push on each wall, the thinnest stone that works. The caption for the buttress piers no longer says their base resultant sits comfortably inside the middle third (it is at 0.40 of the base: inside, not well inside).
 
 ## Play Review
 

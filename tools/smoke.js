@@ -1,6 +1,6 @@
 // Plays one full game and reports script errors, the score line and the play-by-play mix. Then loads
-// the home page and Play Review, so a data file that fails to load or parse fails the check, and
-// checks every version stamp on the pages and their imports against each project's version.
+// the home page, Play Review and both Keystone pages, so a data file or module that fails to load fails the
+// check, and checks every version stamp on the pages and their imports against each project's version.
 const { open, openPage } = require('./harness');
 (async () => {
   const { browser, srv, page, errors, url, close } = await open();
@@ -16,9 +16,9 @@ const { open, openPage } = require('./harness');
   // Review uses its expected goals and rink) carry the sim's. A module imported without a stamp would be cached forever.
   const simVersion = (await page.textContent('#version')).replace(/^v/, '');
   const fs = require('fs'), path = require('path'), pub = path.join(__dirname, '..', 'public');
-  function checkStamps(project, version) {
+  function checkStamps(project, version, pages = ['']) {
     const root = path.join(pub, project), bad = [];
-    const files = ['index.html', ...fs.readdirSync(path.join(root, 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join('src', f))];
+    const files = pages.flatMap(pg => ['index.html', ...fs.readdirSync(path.join(root, pg, 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join('src', f))].map(f => path.join(pg, f)));
     for (const f of files) {
       const text = fs.readFileSync(path.join(root, f), 'utf8');
       const refs = f.endsWith('.html') ? [...text.matchAll(/(?:href|src)="([^"]+\.(?:js|css)[^"]*)"/g)].map(m => m[1]) : [...text.matchAll(/^\s*import\s[^'"]*['"]([^'"]+)['"]/gm)].map(m => m[1]);
@@ -28,12 +28,23 @@ const { open, openPage } = require('./harness');
         if (got !== want) bad.push(`${project}/${f}: ${ref} (want ?v=${want})`);
       }
     }
-    if (bad.length) errors.push('version stamps: ' + bad.join(', ')); else console.log(`Version stamps in ${project} match (${version}${project === 'bruins-vs-canadiens' ? '' : `, sim ${simVersion}`}).`);
+    if (bad.length) errors.push('version stamps: ' + bad.join(', ')); else console.log(`Version stamps in ${project} match (${version}${project === 'play-review' ? `, sim ${simVersion}` : ''}).`);
   }
   checkStamps('bruins-vs-canadiens', simVersion);
   const pr = await openPage(browser, srv, 'play-review/', () => !!window.playReview).catch(e => ({ errors: [e.message.split('\n')[0]] }));
   if (pr.page) checkStamps('play-review', (await pr.page.textContent('#version')).replace(/^Play review v/, ''));
-  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview]]) {
+  // Keystone: the 3D build has to start its 3D graphics and draw the model, and both pages show the same version
+  const ks = await openPage(browser, srv, 'keystone/', () => !!window.keystone).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+  if (ks.page) {
+    const v = await ks.page.evaluate(() => window.keystone.VERSION);
+    checkStamps('keystone', v, ['', 'arch-lab']);
+    const shown = await ks.page.evaluate(() => ({ nogl: !!document.querySelector('.nogl'), pieces: window.keystone.pieces.length, steps: window.keystone.steps.length }));
+    if (shown.nogl) errors.push('keystone/: the 3D graphics did not start');
+    else console.log(`keystone/ draws ${shown.pieces} pieces in ${shown.steps} steps (Keystone ${v}).`);
+    const al = await openPage(browser, srv, 'keystone/arch-lab/', () => !!window.archLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+    if (al.page && await al.page.evaluate(() => window.archLab.VERSION) !== v) errors.push('keystone/arch-lab/: its VERSION differs from the 3D page');
+  }
+  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['keystone/', () => !!window.keystone], ['keystone/arch-lab/', () => !!window.archLab && document.readyState === 'complete']]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);

@@ -16,10 +16,14 @@ public/
   play-review/
     index.html, style.css, src/    shot versus pass review of a real game, scored with the sim's own expected-goal model
     data/game-2025020812.json      the game, built from the NHL play-by-play and shift chart
+  keystone/
+    index.html, style.css, src/    Notre-Dame stone by stone in 3D (Three.js, served from the site), on a masonry solver
+    arch-lab/                      the 2D arch lab: one arch on its centering, its walls and flying buttresses
 tools/                             data fits (xg_fit.py, mp_extract.py, game_load.py), the engine in Node, unit tests and checks
 docs/ENGINE.md                     how the engine is organized, invariants, baselines, lessons learned
 docs/XG-MODEL.md                   the expected-goal model: data, method, fit, how the engine uses it
 docs/PLAY-REVIEW.md                the play-review page: pipeline, reconstruction, scoring, replay, limits
+docs/KEYSTONE.md                   Keystone: concept, the solver and what it checks, buildings, the look, roadmap
 docs/MODELING.md                   every model in the repo: what it answers, what it is built on, how it was set, where it lives
 docs/ROADMAP.md                    where each project stands and what comes next
 docs/HISTORY.md                    what was built before version numbers, in order
@@ -96,15 +100,21 @@ The header says what the page is, switches between Watch a game and the Game pla
 
 A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked shot scored by expected goals against the best pass the model saw from the same spot, and a replay of the seconds around each shot (configurable lead-in, 3 seconds after, real result on the left, the pass on the right). Built from the public NHL play-by-play and shift chart by `tools/game_load.py`; the page infers the other skaters' positions from the clubs' systems and says so. It is the first slice of the counterfactual play-review idea and is documented in `docs/PLAY-REVIEW.md`. Like the sim, it fetches its data over HTTP, and it scores every shot with the sim's own expected-goal code, so the two cannot disagree.
 
+## Keystone
+
+Build three bays of Notre-Dame's nave in 3D, piece by piece, the way the masons did: 871 pieces in 39 steps grouped in 9 bags, like a brick architecture kit. Every stone carries real load. Strike the vault's centering and the line of thrust appears through the ribs, walls, flyers and buttress piers; color by load and the piers glow at the base; tap any piece for its weight, the load it carries and the pressure where it rests. The arch lab next to it is the same physics on one arch in section: build it on its centering, strike it, and see whether it stands, and why.
+
+The physics is rigid-block limit analysis (Heyman): stone pushes but never pulls, an arch stands if a line of thrust fits inside the stone at every joint, and a wall or buttress stands while the resultant on its base lands inside it. One solver, `public/keystone/src/solver.js`, serves both pages and is checked in the unit tests against the classical result for a semicircular arch (minimum thickness 0.1075 of the radius). The 3D page uses Three.js r128, kept in the repo and served from the site. See `docs/KEYSTONE.md`.
+
 ### Tools and checks
 
 `tools/mp_extract.py` builds the ratings and benchmark extract from the MoneyPuck season files (skaters, goalies, teams, lines), `tools/xg_fit.py` fits the expected-goal model from the MoneyPuck shot files, and `tools/game_load.py` turns an NHL play-by-play and shift chart into a game file for the review page. The raw inputs are not committed; keep them in `raw/` (ignored); `docs/RAW-INPUTS.md` lists every file, where to download it and the command that uses it.
 
 The engine runs in Node for the balance checks and the unit tests (`tools/engine.js` sets it up the way the page does), and Playwright loads the pages for the rest, from a server each check starts itself (`tools/serve.js`, which also serves the site for a browser):
 
-- `node --test tools/test`: unit tests (a seed plays the same game whatever came before it, a new game keeps nothing from the last, the engine's math, the expected-goal model against the fit).
+- `node --test tools/test`: unit tests (a seed plays the same game whatever came before it, a new game keeps nothing from the last, the engine's math, the expected-goal model against the fit, Keystone's solver against known results).
 - `lab.js`: seeded matchups eight at a time, each club against the league and a saved reference (a fingerprint per game, so "identical" means every game), two settings compared or one card swept with 95% intervals; `--order` and `--pool` prove the games do not depend on order or on where they run.
-- `smoke.js`: plays a game, loads every page and checks the version stamps. `review.js`: every shot Play Review scores, against its reference. `calibration.js`: a ten-game strategy test through the page. `browsers.js`: the same seeded games in Chromium, Firefox and WebKit as in Node.
+- `smoke.js`: plays a game, loads every page (Keystone's 3D included) and checks the version stamps. `review.js`: every shot Play Review scores, against its reference. `calibration.js`: a ten-game strategy test through the page. `browsers.js`: the same seeded games in Chromium, Firefox and WebKit as in Node.
 - `shifts.js`, `rules.js` and `nhl-average.js`: shift lengths, offsides and icings, and six games at the NHL-average settings.
 
 Setup once and the full list are in `LOCAL-SETUP.md`; which check goes with which change is in `CLAUDE.md`.
