@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.88 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.89 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -46,9 +46,9 @@ From the brief, in order:
 4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
 
-## Keystone (0.4)
+## Keystone (0.5)
 
-The nave (since 0.3) and the west front with its towers (since 0.4) of Notre-Dame in 3D, and the 2D arch lab, on one masonry solver. Next, in order: the transept, crossing and spire; the choir and apse with its long flyers; then (`docs/KEYSTONE.md`):
+Notre-Dame in 3D: the nave (since 0.3), the west front with its towers (0.4), the transept, crossing and spire (0.5); and the 2D arch lab, on one masonry solver. Next, in order: the choir and apse with its long flyers and the twelve copper apostles at the foot of the spire; then (`docs/KEYSTONE.md`):
 
 1. A treadwheel crane lifting each stone.
 2. The cut face drawn as a solid section, with the 2D thrust diagram on it.

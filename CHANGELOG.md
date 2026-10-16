@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.88 = sim 0.71 + Play Review 0.10 + Keystone 0.4. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.89 = sim 0.71 + Play Review 0.10 + Keystone 0.5. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.89
+- Keystone 0.5 (the transept, the crossing and the spire). The home card says so. No change to the sim or Play Review.
 
 ### 0.88
 - Keystone 0.4 (the west front and its towers). The home card says so. No change to the sim or Play Review.
@@ -191,6 +194,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Keystone
+
+### 0.5
+- The transept, the crossing and the spire, in three new bags (Transept, Crossing, Spire): 4,743 pieces in 83 steps in all. The transept is 48 m from end to end and 12 m wide. Each arm: side walls open to the aisles at the bottom, with gallery openings and clerestory windows; a six-part vault over two bays and a four-part end bay; an end wall with a portal (the Cloister on the north, Saint Stephen on the south) on two rings of arches, a row of windows, a rose 13.1 m across with three rings and 48 spokes, and a gable with a small rose; corner buttresses with pinnacles. Two new east crossing piers; the crossing's four arches and its four-part vault; the roofs run across the transept and the nave's roof carries on over the crossing.
+- The spire: four oak base beams on the crossing piers, an eight-sided lower stage of oak posts in lead to 60 m, a needle of eight oak ribs in lead to 93 m, the cross at 96 m and the rooster. Its lead comes to 250 tonnes, the figure for the real spire.
+- The transept's side walls are 3 m thick: with no flyers of their own, that is what the solver needs to keep the vault's push in the middle third (0.37 of the base; a 1.2 m wall like the nave's would tip). The real arms share the push with the aisles and buttresses around them; that is not modeled, and the page says so.
+- The line of thrust is never drawn at the nave's two end lines, now inside the transept wall and the towers, and from the east, once the transept stands, it waits like it does from the west.
 
 ### 0.4
 - The west front, in three new bags (West front, The rose, Towers): 3,748 pieces in 61 steps in all. Two square towers 16 m on a side over the west ends of the aisles, built storey by storey to 69 m; the central wall between them; four buttresses dividing the front into three, 43.5 m wide. Three portals (the Virgin, the Last Judgement, Saint Anne), each with three arches stepping out from the wall on jamb columns, built on centering and struck, with a lintel, a tympanum and oak doors. The Gallery of Kings, 28 statues on a ledge; the Gallery of the Virgin with its open railing; the rose, 9.6 m, with stone rings and spokes and its glass; the grand gallery; the top band at 45 m; belfries with two tall openings in every face; Emmanuel, the 13-tonne bell, on its oak frame in the south tower; lead terraces and railings on the towers.

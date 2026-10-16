@@ -2,7 +2,7 @@
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.4 (site 0.88). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.5 (site 0.89). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -35,7 +35,7 @@ The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m 
 
 ## Buildings
 
-1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers, 3,748 pieces in 61 steps in 12 bags. Next, one part per version: the transept, crossing and spire; the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
+1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire, 4,743 pieces in 83 steps in 15 bags. Next: the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
 2. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
 3. Later: the Taj Mahal as a double-dome comparison.
 
@@ -53,6 +53,14 @@ From the official and Friends of Notre-Dame descriptions: 43.5 m wide, 45 m to t
 
 In the model: towers 16.1 m square, flush with the nave's inner walls (x from 5.65 to 21.75 m each side) and from z = 30.7 to 46.8; walls 2.6 m; storeys at 0.6, 14, 18, 31, 42, 45 and 67.5 m, terrace and railing to 69. The central wall is 4.8 m thick to 31 m, then a 1.2 m screen. Each portal has three rings of nine voussoirs on jamb columns, each ring 0.6 m further out, on its own centering. The last bay of the nave (z 30 to 42) has a four-part vault 12 m square: the west rib, two diagonals, a boss, wall ribs along the towers; the towers take its push instead of flyers (not computed). Each tower comes to about 18,000 tonnes and 1.5 MPa at its base in the load model.
 
+## The transept, crossing and spire as built (0.5)
+
+From the Friends of Notre-Dame layout and the cathedral's site: the transept is 48 m long and 14 m wide; the north and south roses are about 13.1 m across (the west rose 9.6); the transept's inner bays have six-part vaults. The spire (Wikipedia, Spire of Notre-Dame de Paris): Viollet-le-Duc's, 1859, 96 m, oak clad in about 250 tonnes of lead; it fell through the crossing vault in the fire of 15 April 2019 and was rebuilt to the same design.
+
+In the model: the transept's axis at z = -36, between the nave's last pier line (z = -30) and two new square east crossing piers (z = -42). Each arm runs from the nave wall to an end wall 2 m thick at 22 to 24 m from the axis: a six-part vault over 6.25 to 18.25 m (the same rib geometry as the nave's, turned 90°), a four-part end bay to 21.7 m. The ribs land on whatever is there: the crossing piers near the corners, otherwise the arm's side wall (`supAt`). The side walls are 3 m thick, which the solver needs without flyers (base resultant at 0.37); the real walls are thinner and share the push with the aisles and the corner buttresses. The spire: four oak base beams on the four crossing piers' top courses, eight posts to 60 m in a lead octagon, a lead crown, eight ribs to 93 m in a lead needle, the cross to 96 m and the rooster. Lead 250 tonnes in all (100 lower stage, 10 crown, 140 needle); the oak is weighed by the volume of the simplified frame, much less than the real one. The two nave piers that are also the west crossing piers come to about 3 MPa at their base: the real crossing piers are bigger.
+
+The arm and crossing vaults are built with general helpers (`ribIn`, `cenIn`, `halfIn`) in a local frame (u across the span, v along the axis) that `armF` or `crossF` maps to the world; the choir will reuse them.
+
 ## Current simplifications in the 3D build
 
 - The vault's crown is about 35 m up (33 m in the real nave).
@@ -60,6 +68,7 @@ In the model: towers 16.1 m square, flush with the nave's inner walls (x from 5.
 - The chapels built between the buttresses in 1235 to 1245, the gallery's own vaults and floor, and the triforium are left out; the gallery has a plain lean-to roof.
 - The flyer is a strut carrying all the vault's horizontal thrust; its own weight is not in the thrust line.
 - The west front's sculpture is plain shapes (the kings are simple turned figures); the chimeras and gargoyles, the spiral stairs and the tower floors are left out; the portals' arches stand in front of the wall rather than in a deep splay.
+- The transept's side walls are 3 m thick and solid above the aisle openings; the twelve copper apostles at the foot of the spire come with the choir, whose roof they stand on.
 - The drop-in animation is scripted, not physics.
 
 Each is said on the page.

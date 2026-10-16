@@ -1,9 +1,9 @@
-// The nave and west front of Notre-Dame de Paris as a kit: every piece with its geometry, weight, bearing area and what it rests on,
+// The nave, west front, transept and spire of Notre-Dame de Paris as a kit: every piece with its geometry, weight, bearing area and what it rests on,
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
-import * as THREE from './vendor/three.module.js?v=0.4';
-import * as Solver from './solver.js?v=0.4';
+import * as THREE from './vendor/three.module.js?v=0.5';
+import * as Solver from './solver.js?v=0.5';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead
@@ -22,7 +22,7 @@ const ZS = Array.from({ length: NB + 1 }, (_, i) => Z0 + L * i), ZC = b => ZS[b]
 const SIDES = [-1, 1], SN = s => s < 0 ? 'north' : 'south', X = (s, x) => s < 0 ? x : -x;
 const lr = (s, a, b) => s < 0 ? [a, b] : [-b, -a];                  // an x range on the north side, mirrored to the south
 const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, gallery, band, clerestory courses, cornice
-export const KIT = { place: 'Notre-Dame de Paris', title: 'The nave and the west front', bays: NB, length: NB * L };
+export const KIT = { place: 'Notre-Dame de Paris', title: 'Nave, west front, transept and spire', bays: NB, length: NB * L };
 
 // ---------- Pieces and steps ----------
 const pieces = [], byId = {}, steps = [];
@@ -537,18 +537,243 @@ for (const s of SIDES) {
 { const t = pieces.filter(p => /^(TW|TB|TT|TR)-N/.test(p.id)).reduce((a, p) => a + p.w, 0) / 9.81;
   steps[STEP_WF].note = `The towers will weigh about ${Math.round(t / 1000) * 1000} tonnes each, so they get the biggest footings of all: a solid slab under the whole of each tower, wider than its walls.`; }
 
-// ---------- Bag 12: Finishing ----------
-bag(12, 'Finishing');
-step('Glazing', 'Glass in every window: the outer aisles, the gallery, the round band windows by the crossing, the clerestory, and the west rose.');
+// ---------- The transept, the crossing and the spire ----------
+// The transept crosses the nave at its east end, 48 m from end to end and 12 m wide (z from -42 to -30, centred on ZT).
+// Each arm: a six-part vault over two bays from the crossing to the aisles' outer line, then a short four-part end bay,
+// then the end wall with its portal and its rose, 13.1 m across. The crossing: a four-part vault on four piers (the nave's
+// last two and two new ones to the east), and over it the spire, oak and lead, to 96 m. The arms' side walls are 3 m
+// thick: with no flyers of their own, that is what the solver needs to keep the vault's push in the middle third.
+const ZT = Z0 - 6, ZE = Z0 - 12, AW = 3, VEND = 22, VX = 6.25, VI = 12.25, VM = 18.25, VE = VEND - 0.3;
+const ARMB = [[XO * -1, VI], [VI, VM], [VM, VEND]];                         // arm bays along the arm, from the nave wall out
+const ARMSIDES = [['w', ZS[0] - 0.35, ZS[0] - 0.35 + AW], ['e', ZE + 0.35 - AW, ZE + 0.35]];   // the two side walls, z ranges
+const LV = [0.6, 14.6, 24, 34.8], ARMN = s => s < 0 ? 'north arm' : 'south arm', N = s => s < 0 ? 'N' : 'S';
+const XPL = [0.6, 9.2, 14.6, 19.6, 24, 29.4, 34.8];
+const xp = (s, k) => `XP-${N(s)}-${k}`, aw = (s, side, b, k) => `TA-${N(s)}${side}-${b}-${k}`;
+// what a rib lands on: a crossing pier near the crossing's corners, otherwise the arm's side wall at that point
+function supAt(x, z) {
+  const s = x < 0 ? -1 : 1, v = Math.abs(x), west = z > ZT;
+  if (v < 6.6) return west ? [[pid('P', s, 0, 2), 1]] : [[xp(s, 3), 1]];       // the courses that end at 24 m, where the vault springs
+  const b = v < VI ? 0 : v < VM ? 1 : 2;
+  return [[aw(s, west ? 'w' : 'e', b, 1), 1]];
+}
+// a rib or its centering in a local frame: u across the span, v along the vault's axis; F maps (u, y, v) to the world
+function ribIn(prefix, B, { F, cu = 0, cv, du, dv, sx = 1, depth, name, withKey = true }) {
+  const c = F(cu, 0, cv), d = F(cu + du, 0, cv + dv).sub(c), h = B.S * sx / 2;
+  const a = c.clone().addScaledVector(d, -h), b = c.clone().addScaledVector(d, h);
+  return placeArch(prefix, B, { sx, y0: H0, depth, ox: c.x, oz: c.z, dx: d.x, dz: d.z, springL: supAt(a.x, a.z), springR: supAt(b.x, b.z), name, withKey });
+}
+function cenIn(prefix, B, { F, cu = 0, cv, du, dv, sx = 1 }) {
+  const c = F(cu, 0, cv), d = F(cu + du, 0, cv + dv).sub(c);
+  placeCentering(prefix, B, { sx, y0: H0, ox: c.x, oz: c.z, dx: d.x, dz: d.z });
+}
+const halfIn = (B, sx, F, cu, cv, du, dv, h) => { const top = ribTop(B, sx); return q => { const [x, y] = top(q); const t = h < 0 ? x : -x; return F(cu + du * t, y, cv + dv * t); }; };
+const armF = s => (u, y, v) => V3(s * v, y, ZT + u), crossF = (u, y, v) => V3(u, y, v);
+const DQ = Math.hypot(S, VE - VM), Q1 = [S / DQ, (VE - VM) / DQ], Q2 = [S / DQ, -(VE - VM) / DQ], VQ = (VM + VE) / 2;
+const FQ = Solver.build({ shape: 'pointed', span: VE - VM - 0.6, thick: 0.3, count: 5 });
+const DD = [S / D, 2 * L / D], DE = [S / D, -2 * L / D];
+
+bag(12, 'Transept');
+step('Footings for the transept', 'The transept crosses the nave at its east end, 48 m from end to end. Its walls and the two new crossing piers get footings first.');
+for (const s of SIDES) {
+  for (const [side, z0, z1] of ARMSIDES) ARMB.forEach(([v0, v1], b) => add(`TAF-${N(s)}${side}-${b}`, 'footing', `Footing, ${ARMN(s)} wall`, boxG(...lr(s, -v1, -v0), -0.6, 0.62, z0 - 0.5, z1 + 0.5), { w: (v1 - v0) * (AW + 1) * 1.22 * GAMMA, bear: (v1 - v0) * (AW + 1) }));
+  add(`TEF-${N(s)}`, 'footing', `Footing, ${ARMN(s)} end wall`, boxG(...lr(s, -VEND - 3.5, -VEND), -0.6, 0.62, ZE - 5, ZS[0] + 5), { w: 3.5 * 22 * 1.22 * GAMMA, bear: 3.5 * 22 });
+  add(`XF-${N(s)}`, 'footing', `Footing, ${s < 0 ? 'north' : 'south'}-east crossing pier`, boxG(X(s, XW) - 1.8, X(s, XW) + 1.8, -0.6, 0.62, ZE - 1.8, ZE + 1.8), { w: 3.6 * 3.6 * 1.22 * GAMMA, bear: 3.6 * 3.6 });
+}
+step('East crossing piers', 'Two big square piers at the east corners of the crossing, built up in courses to the top of the walls. With the nave\'s last two piers they carry the crossing vault, and later the spire.');
+for (const s of SIDES) XPL.slice(0, -1).forEach((y0, k) => add(xp(s, k), 'crossing pier stone', `${s < 0 ? 'North' : 'South'}-east crossing pier, course ${k + 1}`, boxG(X(s, XW) - 1.2, X(s, XW) + 1.2, y0, XPL[k + 1], ZE - 1.2, ZE + 1.2), { w: 2.4 * 2.4 * (XPL[k + 1] - y0) * GAMMA, bear: 2.4 * 2.4, sup: [[k ? xp(s, k - 1) : `XF-${N(s)}`, 1]] }));
+// the arm walls, per bay and storey: arches to the aisles at the bottom, the gallery opening and windows above
+const ARMHOLES = [
+  [[lancet(-(XO * -1 + VI) / 2, 0.6, 4, 8.6)], [lancet(-(VI + VM) / 2, 0.6, 4, 8.6)], [lancet(-(VM + VEND) / 2, 3, 1.6, 5)]],
+  [[lancet(-(XO * -1 + VI) / 2, 15, 3, 2.6)], [lancet(-(VI + VM) / 2, 16, 1.8, 3)], []],
+  [[lancet(-(XO * -1 + VI) / 2, 25.5, 2.4, 3.5)], [lancet(-(VI + VM) / 2, 25.5, 2.4, 3.5)], [lancet(-(VM + VEND) / 2, 25.5, 1.8, 3.5)]],
+];
+const armStorey = k => { for (const s of SIDES) for (const [side, z0, z1] of ARMSIDES) ARMB.forEach(([v0, v1], b) =>
+  wall(aw(s, side, b, k), 'wall stone', `${ARMN(s)}, ${side === 'w' ? 'west' : 'east'} wall, ${['lower', 'middle', 'upper'][k]} storey`, 'x', mirror(s, rect(-v1, -v0, LV[k], LV[k + 1])), ARMHOLES[k][b].map(h => mirror(s, h)), AW, (z0 + z1) / 2,
+    [[k ? aw(s, side, b, k - 1) : `TAF-${N(s)}${side}-${b}`, 1]])); };
+step('Transept walls, lower storey', `The side walls of the arms, ${AW} m thick, open at the bottom where the aisles run through. The arms have no flying buttresses of their own: walls this thick hold the vault's push by themselves.`);
+armStorey(0);
+const STEP_TWALL = cur;
+step('Transept walls, upper storeys', 'The walls rise to the cornice, with an opening onto the gallery and a window in every bay.');
+armStorey(1); armStorey(2);
+for (const s of SIDES) for (const [side, z0, z1] of ARMSIDES) add(`TAC-${N(s)}${side}`, 'cornice stone', `${ARMN(s)}, cornice`, boxG(...lr(s, -VEND, -XO * -1), 34.8, 35.2, z0 - 0.3, z1 + 0.3), { w: (VEND + XO) * 0.4 * (AW + 0.6) * GAMMA, bear: 10, sup: ARMB.map((_, b) => [aw(s, side, b, 2), 1 / 3]) });
+// the ends of the arms: portal, a row of windows, the rose, the gable; corner buttresses with pinnacles
+const EZ0 = ZE + 0.35 - AW, EZ1 = ZS[0] - 0.35 + AW, EX = VEND + 1, EL = [0.6, 13, 18.4, 32];
+const endWall = (s, k, holes, nm) => wall(`TE-${N(s)}-${k}`, 'wall stone', `${ARMN(s)}, end wall, ${nm}`, 'z', rect(EZ0, EZ1, EL[k], EL[k + 1]), holes, 2, X(s, -EX), [[k ? `TE-${N(s)}-${k - 1}` : `TEF-${N(s)}`, 1]]);
+const TPW = 5, TRING = [0, 1], tring = i => Solver.build({ shape: 'pointed', span: TPW + 0.9 * i, thick: 0.45, count: 9 }), tringX = (s, i) => X(s, -(VEND + 2 + 0.3 + 0.6 * i));
+const TNAME = s => s < 0 ? 'Portal of the Cloister' : 'Portal of Saint Stephen';
+step('Transept ends, ground storey', 'The end walls of the arms go up 2 m thick, each with a portal: the Cloister on the north, Saint Stephen on the south. Buttresses at the corners.');
+for (const s of SIDES) {
+  endWall(s, 0, [lancet(ZT, 0.6, TPW, 6.4)], 'ground storey');
+  [EZ1 + 1, EZ0 - 1].forEach((z, k) => add(`TEB-${N(s)}-${k}-0`, 'buttress stone', `${ARMN(s)}, corner buttress, course 1`, boxG(...lr(s, -(EX + 3.5), -(VEND - 3)), 0.62, 18.4, z - 1, z + 1), { w: 6.5 * 2 * 17.8 * GAMMA, bear: 13, sup: [[`TEF-${N(s)}`, 1]] }));
+  for (const side of [-1, 1]) {
+    add(`TPJ-${N(s)}${side}`, 'jamb stone', `${TNAME(s)}, jamb`, boxG(...lr(s, -(VEND + 2 + 1.4), -(VEND + 2)), 0.62, 7, ...(side < 0 ? [ZT - TPW / 2 - 1.4, ZT - TPW / 2] : [ZT + TPW / 2, ZT + TPW / 2 + 1.4])), { w: 1.4 * 1.4 * 6.4 * GAMMA, bear: 1.96, sup: [[`TEF-${N(s)}`, 1]] });
+    TRING.forEach(i => add(`TPC-${N(s)}${side}-${i}`, 'jamb column', `${TNAME(s)}, column`, cylG(0.22, 0.22, 0.62, 7, tringX(s, i), ZT + side * ((TPW + 0.9 * i) / 2 + 0.225), 16), { w: Math.PI * 0.05 * 6.4 * GAMMA, bear: Math.PI * 0.05, sup: [[`TPJ-${N(s)}${side}`, 1]] }));
+  }
+}
+step('Centering for the transept portals', 'Two rings of arches frame each transept portal, each on its own centering.');
+for (const s of SIDES) TRING.forEach(i => placeCentering(`TPN-${N(s)}-${i}`, tring(i), { y0: 7, ox: tringX(s, i), oz: ZT, dx: 0, dz: 1 }));
+const STEP_TPORTAL_CEN = cur;
+step('Transept portal arches', 'Nine stones to each ring, a lintel over the doorway and the tympanum above it.');
+for (const s of SIDES) {
+  TRING.forEach(i => placeArch(`TPR-${N(s)}-${i}`, tring(i), { y0: 7, depth: 0.6, ox: tringX(s, i), oz: ZT, dx: 0, dz: 1, springL: [[`TPC-${N(s)}-1-${i}`, 1]], springR: [[`TPC-${N(s)}1-${i}`, 1]], name: `${TNAME(s)}, arch ${i + 1}`, kind: 'archivolt stone' }));
+  add(`TPL-${N(s)}`, 'lintel', `${TNAME(s)}, lintel`, boxG(...lr(s, -(VEND + 2), -(VEND + 1.2)), 6.2, 6.6, ZT - TPW / 2, ZT + TPW / 2), { w: TPW * 0.4 * 0.8 * GAMMA, bear: 0.64, sup: [[`TPJ-${N(s)}-1`, 0.5], [`TPJ-${N(s)}1`, 0.5]] });
+  const head = lancet(ZT, 6.6, TPW, 0.4);
+  add(`TPT-${N(s)}`, 'tympanum', `${TNAME(s)}, tympanum`, extr(head, [], 0.4, X(s, -(VEND + 1.8)), 0, 0, 1), { w: extrVol(head, [], 0.4) * GAMMA, bear: TPW * 0.4, sup: [[`TPL-${N(s)}`, 1]] });
+}
+step('Strike the transept portal centering', 'The portal arches stand on their columns.');
+removeAt(p => p.step === STEP_TPORTAL_CEN);
+const TRY0 = 25.2, TRR = 6.55, TCV = [-5, -3, -1, 1, 3, 5].map(d => lancet(ZT + d, 13.4, 1.4, 3.4));
+step('The rose storeys', `Above each portal, a row of tall narrow windows, then a wall left with a round opening ${(2 * TRR).toFixed(1)} m across, almost the whole width of the arm. The buttresses carry on up.`);
+for (const s of SIDES) {
+  endWall(s, 1, TCV, 'window row');
+  endWall(s, 2, [circle(ZT, TRY0, TRR, 72)], 'rose storey');
+  [EZ1 + 1, EZ0 - 1].forEach((z, k) => add(`TEB-${N(s)}-${k}-1`, 'buttress stone', `${ARMN(s)}, corner buttress, course 2`, boxG(...lr(s, -(EX + 2.5), -(VEND - 2)), 18.4, 34, z - 0.9, z + 0.9), { w: 5.5 * 1.8 * 15.6 * GAMMA, bear: 9.9, sup: [[`TEB-${N(s)}-${k}-0`, 1]] }));
+}
+step('Rose tracery, north and south', 'Rings and spokes again, bigger and finer than the west rose. The north rose was made around 1250, the south a few years later; both survived the fire of 2019.');
+for (const s of SIDES) {
+  const t = N(s), rx = X(s, -(VEND + 1.6)), ringT = (r0, r1, id, nm) => add(id, 'rose tracery', nm, extr(circle(ZT, TRY0, r1, 72), [circle(ZT, TRY0, r0, 72)], 0.4, rx, 0, 0, 1), { w: Math.PI * (r1 * r1 - r0 * r0) * 0.4 * GAMMA, bear: 0.4 * (r1 - r0), sup: [[`TE-${t}-2`, 1]] });
+  ringT(TRR - 0.45, TRR, `TRS-${t}-out`, `${ARMN(s)} rose, outer ring`); ringT(3.6, 3.95, `TRS-${t}-mid`, `${ARMN(s)} rose, middle ring`); ringT(1.2, 1.5, `TRS-${t}-in`, `${ARMN(s)} rose, inner ring`);
+  const spokeT = (r0, r1, a, id, sup) => { const g = new THREE.BoxGeometry(0.3, 0.16, r1 - r0); g.translate(0, 0, (r0 + r1) / 2); g.rotateX(a); g.translate(rx, TRY0, ZT); add(id, 'rose tracery', `${ARMN(s)} rose, spoke`, g, { w: (r1 - r0) * 0.05 * GAMMA, sup: [[sup, 1]] }); };
+  for (let k = 0; k < 16; k++) spokeT(1.45, 3.65, Math.PI * 2 * k / 16, `TRS-${t}-i${k}`, `TRS-${t}-mid`);
+  for (let k = 0; k < 32; k++) spokeT(3.9, TRR - 0.4, Math.PI * 2 * (k + 0.5) / 32, `TRS-${t}-o${k}`, `TRS-${t}-out`);
+}
+step('Gables', 'A pointed gable closes the top of each end, with a small rose of its own, and the corner buttresses finish in pinnacles.');
+for (const s of SIDES) {
+  const t = N(s), pts = [[EZ0, 32], [EZ1, 32], [ZT, 46.5]];
+  wall(`TE-${t}-3`, 'wall stone', `${ARMN(s)}, gable`, 'z', pts, [circle(ZT, 37.5, 1.6, 32)], 1.2, X(s, -EX), [[`TE-${t}-2`, 1]]);
+  [EZ1 + 1, EZ0 - 1].forEach((z, k) => { const cx = X(s, -(VEND + 0.5)), sp = new THREE.ConeGeometry(1.1, 5, 4); sp.rotateY(Math.PI / 4); sp.translate(cx, 36.5, z);
+    add(`TEB-${t}-${k}-2`, 'pinnacle stone', `${ARMN(s)}, pinnacle`, sp, { w: 1.5 * 5 / 3 * GAMMA, bear: 1.5, sup: [[`TEB-${t}-${k}-1`, 1]] }); });
+}
+
+bag(13, 'Crossing');
+step('Centering for the crossing and the transept', 'Timber frames under every rib of the crossing and of both arms: the crossing arches, the six-part vault of each arm, and its short end bay.');
+cenIn('XEC', ARCH, { F: crossF, cv: ZE + 0.3, du: 1, dv: 0 });
+cenIn('XDaC', ARCH, { F: crossF, cv: ZT, du: DD[0], dv: DD[1], sx: D / S }); cenIn('XDbC', ARCH, { F: crossF, cv: ZT, du: DE[0], dv: DE[1], sx: D / S });
+for (const s of SIDES) {
+  const F = armF(s), t = N(s);
+  [['X', VX], ['I', VI], ['M', VM], ['E', VE]].forEach(([n, v]) => cenIn(`TC${n}${t}`, ARCH, { F, cv: v, du: 1, dv: 0 }));
+  cenIn(`TDaC${t}`, ARCH, { F, cv: VI, du: DD[0], dv: DD[1], sx: D / S }); cenIn(`TDbC${t}`, ARCH, { F, cv: VI, du: DE[0], dv: DE[1], sx: D / S });
+  cenIn(`TQaC${t}`, ARCH, { F, cv: VQ, du: Q1[0], dv: Q1[1], sx: DQ / S }); cenIn(`TQbC${t}`, ARCH, { F, cv: VQ, du: Q2[0], dv: Q2[1], sx: DQ / S });
+}
+const STEP_X_CEN = cur;
+step('Crossing arches', 'Four great arches frame the crossing: the nave\'s last transverse rib on the west, a new one on the east, and one opening into each arm.');
+ribIn('XE', ARCH, { F: crossF, cv: ZE + 0.3, du: 1, dv: 0, depth: RIBW, name: 'East crossing arch' });
+for (const s of SIDES) ribIn(`TX${N(s)}`, ARCH, { F: armF(s), cv: VX, du: 1, dv: 0, depth: RIBW, name: `Crossing arch, ${ARMN(s)}` });
+step('Transept ribs', 'In each arm: a heavy rib and a lighter one across, two diagonals meeting at a boss, the short end bay with its own diagonals, and a wall rib in every bay.');
+for (const s of SIDES) {
+  const F = armF(s), t = N(s), k = ARCH.k - 1, top = ARCH.extrados.at(-1)[1] + H0;
+  ribIn(`TI${t}`, ARCH, { F, cv: VI, du: 1, dv: 0, depth: RIBW * 0.75, name: `Intermediate rib, ${ARMN(s)}`, withKey: false });
+  ribIn(`TM${t}`, ARCH, { F, cv: VM, du: 1, dv: 0, depth: RIBW, name: `Transverse rib, ${ARMN(s)}` });
+  ribIn(`TE${t}R`, ARCH, { F, cv: VE, du: 1, dv: 0, depth: RIBW, name: `End rib, ${ARMN(s)}` });
+  ribIn(`TDa${t}`, ARCH, { F, cv: VI, du: DD[0], dv: DD[1], sx: D / S, depth: RIBW * 0.9, name: `Diagonal rib, ${ARMN(s)}`, withKey: false });
+  ribIn(`TDb${t}`, ARCH, { F, cv: VI, du: DE[0], dv: DE[1], sx: D / S, depth: RIBW * 0.9, name: `Diagonal rib, ${ARMN(s)}`, withKey: false });
+  ribIn(`TQa${t}`, ARCH, { F, cv: VQ, du: Q1[0], dv: Q1[1], sx: DQ / S, depth: RIBW * 0.8, name: `Diagonal rib, ${ARMN(s)} end bay`, withKey: false });
+  ribIn(`TQb${t}`, ARCH, { F, cv: VQ, du: Q2[0], dv: Q2[1], sx: DQ / S, depth: RIBW * 0.8, name: `Diagonal rib, ${ARMN(s)} end bay`, withKey: false });
+  const bossAt = (id, v, ribs) => { const p = F(0, 0, v); add(id, 'boss', `Boss, ${ARMN(s)}`, cylG(0.6, 0.6, top - 1.1, top + 0.05, p.x, p.z, 32), { w: Math.PI * 0.36 * 1.15 * GAMMA, sup: ribs.flatMap(r => [[`${r}-L${k}`, 0.5 / ribs.length], [`${r}-R${k}`, 0.5 / ribs.length]]) }); };
+  bossAt(`TBOSS${t}`, VI, [`TDa${t}`, `TDb${t}`, `TI${t}`]); bossAt(`TQBOSS${t}`, VQ, [`TQa${t}`, `TQb${t}`]);
+  for (const side of [-1, 1]) {
+    [[0, (VX + VI) / 2], [1, (VI + VM) / 2]].forEach(([b, vm]) => ribIn(`TW${t}${side}${b}`, FM, { F, cu: side * 5.47, cv: vm, du: 0, dv: 1, depth: 0.35, name: `Wall rib, ${ARMN(s)}` }));
+    ribIn(`TWQ${t}${side}`, FQ, { F, cu: side * 5.47, cv: VQ, du: 0, dv: 1, depth: 0.3, name: `Wall rib, ${ARMN(s)} end bay` });
+  }
+}
+step('Crossing vault ribs', 'Two diagonals cross the crossing corner to corner, 17 m apart at their feet, locked by a boss right under where the spire will stand.');
+ribIn('XDa', ARCH, { F: crossF, cv: ZT, du: DD[0], dv: DD[1], sx: D / S, depth: RIBW * 0.9, name: 'Diagonal rib, crossing', withKey: false });
+ribIn('XDb', ARCH, { F: crossF, cv: ZT, du: DE[0], dv: DE[1], sx: D / S, depth: RIBW * 0.9, name: 'Diagonal rib, crossing', withKey: false });
+{ const k = ARCH.k - 1, top = ARCH.extrados.at(-1)[1] + H0;
+  add('XBOSS', 'boss', 'Boss, crossing', cylG(0.6, 0.6, top - 1.1, top + 0.05, 0, ZT, 32), { w: Math.PI * 0.36 * 1.15 * GAMMA, sup: ['XDa', 'XDb'].flatMap(r => [[`${r}-L${k}`, 0.25], [`${r}-R${k}`, 0.25]]) }); }
+// the webs: the crossing's four cells, each arm's six-part vault (as in the nave) and its four-part end bay
+const crossCells = () => {
+  const F = crossF, T = (v, h) => halfIn(ARCH, 1, F, 0, v, 1, 0, h), G = (d, h) => halfIn(ARCH, D / S, F, 0, ZT, d[0], d[1], h), W = (side, h) => halfIn(ARCH, 1, F, side * 5.95, ZT, 0, 1, h);
+  return [[T(ZE + 0.3, -1), G(DD, -1), 'XE', 'XDa'], [T(ZE + 0.3, 1), G(DE, 1), 'XE', 'XDb'], [T(ZS[0], -1), G(DE, -1), 'TR0', 'XDb'], [T(ZS[0], 1), G(DD, 1), 'TR0', 'XDa'],
+    [W(-1, -1), G(DD, -1), 'TXN', 'XDa'], [W(-1, 1), G(DE, -1), 'TXN', 'XDb'], [W(1, -1), G(DE, 1), 'TXS', 'XDb'], [W(1, 1), G(DD, 1), 'TXS', 'XDa']];
+};
+const armCells = s => {
+  const F = armF(s), t = N(s), T = (v, h) => halfIn(ARCH, 1, F, 0, v, 1, 0, h), G = (d, h) => halfIn(ARCH, D / S, F, 0, VI, d[0], d[1], h), Q = (d, h) => halfIn(ARCH, DQ / S, F, 0, VQ, d[0], d[1], h);
+  const W = (side, h, vm) => halfIn(FM, 1, F, side * 5.45, vm, 0, 1, h), WQ = (side, h) => halfIn(FQ, 1, F, side * 5.45, VQ, 0, 1, h);
+  const A = `TDa${t}`, B = `TDb${t}`, T0 = `TX${t}`, T1 = `TI${t}`, T2 = `TM${t}`, TE_ = `TE${t}R`, w = (side, b) => `TW${t}${side}${b}`, m0 = (VX + VI) / 2, m1 = (VI + VM) / 2;
+  return [
+    [T(VX, -1), G(DD, -1), T0, A], [T(VX, 1), G(DE, 1), T0, B], [T(VM, -1), G(DE, -1), T2, B], [T(VM, 1), G(DD, 1), T2, A],
+    [W(-1, -1, m0), G(DD, -1), w(-1, 0), A], [W(-1, 1, m0), T(VI, -1), w(-1, 0), T1], [W(-1, -1, m1), T(VI, -1), w(-1, 1), T1], [W(-1, 1, m1), G(DE, -1), w(-1, 1), B],
+    [W(1, -1, m0), G(DE, 1), w(1, 0), B], [W(1, 1, m0), T(VI, 1), w(1, 0), T1], [W(1, -1, m1), T(VI, 1), w(1, 1), T1], [W(1, 1, m1), G(DD, 1), w(1, 1), A],
+    [T(VM, -1), Q(Q1, -1), T2, `TQa${t}`], [T(VM, 1), Q(Q2, 1), T2, `TQb${t}`], [T(VE, -1), Q(Q2, -1), TE_, `TQb${t}`], [T(VE, 1), Q(Q1, 1), TE_, `TQa${t}`],
+    [WQ(-1, -1), Q(Q1, -1), `TWQ${t}-1`, `TQa${t}`], [WQ(-1, 1), Q(Q2, -1), `TWQ${t}-1`, `TQb${t}`], [WQ(1, -1), Q(Q2, 1), `TWQ${t}1`, `TQb${t}`], [WQ(1, 1), Q(Q1, 1), `TWQ${t}1`, `TQa${t}`],
+  ];
+};
+const webs = (tag, cells, nm) => [[0, 0.38], [0.38, 0.72], [0.72, 1]].forEach(([q0, q1], c) => cells.forEach(([A, B, r1, r2], k) => {
+  const r = ruled(A, B, q0, q1, 6, 12), a = ribPieces(r1), b = ribPieces(r2);
+  add(`WEB${tag}-${k}-${c}`, 'web panel', nm, r.g, { w: r.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(id => [id, 0.5 / a.length]), ...b.map(id => [id, 0.5 / b.length])] });
+}));
+step('Webbing of the crossing and the transept', 'Thin courses close every cell, from the springing up to the bosses, while the centering still holds the ribs.');
+webs('X', crossCells(), 'Vault web, crossing');
+for (const s of SIDES) webs(`T${N(s)}`, armCells(s), `Vault web, ${ARMN(s)}`);
+step('Strike the centering', 'The crossing and both arms carry themselves. The vault you see over the crossing is the one the spire fell through in 2019; it was rebuilt.');
+removeAt(p => p.step === STEP_X_CEN);
+step('Roofs of the transept and the crossing', 'The oak frame and the lead run across the transept from end to end, and the nave\'s roof carries on to meet them over the crossing.');
+{
+  const vs = []; for (let v = 4.75; v <= VEND - 0.7; v += 1.5) vs.push(v);
+  const tieSup = (s, v) => v < 6.85 ? [[pid('P', s, 0, 4), 0.5], [xp(s, 5), 0.5]] : (b => [[aw(s, 'w', b, 2), 0.5], [aw(s, 'e', b, 2), 0.5]])(v < VI ? 0 : v < VM ? 1 : 2);
+  for (const s of SIDES) {
+    const t = N(s), ids = [];
+    vs.forEach((v, i) => { const x = s * v, id = `TTB${t}${i}`; ids.push(id);
+      beam(V3(x, RY + 0.18, ZT - RX), V3(x, RY + 0.18, ZT + RX), 0.36, id, 'tie beam', `Tie beam, ${ARMN(s)}`, tieSup(s, v));
+      beam(V3(x, RY + 0.36, ZT - RX + 0.1), V3(x, RIDGE, ZT), 0.3, `TRF${t}${i}a`, 'rafter', `Rafter, ${ARMN(s)}`, [[id, 1]]);
+      beam(V3(x, RY + 0.36, ZT + RX - 0.1), V3(x, RIDGE, ZT), 0.3, `TRF${t}${i}b`, 'rafter', `Rafter, ${ARMN(s)}`, [[id, 1]]);
+      beam(V3(x, RY + 0.36, ZT), V3(x, RIDGE - 0.2, ZT), 0.26, `TKP${t}${i}`, 'king post', `King post, ${ARMN(s)}`, [[id, 1]]); });
+    const on = ids.map(id => [id, 1 / ids.length]);
+    beam(V3(s * 4, RIDGE + 0.1, ZT), V3(s * VEND, RIDGE + 0.1, ZT), 0.3, `TRIDGE${t}`, 'ridge beam', `Ridge beam, ${ARMN(s)}`, on);
+    for (const side of SIDES) { const lenX = VEND - 0, g = new THREE.BoxGeometry(lenX, 0.08, Math.hypot(RX + 0.25, RIDGE + 0.42 - RY - 0.2)); g.rotateX(side * Math.atan2(RIDGE + 0.42 - RY - 0.2, RX + 0.25)); g.translate(s * lenX / 2, (RY + 0.2 + RIDGE + 0.42) / 2, ZT + side * (RX + 0.25) / 2);
+      add(`TLD${t}${side}`, 'lead sheet', `Lead roof, ${ARMN(s)}`, g, { mat: 'lead', w: lenX * 12.7 * 0.004 * LEAD, sup: on, group: 'roof' }); }
+  }
+  beam(V3(-RX, RY + 0.18, ZS[0] - 1.5), V3(RX, RY + 0.18, ZS[0] - 1.5), 0.36, 'NTBX', 'tie beam', 'Tie beam, over the crossing', [[pid('P', -1, 0, 4), 0.5], [pid('P', 1, 0, 4), 0.5]]);
+  for (const s of SIDES) beam(V3(s * (RX - 0.1), RY + 0.36, ZS[0] - 1.5), V3(0, RIDGE, ZS[0] - 1.5), 0.3, `NRFX${N(s)}`, 'rafter', 'Rafter, over the crossing', [['NTBX', 1]]);
+  for (const s of SIDES) leadSheet(s * (RX + 0.25), RY + 0.2, 0, RIDGE + 0.42, ZT, ZS[0], `NLDX${N(s)}`, 'Lead roof, over the crossing', [['NTBX', 1]]);
+}
+
+bag(14, 'Spire');
+const SR = 3.3, SPIRE = (k, y) => V3(SR * Math.cos(Math.PI * 2 * k / 8 + Math.PI / 8), y, ZT + SR * Math.sin(Math.PI * 2 * k / 8 + Math.PI / 8));
+step('Spire base', 'Over the crossing, four great oak beams lie on the tops of the crossing piers. Everything above rests on them, and through them on the four piers.');
+[[V3(-6.25, 35.5, ZS[0]), V3(6.25, 35.5, ZS[0]), [pid('P', -1, 0, 4), pid('P', 1, 0, 4)]], [V3(-6.25, 35.5, ZE), V3(6.25, 35.5, ZE), [xp(-1, 5), xp(1, 5)]],
+ [V3(-6.25, 36.1, ZS[0]), V3(-6.25, 36.1, ZE), [pid('P', -1, 0, 4), xp(-1, 5)]], [V3(6.25, 36.1, ZS[0]), V3(6.25, 36.1, ZE), [pid('P', 1, 0, 4), xp(1, 5)]]]
+  .forEach(([a, b, sup], k) => beam(a, b, 0.6, `SPB${k}`, 'spire beam', 'Spire base beam', sup.map(id => [id, 0.5])));
+step('Spire, lower stage', 'Eight oak posts rise from the base to 60 m, braced and clad in lead: an open eight-sided lantern above the roofs.');
+const SB = [0, 1, 2, 3].map(k => [`SPB${k}`, 0.25]);
+for (let k = 0; k < 8; k++) beam(SPIRE(k, 36.4), SPIRE(k, 60), 0.45, `SPP${k}`, 'spire post', 'Spire post', SB);
+{ const g = new THREE.CylinderGeometry(SR + 0.25, SR + 0.25, 13, 8, 1, true); g.rotateY(Math.PI / 8); g.translate(0, 53.5, ZT);
+  add('SPL0', 'lead sheet', 'Spire, lead cladding, lower stage', g, { mat: 'lead', w: 100 * 9.81, sup: [...Array(8).keys()].map(k => [`SPP${k}`, 1 / 8]), group: 'roof' });
+  const c = new THREE.CylinderGeometry(SR + 0.6, SR + 0.6, 1.2, 8); c.rotateY(Math.PI / 8); c.translate(0, 60.6, ZT);
+  add('SPL1', 'lead sheet', 'Spire, lead crown', c, { mat: 'lead', w: 10 * 9.81, sup: [...Array(8).keys()].map(k => [`SPP${k}`, 1 / 8]), group: 'roof' }); }
+step('Spire, needle', 'From 60 m the needle tapers to a point 93 m up, eight oak ribs under a skin of lead. The lead on the whole spire weighed about 250 tonnes.');
+for (let k = 0; k < 8; k++) beam(SPIRE(k, 61.2), V3(0, 93, ZT), 0.35, `SPR${k}`, 'spire rib', 'Spire rib', [[`SPP${k}`, 1]]);
+{ const g = new THREE.ConeGeometry(SR + 0.25, 32, 8, 1, true); g.rotateY(Math.PI / 8); g.translate(0, 61.2 + 16, ZT);
+  add('SPL2', 'lead sheet', 'Spire, lead cladding, needle', g, { mat: 'lead', w: 140 * 9.81, sup: [...Array(8).keys()].map(k => [`SPR${k}`, 1 / 8]), group: 'roof' }); }
+step('Cross and rooster', 'A cross tops the spire at 96 m, with a copper rooster on it. The rooster was found, battered, in the rubble after the fire.');
+add('SPX', 'cross', 'Cross', (() => { const g = new THREE.BoxGeometry(0.2, 3.2, 0.2); g.translate(0, 94.4, ZT); return g; })(), { mat: 'lead', w: 0.5 * 9.81, sup: [...Array(8).keys()].map(k => [`SPR${k}`, 1 / 8]), group: 'roof' });
+add('SPX2', 'cross', 'Cross, arm', (() => { const g = new THREE.BoxGeometry(1.6, 0.2, 0.2); g.translate(0, 95, ZT); return g; })(), { mat: 'lead', w: 0.1 * 9.81, sup: [['SPX', 1]], group: 'roof' });
+{ const g = new THREE.SphereGeometry(0.32, 16, 12); g.scale(1.2, 0.9, 0.6); g.translate(0, 96.2, ZT); add('SPRO', 'rooster', 'The rooster', g, { mat: 'copper', sup: [['SPX', 1]], group: 'roof' }); }
+
+// ---------- Bag 15: Finishing ----------
+bag(15, 'Finishing');
+step('Glazing', 'Glass in every window: the outer aisles, the gallery, the round band windows by the crossing, the clerestory, the transept, and the three roses.');
 const ALL = [...Array(NB).keys()];
 const GLASS = [['aislewin', XA, [AWIN], ALL], ['gallery', XM, GWIN, ALL], ['oculus', XW, [circle(0, 21.8, 0.9)], [0]], ['clere', XW, [CWIN], [0]], ['clereT', XW, [CWIN_T], LATE]];
 GLASS.forEach(([g, x0, shapes, bays]) => { for (const s of SIDES) for (const b of bays) shapes.forEach((pts, k) => add(`GL-${g}-${s}${b}${k}`, 'glass panel', 'Stained glass', extr(pts, [], 0.05, X(s, x0), ZC(b), 0, 1), { mat: 'glass', tint: (b + k + (s > 0 ? 1 : 0)) % 3 })); });
 add('GL-rose-in', 'glass panel', 'Rose window glass', extr(circle(0, RY0, 2.7, 64), [], 0.05, 0, RZ - 0.3, 1, 0), { mat: 'glass', tint: 0 });
 add('GL-rose-out', 'glass panel', 'Rose window glass', extr(circle(0, RY0, 4.8, 64), [circle(0, RY0, 2.7, 64)], 0.05, 0, RZ - 0.3, 1, 0), { mat: 'glass', tint: 1 });
-step('Doors', 'Oak doors for the three portals, two leaves each, hung behind the lintels.');
+for (const s of SIDES) {
+  for (const [, z0, z1] of ARMSIDES) ARMB.forEach((_, b) => ARMHOLES[2][b].forEach((h, k) => add(`GL-TA-${N(s)}${z0}-${b}${k}`, 'glass panel', 'Stained glass', extr(mirror(s, h), [], 0.05, 0, (z0 + z1) / 2, 1, 0), { mat: 'glass', tint: (b + k) % 3 })));
+  TCV.forEach((h, k) => add(`GL-TCV-${N(s)}${k}`, 'glass panel', 'Stained glass', extr(h, [], 0.05, X(s, -EX), 0, 0, 1), { mat: 'glass', tint: k % 3 }));
+  const gx = X(s, -(VEND + 1.2));
+  add(`GL-TR-${N(s)}-in`, 'glass panel', `${ARMN(s)} rose glass`, extr(circle(ZT, TRY0, 3.95, 72), [], 0.05, gx, 0, 0, 1), { mat: 'glass', tint: s < 0 ? 1 : 0 });
+  add(`GL-TR-${N(s)}-out`, 'glass panel', `${ARMN(s)} rose glass`, extr(circle(ZT, TRY0, TRR, 72), [circle(ZT, TRY0, 3.95, 72)], 0.05, gx, 0, 0, 1), { mat: 'glass', tint: s < 0 ? 0 : 1 });
+  add(`GL-TG-${N(s)}`, 'glass panel', 'Stained glass', extr(circle(ZT, 37.5, 1.6, 32), [], 0.05, X(s, -EX), 0, 0, 1), { mat: 'glass', tint: 1 });
+}
+step('Doors', 'Oak doors for the five portals, two leaves each, hung behind the lintels.');
+for (const s of SIDES) [-1, 1].forEach(side => add(`DR-T${N(s)}${side}`, 'door leaf', `${TNAME(s)}, door`, boxG(...lr(s, -(VEND + 1.0), -(VEND + 0.85)), 0.62, 6.2, ...(side < 0 ? [ZT - TPW / 2 + 0.05, ZT - 0.04] : [ZT + 0.04, ZT + TPW / 2 - 0.05])), { mat: 'oak', w: (TPW / 2) * 5.6 * 0.15 * OAK }));
 PORTALS.forEach(([, cx, w, nm], p) => [-1, 1].forEach(side => add(`DR-${p}-${side}`, 'door leaf', `${nm}, door`, boxG(...(side < 0 ? [cx - w / 2 + 0.05, cx - 0.04] : [cx + 0.04, cx + w / 2 - 0.05]), 0.65, 6.2, TZ1 - 1.4, TZ1 - 1.25), { mat: 'oak', w: (w / 2) * 5.5 * 0.15 * OAK })));
-step('Paving', 'Stone paving for the nave, all four aisles and the last bay between the towers. The nave and the west front of Notre-Dame, finished.');
+step('Paving', 'Stone paving for the nave, all four aisles, the last bay between the towers, the crossing and the transept. The nave, the west front and the transept of Notre-Dame, finished.');
 add('PV-W', 'paving slab', 'Paving, last bay', boxG(XI, -XI, 0, 0.08, ZS[NB], WB), { mat: 'pave' });
+add('PV-X', 'paving slab', 'Paving, crossing', boxG(XI, -XI, 0, 0.08, ZE + 0.35, ZS[0] - 0.35), { mat: 'pave' });
+for (const s of SIDES) add(`PV-T${N(s)}`, 'paving slab', `Paving, ${ARMN(s)}`, boxG(...lr(s, -VEND, XI), 0, 0.08, ZE + 0.35, ZS[0] - 0.35), { mat: 'pave' });
 for (let b = 0; b < NB; b++) {
   add(`PV-N${b}`, 'paving slab', `Nave paving, bay ${b + 1}`, boxG(XI, -XI, 0, 0.08, ZS[b], ZS[b + 1]), { mat: 'pave' });
   for (const s of SIDES) {
@@ -587,6 +812,6 @@ export function computeLoads(n) {
   pieces.forEach(p => { p.load = live(p, n) ? carried(p) : 0; p.stress = p.bear ? p.load / p.bear / 1000 : 0; });
 }
 
-// the front hides the nave's line of thrust from anyone standing west of it, once its walls are up
-export const FRONT = { step: STEP_FRONT, z: TZ0 };
+// what hides the nave's line of thrust once it is built: the west front from the west, the transept from the east
+export const HIDERS = [{ step: STEP_FRONT, west: TZ0, msg: 'From the west, the front hides the vault.' }, { step: STEP_TWALL, east: ZS[0], msg: 'From the east, the transept hides the nave\'s vault.' }];
 export { pieces, steps, STEP_STRUCK };

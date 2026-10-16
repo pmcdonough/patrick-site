@@ -3,11 +3,11 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.4';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.4';
-import { pieces, steps, STEP_STRUCK, FRONT, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.4';
+import * as THREE from './vendor/three.module.js?v=0.5';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.5';
+import { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.5';
 
-const VERSION = '0.4';
+const VERSION = '0.5';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -28,14 +28,14 @@ catch (e) { $('stage').insertAdjacentHTML('beforeend', '<div class="nogl">This b
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.localClippingEnabled = true;
-const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.5, 1400);
-const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 8; controls.maxDistance = 320;
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.5, 2400);
+const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 8; controls.maxDistance = 480;
 camera.position.set(-60, 34, 66); controls.target.set(0, 16, 0);
 const lin = h => new THREE.Color(h).convertSRGBToLinear();
 const hemi = new THREE.HemisphereLight(lin(0xeef2f6), lin(0xb9b1a3), 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(lin(0xfff3e2), 1.15); sun.position.set(-40, 70, 45); sun.castShadow = true;
-Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 70, bottom: -40, near: 10, far: 300 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
-const ground = new THREE.Mesh(new THREE.CircleGeometry(1000, 96), new THREE.MeshLambertMaterial()); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
+Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 110, bottom: -60, near: 10, far: 400 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(1600, 96), new THREE.MeshLambertMaterial()); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
 // a person for scale, by the west end of the nave
 const person = new THREE.Group(), pm = new THREE.MeshStandardMaterial({ color: lin(0x4a5a6c), roughness: 0.8 });
 const pb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.45, 16), pm); pb.position.y = 0.73;
@@ -52,6 +52,7 @@ const MATS = {
   glass: t => new THREE.MeshStandardMaterial({ color: lin([0x3d6db5, 0xb2404f, 0x4b8a66][t]), roughness: 0.3, transparent: true, opacity: 0.8, emissive: lin([0x1c3f80, 0x6e1f2b, 0x1d4d33][t]), side: THREE.DoubleSide }),
   pave: () => new THREE.MeshStandardMaterial({ color: lin(0xd2c9b7), roughness: 0.95 }),
   bronze: () => new THREE.MeshStandardMaterial({ color: lin(0x8c6a3c), roughness: 0.45, metalness: 0.6 }),
+  copper: () => new THREE.MeshStandardMaterial({ color: lin(0x6aa596), roughness: 0.6, metalness: 0.3 }),
 };
 // ---------- Batches ----------
 // Thousands of pieces can't each be their own object on a phone, so the pieces that come and go together (same step, same
@@ -129,7 +130,8 @@ function pickBayLine() {
   // with the cutaway on, the bay line just behind the cut; otherwise the one nearest the camera
   const cut = on('v-cut') ? cutPlane.constant : null;
   const score = g => cut != null ? (g.userData.z <= cut + 1e-6 ? cut - g.userData.z : Infinity) : Math.abs(camera.position.z - g.userData.z);
-  const best = bayLines.reduce((a, g) => score(g) < score(a) ? g : a);
+  // the nave's two end lines are inside the transept wall and the towers once those are built, so they are never shown
+  const best = bayLines.filter(g => Math.abs(g.userData.z) < 29).reduce((a, g) => score(g) < score(a) ? g : a);
   bayLines.forEach(g => { if (g.visible !== (g === best)) { g.visible = g === best; redraw(); } });
 }
 forceGroup.visible = false;
@@ -183,9 +185,10 @@ function recolor() {
 // From the west, once the front stands, the line of thrust would be drawn over the towers, where it means nothing, so it
 // waits until you go round to the side or cut the building open; the key says so.
 function showForces() {
-  const hidden = state.forces && state.n > FRONT.step && camera.position.z > FRONT.z && !on('v-cut');
+  const by = on('v-cut') ? null : HIDERS.find(h => state.n > h.step && (h.west != null ? camera.position.z > h.west : camera.position.z < h.east));
+  const hidden = state.forces && !!by;
   if (forceGroup.visible !== (state.forces && !hidden)) { forceGroup.visible = state.forces && !hidden; redraw(); }
-  if (hidden !== state.fHidden) { state.fHidden = hidden; $('fkeyMsg').textContent = hidden ? 'From the west, the front hides the vault. Go round to the side, or turn on Cutaway.' : 'The path the vault\'s weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.'; }
+  if ((by && by.msg) !== state.fHidden) { state.fHidden = by && by.msg; $('fkeyMsg').textContent = hidden ? `${by.msg} Go round to the side, or turn on Cutaway.` : 'The path the vault\'s weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.'; }
 }
 
 // ---------- Camera ----------
@@ -354,7 +357,7 @@ function theme() {
   // and the ground fades into the sky with no horizon
   const sky = new THREE.Color(cs.getPropertyValue('--sky').trim());
   scene.background = sky; ground.material.color.copy(css('--ground'));
-  scene.fog = new THREE.Fog(sky, 320, 800);
+  scene.fog = new THREE.Fog(sky, 480, 1200);
   forceMat.color.copy(css('--thrust'));
   redraw();
 }
