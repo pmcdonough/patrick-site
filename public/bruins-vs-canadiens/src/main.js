@@ -3,13 +3,13 @@
 // against it, and the comparison with the real teams).
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. Bump them all with VERSION; tools/smoke.js fails if they disagree.
-import { createSim } from './engine/sim.js?v=0.54';
-import { installReview } from './review.js?v=0.54';
+import { createSim } from './engine/sim.js?v=0.55';
+import { installReview } from './review.js?v=0.55';
 
 export function startSim(DATA) {
   const $ = id => document.getElementById(id);
   // admin settings (multipliers), driven by the sliders in the Admin panel
-  const VERSION = '0.54';
+  const VERSION = '0.55';
   $('version').textContent = 'v' + VERSION; $('versionD').textContent = 'v' + VERSION;
   const sim = createSim(DATA);
   const { cfg, teams, game, puck, officials, tick, newGame, teamSample, moveOfficials, RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE,
@@ -102,7 +102,9 @@ export function startSim(DATA) {
   });
   sim.on('reset', () => { $('log').innerHTML = ''; });
   sim.on('final', () => recordResult());
-  newGame();
+  // every Watch game is seeded (a fresh random seed each time), so the shot review can rebuild any moment of it
+  const watchGame = () => newGame(1 + Math.floor(Math.random() * 2147483646));
+  watchGame();
 
 
 
@@ -410,7 +412,7 @@ export function startSim(DATA) {
   }
 
   // the shot review under the rink once a game ends (review.js): it records as the game plays and draws with the functions above
-  const REVIEW = installReview({ sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW });
+  const REVIEW = installReview({ sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim: () => createSim(DATA) });
 
   // ---------- Roster sheets ----------
   const mmss = v => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, '0')}`;
@@ -691,7 +693,7 @@ export function startSim(DATA) {
   // copy the lab's plans to the Watch view and start a game there with them
   $('watchPlans').addEventListener('click', () => {
     LAB.plans.forEach((p, i) => TKEYS.forEach(([k]) => { const el = $(pre(i) + k); el.value = p[k]; el.dispatchEvent(new Event('input')); }));
-    newGame(); game.paused = false; $('pause').textContent = 'Pause';
+    watchGame(); game.paused = false; $('pause').textContent = 'Pause';
     showView('watch'); window.scrollTo(0, 0);
   });
 
@@ -930,7 +932,7 @@ export function startSim(DATA) {
   // ---------- Controls ----------
   $('pause').addEventListener('click', () => { game.paused = !game.paused; $('pause').textContent = game.paused ? 'Resume' : 'Pause'; });
   document.querySelectorAll('.spd').forEach(b => b.addEventListener('click', () => { game.speed = +b.dataset.s; document.querySelectorAll('.spd').forEach(o => o.setAttribute('aria-pressed', o === b)); }));
-  $('newgame').addEventListener('click', () => { if (!SIM_END.on) newGame(); });
+  $('newgame').addEventListener('click', () => { if (!SIM_END.on) watchGame(); });
   // Sim to the final horn: the rest of this game at once, the same ticks the rink would play, a few thousand per frame
   // so the page stays responsive; then the review opens
   const SIM_END = { on: false };

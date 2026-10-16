@@ -6,7 +6,7 @@
 <link rel="icon" href="data:,">
 <title>Bruins vs Canadiens</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.54">
+<link rel="stylesheet" href="style.css?v=0.55">
 </head>
 <body>
 
@@ -74,6 +74,7 @@
             <button type="button" id="rvPlay" class="secondary">Play the lead-up</button>
             <button type="button" id="rvShot">Back to the shot</button>
             <div class="seg" id="rvSpeed" role="group" aria-label="Replay speed"><button type="button" data-s="0.5" aria-pressed="true">0.5x</button><button type="button" data-s="1" aria-pressed="false">1x</button></div>
+            <div class="seg" id="rvAlt" role="group" aria-label="Which play" hidden><button type="button" data-alt="0" aria-pressed="true">As played</button><button type="button" data-alt="1" aria-pressed="false">If he passed</button></div>
             <span class="rvclock" id="rvClock"></span>
             <button type="button" id="rvNext" aria-label="Next shot">&rarr;</button>
           </div>
@@ -87,7 +88,7 @@
         </div>
       </div>
       <details class="more"><summary>Every shooter <small>shots, right calls and the chances each one left on the table</small></summary><div id="rvPlayers" class="calib lab"></div></details>
-      <p class="hint">This is the simulated game you watched, so every position is exact, not estimated. A shot's value is its chance of becoming a goal from the expected-goal model, after the defenders in his lane and on him; a pass's is the receiver's look times the chance the pass gets there. The review judges the choice, not the result: a good shot can be saved and a bad one can go in. It does not yet play out the pass he passed up; that comes next.</p>
+      <p class="hint">This is the simulated game you watched, so every position is exact, not estimated. A shot's value is its chance of becoming a goal from the expected-goal model, after the defenders in his lane and on him; a pass's is the receiver's look times the chance the pass gets there. The review judges the choice, not the result: a good shot can be saved and a bad one can go in. What if he passed rebuilds the game at the instant before the shot and plays the pass and the shot out a few hundred times each: what the pass would have produced, not a guess at it.</p>
     </section>
     <div class="plans">
       <article class="plan bos">
@@ -283,7 +284,7 @@
 </dialog>
 <footer class="version">Bruins vs Canadiens <span id="version"></span></footer>
 
-<script type="module" src="src/main.js?v=0.54"></script>
+<script type="module" src="src/main.js?v=0.55"></script>
 
 </body>
 </html>

@@ -136,7 +136,7 @@
       <div class="col">
         <div class="box page"><b>Watch</b><span>draws the rink at 60 frames a second, sight lines, controls, box score</span></div>
         <div class="box page"><b>Game plan lab</b><span>hundreds of seeded games in background workers, one engine per CPU core</span></div>
-        <div class="box page"><b>Shot review</b><span>records every shot and the shooter's read, replays it</span></div>
+        <div class="box page"><b>Shot review</b><span>records every shot and the shooter's read, replays it, and plays out the pass he passed up</span></div>
         <div class="box page"><b>Play Review</b><span>the real-game prototype; imports the engine's model and math</span></div>
       </div>
     </div>
@@ -161,6 +161,7 @@
   <div class="cards">
     <div class="cardx"><h3>A seeded generator</h3><p>Every random draw in a game comes from one generator seeded by the game's number. Nothing in the engine may call the browser's own random function, and a unit test fails if anything does.</p></div>
     <div class="cardx"><h3>Exact math</h3><p>Browsers and Node compute sine, cosine, logarithms and powers differently in the last binary digit. That was enough to change how 2 of 20 games ended. The engine now uses its own ports of the standard fdlibm routines, built from exact arithmetic.</p></div>
+    <div class="cardx"><h3>Snapshots</h3><p>The whole state of a game can be copied and restored into another engine. The shot review rebuilds the instant before a shot that way, makes the shooter pass instead, and plays both choices out a few hundred times with paired random numbers: about two seconds in the browser.</p></div>
     <div class="cardx"><h3>Proven, not assumed</h3><p>Seeded games are played in Node and in Chromium, Firefox and WebKit, and every final number must match to the last digit. Games also replay in reverse order and in the page's own workers to prove no state leaks between them.</p></div>
   </div>
 
@@ -181,7 +182,7 @@
   <div class="tablewrap"><table>
     <tr><th>Check</th><th>What it proves</th></tr>
     <tr><td class="n">Smoke test</td><td>All three pages load over HTTP in a real browser, a full game plays without an error, and every file and import carries the same version stamp</td></tr>
-    <tr><td class="n">Unit tests</td><td>A seed plays the same game whatever ran before it, a new game keeps nothing from the last, every random draw is seeded, play never freezes, the math matches to one unit in the last place</td></tr>
+    <tr><td class="n">Unit tests</td><td>A seed plays the same game whatever ran before it, a new game keeps nothing from the last, every random draw is seeded, a restored snapshot plays on exactly, play never freezes, the math matches to one unit in the last place</td></tr>
     <tr><td class="n">Reference games</td><td>200 saved games, 100 at each level, each with a fingerprint: a change that moves even one game is caught and has to be explained</td></tr>
     <tr><td class="n">Order and pool</td><td>Games are identical played backwards in one process and in the page's own background workers</td></tr>
     <tr><td class="n">Calibration</td><td>Shift lengths, offsides and icings, and 28 per-team numbers against the real 2025-26 teams</td></tr>

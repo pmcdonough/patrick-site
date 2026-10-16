@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.65 = sim 0.54 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.66 = sim 0.55 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.66
+- Sim 0.55 (What if he passed). Under the hood describes snapshots and the what-if.
 
 ### 0.65
 - Sim 0.54 (Sim to the final horn).
@@ -156,6 +159,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - First version: Montreal 3 at Boston 4 (Jan 24, 2026) loaded from the NHL play-by-play and shift chart; every unblocked shot scored by expected goals against the best pass from the same spot; teammates and defenders inferred from the clubs' systems; top ten per club with side-by-side rinks and a method note. Single file: the model, systems and game data are embedded with a fetch-first fallback.
 
 ## Bruins vs Canadiens
+
+### 0.55
+- What if he passed, in the shot review: for a shot with a pass available, the game is rebuilt at the instant before the release on a separate engine, and the pass he passed up and the shot he took are each played out `review.whatIf.runs` (200) times for `horizonSec` (5) seconds or until the whistle, with the same fresh random numbers for both, so each pair differs only by the choice. The card gives net chances for each (expected goals for minus against), goals in the runs, how often the pass arrived and the receiver got a shot away, and a verdict from the 95% range of the paired difference. When the played-out pass is worth much less than the read said, it says why: the read prices an instant one-timer. If he passed, above the rink, replays one typical run of the pass. About two seconds a shot.
+- Engine: `snapshot()` and `restore(snap)` (the whole game state, restorable into any engine; the generator's state rides along), `reseed(seed)`, and `force(player, { kind })`, a carrier's next decision once. Watch games are now seeded (a random seed each game) so they can be rebuilt; they play as before. Two new unit tests: a restored snapshot plays on exactly as the game did, in the same engine and another; a forced decision happens once and a reseed changes what follows. Both references identical.
 
 ### 0.54
 - Sim to the final horn, beside New game: plays the rest of the game at once, the same ticks the rink would play, a few thousand a frame (about two seconds), then scrolls to the shot review.

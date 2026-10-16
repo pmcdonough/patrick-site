@@ -296,10 +296,17 @@
   ]
  },
  "review": {
-  "desc": "The shot review after a Watch game. Every shot is judged by the carrier's own read at the moment he let it go, the same values his decisions and the sight lines use. A pass counts as a better option when it was worth passMustBeatBy times his shot (shotDecision.xgChoice) and at least minGapXg more; it is a close call when a pass was worth more but not by that much, and the right call otherwise. Each shot keeps leadSec of play before the release and afterSec after it, sampled sampleHz times a second, for the replay.",
+  "desc": "The shot review after a Watch game. Every shot is judged by the carrier's own read at the moment he let it go, the same values his decisions and the sight lines use. A pass counts as a better option when it was worth passMustBeatBy times his shot (shotDecision.xgChoice) and at least minGapXg more; it is a close call when a pass was worth more but not by that much, and the right call otherwise. Each shot keeps leadSec of play before the release and afterSec after it, sampled sampleHz times a second, for the replay. Every snapshotEverySec of play it also keeps a snapshot of the whole game, so the what-if can rebuild the instant before any shot.",
   "minGapXg": 0.02,
   "leadSec": 6,
   "afterSec": 2,
-  "sampleHz": 10
+  "sampleHz": 10,
+  "snapshotEverySec": 1,
+  "whatIf": {
+   "desc": "Play out the pass: the game is rebuilt on a separate engine at the instant before the shot, the shooter is made to pass to his best option instead, and the next horizonSec seconds (or until the whistle) are played runs times with fresh random numbers each time; the shot he took is played out the same number of times with the same random numbers, so each pair differs only by the choice. A choice is better when the 95% range of the paired difference in expected goals is above zero.",
+   "runs": 200,
+   "horizonSec": 5,
+   "arrivedWithinSec": 1.5
+  }
  }
 }

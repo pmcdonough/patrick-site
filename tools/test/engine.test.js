@@ -73,3 +73,30 @@ test('play never freezes and nobody stays out for a period', async () => {
     assert.ok(worstShift <= 180, `seed ${seed}: ${who} stayed on for ${worstShift.toFixed(0)} s`);
   }
 });
+
+test('a snapshot restored, in the same engine or another, plays on exactly as the game did', async () => {
+  const E = await load();
+  const a = E.create(), b = E.create();
+  a.newGame(5); for (let k = 0; k < 40000; k++) a.tick(0.03);      // well into the second period, mid-play
+  const snap = a.snapshot();
+  const run = sim => { for (let k = 0; k < 4000 && !sim.game.over; k++) sim.tick(0.03); return snapshot(sim); };
+  const original = run(a);
+  a.restore(snap); assert.equal(run(a), original, 'restored into the same engine');
+  b.newGame(99); for (let k = 0; k < 500; k++) b.tick(0.03);        // another engine in another game
+  b.restore(snap); assert.equal(run(b), original, 'restored into another engine');
+  b.restore(snap); assert.equal(run(b), original, 'and again: a snapshot is not used up');
+});
+
+test('a forced decision happens on the next tick, once, and a reseed changes what follows', async () => {
+  const E = await load();
+  const sim = E.create();
+  sim.newGame(5);
+  let k = 0; while (!(sim.puck.carrier && !sim.puck.carrier.goalie) && k++ < 20000) sim.tick(0.03);
+  const p = sim.puck.carrier, snap = sim.snapshot();
+  const shots = () => sim.teams[p.team.id].attempts;
+  const before = shots(); sim.force(p, { kind: 'shoot' }); sim.tick(0.03);
+  assert.equal(shots(), before + 1, 'the forced shot was taken');
+  assert.equal(sim.puck.carrier, null);
+  const ends = new Set(); for (let s = 1; s <= 5; s++) { sim.restore(snap); sim.reseed(s); for (let j = 0; j < 300; j++) sim.tick(0.03); ends.add(snapshot(sim)); }
+  assert.ok(ends.size > 1, 'different seeds from the same moment play differently');
+});

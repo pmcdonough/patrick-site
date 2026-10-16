@@ -2,11 +2,14 @@
 // let it go (the same values his decision and the sight lines use), with a replay of the seconds around it.
 // It only listens: the engine's 'shot' event, its state after each tick, 'reset' and 'final'. It never changes the game.
 // main.js installs it with the drawing functions it shares (installReview(kit)), so the replay looks like the rink.
+// What if he passed: about once a second of play it keeps a snapshot of the game; for a shot, a separate engine
+// (kit.makeSim) restores the last one, replays the same ticks to the instant before the release, then plays the pass he
+// passed up and the shot he took, each review.whatIf.runs times with paired fresh random numbers.
 
 export function installReview(kit) {
-  const { sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW } = kit;
+  const { sim, $, withCtx, drawRink, drawSkater, paintSight, S, RINK_Y, RH, RW, makeSim } = kit;
   const { teams, game, puck, PH, active, dist, oppNet, readLook, goalieLine, clamp } = sim;
-  const RV = PH.review, XC = PH.shotDecision.xgChoice;
+  const RV = PH.review, XC = PH.shotDecision.xgChoice, WI = RV.whatIf;
   const STEP = 1 / RV.sampleHz;
   const PERIOD = ['1st', '2nd', '3rd', 'OT'];
   const pct = v => Math.round(v * 100) + '%';
@@ -14,12 +17,14 @@ export function installReview(kit) {
   const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
   // ---------- Recording: the last few seconds of play, and every shot with its read ----------
-  const R = { t: 0, nextAt: 0, ring: [], moments: [], open: [], scores: [0, 0] };
-  const frame = () => ({
-    t: R.t, puck: [puck.x, puck.y], carrier: puck.carrier,
-    sk: teams.flatMap(t => t.players.filter(p => !p.goalie && !p.box).map(p => [p, p.x, p.y])),
-    gl: teams.map(t => t.goalie).filter(g => g && !g.box).map(g => [g, g.x, g.y, goalieLine(g)]),
+  const R = { t: 0, nextAt: 0, ring: [], moments: [], open: [], scores: [0, 0], snap: null, dts: [], snapAge: 0 };
+  // one sample of the play on an engine (the Watch game, or the what-if engine)
+  const frameOf = (E, t) => ({
+    t, puck: [E.puck.x, E.puck.y], carrier: E.puck.carrier,
+    sk: E.teams.flatMap(q => q.players.filter(p => !p.goalie && !p.box).map(p => [p, p.x, p.y])),
+    gl: E.teams.map(q => q.goalie).filter(g => g && !g.box).map(g => [g, g.x, g.y, E.goalieLine(g)]),
   });
+  const frame = () => frameOf(sim, R.t);
   const counts = t => { const o = teams[1 - t.id]; return { score: t.score, shots: t.shots, missed: t.missed, blocked: o.blocked + t.blockedOwn }; };
   sim.on('shot', info => {
     if (game.shootout) return;
@@ -27,7 +32,8 @@ export function installReview(kit) {
     const read = readLook(p, t, opp, mates, Math.min(...opp.map(o => dist(o, p))));
     const now = frame(), here = q => ({ x: q.x, y: q.y, num: q.num });
     const m = { id: R.moments.length, team: t.id, period: game.period, clock: game.clock, shooter: p, why: info.why, oneTimer: info.oneTimer,
-      xg: info.xg, read, net: oppNet(t), shooterAt: here(p), sightRead: read && { ...read, best: read.best && here(read.best) }, opp: opp.map(o => ({ x: o.x, y: o.y })), at: now, frames: [...R.ring.filter(f => f.t >= R.t - RV.leadSec), now], before: counts(t), outcome: null };
+      xg: info.xg, read, net: oppNet(t), shooterAt: here(p), sightRead: read && { ...read, best: read.best && here(read.best) }, opp: opp.map(o => ({ x: o.x, y: o.y })), at: now, frames: [...R.ring.filter(f => f.t >= R.t - RV.leadSec), now], before: counts(t), outcome: null,
+      replay: R.snap && info.why !== 'oneTimer' && read && read.best ? { snap: R.snap, dts: R.dts.slice() } : null };   // a one-timer is not a choice he could have passed up
     m.verdict = judge(read);
     R.moments.push(m); R.open.push(m);
   });
@@ -40,7 +46,8 @@ export function installReview(kit) {
   }
   // after every tick on the Watch page: sample the play, and settle what became of each open shot
   function step(dt) {
-    R.t += dt;
+    R.t += dt; R.dts.push(dt); R.snapAge += dt;
+    if (!R.snap || R.snapAge >= RV.snapshotEverySec) { try { R.snap = sim.snapshot(); } catch (e) { R.snap = null; } R.dts = []; R.snapAge = 0; }
     if (R.t >= R.nextAt) {
       R.nextAt = R.t + STEP; const f = frame(); R.ring.push(f);
       while (R.ring.length && R.ring[0].t < R.t - RV.leadSec - STEP) R.ring.shift();
@@ -61,8 +68,53 @@ export function installReview(kit) {
     const team = teams.findIndex(t => t.score > R.scores[t.id]); R.scores = teams.map(t => t.score); if (team < 0) return;
     for (let i = R.moments.length - 1; i >= 0; i--) { const m = R.moments[i]; if (R.t - m.at.t > 4) break; if (m.team === team && (!d.scorer || m.shooter === d.scorer)) { m.outcome = 'goal'; break; } }
   });
-  sim.on('reset', () => { R.t = 0; R.nextAt = 0; R.ring = []; R.moments = []; R.open = []; R.scores = [0, 0]; hide(); });
+  sim.on('reset', () => { R.t = 0; R.nextAt = 0; R.ring = []; R.moments = []; R.open = []; R.scores = [0, 0]; R.snap = null; R.dts = []; R.snapAge = 0; hide(); });
   sim.on('final', () => { R.open.forEach(m => { if (!m.outcome) m.outcome = 'loose'; }); R.open = []; show(); });
+
+  // ---------- What if he passed: the moment rebuilt on another engine and played out both ways ----------
+  let B = null; const BR = { on: false, shots: [] };
+  const find = (team, num) => num === undefined ? null : B.teams[team].all.find(q => q.num === num);
+  // the instant before the release, on the what-if engine: the last snapshot, then the same ticks the game played
+  function rebuild(m) {
+    if (!B) { B = makeSim(); B.on('shot', i => { if (BR.on) BR.shots.push(i); }); }
+    B.restore(m.replay.snap); for (const dt of m.replay.dts) B.tick(dt);
+    const p = find(m.team, m.shooter.num);
+    const same = p && B.puck.carrier === p && Math.abs(p.x - m.shooterAt.x) < 1e-6 && Math.abs(p.y - m.shooterAt.y) < 1e-6;
+    return same ? B.snapshot() : null;
+  }
+  // one run from that instant: the forced choice, fresh random numbers, horizonSec of play or until a goal or whistle
+  function runOne(m, pre, kind, seed, record) {
+    B.restore(pre); B.reseed(seed);
+    const p = find(m.team, m.shooter.num), r = find(m.team, m.read.best.num), t = B.teams[m.team], o = B.teams[1 - m.team];
+    B.force(p, kind === 'pass' ? { kind: 'pass', to: r } : { kind: 'shoot' });
+    const x0 = t.xg, xa0 = o.xg, g0 = t.score, ga0 = o.score, frames = record ? [] : null;
+    BR.shots = []; BR.on = true; let arrived = false;
+    for (let k = 1; k <= WI.horizonSec / 0.03 && !B.game.over; k++) {
+      B.tick(0.03);
+      if (kind === 'pass' && !arrived && k * 0.03 <= WI.arrivedWithinSec && (B.puck.carrier === r || BR.shots.some(s => s.shooter === r))) arrived = true;
+      if (record && k % 3 === 0) frames.push(frameOf(B, m.at.t + k * 0.03));
+      if (t.score > g0 || o.score > ga0 || B.game.faceoff) break;
+    }
+    BR.on = false;
+    return { goal: t.score > g0, against: o.score > ga0, xg: t.xg - x0, xga: o.xg - xa0, arrived, hisShot: BR.shots.some(s => s.shooter === r), frames };
+  }
+  async function whatIf(m, progress) {
+    const pre = rebuild(m); if (!pre) return { failed: true };
+    const pass = [], shot = [];
+    for (let i = 0; i < WI.runs; i++) {
+      pass.push(runOne(m, pre, 'pass', 7001 + i)); shot.push(runOne(m, pre, 'shoot', 7001 + i));   // the same seed both ways: a pair
+      if (i % 10 === 9) { progress((i + 1) / WI.runs); await new Promise(requestAnimationFrame); }
+    }
+    const net = x => x.xg - x.xga, d = pass.map((x, i) => net(x) - net(shot[i])), n = d.length, mean = d.reduce((a, b) => a + b, 0) / n;
+    const e = 1.96 * Math.sqrt(d.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) / Math.sqrt(n);
+    const avg = (xs, f) => xs.reduce((a, x) => a + f(x), 0) / xs.length;
+    // one typical run of the pass to watch: the one whose net chances sit closest to the average, played again recording
+    const mp = avg(pass, net); let ti = 0; pass.forEach((x, i) => { if (Math.abs(net(x) - mp) < Math.abs(net(pass[ti]) - mp)) ti = i; });
+    const typical = runOne(m, pre, 'pass', 7001 + ti, true);
+    return { n, mean, e, pass: { goals: pass.filter(x => x.goal).length, against: pass.filter(x => x.against).length, xg: avg(pass, x => x.xg), xga: avg(pass, x => x.xga), arrived: avg(pass, x => x.arrived ? 1 : 0), hisShot: avg(pass, x => x.hisShot ? 1 : 0) },
+      shot: { goals: shot.filter(x => x.goal).length, against: shot.filter(x => x.against).length, xg: avg(shot, x => x.xg), xga: avg(shot, x => x.xga) },
+      frames: [...m.frames.filter(f => f.t <= m.at.t), ...typical.frames], typicalGoal: typical.goal };
+  }
 
   // ---------- Words ----------
   const WHY = {
@@ -97,12 +149,13 @@ export function installReview(kit) {
   }
 
   // ---------- The panel ----------
-  const V = { kind: 'better', team: 'both', sel: null, tau: 0, playing: false, hold: 0, speed: 0.5, last: 0 };
+  const V = { kind: 'better', team: 'both', sel: null, tau: 0, playing: false, hold: 0, speed: 0.5, last: 0, alt: false };
+  const fr = m => V.alt && m.what && m.what.frames ? m.what.frames : m.frames;   // the clip on screen: as played, or one run of the pass
   const box = $('review'), cv = $('rvCanvas'), rctx = cv.getContext('2d');
   // the replay shows only the ice the play used: the puck's path and the shooter, at least the attacking half, so the
   // sight lines and their tag stay readable on a phone
   function viewOf(m) {
-    const xs = m.frames.flatMap(f => [f.puck[0], ...f.sk.filter(e => e[0] === m.shooter).map(e => e[1])]);
+    const xs = [...m.frames, ...(m.what && m.what.frames || [])].flatMap(f => [f.puck[0], ...f.sk.filter(e => e[0] === m.shooter).map(e => e[1])]);
     let x0 = Math.max(0, Math.min(...xs) - 8), x1 = Math.min(RW, Math.max(...xs) + 8);
     const atk = m.net.x > RW / 2 ? 1 : -1, need = 100 - (x1 - x0);
     if (need > 0) { if (atk > 0) { x1 = RW; x0 = Math.max(0, x1 - 100); } else { x0 = 0; x1 = Math.min(RW, 100); } }
@@ -154,15 +207,49 @@ export function installReview(kit) {
     $('rvPlayers').innerHTML = `<table><tr><th>Player</th><th>Shots</th><th>Right call</th><th>Close</th><th>Better pass missed</th><th>Goals left</th><th>Goals</th></tr>${rows.map(r => `<tr><td>${r.p.team.abbr} ${esc(who(r.p))}</td><td>${r.n}</td><td>${r.right}</td><td>${r.close}</td><td>${r.better}</td><td>${r.left.toFixed(2)}</td><td>${r.goals}</td></tr>`).join('')}</table>`;
   }
   function select(m) {
-    V.sel = m || null; V.playing = false; V.tau = 0; V.hold = 0;
+    V.sel = m || null; V.playing = false; V.tau = 0; V.hold = 0; V.alt = false;
     document.querySelectorAll('#rvLine .mk.on, #rvList .rvrow.on').forEach(e => e.classList.remove('on'));
     if (!m) { $('rvText').innerHTML = ''; paint(); return; }
     document.querySelectorAll(`#rvLine .mk[data-m="${m.id}"], #rvList .rvrow[data-m="${m.id}"]`).forEach(e => e.classList.add('on'));
     const t = teams[m.team];
     $('rvText').innerHTML = `<p class="rvwhen"><span class="dot ${m.team ? 'a' : 'h'}"></span>${when(m)} · ${t.abbr} ${esc(who(m.shooter))} · ${OUTCOME[m.outcome] || ''}</p><p class="headline sm">${esc(headline(m))}</p><span class="pill ${m.verdict === 'better' ? 'warn' : m.verdict === 'right' ? 'good' : 'flat'}">${VERDICT[m.verdict]}</span>`
-      + `<dl class="rvdl">${details(m).map(([k, v, extra]) => `<dt>${k}</dt><dd>${esc(v)}${extra ? esc(extra) : ''}</dd>`).join('')}</dl>`;
-    $('rvPlay').textContent = 'Play the lead-up'; sizeView(m); paint();
+      + `<dl class="rvdl">${details(m).map(([k, v, extra]) => `<dt>${k}</dt><dd>${esc(v)}${extra ? esc(extra) : ''}</dd>`).join('')}</dl><div class="rvwhat" id="rvWhat"></div>`;
+    $('rvPlay').textContent = 'Play the lead-up'; renderWhat(m); sizeView(m); paint();
   }
+  // the what-if block: a button, its progress, then both choices played out and a verdict from the paired runs
+  function renderWhat(m) {
+    const el = $('rvWhat'); if (!el || V.sel !== m) return;
+    syncAlt(m);
+    if (!m.read || !m.read.best) { el.innerHTML = ''; return; }
+    const to = who(m.read.best);
+    if (!m.replay) { el.innerHTML = `<p class="hint">${m.why === 'oneTimer' ? 'A one-timer is not a choice he could have passed up, so there is nothing to play out.' : 'This shot came before the first snapshot of the game, so it cannot be rebuilt.'}</p>`; return; }
+    if (m.whatRun) { el.innerHTML = `<p class="hint">Playing it out: ${Math.round(m.whatRun * 100)}%</p><div class="progress"><i style="width:${Math.round(m.whatRun * 100)}%"></i></div>`; return; }
+    const w = m.what;
+    if (!w) { el.innerHTML = `<h3 class="rvh">What if he passed?</h3><p class="hint">Rebuild this moment and play it out ${WI.runs} times each way: the pass to ${esc(to)}, and the shot he took, with the same fresh bounces for both, for ${WI.horizonSec} seconds or until the whistle. About a second.</p><button type="button" class="secondary" id="rvWhatGo">Play out the pass to ${esc(to)}</button>`; return; }
+    if (w.failed) { el.innerHTML = '<p class="hint">This moment could not be rebuilt exactly, so it is not played out.</p>'; return; }
+    const f2 = v => v.toFixed(2), net = x => x.xg - x.xga, small = Math.abs(w.mean) < RV.minGapXg;
+    const verdict = w.mean - w.e > 0 ? (small ? 'Slightly better to pass, by under two hundredths of a goal: about even.' : `The pass was better: about ${f2(w.mean)} more net chances than the shot.`)
+      : w.mean + w.e < 0 ? (small ? 'Slightly better to shoot, by under two hundredths of a goal: about even.' : `The shot was better: about ${f2(-w.mean)} more net chances than the pass.`)
+      : 'About even: the two choices are not separated in these runs.';
+    // when playing it out gives the pass much less than his read did, say why: the read prices an instant one-timer
+    const gap = m.read.bestV > 0 && w.pass.xg < 0.6 * m.read.bestV ? `<p class="hint">His read priced the pass at ${pct(m.read.bestV)}, as if ${esc(to)} shot it the instant it arrived. Played out, he got a shot away in ${pct(w.pass.hisShot)} of the runs, so the pass produced less than the read promised.</p>` : '';
+    const card = (cls, title, x, extra) => `<div class="c ${cls}"><b>${title}</b><span class="g">${f2(net(x))}</span><span>net chances, the next ${WI.horizonSec} seconds</span><small>${f2(x.xg)} for, ${f2(x.xga)} against. ${x.goals} goal${x.goals === 1 ? '' : 's'} in ${w.n} runs${x.against ? `, ${x.against} against` : ''}.${extra}</small></div>`;
+    el.innerHTML = `<h3 class="rvh">What if he passed?</h3><p class="headline sm">${esc(verdict)}</p>
+      <div class="rvcmp">${card('pass', `Pass to ${esc(to)}`, w.pass, ` The pass got there ${pct(w.pass.arrived)} of the time; he got a shot away in ${pct(w.pass.hisShot)}.`)}${card('shot', 'The shot he took', w.shot, '')}</div>${gap}
+      <p class="hint">Each run starts at the instant before he shot and plays ${WI.horizonSec} seconds or until the whistle. Both choices get the same random numbers, so each pair differs only by the choice. Net chances are expected goals for minus against, and they decide it: goals are too rare to judge in ${w.n} runs. The 95% range of the difference is ${f2(w.mean - w.e)} to ${f2(w.mean + w.e)}. Choose If he passed above to watch one typical run of the pass${w.typicalGoal ? ', which scores' : ''}.</p>`;
+  }
+  function syncAlt(m) {
+    const has = !!(m && m.what && m.what.frames);
+    $('rvAlt').hidden = !has; document.querySelectorAll('#rvAlt [data-alt]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.alt === '1') === V.alt));
+  }
+  $('rvText').addEventListener('click', async e => {
+    if (!e.target.closest('#rvWhatGo')) return;
+    const m = V.sel; if (!m || m.whatRun || m.what) return;
+    m.whatRun = 0.001; renderWhat(m);
+    try { m.what = await whatIf(m, f => { m.whatRun = f; renderWhat(m); }); } catch (err) { m.what = { failed: true }; }
+    m.whatRun = 0; m.view = null; if (V.sel === m) { sizeView(m); paint(); } renderWhat(m);
+  });
+  document.querySelectorAll('#rvAlt [data-alt]').forEach(b => b.addEventListener('click', () => { V.alt = b.dataset.alt === '1'; V.playing = false; V.tau = 0; $('rvPlay').textContent = 'Play the lead-up'; syncAlt(V.sel); paint(); }));
   const syncSeg = () => { document.querySelectorAll('#rvKind [data-k]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === V.kind)); document.querySelectorAll('#rvTeam [data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === V.team)); };
   document.querySelectorAll('#rvKind [data-k]').forEach(b => b.addEventListener('click', () => { V.kind = b.dataset.k; syncSeg(); renderList(); const l = list(); if (!l.includes(V.sel)) select(l[0]); }));
   document.querySelectorAll('#rvTeam [data-t]').forEach(b => b.addEventListener('click', () => { V.team = b.dataset.t; syncSeg(); renderList(); const l = list(); if (!l.includes(V.sel)) select(l[0]); }));
@@ -172,14 +259,14 @@ export function installReview(kit) {
   $('rvPlay').addEventListener('click', () => {
     if (!V.sel) return;
     if (V.playing) { V.playing = false; $('rvPlay').textContent = 'Play the lead-up'; return; }
-    V.tau = -(V.sel.at.t - V.sel.frames[0].t); V.hold = 0; V.playing = true; V.last = performance.now(); $('rvPlay').textContent = 'Pause';
+    V.tau = -(V.sel.at.t - fr(V.sel)[0].t); V.hold = 0; V.playing = true; V.last = performance.now(); $('rvPlay').textContent = 'Pause';
   });
   $('rvShot').addEventListener('click', () => { V.playing = false; V.tau = 0; $('rvPlay').textContent = 'Play the lead-up'; paint(); });
   document.querySelectorAll('#rvSpeed [data-s]').forEach(b => b.addEventListener('click', () => { V.speed = +b.dataset.s; document.querySelectorAll('#rvSpeed [data-s]').forEach(o => o.setAttribute('aria-pressed', o === b)); }));
 
   // ---------- The replay: the recorded frames, eased between samples, frozen on the release with his sight lines ----------
   function at(m, tau) {
-    const T = m.at.t + tau, fs = m.frames;
+    const T = m.at.t + tau, fs = fr(m);
     let i = fs.findIndex(f => f.t >= T); if (i < 0) return fs[fs.length - 1]; if (i === 0) return fs[0];
     const a = fs[i - 1], b = fs[i], k = clamp((T - a.t) / ((b.t - a.t) || 1), 0, 1), mix = (u, v) => u + (v - u) * k;
     const pos = new Map(b.sk.map(e => [e[0], e]));
@@ -203,14 +290,16 @@ export function installReview(kit) {
         const d = Math.hypot(f.puck[0] - x, f.puck[1] - y);
         if (d < 16 && d > 0.1) { const a = Math.atan2(f.puck[1] - y, f.puck[0] - x), len = Math.min(3.6, d); rctx.lineWidth = 0.4; rctx.strokeStyle = 'rgba(0,0,0,0.55)'; rctx.beginPath(); rctx.moveTo(x, y); rctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); rctx.stroke(); }
         drawSkater(p, x, y, 2.0, false);
-        if (p === m.shooter) { rctx.lineWidth = 0.6; rctx.strokeStyle = '#ffb000'; rctx.beginPath(); rctx.arc(x, y, 3.6, 0, Math.PI * 2); rctx.stroke(); }
+        const mine = p.team.id === m.team;
+        if (V.alt && mine && m.read && m.read.best && p.num === m.read.best.num) { rctx.lineWidth = 0.6; rctx.strokeStyle = '#3b82f6'; rctx.beginPath(); rctx.arc(x, y, 3.6, 0, Math.PI * 2); rctx.stroke(); }
+        if (mine && p.num === m.shooter.num) { rctx.lineWidth = 0.6; rctx.strokeStyle = '#ffb000'; rctx.beginPath(); rctx.arc(x, y, 3.6, 0, Math.PI * 2); rctx.stroke(); }
         if (p === f.carrier) { rctx.lineWidth = 0.5; rctx.strokeStyle = '#111'; rctx.beginPath(); rctx.arc(x, y, 3.0, 0, Math.PI * 2); rctx.stroke(); }
       }
       rctx.fillStyle = '#111'; rctx.beginPath(); rctx.arc(f.puck[0], f.puck[1], 0.8, 0, Math.PI * 2); rctx.fill();
       rctx.restore();
     });
-    const lead = m.at.t - m.frames[0].t, span = lead + (m.frames[m.frames.length - 1].t - m.at.t);
-    $('rvClock').textContent = Math.abs(V.tau) < 0.05 ? 'At the release' : V.tau < 0 ? `${(-V.tau).toFixed(1)} s before the shot` : `${V.tau.toFixed(1)} s after`;
+    const fs = fr(m), lead = m.at.t - fs[0].t, span = lead + (fs[fs.length - 1].t - m.at.t);
+    $('rvClock').textContent = Math.abs(V.tau) < 0.05 ? 'At the release' : V.tau < 0 ? `${(-V.tau).toFixed(1)} s before the shot` : `${V.tau.toFixed(1)} s after${V.alt ? ', if he had passed' : ''}`;
     $('rvBar').style.width = (100 * clamp((V.tau + lead) / (span || 1), 0, 1)) + '%';
   }
   // playback: ice time runs at the chosen speed, holds 1.5 s on the release to show the read, then runs out the clip
@@ -218,7 +307,7 @@ export function installReview(kit) {
     const m = V.sel;
     if (V.playing && m) {
       const dt = Math.min(0.1, (now - V.last) / 1000); V.last = now;
-      const end = m.frames[m.frames.length - 1].t - m.at.t;
+      const fs = fr(m), end = fs[fs.length - 1].t - m.at.t;
       if (V.hold > 0) { V.hold -= dt; if (V.hold <= 0) V.tau = 0.001; }
       else { const was = V.tau; V.tau += dt * V.speed; if (was < 0 && V.tau >= 0) { V.tau = 0; V.hold = 1.5; } }
       if (V.tau >= end) { V.tau = end; V.playing = false; $('rvPlay').textContent = 'Play the lead-up'; }

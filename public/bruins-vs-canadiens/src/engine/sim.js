@@ -11,6 +11,9 @@
 //   sim.setTactics(i, { fore, brk, entry, oz, dz, pp, pk, agg })   club i's game plan (the same as setting sim.teams[i].tac)
 //   sim.cfg                                engine multipliers (the sliders); every one at 1 is the NHL-average calibration
 //   sim.newGame(seed); while (!sim.game.over) sim.tick(0.03);   the same seed plays the same game, in Node and any browser
+//   const snap = sim.snapshot(); other.restore(snap)   the whole game state of a seeded game, restorable into any engine
+//   sim.reseed(seed)                       new random numbers from here on (a branch of the same moment)
+//   sim.force(player, { kind: 'pass', to } or { kind: 'shoot' })   that carrier's next decision, once (the shot review)
 //
 // The engine is split by subject. This file holds the game state, starts a game and runs the tick; rink.js (geometry),
 // xg.js (expected goals) and rosters.js (ratings) are plain functions, and officials, lines, formations, ai, physics
@@ -18,17 +21,17 @@
 // Trigonometry, exp, log and pow come from detmath.js, never from Math, so a seed plays the same game everywhere.
 // Random numbers: every draw goes through random(), one generator per game. newGame(seed) plays the seeded game
 // (rng.js); newGame() uses opts.rng, or Math.random. `drift: false` stops the small idle sway of players on their spots.
-import * as DM from './detmath.js?v=0.54';
-import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.54';
-import { makeXg } from './xg.js?v=0.54';
-import { seeded } from './rng.js?v=0.54';
-import { buildTeams } from './rosters.js?v=0.54';
-import * as officialsModule from './officials.js?v=0.54';
-import * as linesModule from './lines.js?v=0.54';
-import * as formationsModule from './formations.js?v=0.54';
-import * as aiModule from './ai.js?v=0.54';
-import * as physicsModule from './physics.js?v=0.54';
-import * as rulesModule from './rules.js?v=0.54';
+import * as DM from './detmath.js?v=0.55';
+import { RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, clamp, dist, toRink, toFx, ownNet, oppNet, zone } from './rink.js?v=0.55';
+import { makeXg } from './xg.js?v=0.55';
+import { seeded } from './rng.js?v=0.55';
+import { buildTeams } from './rosters.js?v=0.55';
+import * as officialsModule from './officials.js?v=0.55';
+import * as linesModule from './lines.js?v=0.55';
+import * as formationsModule from './formations.js?v=0.55';
+import * as aiModule from './ai.js?v=0.55';
+import * as physicsModule from './physics.js?v=0.55';
+import * as rulesModule from './rules.js?v=0.55';
 
 export function createSim(DATA, opts = {}) {
   const drift = opts.drift !== false;
@@ -113,7 +116,43 @@ export function createSim(DATA, opts = {}) {
   }
   const setTactics = (i, tac) => { teams[i].tac = tac; };
 
-  return { on, cfg, DATA, teams, game, puck, officials, tick, newGame, setTactics, teamSample, moveOfficials,
+  // ---------- Snapshots: the shot review's what-if ----------
+  // Every piece of game state hangs off teams, puck, game and officials (the modules keep none of their own), so a
+  // snapshot is a deep copy of those four and the generator's state. Restoring copies it back into this engine's own
+  // objects in place: the modules hold references to them, and a team, the puck or an official keeps its identity.
+  // Data (ratings, systems, physics) is shared, never copied. A snapshot from one engine restores into another.
+  const ROOTS = () => [teams, ...teams, puck, game, officials, ...officials, cfg];
+  const fixed = new WeakSet(); (function mark(v) { if (v && typeof v === 'object' && !fixed.has(v)) { fixed.add(v); for (const k in v) mark(v[k]); } })(DATA);
+  const SKIP = new Set(['trail', 'trailCol']);   // the page's drawing trails, not game state
+  function copyInto(src, dst, memo) {
+    const conv = v => {
+      if (!v || typeof v !== 'object' || fixed.has(v)) return v;
+      if (memo.has(v)) return memo.get(v);
+      if (Array.isArray(v)) { const a = []; memo.set(v, a); for (const x of v) a.push(conv(x)); return a; }
+      if (v instanceof Set) { const s = new Set(); memo.set(v, s); for (const x of v) s.add(conv(x)); return s; }
+      if (v instanceof Map) { const m = new Map(); memo.set(v, m); for (const [k, x] of v) m.set(conv(k), conv(x)); return m; }
+      const o = {}; memo.set(v, o); for (const k of Object.keys(v)) if (!SKIP.has(k)) o[k] = conv(v[k]); return o;
+    };
+    if (Array.isArray(src)) { dst.length = 0; for (const x of src) dst.push(conv(x)); return; }
+    for (const k of Object.keys(dst)) if (!(k in src) && !SKIP.has(k)) delete dst[k];
+    for (const k of Object.keys(src)) if (!SKIP.has(k)) dst[k] = conv(src[k]);
+  }
+  function graftRoots(from, to) { const memo = new Map(); from.forEach((r, i) => memo.set(r, to[i])); from.forEach((r, i) => copyInto(r, to[i], memo)); }
+  function snapshot() {
+    if (gen.state === undefined) throw new Error('snapshot needs a seeded game: newGame(seed)');
+    const live = ROOTS(), copy = live.map(r => Array.isArray(r) ? [] : {});
+    graftRoots(live, copy); return { roots: copy, rng: gen.state };
+  }
+  function restore(snap) {
+    if (snap.roots.length !== ROOTS().length) throw new Error('snapshot from a different engine shape');
+    graftRoots(snap.roots, ROOTS());
+    if (gen.state === undefined) gen = seeded(1);
+    gen.state = snap.rng; S.forced = null;
+  }
+  const reseed = seed => { gen = seeded(seed); };
+  const force = (p, what) => { S.forced = { p, ...what }; };
+
+  return { on, cfg, DATA, teams, game, puck, officials, tick, newGame, setTactics, teamSample, moveOfficials, snapshot, restore, reseed, force,
     RW, RH, GL, NETW, NETD, CORNER, RINK_Y, BENCH_H, BOX_H, BLUE, ROSTERS, RT, SYS, PH, MP, XG, XGF,
     xgModel, xgTier, clamp, dist, rnd, active, skaters, shorthanded, onPP, toRink, toFx, ownNet, oppNet, zone, lookXg, readLook,
     buildUnit, peekLine, shiftTarget, fDoor, dDoor, doorFor, fatigueLevel, goalieLine };

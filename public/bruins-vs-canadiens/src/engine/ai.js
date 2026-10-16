@@ -1,8 +1,8 @@
 // Decisions: who chases, covers and supports; the carrier's read; passes, shots, chips and clears.
 // Installed into the engine by createSim (sim.js): it reads the shared state from S, gets the other modules' functions
 // when link() runs, and adds its own to S.
-import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.54';
-import * as DM from './detmath.js?v=0.54';
+import { NETW, clamp, dist, oppNet, ownNet, toFx, toRink, zone } from './rink.js?v=0.55';
+import * as DM from './detmath.js?v=0.55';
 
 export function install(S) {
   const { active, cfg, emit, game, log, MP, onPP, PH, puck, random, release, rnd, shorthanded, SYS, teams, xgModel, xgTier } = S;
@@ -92,6 +92,8 @@ export function install(S) {
   }
 
   function carrierThink(p, dt) {
+    // a decision forced from outside, once (the shot review plays out the pass a shooter passed up)
+    if (S.forced && S.forced.p === p) { const f = S.forced; S.forced = null; if (f.kind === 'pass' && f.to) pass(p, f.to); else shoot(p, false, 'forced'); return null; }
     const t = p.team, opp = active(teams[1 - t.id]);
     const pz = zone(t, p.x);
     const pfx = toFx(t, p.x);

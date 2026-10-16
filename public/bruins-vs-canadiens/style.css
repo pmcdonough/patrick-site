@@ -355,3 +355,13 @@
   .rvrow .when { font-size: 0.8rem; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
   .rvrow .who { display: flex; flex-direction: column; min-width: 0; } .rvrow .who small { color: var(--fg-dim); font-size: 0.76rem; font-weight: 400; }
   #rvPlayers table td:first-child { white-space: nowrap; }
+  .rvwhat { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; display: flex; flex-direction: column; gap: 8px; }
+  .rvwhat:empty { display: none; }
+  .rvwhat .hint { margin: 0; }
+  .rvh { font: 800 1.05rem var(--display); letter-spacing: 0.04em; margin: 0; }
+  .rvcmp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 600px) { .rvcmp { grid-template-columns: 1fr; } }
+  .rvcmp .c { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--raised); display: flex; flex-direction: column; gap: 2px; font-size: 0.86rem; }
+  .rvcmp .c.pass { border-color: #3b82f6; }
+  .rvcmp .c b { font-weight: 600; } .rvcmp .c .g { font: 800 1.6rem/1.1 var(--display); }
+  .rvcmp .c small { color: var(--fg-dim); font-size: 0.8rem; margin-top: 4px; }
