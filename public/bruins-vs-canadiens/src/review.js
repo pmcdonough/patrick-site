@@ -149,7 +149,7 @@ export function installReview(kit) {
   }
 
   // ---------- The panel ----------
-  const V = { kind: 'better', team: 'both', sel: null, tau: 0, playing: false, hold: 0, speed: 0.5, last: 0, alt: false };
+  const V = { kind: 'better', team: 'both', sel: null, tau: 0, playing: false, hold: 0, speed: 0.5, last: 0, alt: false, mid: false };   // mid: paused partway through a clip
   const fr = m => V.alt && m.what && m.what.frames ? m.what.frames : m.frames;   // the clip on screen: as played, or one run of the pass
   const box = $('review'), cv = $('rvCanvas'), rctx = cv.getContext('2d');
   // the replay shows only the ice the play used: the puck's path and the shooter, at least the attacking half, so the
@@ -214,7 +214,7 @@ export function installReview(kit) {
     const t = teams[m.team];
     $('rvText').innerHTML = `<p class="rvwhen"><span class="dot ${m.team ? 'a' : 'h'}"></span>${when(m)} · ${t.abbr} ${esc(who(m.shooter))} · ${OUTCOME[m.outcome] || ''}</p><p class="headline sm">${esc(headline(m))}</p><span class="pill ${m.verdict === 'better' ? 'warn' : m.verdict === 'right' ? 'good' : 'flat'}">${VERDICT[m.verdict]}</span>`
       + `<dl class="rvdl">${details(m).map(([k, v, extra]) => `<dt>${k}</dt><dd>${esc(v)}${extra ? esc(extra) : ''}</dd>`).join('')}</dl><div class="rvwhat" id="rvWhat"></div>`;
-    $('rvPlay').textContent = 'Play the lead-up'; renderWhat(m); sizeView(m); paint();
+    V.mid = false; playCtl(); renderWhat(m); sizeView(m); paint();
   }
   // the what-if block: a button, its progress, then both choices played out and a verdict from the paired runs
   function renderWhat(m) {
@@ -249,19 +249,27 @@ export function installReview(kit) {
     try { m.what = await whatIf(m, f => { m.whatRun = f; renderWhat(m); }); } catch (err) { m.what = { failed: true }; }
     m.whatRun = 0; m.view = null; if (V.sel === m) { sizeView(m); paint(); } renderWhat(m);
   });
-  document.querySelectorAll('#rvAlt [data-alt]').forEach(b => b.addEventListener('click', () => { V.alt = b.dataset.alt === '1'; V.playing = false; V.tau = 0; $('rvPlay').textContent = 'Play the lead-up'; syncAlt(V.sel); paint(); }));
+  document.querySelectorAll('#rvAlt [data-alt]').forEach(b => b.addEventListener('click', () => { V.alt = b.dataset.alt === '1'; V.playing = false; V.mid = false; V.tau = 0; playCtl(); syncAlt(V.sel); paint(); }));
   const syncSeg = () => { document.querySelectorAll('#rvKind [data-k]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === V.kind)); document.querySelectorAll('#rvTeam [data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === V.team)); };
   document.querySelectorAll('#rvKind [data-k]').forEach(b => b.addEventListener('click', () => { V.kind = b.dataset.k; syncSeg(); renderList(); const l = list(); if (!l.includes(V.sel)) select(l[0]); }));
   document.querySelectorAll('#rvTeam [data-t]').forEach(b => b.addEventListener('click', () => { V.team = b.dataset.t; syncSeg(); renderList(); const l = list(); if (!l.includes(V.sel)) select(l[0]); }));
   for (const id of ['rvLine', 'rvList']) $(id).addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) select(R.moments[+b.dataset.m]); });
   const move = d => { const l = list(); if (!l.length) return; const i = l.indexOf(V.sel); select(l[(i + d + l.length) % l.length]); const row = $('rvList').querySelector('.rvrow.on'); if (row) row.scrollIntoView({ block: 'nearest' }); };
   $('rvPrev').addEventListener('click', () => move(-1)); $('rvNext').addEventListener('click', () => move(1));
+  // one button plays, pauses and resumes; after a pause, Play from the start runs the lead-up again
+  function playCtl() {
+    $('rvPlay').textContent = V.playing ? 'Pause' : V.mid ? 'Play' : 'Play the lead-up';
+    $('rvRestart').hidden = !V.playing && !V.mid;
+  }
+  const fromStart = () => { V.tau = -(V.sel.at.t - fr(V.sel)[0].t); V.hold = 0; V.playing = true; V.mid = false; V.last = performance.now(); playCtl(); };
   $('rvPlay').addEventListener('click', () => {
     if (!V.sel) return;
-    if (V.playing) { V.playing = false; $('rvPlay').textContent = 'Play the lead-up'; return; }
-    V.tau = -(V.sel.at.t - fr(V.sel)[0].t); V.hold = 0; V.playing = true; V.last = performance.now(); $('rvPlay').textContent = 'Pause';
+    if (V.playing) { V.playing = false; V.mid = true; playCtl(); return; }
+    if (V.mid) { V.playing = true; V.mid = false; V.last = performance.now(); playCtl(); return; }
+    fromStart();
   });
-  $('rvShot').addEventListener('click', () => { V.playing = false; V.tau = 0; $('rvPlay').textContent = 'Play the lead-up'; paint(); });
+  $('rvRestart').addEventListener('click', () => { if (V.sel) fromStart(); });
+  $('rvShot').addEventListener('click', () => { V.playing = false; V.mid = false; V.tau = 0; playCtl(); paint(); });
   document.querySelectorAll('#rvSpeed [data-s]').forEach(b => b.addEventListener('click', () => { V.speed = +b.dataset.s; document.querySelectorAll('#rvSpeed [data-s]').forEach(o => o.setAttribute('aria-pressed', o === b)); }));
 
   // ---------- The replay: the recorded frames, eased between samples, frozen on the release with his sight lines ----------
@@ -310,7 +318,7 @@ export function installReview(kit) {
       const fs = fr(m), end = fs[fs.length - 1].t - m.at.t;
       if (V.hold > 0) { V.hold -= dt; if (V.hold <= 0) V.tau = 0.001; }
       else { const was = V.tau; V.tau += dt * V.speed; if (was < 0 && V.tau >= 0) { V.tau = 0; V.hold = 1.5; } }
-      if (V.tau >= end) { V.tau = end; V.playing = false; $('rvPlay').textContent = 'Play the lead-up'; }
+      if (V.tau >= end) { V.tau = end; V.playing = false; V.mid = false; playCtl(); }
       paint();
     }
     requestAnimationFrame(frameLoop);

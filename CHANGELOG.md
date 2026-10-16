@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.79 = sim 0.66 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.80 = sim 0.67 + Play Review 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.80
+- Sim 0.67 (the shot replay pauses and resumes). No change to play.
 
 ### 0.79
 - Sim 0.66 (renamed the Hockey Strategy Lab). The home page card is titled Hockey Strategy Lab, with the matchup, Bruins vs Canadiens, under it. Under the hood names it. The address stays /bruins-vs-canadiens/, so links keep working.
@@ -202,6 +205,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ## Hockey Strategy Lab
 
 Called Bruins vs Canadiens until 0.66; entries before it keep that name.
+
+### 0.67
+- Review this game: Pause in the shot replay now leads to Play, which carries on from where it stopped. Before, the button went back to Play the lead-up and started the clip over. Play from the start sits beside it while a clip is playing or paused.
 
 ### 0.66
 - Renamed: the page's title is Hockey Strategy Lab, and the matchup it plays, Bruins vs Canadiens, is the line under it (it was the title, with Hockey strategy lab as the small line above). The browser tab, How it works and the footer say Hockey Strategy Lab too. The address stays the same. No change to play.

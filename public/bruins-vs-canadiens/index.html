@@ -6,7 +6,7 @@
 <link rel="icon" href="data:,">
 <title>Hockey Strategy Lab: Bruins vs Canadiens</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.66">
+<link rel="stylesheet" href="style.css?v=0.67">
 </head>
 <body>
 
@@ -73,6 +73,7 @@
           <div class="rvctl">
             <button type="button" id="rvPrev" aria-label="Previous shot">&larr;</button>
             <button type="button" id="rvPlay" class="secondary">Play the lead-up</button>
+            <button type="button" id="rvRestart" hidden>Play from the start</button>
             <button type="button" id="rvShot">Back to the shot</button>
             <div class="seg" id="rvSpeed" role="group" aria-label="Replay speed"><button type="button" data-s="0.5" aria-pressed="true">0.5x</button><button type="button" data-s="1" aria-pressed="false">1x</button></div>
             <div class="seg" id="rvAlt" role="group" aria-label="Which play" hidden><button type="button" data-alt="0" aria-pressed="true">As played</button><button type="button" data-alt="1" aria-pressed="false">If he passed</button></div>
@@ -284,7 +285,7 @@
 </dialog>
 <footer class="version">Hockey Strategy Lab <span id="version"></span></footer>
 
-<script type="module" src="src/main.js?v=0.66"></script>
+<script type="module" src="src/main.js?v=0.67"></script>
 
 </body>
 </html>
