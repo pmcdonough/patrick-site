@@ -3,11 +3,11 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.5';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.5';
-import { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.5';
+import * as THREE from './vendor/three.module.js?v=0.6';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.6';
+import { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.6';
 
-const VERSION = '0.5';
+const VERSION = '0.6';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -34,7 +34,7 @@ camera.position.set(-60, 34, 66); controls.target.set(0, 16, 0);
 const lin = h => new THREE.Color(h).convertSRGBToLinear();
 const hemi = new THREE.HemisphereLight(lin(0xeef2f6), lin(0xb9b1a3), 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(lin(0xfff3e2), 1.15); sun.position.set(-40, 70, 45); sun.castShadow = true;
-Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 110, bottom: -60, near: 10, far: 400 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
+Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 120, bottom: -90, near: 10, far: 500 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
 const ground = new THREE.Mesh(new THREE.CircleGeometry(1600, 96), new THREE.MeshLambertMaterial()); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
 // a person for scale, by the west end of the nave
 const person = new THREE.Group(), pm = new THREE.MeshStandardMaterial({ color: lin(0x4a5a6c), roughness: 0.8 });
@@ -120,18 +120,19 @@ function tube(pts, r) {
   return g;
 }
 const baseBall = new THREE.SphereGeometry(0.4, 20, 14);
-const bayLines = forceLines().map(({ z, lines, bases }) => {
-  const g = new THREE.Group(); g.userData.z = z;
+const bayLines = forceLines().map(({ z, end, radial, at, normal, lines, bases }) => {
+  const g = new THREE.Group(); Object.assign(g.userData, { z, end, radial, at, normal });
   lines.forEach(l => g.add(tube(l.pts, l.r)));
   bases.forEach(p => { const b = onTop(new THREE.Mesh(baseBall, forceMat)); b.position.copy(p); g.add(b); });
   forceGroup.add(g); return g;
 });
 function pickBayLine() {
-  // with the cutaway on, the bay line just behind the cut; otherwise the one nearest the camera
-  const cut = on('v-cut') ? cutPlane.constant : null;
-  const score = g => cut != null ? (g.userData.z <= cut + 1e-6 ? cut - g.userData.z : Infinity) : Math.abs(camera.position.z - g.userData.z);
-  // the nave's two end lines are inside the transept wall and the towers once those are built, so they are never shown
-  const best = bayLines.filter(g => Math.abs(g.userData.z) < 29).reduce((a, g) => score(g) < score(a) ? g : a);
+  // with the cutaway on, the bay line just behind the cut (the apse's lines are not cut across); otherwise the nearest one
+  // that you see broadside, not edge on
+  const cut = on('v-cut') ? cutPlane.constant : null, look = camera.getWorldDirection(V3());
+  const score = g => cut != null ? (!g.userData.radial && g.userData.z <= cut + 1e-6 ? cut - g.userData.z : Infinity) : camera.position.distanceTo(g.userData.at) / (0.15 + Math.abs(look.dot(g.userData.normal)));
+  // the lines next to the crossing and the towers end up inside the transept walls and the towers, so they are never shown
+  const best = bayLines.filter(g => !g.userData.end).reduce((a, g) => score(g) < score(a) ? g : a);
   bayLines.forEach(g => { if (g.visible !== (g === best)) { g.visible = g === best; redraw(); } });
 }
 forceGroup.visible = false;

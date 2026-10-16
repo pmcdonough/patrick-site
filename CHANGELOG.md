@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.89 = sim 0.71 + Play Review 0.10 + Keystone 0.5. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.90 = sim 0.71 + Play Review 0.10 + Keystone 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.90
+- Keystone 0.6 (the choir, the apse and the apostles: the whole cathedral). The home card says so. No change to the sim or Play Review.
 
 ### 0.89
 - Keystone 0.5 (the transept, the crossing and the spire). The home card says so. No change to the sim or Play Review.
@@ -194,6 +197,13 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Keystone
+
+### 0.6
+- The whole cathedral: 6,631 pieces in 101 steps in 17 bags. The choir's straight bays, two six-part vaults with their double aisles, gallery and flyers, go up with the nave in the first eight bags (the same code builds both: `SEGS` and `eachSeg`); the nave's 3,607 pieces and the west front came out identical, checked piece by piece. The choir's first piers and first transverse rib are the crossing's east piers and arch, so the square crossing piers of 0.5 are gone.
+- The apse, in two new bags (Apse, Chevet): four more piers on a circle 12.5 m across, five narrow arches on centering, a double ambulatory with radial arches and wedge-shaped vaults, the outer wall in five runs, apse walls with gallery openings and tall windows, four buttress piers standing alone 22 m out, flyers about 15 m long over both ambulatories (Jean Ravy's, 14th century), pinnacles, a vault of four half-ribs to the choir's last keystone with five wedge cells, and its roofs.
+- The twelve copper apostles at the foot of the spire, in four groups of three.
+- The line of thrust also runs on the four apse lines; the one shown is the nearest one seen broadside. From the east it no longer waits: the apse's own lines show.
+- Arch stones are drawn with every other point of their curved edges (weights from the solver's exact areas, so nothing changes but the vertex count): 0.93 million vertices for the whole cathedral instead of 1.33.
 
 ### 0.5
 - The transept, the crossing and the spire, in three new bags (Transept, Crossing, Spire): 4,743 pieces in 83 steps in all. The transept is 48 m from end to end and 12 m wide. Each arm: side walls open to the aisles at the bottom, with gallery openings and clerestory windows; a six-part vault over two bays and a four-part end bay; an end wall with a portal (the Cloister on the north, Saint Stephen on the south) on two rings of arches, a row of windows, a rose 13.1 m across with three rings and 48 spokes, and a gable with a small rose; corner buttresses with pinnacles. Two new east crossing piers; the crossing's four arches and its four-part vault; the roofs run across the transept and the nave's roof carries on over the crossing.

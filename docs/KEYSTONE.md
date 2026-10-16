@@ -2,7 +2,7 @@
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.5 (site 0.89). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.6 (site 0.90). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -35,7 +35,7 @@ The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m 
 
 ## Buildings
 
-1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire, 4,743 pieces in 83 steps in 15 bags. Next: the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
+1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire. Since 0.6: the choir and apse, so the whole cathedral, 6,631 pieces in 101 steps in 17 bags. Next: the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
 2. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
 3. Later: the Taj Mahal as a double-dome comparison.
 
@@ -61,6 +61,14 @@ In the model: the transept's axis at z = -36, between the nave's last pier line 
 
 The arm and crossing vaults are built with general helpers (`ribIn`, `cenIn`, `halfIn`) in a local frame (u across the span, v along the axis) that `armF` or `crossF` maps to the world; the choir will reuse them.
 
+## The choir and apse as built (0.6)
+
+Sources (Grove via MIT Dome, Columbia, Wikipedia): the choir has two double bays with double aisles that continue round the apse as a double ambulatory; it was built first, from 1163; its chapels came later; Jean Ravy built the chevet's flyers in the 14th century, about 15 m in a single span.
+
+In the model the choir's straight bays (z = -66 to -42) are a second stretch of the nave's own code: `SEGS` lists the nave's and the choir's bay lines and `eachSeg(f)` runs each step's pieces once per stretch, with `ZS`, `NB`, `pid` and the id prefix `TG` switched (the choir's ids start with C). The refactor was checked by fingerprint: every nave and west-front piece kept its id, step, weight, bearing area, supports and geometry. The choir's first line (z = -42) gives the crossing its east piers and arch, as the nave's last line gives its west ones.
+
+The apse, centred on the choir's last line: six lines at 36° (the end ones are the choir's), piers at 6.25 m (the apse) and 12.25 m (the ambulatory), the outer wall at 18.25 m in five straight runs, buttress piers from 21.85 m, so the flyers reach 15 m from the wall's outer face. The solver gives the same verdicts as in the nave (`supports()` with `gap` 15): it treats a flyer as a strut, so length does not change the push; what a long flyer makes harder is carrying its own weight, which is not modeled. The apse vault is four half-ribs (the left half of the nave's transverse arch) from the apse wall piers to the keystone of the choir's last transverse rib, and five ruled cells between them. Its thrust lines are drawn on the four apse lines; the page shows the nearest line seen broadside.
+
 ## Current simplifications in the 3D build
 
 - The vault's crown is about 35 m up (33 m in the real nave).
@@ -68,7 +76,9 @@ The arm and crossing vaults are built with general helpers (`ribIn`, `cenIn`, `h
 - The chapels built between the buttresses in 1235 to 1245, the gallery's own vaults and floor, and the triforium are left out; the gallery has a plain lean-to roof.
 - The flyer is a strut carrying all the vault's horizontal thrust; its own weight is not in the thrust line.
 - The west front's sculpture is plain shapes (the kings are simple turned figures); the chimeras and gargoyles, the spiral stairs and the tower floors are left out; the portals' arches stand in front of the wall rather than in a deep splay.
-- The transept's side walls are 3 m thick and solid above the aisle openings; the twelve copper apostles at the foot of the spire come with the choir, whose roof they stand on.
+- The transept's side walls are 3 m thick and solid above the aisle openings.
+- The apse is five-sided, with as many ambulatory piers as apse piers (the real outer ambulatory has more), and its ring of chapels, added around 1300, is left out, so the chevet's buttresses stand alone.
+- The apostles weigh nothing in the load model (their weight is not sourced).
 - The drop-in animation is scripted, not physics.
 
 Each is said on the page.
