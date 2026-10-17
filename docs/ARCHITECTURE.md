@@ -7,7 +7,7 @@ How the whole site is put together: what runs where, the one pattern every proje
 ```mermaid
 flowchart LR
   subgraph offline["Offline, on a laptop (run once, output committed)"]
-    raw["raw/ (git-ignored)<br/>MoneyPuck CSVs, NHL JSON"] --> py["tools/*.py<br/>mp_extract, xg_fit, game_load"]
+    raw["raw/ (git-ignored)<br/>MoneyPuck CSVs, NHL JSON, Nordschleife map and heights"] --> py["tools/*.py<br/>mp_extract, xg_fit, game_load, ring_track"]
   end
   subgraph repo["The repo (GitHub)"]
     data["public/*/data/*.json<br/>ratings, model, game files"]
@@ -64,7 +64,7 @@ flowchart TB
 | Hockey Strategy Lab | `src/engine/` (`createSim`), `src/lab/read.js` | `src/main.js`, `src/review.js`, `src/lab/worker.js` |
 | Play Review | the sim's `xg.js`, `rink.js`, `detmath.js` | `src/main.js` (reconstruction, scoring and replay) |
 | Cathedral Lab | four layers, each importing only those below: `src/solver.js` (masonry), `src/kit.js` (pieces, steps, loads), the builders and buildings (`gothic.js`, `design.js`, `notre-dame.js`, `amiens.js`, `yours.js`) | `src/main.js` (3D), `arch-lab/src/main.js`, `design/src/main.js` |
-| Ring Kart | `src/track.js` (the road from 68 hand-traced points), `src/drive.js` (arcade physics, the AI, the gearbox), `src/line.js` (the best line and the pro) | `src/scene.js` (the Three.js world and cars), `src/audio.js` (Web Audio), `src/main.js` (the session, input, camera, HUD) |
+| Ring Kart | `src/track.js` (the road from the points `tools/ring_track.py` builds from OpenStreetMap), `src/drive.js` (arcade physics, the AI, the gearbox), `src/line.js` (the best line and the pro) | `src/scene.js` (the Three.js world and cars), `src/audio.js` (Web Audio), `src/main.js` (the session, input, camera, HUD) |
 
 Cathedral Lab's layers, its piece data model and the contract a building module meets are in `docs/CATHEDRAL-LAB-CODE.md`; its refactors are proven by byte-identical piece fingerprints, the way the engine's are proven by game fingerprints. Ring Kart runs its physics in fixed 1/120 s substeps and draws from state only; its game is not seeded, since nothing replays it. `docs/RING-KART.md` is its full reference.
 
@@ -143,7 +143,7 @@ flowchart LR
   stamps --> smoke["tools/smoke.js fails<br/>if any stamp disagrees"]
 ```
 
-- The site has one version (the home page footer, the Site section of `CHANGELOG.md`). Each project has its own (`VERSION` in its `src/main.js`, its card badge on the home page). As of this writing: site 0.102, sim 0.71, Play Review 0.10, Cathedral Lab 0.11, Ring Kart 0.7.
+- The site has one version (the home page footer, the Site section of `CHANGELOG.md`). Each project has its own (`VERSION` in its `src/main.js`, its card badge on the home page). As of this writing: site 0.105, sim 0.71, Play Review 0.10, Cathedral Lab 0.13, Ring Kart 0.8.
 - Every file a page loads, and every import inside it, carries `?v=` with its project's version. The Worker serves every file with `Cache-Control: public, max-age=0, must-revalidate`, so browsers check each file on every visit, and the stamps make sure a visitor never runs a new module against an old one during a deploy.
 - Saved browser data carries its version where a version change would make it wrong. The lab's results (`rink.lab`) and recent lab games (`rink.reviews`) are dropped when the sim version changes, because the same seed may now play differently; plans and designs are kept.
 

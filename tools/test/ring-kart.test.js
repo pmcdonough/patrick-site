@@ -1,7 +1,7 @@
 // Ring Kart's road and driving, in Node: the lap builds to its real length scaled, and every car drives it to the
 // gantry on the AI without getting stuck, in a sensible time, with the faster cars faster; the pro drives the best line
 // clean; the driving modes keep a clumsy driver off the Armco without slowing a good one; reverse stops when you
-// let go; and the gearbox works through every gear.
+// let go; the gearbox works through every gear; and DRS opens only where it should.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -18,7 +18,7 @@ test('the lap is the real length at the game scale, with its corners in order', 
   const want = T.build.realLength.value * T.build.lengthScale.value;
   assert.ok(Math.abs(t.L - want) < 1, `length ${t.L} m, want ${want}`);
   const at = n => t.marks.find(m => m.name === n).at;
-  assert.ok(at('Hatzenbach') < at('Flugplatz') && at('Flugplatz') < at('Breidscheid') && at('Breidscheid') < at('Karussell') && at('Karussell') < at('Pflanzgarten') && at('Pflanzgarten') < at('Doettinger Hoehe'));
+  assert.ok(at('Hatzenbach') < at('Flugplatz') && at('Flugplatz') < at('Breidscheid') && at('Breidscheid') < at('Karussell') && at('Karussell') < at('Pflanzgarten') && at('Pflanzgarten') < at('Döttinger Höhe'));
   // Breidscheid is the bottom of the lap
   let lo = 0; for (let k = 1; k < t.n; k++) if (t.y[k] < t.y[lo]) lo = k;
   assert.ok(Math.abs(lo - at('Breidscheid')) < 120, `lowest point at sample ${lo}, Breidscheid at ${at('Breidscheid')}`);
@@ -121,9 +121,27 @@ test('the gearbox: every player car changes up through all its gears and back do
       if (g.gear > 1 && g.shiftT <= 0 && car.input.gas && g.rpm < car.engine.redline * 0.35) low++;
     }
     const n = car.engine.gears.length;
-    assert.ok(top >= n - 1, `${spec.name}: top gear reached ${top} of ${n}`);
+    // the lap ends at the gantry partway down the Doettinger Hoehe, before anything reaches its top gear
+    assert.ok(top >= n - 2, `${spec.name}: top gear reached ${top} of ${n}`);
+    if (car.engine.shift) assert.ok(car.gb.maxUp > car.engine.shift - 150 && car.gb.maxUp < car.engine.shift + 250, `${spec.name}: changes up at ${car.gb.maxUp.toFixed(0)} rpm, wants ${car.engine.shift}`);
     assert.ok(car.gb.ups > 15 && car.gb.downs > 15, `${spec.name}: ${car.gb.ups} up, ${car.gb.downs} down`);
     assert.ok(over === 0, `${spec.name}: over the redline for ${over} steps`);
     assert.ok(low < 120, `${spec.name}: lugging in too high a gear on the gas for ${(low * dt).toFixed(1)} s`);
   }
+});
+
+test('DRS: the GT3 RS opens its flap only on a straight, it shuts on the brakes and in corners, and it is faster', async () => {
+  const [{ buildTrack }, { makeCar, step, drs }] = await load();
+  const t = buildTrack(T), dt = 1 / 120, spec = C.player.find(s => s.id === 'gt3rs'), gti = C.player.find(s => s.id === 'gti');
+  const zone = t.drsZone.indexOf(1), corner = Array.from(t.curv).findIndex((c, k) => k > t.gateAt && Math.abs(c) > 1 / 30);
+  const car = makeCar(spec, t, zone + 2, 0); car.v = 40; car.input = { steer: 0, gas: 1, brake: 0, drift: false };
+  assert.strictEqual(drs(car, t, true), 'open');
+  car.input.brake = 1; assert.strictEqual(drs(car, t, false), 'ready', 'shuts on the brakes'); car.input.brake = 0;
+  assert.ok(drs(makeCar(gti, t, zone + 2, 0), t, true) === '', 'a car without DRS has none');
+  const bend = makeCar(spec, t, corner, 0); bend.input = { steer: 0, gas: 1, brake: 0, drift: false };
+  assert.strictEqual(drs(bend, t, true), '', 'no DRS in a corner');
+  // flat out down the longest zone, with and without
+  let best = 0, at = 0; for (let k = 1, run = 0; k < t.n; k++) { run = t.drsZone[k] ? run + 1 : 0; if (run > best) { best = run; at = k - run + 1; } }
+  const top = open => { const c = makeCar(spec, t, at, 0); c.v = 50; for (let i = 0; i < best * t.ds / 60 / dt && c.k < at + best - 2; i++) { c.input = { steer: 0, gas: 1, brake: 0, drift: false }; if (open) drs(c, t, true); step(c, dt, t, C.race, []); } return c.v; };
+  assert.ok(top(true) > top(false) + 0.3, `DRS ${top(true).toFixed(2)} m/s, shut ${top(false).toFixed(2)}`);
 });

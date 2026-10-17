@@ -9,7 +9,8 @@
 // and a backward pass for where it must start braking. Every point on the line then has a phase, what your feet
 // should be doing there: gas, coast, brake or hard brake. The pro drives exactly that line at exactly those speeds,
 // so the line you are shown is the line the pro takes.
-import { pointAt } from './track.js?v=0.7';
+import { pointAt } from './track.js?v=0.8';
+import { drs } from './drive.js?v=0.8';
 
 const G = 9.81;
 export const PHASE = { GAS: 0, COAST: 1, BRAKE: 2, HARD: 3 };
@@ -48,23 +49,34 @@ export function lineFor(track, lat, spec, pace = 1.0) {
     const cross = ax * bz - az * bx, la = Math.hypot(ax, az), lb = Math.hypot(bx, bz), lc = Math.hypot(cx, cz);
     ks[k] = 2 * cross / Math.max(1e-6, la * lb * lc); raw[k] = Math.abs(ks[k]);
   }
-  // in a hairpin the long span averages the tightest part away, so a short span counts there too (only there: on
-  // gentle bends it reads noise)
-  const tight = new Float32Array(n), s2 = 4;
+  // in a hairpin the long span averages the tightest part away, and in a quick S it averages the left and the right
+  // into a straight, so a short span counts too: inside a corner the long span already sees, and wherever it reads a
+  // tight corner for 6 m either way (one sample alone is a wiggle, not a corner)
+  const short = new Float32Array(n), tight = new Float32Array(n), s2 = 4;
   for (let k = s2; k < n - s2; k++) {
     const ax = px[k] - px[k - s2], az = pz[k] - pz[k - s2], bx = px[k + s2] - px[k], bz = pz[k + s2] - pz[k], cx = px[k + s2] - px[k - s2], cz = pz[k + s2] - pz[k - s2];
-    const c = 2 * Math.abs(ax * bz - az * bx) / Math.max(1e-6, Math.hypot(ax, az) * Math.hypot(bx, bz) * Math.hypot(cx, cz));
-    tight[k] = c > 1 / 22 && raw[k] > 1 / 40 ? c : 0;
+    short[k] = 2 * Math.abs(ax * bz - az * bx) / Math.max(1e-6, Math.hypot(ax, az) * Math.hypot(bx, bz) * Math.hypot(cx, cz));
   }
-  for (let k = 0; k < n; k++) { let m = 0; for (let j = Math.max(0, k - 4); j <= Math.min(n - 1, k + 4); j++) m = Math.max(m, raw[j], tight[j]); kap[k] = m; }
+  for (let k = 3; k < n - 3; k++) { let m = Infinity; for (let j = k - 3; j <= k + 3; j++) m = Math.min(m, short[j]); tight[k] = (short[k] > 1 / 22 && raw[k] > 1 / 40) || m > 1 / 16 ? short[k] : 0; }
+  // and a floor from the road itself: through a tight corner no line can be wider than the centre's radius plus the
+  // half-road it may use, however the offset points measure (hugging the inside of a hairpin they bunch up and read
+  // nearly straight)
+  const room = track.width / 2;
+  for (let k = 0; k < n; k++) {
+    let m = 0, c = 0;
+    for (let j = Math.max(0, k - 4); j <= Math.min(n - 1, k + 4); j++) { m = Math.max(m, raw[j], tight[j]); c = Math.max(c, Math.abs(track.curv[j])); }
+    kap[k] = c > 1 / 25 ? Math.max(m, 1 / (1 / c + room)) : m;
+  }
   // the most the car can carry through each point, then the passes for accelerating out and braking in
   const vc = new Float32Array(n), v = new Float32Array(n);
-  for (let k = 0; k < n; k++) vc[k] = Math.min(spec.vmax, Math.sqrt(pace * spec.grip * G / Math.max(kap[k], 1e-5)));
+  // the top speed at each point: higher on the straights for a car with DRS, which the pro opens there
+  const vmaxAt = k => spec.vmax * (spec.drs && track.drsZone && track.drsZone[k] ? 1 + spec.drs.vmax : 1), drag = k => spec.drs && track.drsZone && track.drsZone[k] ? 1 - spec.drs.drag : 1;
+  for (let k = 0; k < n; k++) vc[k] = Math.min(vmaxAt(k), Math.sqrt(pace * spec.grip * G / Math.max(kap[k], 1e-5)));
   // from a standstill at the start of the road (the queue and the pro both start behind the barrier)
   for (let k = 0; k < n; k++) v[k] = k ? vc[k] : 0;
   for (let k = 0; k < n - 1; k++) {
     const slope = Math.max(-0.4, Math.min(0.4, (track.y[k + 1] - track.y[k]) / ds));
-    const a = spec.accel * Math.max(0, 1 - (v[k] / spec.vmax) ** 2) - 0.25 - 0.00022 * v[k] * v[k] - G * slope * 0.55;
+    const a = spec.accel * Math.max(0, 1 - (v[k] / vmaxAt(k)) ** 2) - 0.25 - 0.00022 * drag(k) * v[k] * v[k] - G * slope * 0.55;
     v[k + 1] = Math.min(v[k + 1], Math.sqrt(Math.max(0, v[k] * v[k] + 2 * a * ds)));
   }
   const brake = spec.brake * 0.95;
@@ -73,7 +85,7 @@ export function lineFor(track, lat, spec, pace = 1.0) {
   // graded by how much speed it sheds: a big drop is hard braking, a small one braking, a tiny one just a lift. Where
   // the corner itself holds the speed down, coast; everywhere else, gas.
   const phase = new Uint8Array(n);
-  for (let k = 0; k < n - 1; k++) phase[k] = v[k] > 4 && v[k] >= vc[k] * 0.97 && v[k] < spec.vmax * 0.97 ? PHASE.COAST : PHASE.GAS;
+  for (let k = 0; k < n - 1; k++) phase[k] = v[k] > 4 && v[k] >= vc[k] * 0.97 && v[k] < vmaxAt(k) * 0.97 ? PHASE.COAST : PHASE.GAS;
   for (let k = gate; k < n - 1;) {
     const decel = k2 => (v[k2] * v[k2] - v[k2 + 1] * v[k2 + 1]) / (2 * ds);
     if (decel(k) <= 1.4) { k++; continue; }
@@ -105,4 +117,6 @@ export function drivePro(car, dt, track, line) {
   const steer = line.ks[lead] * 5.2 - 0.3 * (car.lat - line.lat[k]) + 1.8 * wrap(line.hd[lead] - car.h);
   car.input.steer = Math.max(-1, Math.min(1, steer));
   car.input.drift = false;
+  // DRS wherever the straight allows it, as a pro would
+  if (car.spec.drs) drs(car, track, car.input.gas === 1);
 }

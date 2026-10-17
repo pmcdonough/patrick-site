@@ -1,8 +1,9 @@
 // The road, built from the corner list in data/track.json. Pure functions, no page and no 3D, so the checks run it in Node.
 //
-// A smooth curve runs through the hand-traced points (centripetal Catmull-Rom), scaled to the real lap length and then
-// shrunk to game size. Heights ease between the points, crests add a short sharp bump (the jumps), and banking eases
-// between the points that have it.
+// A smooth curve runs through the points (centripetal Catmull-Rom), scaled to the real lap length and then shrunk to
+// game size. Heights run straight between the points and are then smoothed (easing to flat at every point, as until
+// 0.8, turned a descent with a point every 50 m into a staircase that threw the cars into the air), crests add a short
+// sharp bump (the jumps), and banking eases between the points that have it.
 //
 // Coordinates: x east, z south, y up. Heading h: forward is (cos h, sin h) in x and z, so a right turn raises h.
 
@@ -42,12 +43,12 @@ export function buildTrack(T) {
   for (let k = 1; k < n; k++) { while (h[k] - h[k - 1] > Math.PI) h[k] -= 2 * Math.PI; while (h[k] - h[k - 1] < -Math.PI) h[k] += 2 * Math.PI; }
   for (let k = 0; k < n; k++) { const a = Math.max(0, k - 3), b = Math.min(n - 1, k + 3); curv[k] = (h[b] - h[a]) / ((b - a) * ds); }
 
-  // heights: ease between the points' heights, smooth, then the crests; bank eases between points that have it
+  // heights: straight between the points' heights, smoothed, then the crests; bank eases between points that have it
   const y = new Float64Array(n), bank = new Float32Array(n);
   const el0 = P[0].el;
   for (let k = 0; k < n; k++) {
     const i = Math.min(P.length - 2, Math.floor(u[k])), t = u[k] - i;
-    y[k] = (P[i].el + (P[i + 1].el - P[i].el) * (1 - Math.cos(Math.PI * t)) / 2 - el0) * B.heightScale;
+    y[k] = (P[i].el + (P[i + 1].el - P[i].el) * t - el0) * B.heightScale;
     bank[k] = ((P[i].bank || 0) * (1 - t) + (P[i + 1].bank || 0) * t) * D2R;
   }
   smooth(y, 8);
@@ -69,11 +70,18 @@ export function buildTrack(T) {
   const wallL = new Float32Array(n), wallR = new Float32Array(n), base = B.width / 2 + B.verge;
   for (let k = 0; k < n; k++) {
     let c = 0; for (let j = Math.max(0, k - 4); j <= Math.min(n - 1, k + 4); j++) c = Math.abs(curv[j]) > Math.abs(c) ? curv[j] : c;
-    const inside = c ? Math.max(B.width / 2 + 1.2, Math.min(base, 0.8 / Math.abs(c))) : base;
+    const inside = c ? Math.max(B.width / 2 + 1.2, Math.min(base, 0.9 / Math.abs(c))) : base;
     wallR[k] = c > 0 ? inside : base; wallL[k] = c < 0 ? inside : base;
   }
 
-  return { n, ds, L, x, z, y, h, curv, bank, marks, wallL, wallR, width: B.width, verge: B.verge, gateAt: Math.round(B.gateAt / ds), crests: P.filter(p => p.crest).length };
+  // DRS zones: where the road runs straight for the next 80 m (no bend tighter than 100 m), past the gate. A car with
+  // DRS may open its wing flap there; the flap shuts itself when the straight ends, as the real one does on the brakes
+  const drsZone = new Uint8Array(n), clear = Math.round(80 / ds), gate = Math.round(B.gateAt / ds) + 20;
+  for (let k = n - 1, run = 0; k >= 0; k--) { run = Math.abs(curv[k]) < 1 / 100 ? run + 1 : 0; drsZone[k] = k > gate && run >= clear ? 1 : 0; }
+  // and only zones worth opening for: a flap open for less than 30 m is a flicker
+  for (let k = 0; k < n; k++) if (drsZone[k] && !drsZone[k - 1]) { let e = k; while (e < n && drsZone[e]) e++; if ((e - k) * ds < 30) drsZone.fill(0, k, e); k = e; }
+
+  return { n, ds, L, x, z, y, h, curv, bank, marks, wallL, wallR, drsZone, width: B.width, verge: B.verge, gateAt: Math.round(B.gateAt / ds), crests: P.filter(p => p.crest).length };
 }
 
 function smooth(a, r) {
@@ -98,12 +106,15 @@ export function locateGlobal(track, px, pz) {
 }
 
 function frameAt(track, k, px, pz) {
-  const { x, z, h, y, bank, ds, n } = track;
-  // refine between k and its neighbour along the line
+  const { x, z, h, y, bank, ds, n, curv } = track;
+  // refine between k and its neighbour along the line. Off the centre of a corner a sample's length is longer on the
+  // outside and shorter on the inside, so the share of the way to the next sample is measured on the car's own arc;
+  // measured on the centre line, the height jumped a few centimetres as the nearest sample changed, which on the steep
+  // real lap threw cars into the air
   const hk = h[k], fx = Math.cos(hk), fz = Math.sin(hk);
   const dx = px - x[k], dz = pz - z[k];
   const along = dx * fx + dz * fz, lat = -dx * fz + dz * fx;
-  const t = Math.max(-1, Math.min(1, along / ds));
+  const t = Math.max(-1, Math.min(1, along / (ds * Math.max(0.3, 1 - lat * (curv ? curv[k] : 0)))));
   const k2 = Math.max(0, Math.min(n - 1, k + Math.sign(t)));
   const a = Math.abs(t);
   const yc = y[k] + (y[k2] - y[k]) * a;

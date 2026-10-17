@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.7';
+import { locate, pointAt } from './track.js?v=0.8';
 
 const G = 9.81;
 
@@ -28,6 +28,8 @@ export function step(car, dt, track, R, others = []) {
   const M = car.mode || {}, GR = M.grass || R.grass.value, WALL = M.wall ?? R.wall.value;
   let vmax = sp.vmax * (car.grass ? GR.vmax : 1);
   if (car.slipT > S.build) vmax *= 1 + S.gain;
+  // DRS open: the wing flap flattens, so less drag and a higher top speed, and a little less grip (it shuts in corners)
+  if (car.drs) vmax *= 1 + sp.drs.vmax;
   if (car.boost > 0) { vmax *= 1 + B.gain; car.boost -= dt; }
   let a = 0;
   if (!car.air) {
@@ -39,7 +41,7 @@ export function step(car, dt, track, R, others = []) {
     if (inp.brake > 0) a -= car.v > 0.5 ? inp.brake * sp.brake : inp.brake * 4 * (car.v > -8 ? 1 : 0);
     // rolling resistance and lifting off slow the car. Backing up, letting go of reverse stops it within a couple of
     // seconds and never past a stop (until 0.7 both pushed backwards, so a car in reverse sped up on its own)
-    if (car.v >= 0) a -= 0.25 + 0.00022 * car.v * Math.abs(car.v) + (inp.gas > 0 || car.boost > 0 ? 0 : 0.6);
+    if (car.v >= 0) a -= 0.25 + 0.00022 * (car.drs ? 1 - sp.drs.drag : 1) * car.v * Math.abs(car.v) + (inp.gas > 0 || car.boost > 0 ? 0 : 0.6);
     else { a -= 0.00022 * car.v * Math.abs(car.v); if (!(inp.brake > 0)) a += Math.min(4, -car.v / dt); }
     if (car.grass) a -= GR.drag * Math.max(0, car.v) * 0.25;
     // climbing costs speed and falling gives it back, at a fraction of real so the hills matter without stalling anyone
@@ -51,7 +53,10 @@ export function step(car, dt, track, R, others = []) {
 
   // ---------- turning ----------
   const v = Math.max(0.1, Math.abs(car.v));
-  const lim = sp.grip * G / v;                     // the most yaw rate grip allows at this speed
+  // the most yaw rate grip allows at this speed; turning into a banked corner (the Karussell) the banking holds the
+  // car too, as cornerSpeed and the AI already counted on
+  const banked = car.bank && car.bank * inp.steer > 0 ? 1 + Math.abs(car.bank) * 1.2 : 1;
+  const lim = sp.grip * G * banked * (car.drs ? 0.96 : 1) / v;
   const geo = inp.steer * v / 5.2;                 // what the steering wheel asks for (a 5.2 m turning circle at full lock)
   let yaw;
   // a drift starts on the drift button with some steering and speed, and keeps its direction until you let go
@@ -100,7 +105,7 @@ export function step(car, dt, track, R, others = []) {
     if (car.drift) car.drift = null;
     f = locate(track, car.x, car.z, f.k);
   }
-  car.k = f.k; car.s = f.s; car.lat = f.lat;
+  car.k = f.k; car.s = f.s; car.lat = f.lat; car.bank = f.bank;
   car.grass = Math.abs(f.lat) > half + 0.2;
   car.scrape = Math.max(0, car.scrape - dt);
   car.bump = Math.max(0, car.bump - dt * 2);
@@ -169,6 +174,17 @@ function circles(c) {
   const L = c.spec.body.len, r = c.spec.body.wid * 0.5, o = L / 2 - r;
   const fx = Math.cos(c.h), fz = Math.sin(c.h);
   return [[c.x + fx * o, c.z + fz * o, r], [c.x - fx * o, c.z - fz * o, r]];
+}
+
+// DRS, for a car that has it (the GT3 RS): `want` opens the wing flap, but only on a straight (`track.drsZone`), on the
+// ground and not drifting; it shuts the moment you brake, steer more than a little, drift or leave the straight, as
+// the real one does. Returns 'open', 'ready' (on a straight, shut) or '' (not available here).
+export function drs(car, track, want) {
+  if (!car.spec.drs) return '';
+  const zone = track.drsZone[car.k] && !car.air && !car.drift, inp = car.input;
+  if (car.drs && (!zone || inp.brake > 0 || Math.abs(inp.steer) > 0.35)) car.drs = false;
+  else if (!car.drs && want && zone && !(inp.brake > 0)) car.drs = true;
+  return car.drs ? 'open' : zone ? 'ready' : '';
 }
 
 // The fastest a car can be going now and still make every corner within braking reach, using `pace` of its grip:
@@ -292,13 +308,14 @@ export function driveAI(car, dt, track, cars, opts = {}) {
 // The engine and gearbox the sound and the dials share, from each car's `engine` in cars.json: its gears (the speed
 // at the redline in each, in km/h on the dial), idle and redline, and the kind of box. It is for the ears and the
 // eyes only: the physics above drives the car the same in any gear, so the line, the pro and the AI are untouched.
-// A twin-clutch box (pdk, dsg) changes up in a few hundredths of a second at the redline under full throttle, and
+// A twin-clutch box (pdk, dsg) changes up in about a tenth of a second near the redline under full throttle (the revs
+// glide down to the next gear without a break: measured from an onboard GT3 RS), and
 // changes down one gear at a time under braking as soon as the lower gear fits, blipping the throttle to match the
 // revs: the bark-bark-bark into a hairpin. A manual takes longer over each change, an old automatic longer still and
 // lazily. Call it once a physics step for a car you want to hear; it keeps its state in car.gb and counts the
 // changes (ups, downs) so the sound can hear each one.
 export const BOXES = {
-  pdk:    { up: 0.05, down: 0.11, gap: 0.16, shift: 0.985, fit: 0.87, blip: 1.06 },
+  pdk:    { up: 0.1, down: 0.11, gap: 0.2, shift: 0.985, fit: 0.87, blip: 1.06 },
   dsg:    { up: 0.07, down: 0.14, gap: 0.2, shift: 0.97, fit: 0.84, blip: 1.05 },
   manual: { up: 0.32, down: 0.28, gap: 0.36, shift: 0.96, fit: 0.8, blip: 1.03 },
   auto:   { up: 0.45, down: 0.4, gap: 0.6, shift: 0.92, fit: 0.66, blip: 1 },
@@ -325,8 +342,8 @@ export function gearbox(car, dt) {
     const since = gb.t - gb.lastShift;
     if (gb.shiftT <= 0 && since > X.gap) {
       // up at the redline, or early in an old automatic cruising; down as soon as the gear below fits
-      const r = inGear(gb.gear), shiftAt = E.redline * (gas ? X.shift : E.box === 'auto' ? 0.55 : 0.99);
-      if (gb.gear < n && r > shiftAt) { gb.gear++; gb.shiftT = X.up; gb.kind = 'up'; gb.lastShift = gb.t; gb.ups++; }
+      const r = inGear(gb.gear), shiftAt = gas ? E.shift || E.redline * X.shift : E.redline * (E.box === 'auto' ? 0.55 : 0.99);
+      if (gb.gear < n && r > shiftAt) { gb.gear++; gb.shiftT = X.up; gb.kind = 'up'; gb.lastShift = gb.t; gb.ups++; gb.maxUp = Math.max(gb.maxUp || 0, gb.rpm); }
       else if (gb.gear > 1 && inGear(gb.gear - 1) < E.redline * X.fit && (brake || (!gas && E.box !== 'auto') || r < E.redline * 0.42)) {
         gb.gear--; gb.shiftT = X.down; gb.kind = 'down'; gb.lastShift = gb.t; gb.downs++;
       }

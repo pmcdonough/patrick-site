@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.13';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.7';
-import { makeCar, step, collide, driveAI, assist, gearbox, cornerSpeed, nextCorner } from './drive.js?v=0.7';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.7';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.7';
-import { Sound } from './audio.js?v=0.7';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.8';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.8';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.8';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.8';
+import { Sound } from './audio.js?v=0.8';
 
-const VERSION = '0.7';
+const VERSION = '0.8';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -90,7 +90,9 @@ const MODE_NOTE = {
 };
 let mode = store.get('mode', 'beginner');
 if (!MODES[mode]) mode = 'beginner';
-const bestKey = id => mode === 'expert' ? 'best.' + id : `best.${mode}.${id}`;
+// times on the real lap (from 0.8) are kept apart from those on the hand-traced one before it, which was a different
+// length: `lap2.` in front of the old keys, which stay in the browser untouched
+const bestKey = id => 'lap2.' + (mode === 'expert' ? 'best.' + id : `best.${mode}.${id}`);
 function setMode(m) {
   mode = m; store.set('mode', m);
   document.querySelectorAll('.modes [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
@@ -165,7 +167,7 @@ $('resume').onclick = () => pause(false);
 $('restart').onclick = () => { pause(false); if (S.mode === 'pro' || S.mode === 'proDone') toPick(); else toRace(); };
 $('proStop').onclick = () => { pause(false); toPick(); };
 // which HUD shows: none on the picker; the race HUD; the pro lap's (no position or gaps, a title bar instead)
-function hudFor(m) { $('hud').hidden = m === 'pick'; $('touch').hidden = !touch || m === 'pick'; $('hud').classList.toggle('pro', m === 'pro'); $('stage').classList.toggle('pro', m === 'pro'); }
+function hudFor(m) { $('hud').hidden = m === 'pick'; $('touch').hidden = !touch || m === 'pick'; $('hud').classList.toggle('pro', m === 'pro'); $('stage').classList.toggle('pro', m === 'pro'); $('inset').classList.toggle('on', m !== 'pick'); }
 
 // ---------- input: keyboard, gamepad, touch ----------
 const keys = new Set();
@@ -185,6 +187,7 @@ addEventListener('keydown', e => {
   if (k === 'g') setGasMode(!autoGas);
   if (k === 'f') full();
   if (k === 'r' && player && S.mode === 'race') rescue();
+  if (k === 'x' && player && S.mode === 'race') S.drsReq = true;
   if ((k === ' ' || k === 'enter') && S.mode === 'queue') ticket();
   if (k === 'enter' && S.mode === 'pick') $('go').click();
 });
@@ -202,7 +205,7 @@ cv.addEventListener('pointerdown', () => { if (S.mode === 'queue') ticket(); });
 // the small buttons on a touch screen for what the keyboard does with C, L, E and R
 $('touch').querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
   const a = b.dataset.act;
-  if (a === 'cam') nextCamera(); if (a === 'line') setLine(!lineOn()); if (a === 'horn' && S.mode === 'race') honk(); if (a === 'reset' && S.mode === 'race') rescue();
+  if (a === 'cam') nextCamera(); if (a === 'line') setLine(!lineOn()); if (a === 'horn' && S.mode === 'race') honk(); if (a === 'reset' && S.mode === 'race') rescue(); if (a === 'drs' && S.mode === 'race') S.drsReq = true;
 }));
 // C: behind, high, on the bonnet; on the pro lap, the director's cut, behind, on the bonnet
 const PRO_CAMS = ['The director', 'Behind', 'On the bonnet'];
@@ -239,6 +242,7 @@ function readInput(dt) {
     const b = i => gp.buttons[i] ? gp.buttons[i].value || (gp.buttons[i].pressed ? 1 : 0) : 0;
     gas = Math.max(gas, b(7), b(0)); brake = Math.max(brake, b(6), b(2)); if (b(5) || b(4) || b(1)) drift = true;
     if (S.mode === 'queue' && (b(0) || b(7)) && !S.padTicket) { S.padTicket = true; ticket(); } else if (!b(0) && !b(7)) S.padTicket = false;
+    if (b(3)) S.drsReq = true;
     if (b(9) && !S.padPause) { S.padPause = true; if (S.mode === 'race' || S.mode === 'queue') pause(!S.paused); } else if (!b(9)) S.padPause = false;
   }
   return { steer: Math.max(-1, Math.min(1, steer)), gas, brake, drift };
@@ -327,6 +331,9 @@ function tick(dt) {
     if (S.autopilot && player.released && S.mode === 'race') driveAI(player, dt, track, cars, { paceScale: 1.05 });
     else S.aid = player.released && S.mode === 'race' && mode !== 'expert' ? assist(player, track, MODES[mode]) : 0;
     if (!player.released) { player.input.drift = false; }
+    // DRS: a tap of X (or Y on a pad, DRS on a phone) opens the flap if the straight allows; it shuts itself
+    if (player.released && S.mode === 'race') drs(player, track, S.drsReq);
+    S.drsReq = false;
     // everyone else
     for (const c of cars) {
       if (c === player || c.hidden || !c.released) continue;
@@ -385,7 +392,7 @@ function proTick(dt) {
   if (S.mode === 'pro') S.raceT = Math.max(0, S.t - S.proStart);
   if (S.mode === 'pro' && player.s >= finishS) {
     player.done = true; player.time = S.raceT; S.mode = 'proDone'; S.doneAt = S.t; sound.finish();
-    store.set('pro.' + choice, player.time);
+    store.set('lap2.pro.' + choice, player.time);
   }
   if (S.mode === 'proDone' && !S.resultShown && S.t - S.doneAt > 2.4) proResult();
 }
@@ -421,6 +428,8 @@ function draw(dt) {
     if (m.label) { const d = Math.hypot(c.x - player.x, c.z - player.z); m.label.visible = S.mode !== 'pick' && d < 70 && d > 9; }
   }
   for (const [c, m] of meshes) if (!c.hidden) for (const w of m.wheels) w.rotation.z -= c.v * dt / 0.33;
+  // the DRS flap swings flat when it opens
+  for (const [c, m] of meshes) if (m.flap && !c.hidden) { const want = c.drs ? 0.45 : 0; m.flap.rotation.z += (want - m.flap.rotation.z) * Math.min(1, dt * 12); }
   const pm = meshes.get(player);
   // the camera sits inside your car's ink outline on the bonnet, so hide it there (the director sets its own)
   if (pm.ink) pm.ink.visible = S.mode === 'pick' || ((S.mode === 'pro' || S.mode === 'proDone') ? S.proCam !== 2 : S.camMode !== 2);
@@ -584,26 +593,71 @@ function drawProfileBase() {
   const mk = fill => { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); shape(g, fill); g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 2; g.beginPath(); for (let k = a; k <= b; k += 3) g[k === a ? 'moveTo' : 'lineTo'](X(k), Y(k)); g.stroke(); return c; };
   profBase = { dim: mk('rgba(255,241,207,0.14)'), lit: mk('rgba(236,111,43,0.75)'), X, Y };
 }
-// the revs: an arc of bars from 0 to a thousand past the car's redline, green, then amber, red past the redline
+// the revs, as on the Porsche broadcast: a row of bars rising from left to right, green, yellow toward the change,
+// red past the redline; near the change they all flash, and on the limiter they blink red
 function drawTach(rpm, gear, E) {
-  const REDLINE = E.redline, top = Math.ceil(REDLINE / 1000 + 0.6) * 1000, shift = REDLINE * 0.93;
-  const W = tach.width, H = tach.height, cx = W / 2, cy = H * 0.66, R = H * 0.52, a0 = Math.PI * 0.86, a1 = Math.PI * 2.14, N = 44;
+  const REDLINE = E.redline, shift = E.shift || REDLINE * 0.97, top = Math.ceil(REDLINE / 1000) * 1000, W = tach.width, H = tach.height, N = 36;
+  const x0 = 10, x1 = W - 10, base = H - 40, flash = rpm > shift * 0.985 && gear > 0 && gear < E.vg.length && Math.floor(performance.now() / 70) % 2;
   tg.clearRect(0, 0, W, H);
   for (let i = 0; i < N; i++) {
-    const f = (i + 0.5) / N, r = f * top, a = a0 + (a1 - a0) * f, on = r <= rpm;
-    tg.strokeStyle = !on ? 'rgba(255,241,207,0.14)' : r > REDLINE ? '#d8402b' : r > REDLINE * 0.84 ? '#ec6f2b' : r > REDLINE * 0.62 ? '#f2b631' : '#a8c043';
-    tg.lineWidth = 5; tg.beginPath();
-    tg.moveTo(cx + Math.cos(a) * (R - 22), cy + Math.sin(a) * (R - 22)); tg.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); tg.stroke();
+    const f = (i + 0.5) / N, r = f * top, x = x0 + (x1 - x0) * i / N, w = (x1 - x0) / N - 3, h = 14 + (base - 14) * Math.pow(f, 1.2), on = r <= rpm;
+    tg.fillStyle = !on ? 'rgba(255,241,207,0.12)' : flash ? '#2f9c9a' : r > REDLINE ? '#d8402b' : r > shift * 0.93 ? '#f2b631' : '#a8c043';
+    tg.fillRect(x, base - h, w, h);
   }
-  tg.font = '22px Righteous, Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'middle';
-  for (let t = 0, T = top / 1000; t <= T; t++) { const a = a0 + (a1 - a0) * t / T; tg.fillStyle = t * 1000 > REDLINE ? '#ec6f2b' : '#fff1cf'; tg.fillText(t, cx + Math.cos(a) * (R - 40), cy + Math.sin(a) * (R - 40)); }
-  // a shift light when it is time to change up
-  if (rpm > shift && gear > 0 && gear < E.vg.length) { tg.fillStyle = '#2f9c9a'; tg.strokeStyle = '#fff1cf'; tg.lineWidth = 3; tg.beginPath(); tg.arc(cx, cy - 4, 10, 0, 7); tg.fill(); tg.stroke(); }
-  tg.fillStyle = '#f2b631'; tg.font = '18px Righteous, Barlow, sans-serif'; tg.fillText('rpm × 1000', cx, H - 12);
+  tg.font = '24px Righteous, Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'top';
+  for (let t = 0, T = top / 1000; t <= T; t++) { tg.fillStyle = t * 1000 > REDLINE ? '#ec6f2b' : '#fff1cf'; tg.fillText(t, x0 + (x1 - x0) * t / T, base + 8); }
+}
+// the rear wing in profile: the main plane, and the flap above it that tilts flat when DRS is open
+const sil = $('sil'), sg = sil.getContext('2d');
+function drawSil(open) {
+  const W = sil.width, H = sil.height; sg.clearRect(0, 0, W, H);
+  sg.lineJoin = 'round'; sg.lineCap = 'round'; sg.strokeStyle = '#2a1a0e'; sg.lineWidth = 4;
+  // the tail of the car and the swan necks
+  sg.fillStyle = '#c7cdd3'; sg.beginPath(); sg.moveTo(8, H - 6); sg.quadraticCurveTo(40, H - 40, 120, H - 34); sg.lineTo(232, H - 30); sg.lineTo(232, H - 6); sg.closePath(); sg.fill(); sg.stroke();
+  sg.fillStyle = '#1a1a1a'; for (const x of [84, 118]) { sg.beginPath(); sg.moveTo(x, H - 36); sg.quadraticCurveTo(x + 18, H - 52, x + 8, 34); sg.lineTo(x + 18, 34); sg.quadraticCurveTo(x + 26, H - 52, x + 12, H - 36); sg.closePath(); sg.fill(); sg.stroke(); }
+  // the main plane
+  sg.beginPath(); sg.moveTo(40, 36); sg.quadraticCurveTo(110, 18, 180, 30); sg.lineTo(178, 40); sg.quadraticCurveTo(110, 32, 44, 46); sg.closePath(); sg.fill(); sg.stroke();
+  // the flap, pivoting on its front edge: up and steep when shut, laid flat when open
+  const a = -0.55 + 0.5 * open, px = 168, py = 26, len = 62;
+  sg.save(); sg.translate(px, py); sg.rotate(Math.PI + a); sg.fillStyle = open > 0.5 ? '#8a9a2b' : '#1a1a1a';
+  sg.beginPath(); sg.moveTo(0, -4); sg.quadraticCurveTo(len / 2, -10, len, -3); sg.lineTo(len, 4); sg.quadraticCurveTo(len / 2, 2, 0, 5); sg.closePath(); sg.fill(); sg.stroke(); sg.restore();
+}
+// the driver's hands on the wheel, a cartoon of the broadcast's cockpit camera: the wheel turns with your steering, the
+// shift lights across its top fill with the revs, the gear shows in its middle, and a paddle flicks on each change
+const ins = $('inset'), ig = ins.getContext('2d'), wheelI = { a: 0, up: 0, down: 0, ups: 0, downs: 0 };
+function drawInset(p, gb, dt) {
+  if (!ins.classList.contains('on') || ins.offsetParent === null) return;
+  const W = ins.width, H = ins.height, E = p.engine, ink = '#2a1a0e';
+  wheelI.a += (p.input.steer * 1.4 - wheelI.a) * Math.min(1, dt * 10);
+  if (gb.ups !== wheelI.ups) { wheelI.ups = gb.ups; wheelI.up = 0.18; } if (gb.downs !== wheelI.downs) { wheelI.downs = gb.downs; wheelI.down = 0.18; }
+  wheelI.up = Math.max(0, wheelI.up - dt); wheelI.down = Math.max(0, wheelI.down - dt);
+  // the cabin: windscreen, dashboard, the roll cage's front hoop
+  ig.fillStyle = '#7fd3cf'; ig.fillRect(0, 0, W, H);
+  ig.fillStyle = '#8cc63f'; ig.beginPath(); ig.moveTo(0, 92); ig.lineTo(W, 84); ig.lineTo(W, H); ig.lineTo(0, H); ig.fill();
+  ig.fillStyle = '#b9b2a6'; ig.beginPath(); ig.moveTo(W * 0.38, 86); ig.lineTo(W * 0.62, 86); ig.lineTo(W * 0.95, H); ig.lineTo(W * 0.05, H); ig.fill();
+  ig.fillStyle = '#3b2414'; ig.beginPath(); ig.moveTo(0, 116); ig.quadraticCurveTo(W / 2, 92, W, 116); ig.lineTo(W, H); ig.lineTo(0, H); ig.fill();
+  ig.strokeStyle = '#1a1a1a'; ig.lineWidth = 10; ig.beginPath(); ig.moveTo(18, H); ig.lineTo(46, 0); ig.moveTo(W - 18, H); ig.lineTo(W - 46, 0); ig.stroke();
+  // the wheel
+  const cx = W / 2, cy = 132, R = 70;
+  ig.save(); ig.translate(cx, cy); ig.rotate(wheelI.a);
+  ig.lineWidth = 4; ig.strokeStyle = ink;
+  // paddles behind it: right is up, left is down
+  for (const [s, on] of [[1, wheelI.up], [-1, wheelI.down]]) { ig.fillStyle = on > 0 ? '#f2b631' : '#c7cdd3'; ig.beginPath(); ig.ellipse(s * (R * 0.62 + (on > 0 ? 4 : 0)), -R * 0.32, 18, 28, s * 0.5, 0, 7); ig.fill(); ig.stroke(); }
+  ig.fillStyle = '#1a1a1a'; ig.beginPath(); ig.arc(0, 0, R, 0, 7); ig.arc(0, 0, R - 18, 0, 7, true); ig.fill(); ig.stroke(); ig.beginPath(); ig.arc(0, 0, R - 18, 0, 7); ig.stroke();
+  ig.fillStyle = '#ec6f2b'; ig.fillRect(-5, -R, 10, 18);
+  ig.fillStyle = '#2b2b2b'; ig.beginPath(); ig.moveTo(-42, -34); ig.arcTo(58, -34, 58, 28, 16); ig.arcTo(58, 28, -58, 28, 16); ig.arcTo(-58, 28, -58, -34, 16); ig.arcTo(-58, -34, 58, -34, 16); ig.closePath(); ig.fill(); ig.stroke();
+  // shift lights: ten across the top of the hub, green, yellow, red, then all blue at the change
+  const shift = E.shift || E.redline * 0.97, f = Math.max(0, (gb.rpm - E.redline * 0.6) / (shift - E.redline * 0.6));
+  for (let i = 0; i < 10; i++) { const lit = f * 10 > i, all = f >= 1; ig.fillStyle = !lit ? '#4a3a2a' : all ? '#2f9cff' : i < 4 ? '#8ccf3f' : i < 7 ? '#f6d23c' : '#d8402b'; ig.beginPath(); ig.arc(-45 + i * 10, -24, 4, 0, 7); ig.fill(); }
+  ig.fillStyle = '#f2b631'; ig.font = '30px Righteous, Barlow, sans-serif'; ig.textAlign = 'center'; ig.textBaseline = 'middle';
+  ig.fillText(gb.gear < 0 ? 'R' : gb.gear === 0 ? 'N' : gb.gear, 0, 4);
+  // gloves at a quarter to three
+  for (const s of [-1, 1]) { ig.fillStyle = '#d8402b'; ig.beginPath(); ig.ellipse(s * (R - 8), -8, 20, 26, s * -0.3, 0, 7); ig.fill(); ig.stroke(); ig.fillStyle = '#fff1cf'; ig.beginPath(); ig.ellipse(s * (R - 2), 14, 14, 7, 0, 0, 7); ig.fill(); ig.stroke(); }
+  ig.restore();
 }
 drawMapBase(); drawProfileBase();
 const fmt2 = t => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s < 10 ? '0' : ''}${s.toFixed(2)}`; };
-const dial = { rpm: 900, gas: 0, brake: 0 };
+const dial = { rpm: 900, gas: 0, brake: 0, flap: 0 };
 let lastHud = 0;
 function hud(dt) {
   if (S.mode === 'pick') return;
@@ -618,6 +672,15 @@ function hud(dt) {
   dial.gas += ((p.input.gas || p.boost > 0 ? 1 : 0) - dial.gas) * e; dial.brake += (p.input.brake - dial.brake) * e;
   $('thr').style.height = (dial.gas * 100).toFixed(0) + '%'; $('brk').style.height = (dial.brake * 100).toFixed(0) + '%';
   drawTach(dial.rpm, gb.gear, p.engine);
+  // DRS: the wing in profile and the chip, for a car that has it
+  const hasDrs = !!p.spec.drs;
+  if (hasDrs !== S.hasDrs) { S.hasDrs = hasDrs; $('drsbox').hidden = !hasDrs; $('tele').classList.toggle('has-drs', hasDrs); const td = $('touchDrs'); if (td) td.hidden = !hasDrs; }
+  if (hasDrs) {
+    const st = p.drs ? 'open' : track.drsZone[p.k] && !p.air && S.mode !== 'queue' ? 'ready' : '';
+    if (st !== S.drsShown) { S.drsShown = st; const el = $('drs'); el.className = 'drs ' + st; el.textContent = touch ? 'DRS' : st === 'open' ? 'DRS open' : st === 'ready' ? 'DRS · X' : 'DRS'; if (st === 'open') sound.drs(); }
+    dial.flap += ((p.drs ? 1 : 0) - dial.flap) * Math.min(1, dt * 12); drawSil(dial.flap);
+  }
+  drawInset(p, gb, dt);
   $('time').textContent = fmt2(S.mode === 'queue' ? 0 : player.done ? player.time : S.raceT);
   if (performance.now() - lastHud > 90) {
     lastHud = performance.now();
@@ -716,7 +779,7 @@ function result() {
   if (best) store.set(bestKey(choice), p.time);
   $('resTitle').textContent = place === 1 ? 'First to the gantry' : `${ord(place)} to the gantry`;
   $('resTime').innerHTML = `${fmt(p.time)}<small>Bridge to gantry in the ${p.spec.name} on ${MODE_NAME[mode]}${best ? (prev ? `, a new best by ${(prev - p.time).toFixed(1)} s` : ', your first time in it') : `, best ${fmt(prev)}`}</small>`;
-  const proT = store.get('pro.' + choice, 0);
+  const proT = store.get('lap2.pro.' + choice, 0);
   if (proT) $('resTime').innerHTML += `<small>The pro does it in ${fmt(proT)}: you were ${(p.time - proT).toFixed(1)} s off.</small>`;
   resultButtons([['Go again', toRace, true], ['Watch the pro', () => { $('result').hidden = true; startPro(); }], ['Change car', toPick]]);
   $('touch').hidden = true;

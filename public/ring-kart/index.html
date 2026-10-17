@@ -7,7 +7,7 @@
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Righteous&family=Shrikhand&display=swap">
-<link rel="stylesheet" href="style.css?v=0.7">
+<link rel="stylesheet" href="style.css?v=0.8">
 </head>
 <body>
 
@@ -34,6 +34,7 @@
       <div class="brakecue" id="brakecue">Brake!</div>
       <div class="coach" id="coach"><b id="coachTxt">Gas</b><span id="coachV"></span></div>
       <div class="protag" id="protag"></div>
+      <canvas class="inset" id="inset" width="320" height="200" aria-label="The driver's hands on the wheel"></canvas>
       <div class="tele" id="tele">
         <canvas class="map" id="map" width="300" height="240" aria-label="Map of the lap"></canvas>
         <div class="gs">
@@ -41,7 +42,8 @@
           <div><span class="lbl">Speed</span><b id="kmh">0</b></div>
           <i class="flags" id="flags"></i>
         </div>
-        <canvas class="tach" id="tach" width="320" height="200" aria-label="Revs"></canvas>
+        <canvas class="tach" id="tach" width="360" height="150" aria-label="Revs"></canvas>
+        <div class="drsbox" id="drsbox" hidden><canvas class="sil" id="sil" width="240" height="96" aria-label="The rear wing, its DRS flap shut or open"></canvas><i class="drs" id="drs">DRS</i></div>
         <div class="pedals-hud"><i class="bar brk"><b id="brk"></b></i><span class="lbl v">Brake</span><i class="bar gas"><b id="thr"></b></i><span class="lbl v">Gas</span></div>
         <div class="timing">
           <span class="lbl">Bridge to gantry</span>
@@ -64,7 +66,7 @@
       <div class="keymap" aria-label="Controls">
         <span><kbd>↑</kbd>Gas</span><span><kbd>←</kbd><kbd>→</kbd>Steer</span><span><kbd class="wide">Space</kbd>Brake</span><span><kbd class="wide">Shift</kbd>Drift</span>
         <span><kbd>↓</kbd>Reverse</span><span><kbd>E</kbd>Horn</span><span><kbd>Q</kbd>Look back</span><span><kbd>C</kbd>Camera</span>
-        <span><kbd>L</kbd>Best line</span><span><kbd>R</kbd>Back on road</span>
+        <span><kbd>L</kbd>Best line</span><span><kbd>R</kbd>Back on road</span><span><kbd>X</kbd>DRS (GT3 RS)</span>
       </div>
       <div class="row switches"><button id="gasMode" aria-pressed="false" title="G switches it during the race">Gas: hold Up</button><button id="lineMode" aria-pressed="false" title="L switches it during the race">Best line: off</button></div>
       <p class="keys-line">Right hand on the arrows, left thumb on Space, little finger on Shift. WASD works too, and a gamepad. With the gas always on you only steer, brake and drift.</p>
@@ -85,7 +87,7 @@
     <div class="touch" id="touch" hidden>
       <div class="lr"><button data-k="left" aria-label="Steer left">◀</button><button data-k="right" aria-label="Steer right">▶</button></div>
       <div class="pedals"><button data-k="drift" class="drift">Drift</button><button data-k="brake" class="brake">Brake</button><button data-k="gas" class="gas">Gas</button></div>
-      <div class="extras"><button data-act="cam">Camera</button><button data-act="line" id="touchLine">Line</button><button data-act="horn">Horn</button><button data-act="reset">Reset</button></div>
+      <div class="extras"><button data-act="drs" id="touchDrs" hidden>DRS</button><button data-act="cam">Camera</button><button data-act="line" id="touchLine">Line</button><button data-act="horn">Horn</button><button data-act="reset">Reset</button></div>
     </div>
 
     <button class="corner-btn stop" id="proStop">Stop</button>
@@ -108,7 +110,7 @@
   </section>
 </main>
 
-<footer class="version">Ring Kart <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.7"></script>
+<footer class="version">Ring Kart <span id="version"></span> · The lap is the real Nordschleife from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, with heights from the Copernicus EU-DEM, shrunk to a third.</footer>
+<script type="module" src="src/main.js?v=0.8"></script>
 </body>
 </html>

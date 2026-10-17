@@ -8,8 +8,13 @@
 // exhaust, and a low-pass opens with the revs and the throttle. A flat-six at 9,000 rpm fires 450 times a second,
 // which is the GT3 RS's scream; a four at 6,700 fires 223 times and sounds like a hot hatch.
 //
-// The gearbox (`gearbox` in drive.js) is what makes it sound driven: each change up cuts the ignition for a few
-// hundredths of a second, a crack in a twin-clutch box and a "brap" in a DSG, while the revs fall to the next gear;
+// The GT3 RS's partials are not a guess: they were measured from an onboard recording of the real car (the strength of
+// each partial against the firing one, over the frames above 5,500 rpm), so its note has the flat-six's gravel, the
+// 1.5 order nearly as loud as the firing one, and a top end that falls away quickly.
+//
+// The gearbox (`gearbox` in drive.js) is what makes it sound driven: each change up dips the note while the revs fall
+// to the next gear, a glide of about a tenth of a second in the GT3 RS's PDK (also measured), a "brap" in a DSG, a lift
+// in a manual;
 // each change down blips the throttle, so the revs jump and the exhaust pops, one bark per gear into a hairpin. Off
 // the throttle at high revs it crackles. Turbo cars whistle on boost and sigh when you lift. Then the tyres in a
 // drift, the wind, a whoosh for a mini-turbo, a thud for a bump, the barrier's beep and the horn. On the pro lap the
@@ -59,10 +64,12 @@ export class Sound {
     // the firing partials, falling away slowly (a flat-six keeps its high ones: that is the howl), and a little of
     // every other partial, fixed per engine so it always sounds the same
     let seed = N * 7919 + (E.redline || 0); const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const fall = E.flat ? 0.55 : E.turbo ? 0.95 : 0.8;
+    // a car with measured partials (the GT3 RS, from an onboard recording) uses them, and past them a gentle fall
+    const fall = E.flat ? 0.55 : E.turbo ? 0.95 : 0.8, M = E.partials;
     for (let h = 1; h <= H; h++) {
       const k = h / N;
-      im[h] = h % N === 0 ? 1 / Math.pow(k, fall) : (h % (N / 2) === 0 ? 0.22 : 0.07) * rnd() / Math.sqrt(h / N + 0.5);
+      if (M) im[h] = h <= M.length ? M[h - 1] : (h % N === 0 ? 0.08 : 0.03 * rnd()) * Math.pow(M.length / h, 1.5);
+      else im[h] = h % N === 0 ? 1 / Math.pow(k, fall) : (h % (N / 2) === 0 ? 0.22 : 0.07) * rnd() / Math.sqrt(h / N + 0.5);
     }
     const w = this.ctx.createPeriodicWave(re, im);
     this.o1.setPeriodicWave(w); this.o2.setPeriodicWave(w);
@@ -96,6 +103,8 @@ export class Sound {
   }
   // a car going past a trackside camera
   whoosh() { this.burst('bandpass', 700, 0.9, 0.45); this.burst('highpass', 2400, 0.5, 0.16); }
+  // the DRS flap opening: a short pneumatic clack
+  drs() { this.burst('bandpass', 2600, 0.06, 0.18, 0, 2); this.burst('lowpass', 500, 0.05, 0.2, 0.02); }
   beep() { this.tone(880, 0.18, 0.12); this.tone(1320, 0.3, 0.12, 0.2); }
   finish() { [660, 880, 1100, 1320].forEach((f, i) => this.tone(f, 0.25, 0.1, i * 0.12)); }
   // where the listener is: d metres from the car, closing at vr metres a second (negative going away)
@@ -116,11 +125,13 @@ export class Sound {
       this.ups = gb.ups;
       if (gas) {
         // the ignition cut: a dip and a crack, longer in a manual where you lift for the change
-        const quick = E.box === 'pdk' || E.box === 'dsg', dip = quick ? 0.05 : E.box === 'auto' ? 0.3 : 0.28;
+        // a PDK never lets go: the revs glide down to the next gear with only a slight dip and a tick (measured from
+        // an onboard GT3 RS); a DSG braps, a manual lifts for the change, an old automatic slurs
+        const dip = E.box === 'pdk' ? 0.1 : E.box === 'dsg' ? 0.06 : E.box === 'auto' ? 0.3 : 0.28, depth = E.box === 'pdk' ? 0.8 : E.box === 'auto' ? 0.7 : 0.25;
         this.eg.gain.cancelScheduledValues(t); this.eg.gain.setValueAtTime(this.eg.gain.value, t);
-        this.eg.gain.linearRampToValueAtTime(this.eg.gain.value * (E.box === 'auto' ? 0.7 : 0.25), t + 0.012);
+        this.eg.gain.linearRampToValueAtTime(this.eg.gain.value * depth, t + 0.02);
         this.eg.gain.linearRampToValueAtTime(this.eg.gain.value, t + dip);
-        if (E.box === 'pdk') this.burst('bandpass', 1900, 0.05, 0.28 * near, 0, 1.4);
+        if (E.box === 'pdk') this.burst('bandpass', 2400, 0.03, 0.1 * near, 0, 1.4);
         if (E.box === 'dsg') { this.burst('lowpass', 320, 0.11, 0.5 * near, 0.005, 1.2); this.pop(0.35, 0.03); }
         if (E.box === 'manual' && E.turbo) this.burst('highpass', 2600, 0.25, 0.08 * near);   // the wastegate sighing as you lift
         this.cutUntil = t + dip;

@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.104 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.13 + Ring Kart 0.7. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.105 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.13 + Ring Kart 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.105
+- Ring Kart 0.8 (the real lap, DRS, an engine matched to a recording, a broadcast strip, the widebody GT3 RS). The home card says so. `tools/ring_track.py` is new: it builds the lap from OpenStreetMap and the EU elevation model, and `docs/RAW-INPUTS.md` lists both. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.104
 - Cathedral Lab 0.13 (the back of the 1972 house, from photographs). The home card's badge says so. No change to the sim, Play Review or Ring Kart.
@@ -617,6 +620,16 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.8
+- The real Nordschleife. The lap is now built from OpenStreetMap's Nordschleife segments and the EU-DEM 25 m elevation model by a new script, `tools/ring_track.py`, from the T13 entry to the gantry before Antoniusbuche: 19.2 km on the map, shrunk to a third (6.3 km), 40 real corner names, real radii and real climbs and drops (342 m at Breidscheid to 625 m at Hohe Acht). The jumps (Quiddelbacher Höhe, Flugplatz, Pflanzgarten, Sprunghügel) and the Karussell's banking are carried over by name. A lap in the GT3 RS takes the pro about 3:22.
+- Found on the way and fixed: heights that eased to flat at every point (on the new 50 m spacing, a staircase that threw cars into the air), a car's height between road samples measured on the centre line (it jumped a few centimetres in corners: 25 flights a lap, some at 50 km/h), and banking that the AI and the brake aid counted on but the physics never gave. The best line now sees quick S-bends and has a floor from the road's own radius in tight corners, so the pro stays within 3.2 m of it all the way round. Beginner's brake aid aims for 80% of the grip instead of 90% for the real Karussell.
+- DRS in the GT3 RS: X (Y on a pad, DRS on a phone) opens the rear wing's flap on a straight, for 6% more top speed and 30% less drag; it shuts on the brakes, in a corner or when the straight ends. Six zones on the real lap. The pro uses it, and the best line counts it. The flap visibly opens on the car.
+- The GT3 RS's engine matched to an onboard recording of the real car: the strength of each of its 18 partials (the flat-six's gravel, the 1.5 order, nearly as loud as the firing one), the change up at 8,600 rpm, and a PDK upshift that glides down to the next gear in a tenth of a second instead of cutting. Rendered and measured the same way, the game's engine is within 1.7 dB of the real one on average.
+- The strip after Porsche's own onboard broadcast: the revs as a row of rising bars that flash at the change, and in the GT3 RS the rear wing in profile with its flap and a DRS chip (grey, ready, open). A small inset of the driver's hands on the wheel, turning with your steering, with shift lights, the gear and a paddle that flicks on each change (not on phones).
+- The GT3 RS as a widebody racer, silver with black accents and a black stripe: flared arches, frog-eye headlights on raised front wings, a wide mouth with a splitter and canards, bonnet vents, side vents and intakes, a tail light bar, twin exhausts, five-spoke wheels, a roll cage through the glass, a door roundel with 91, and a swan-neck wing. The other cars are unchanged.
+- Best times on the real lap are kept apart from the old lap's, which was a different length. The page credits OpenStreetMap and the EU-DEM.
+- Tests: the lap's corners in their real order, every car and the pro clean on the real lap, the clumsy driver never on the Armco on Beginner, the GT3 RS changing up at its measured shift point, and DRS opening only on straights and shutting on the brakes and in corners.
 
 ### 0.7
 - Round cars. Every body is a smooth cartoon shell instead of extruded panels: lofted along the car from rounded sections, fat wings over tucked-up tyres, a round nose and tail, and a bubble glasshouse with the windows painted on and ringed in ink. Round headlights, a wide grille, slim lips, round-shouldered tyres on chrome dishes, a slimmer GT3 wing. Same sizes and the same seven styles, so the driving and the bumps are unchanged.

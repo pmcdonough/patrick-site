@@ -127,7 +127,17 @@ button.primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 va
 .gs b { display: block; font: 400 3.3rem/0.95 var(--num); font-variant-numeric: tabular-nums; }
 .gs > div:last-of-type b { min-width: 3ch; }
 .gs .flags { grid-column: 1 / -1; font: 400 0.8rem var(--num); font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; color: var(--orange); min-height: 1.1em; text-align: center; }
-.tach { width: 160px; height: 100px; }
+.tach { width: 180px; height: 75px; }
+/* DRS: the rear wing in profile with its flap, and a chip that says whether it can open, for cars that have it */
+.tele.has-drs { grid-template-columns: 150px auto 180px 110px 74px minmax(0, 1fr); }
+.drsbox { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.drsbox .sil { width: 110px; height: 44px; }
+.drs { font: 400 0.85rem var(--num); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 10px 3px; border-radius: 999px; border: 2px solid var(--ink); background: rgb(255 241 207 / 0.12); color: rgb(255 241 207 / 0.5); }
+.drs.ready { background: var(--mustard); color: var(--ink); }
+.drs.open { background: var(--avocado); color: var(--cream); }
+/* the driver's hands on the wheel, inset above the strip as on a broadcast */
+.inset { position: absolute; left: 12px; bottom: 166px; width: 192px; height: 120px; border: var(--sticker); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); background: #3b2414; display: none; }
+.inset.on { display: block; }
 .pedals-hud { height: 100px; display: grid; grid-template-columns: 14px 10px 14px 10px; column-gap: 4px; align-items: end; }
 .pedals-hud .bar { display: block; height: 100%; background: rgb(255 241 207 / 0.12); position: relative; border-radius: 4px; overflow: hidden; border: 2px solid var(--ink); }
 .pedals-hud .bar b { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
@@ -201,12 +211,14 @@ kbd.wide { min-width: 52px; }
 /* on a touch screen the corner buttons go top right, out of the thumbs' way */
 .touch:not([hidden]) ~ #sound { top: 12px; bottom: auto; right: 10px; }
 .touch:not([hidden]) ~ .corner-btn.full { top: 50px; bottom: auto; right: 10px; }
-.stage.pro .touch .lr, .stage.pro .touch .pedals, .stage.pro .touch [data-act="horn"], .stage.pro .touch [data-act="reset"] { display: none; }
+.stage.pro .touch .lr, .stage.pro .touch .pedals, .stage.pro .touch [data-act="horn"], .stage.pro .touch [data-act="reset"], .stage.pro .touch [data-act="drs"] { display: none; }
 .stage.pro .touch:not([hidden]) ~ #sound, .stage.pro .touch:not([hidden]) ~ .corner-btn.full { display: none; }
 
 @media (max-width: 900px) {
   .tele { grid-template-columns: 110px auto 120px 60px minmax(0, 1fr); gap: 12px; padding-inline: 10px; }
-  .tele .map { width: 110px; height: 88px; } .tach { width: 120px; height: 75px; }
+  .tele .map { width: 110px; height: 88px; } .tach { width: 130px; height: 54px; }
+  .tele.has-drs { grid-template-columns: 110px auto 130px 80px 60px minmax(0, 1fr); } .drsbox .sil { width: 80px; height: 32px; }
+  .inset { width: 160px; height: 100px; }
   .gs b { font-size: 2.6rem; } .timing b { font-size: 2.3rem; }
 }
 @media (max-width: 700px) {
@@ -220,7 +232,9 @@ kbd.wide { min-width: 52px; }
   .pos b { font-size: 2.1rem; }
   .tele { height: 100px; grid-template-columns: auto 90px minmax(0, 1fr); padding: 18px 10px 8px; gap: 10px; }
   .tele .map, .pedals-hud, .timing .profile { display: none; }
-  .gs { column-gap: 12px; } .gs b { font-size: 2rem; } .tach { width: 90px; height: 56px; }
+  .gs { column-gap: 12px; } .gs b { font-size: 2rem; } .tach { width: 96px; height: 40px; }
+  .tele.has-drs { grid-template-columns: auto 96px auto minmax(0, 1fr); } .drsbox .sil { display: none; } .drs { font-size: 0.7rem; padding: 1px 7px 2px; }
+  .inset.on { display: none !important; }
   .timing b { font-size: 1.7rem; }
   .gaps { display: none; }
   .note { top: 78px; } .note canvas { width: 44px; height: 44px; } .note b { font-size: 1.1rem; }

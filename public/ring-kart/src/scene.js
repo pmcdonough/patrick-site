@@ -4,7 +4,7 @@
 // view to its own proportions, with racing stripes. Everything is cel-shaded (three flat bands of light, no gradients)
 // and the cars and trees carry a brown ink outline. Three.js r128, the copy Cathedral Lab keeps on the site.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.13';
-import { pointAt } from './track.js?v=0.7';
+import { pointAt } from './track.js?v=0.8';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.
 const col = c => new THREE.Color(c).convertSRGBToLinear();
@@ -446,6 +446,8 @@ const STYLE = {
   van:      { top: [[0, 0.44], [0.01, 0.48], [0.84, 0.48], [0.97, 0.4], [1, 0.3]], cab: [[0.0, 0.48], [0.0, 1], [0.76, 1], [0.88, 0.48]], wheels: [0.16, 0.84], panel: 0.6 },
   roadster: { top: [[0, 0.5], [0.03, 0.66], [0.32, 0.68], [0.6, 0.68], [0.95, 0.56], [1, 0.46]], cab: null, wheels: [0.18, 0.82] },
   tiny:     { top: [[0, 0.5], [0.03, 0.6], [0.7, 0.6], [0.94, 0.54], [1, 0.46]], cab: [[0.04, 0.6], [0.09, 1], [0.6, 1], [0.75, 0.6]], wheels: [0.15, 0.84], b: 0.42 },
+  // a 911: high rear deck, a fastback roof, a low bonnet between the front wings
+  gt3:      { top: [[0, 0.44], [0.03, 0.58], [0.16, 0.64], [0.3, 0.62], [0.62, 0.55], [0.84, 0.54], [0.96, 0.46], [1, 0.36]], cab: [[0.14, 0.62], [0.38, 1], [0.52, 1], [0.69, 0.55]], wheels: [0.19, 0.8] },
 };
 const lerpLine = (pts, x) => { for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + (y1 - y0) * (x - x0) / ((x1 - x0) || 1); } return pts[pts.length - 1][1]; };
 // a profile sampled finely and blurred, so its corners round off: f from 0 to 1 -> value
@@ -493,35 +495,66 @@ const lighter = (hex, t) => '#' + new THREE.Color(hex).lerp(new THREE.Color(0xff
 
 export function carMesh(body) {
   const st = STYLE[body.style] || STYLE.hatch, L = body.len, Wd = body.wid, H = body.hgt;
-  const clear = 0.16, X = f => -L / 2 + f * L, Y = h => clear * 0.4 + h * (H - clear * 0.4);
+  // the race kit (the GT3 RS): lower, bigger wheels, flared arches, one wide stripe, and the parts below
+  const race = body.kit === 'race';
+  const clear = race ? 0.12 : 0.16, X = f => -L / 2 + f * L, Y = h => clear * 0.4 + h * (H - clear * 0.4);
   const grp = new THREE.Group(), inkParts = [];
-  const wr = Math.min(0.48, H * 0.33), wf = st.wheels;
-  const stripes = body.style !== 'van', sc = stripeFor(body.color);
+  const wr = race ? Math.min(0.5, H * 0.36) : Math.min(0.48, H * 0.33), wf = st.wheels;
+  const stripes = body.style !== 'van', sc = body.stripe || stripeFor(body.color);
 
   // ---------- the body ----------
   // the top: the side view, with a wing swelling over each wheel, its corners rounded off
   const bell = (f, c, w) => { const d = Math.abs(f - c) / w; return d >= 1 ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * d); };
-  const archW = wr * 1.5 / L, fender = wr * 2 + 0.14;
+  const archW = wr * 1.5 / L, fender = wr * 2 + (race ? 0.1 : 0.14);
   const top = smooth(f => { let y = Y(lerpLine(st.top, f)); for (const c of wf) y = Math.max(y, y + (fender - y) * bell(f, c, archW * 1.2)); return y; }, 0.035);
   // the bottom: a sill between the wheels, rising over each one to just above the axle, and up into the nose and tail
   const sill = clear + 0.07;
   const bottom = smooth(f => { let y = sill; for (const c of wf) y += (wr * 1.02 - sill) * bell(f, c, archW); return y; }, 0.02);
   // the plan: full width in the middle, a fat swelling over the wheels, a rounded nose and tail
   const plan = f => (1 - Math.abs(2 * f - 1) ** 5) ** (1 / 5);
-  const half = f => Wd / 2 * (1 + 0.035 * Math.max(...wf.map(c => bell(f, c, archW * 1.3))));
+  const half = f => Wd / 2 * (1 + (race ? 0.1 : 0.035) * Math.max(...wf.map(c => bell(f, c, archW * (race ? 1.5 : 1.3)))));
+  // a 911's front wings stand up either side of a lower bonnet, so on the race kit the top of each section rises
+  // toward its shoulders over the front of the car (the headlights sit on top of those wings)
+  const wings = f => race ? 0.11 * bell(f, 0.86, 0.17) : 0;
   const bodyAt = (f, th) => {
     const p = plan(f), yt = top(f), yb = bottom(f), yc = (yt + yb) / 2 + (1 - p) * 0.04, hh = (yt - yb) / 2 * p ** 0.3;
     const up = Math.sin(th) > 0, [cz, cy] = se(th, up ? 3 : 4.5);
     const tumble = up ? 1 - 0.07 * Math.sin(th) ** 2 : 1;
-    return [X(f), yc + hh * cy, -half(f) * p * cz * tumble];
+    const rise = up ? wings(f) * p * p * Math.exp(-(((Math.abs(cz) - 0.68) / 0.24) ** 2)) * Math.sin(th) : 0;
+    return [X(f), yc + hh * cy + rise, -half(f) * p * cz * tumble];
   };
+  // the girth of the body at f, for painting things their real size on a canvas that wraps round it
+  const girth = f => { let g = 0, a = bodyAt(f, 0); for (let i = 1; i <= 48; i++) { const b = bodyAt(f, i / 48 * Math.PI * 2); g += Math.hypot(b[1] - a[1], b[2] - a[2]); a = b; } return g; };
   // the paint: the colour, a soft highlight along each shoulder, and the twin stripes over the top
-  const bodyTex = canvas(256, 128, (g, w, h) => {
+  const bodyTex = canvas(race ? 512 : 256, race ? 256 : 128, (g, w, h) => {
     g.fillStyle = body.color; g.fillRect(0, 0, w, h);
     g.fillStyle = lighter(body.color, 0.28);
-    for (const v of [0.16, 0.34]) { round(g, w * 0.14, h * v - 2, w * 0.7, 4, 2); g.fill(); }
-    if (stripes) { g.fillStyle = sc; for (const v of [0.218, 0.262]) g.fillRect(0, h * v - h * 0.016, w, h * 0.032); }
+    for (const v of [0.16, 0.34]) { round(g, w * 0.14, h * v - h / 64, w * 0.7, h / 32, h / 64); g.fill(); }
+    if (stripes && !race) { g.fillStyle = sc; for (const v of [0.218, 0.262]) g.fillRect(0, h * v - h * 0.016, w, h * 0.032); }
+    if (race) raceLivery(g, w, h);
   });
+  // the race livery, painted in the body's own coordinates (u along the car, v round it; the near side, z > 0, is
+  // v 0.25 to 0.75): one wide stripe over the top, black sills, a pinstripe, bonnet vents, side vents and intakes, and
+  // a roundel with the number on each door, the right way up from each side
+  function raceLivery(g, w, h) {
+    const ink = sc;
+    // the stripe: 0.46 m wide all the way, so a share of the girth that grows as the body narrows toward the ends;
+    // it runs from the tail's top edge to the bonnet's front edge, not down over the nose and tail themselves
+    for (let x = Math.round(w * 0.05); x < w * 0.935; x += 2) { const dv = 0.23 / girth((x + 1) / w); g.fillStyle = ink; g.fillRect(x, h * (0.25 - dv), 2, h * dv * 2); g.fillStyle = lighter(sc, 0.35); g.fillRect(x, h * (0.25 - dv - 0.012), 2, 2); g.fillRect(x, h * (0.25 + dv + 0.012) - 2, 2, 2); }
+    g.fillStyle = ink; for (const [a, b] of [[0.53, 0.575], [0.925, 0.97]]) g.fillRect(w * 0.12, h * a, w * 0.76, h * (b - a));
+    for (const v of [0.035, 0.465]) g.fillRect(w * 0.2, h * v - 1.5, w * 0.6, 3);
+    const slot = (u, v, sw, sh, n) => { g.fillStyle = '#151515'; round(g, w * u - sw / 2, h * v - sh / 2, sw, sh, Math.min(sw, sh) / 2.5); g.fill(); g.fillStyle = '#5a5f66'; for (let i = 1; i < n; i++) g.fillRect(w * u - sw / 2 + 4, h * v - sh / 2 + sh * i / n - 1, sw - 8, 2); };
+    for (const v of [0.172, 0.328]) slot(0.86, v, w * 0.07, h * 0.06, 4);        // bonnet vents
+    for (const v of [0.02, 0.48]) { slot(0.68, v, w * 0.035, h * 0.05, 3); slot(0.3, v, w * 0.07, h * 0.045, 3); }   // vents behind the front wheels, intakes ahead of the rear
+    // the roundels: round on the car, so squashed here by the body's own stretch (u spans the length, v the girth)
+    const ru = 0.5, rw = w * 0.42 / L, rh = h * 0.42 / girth(ru);
+    for (const [v, flip] of [[0.444, false], [0.056, true]]) {
+      g.save(); g.translate(w * ru, h * v); if (flip) g.rotate(Math.PI); g.scale(1, rh / rw);
+      g.fillStyle = '#f4f1ea'; g.beginPath(); g.arc(0, 0, rw / 2, 0, 7); g.fill(); g.lineWidth = rw * 0.06; g.strokeStyle = '#151515'; g.stroke();
+      g.fillStyle = '#151515'; g.font = `${Math.round(rw * 0.62)}px Righteous, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(body.number || '', 0, rw * 0.04);
+      g.restore();
+    }
+  }
   bodyTex.flipY = false;
   const bodyGeo = loft(64, 48, (u, v) => bodyAt(u, v * Math.PI * 2));
   const paint = toon({ map: bodyTex });
@@ -548,7 +581,10 @@ export function carMesh(body) {
         if (u1 - u0 < 0.02) return;
         const x = u0 * w, y = v0 * h, pw = (u1 - u0) * w, ph = (v1 - v0) * h;
         round(g, x, y, pw, ph, Math.min(14, ph / 3)); g.fillStyle = '#8fd0e6'; g.fill();
-        g.save(); g.clip(); g.fillStyle = '#e9fbff'; g.translate(x + pw * 0.4, y + ph / 2); g.rotate(-0.5); g.fillRect(-pw, -ph * 0.14, pw * 2, ph * 0.12); g.fillRect(-pw, ph * 0.06, pw * 2, ph * 0.05); g.restore();
+        g.save(); g.clip();
+        // a roll cage seen through the glass: a hoop and a diagonal in the accent colour
+        if (race) { g.strokeStyle = sc; g.lineWidth = Math.max(3, ph * 0.07); g.beginPath(); g.moveTo(x + pw * 0.3, y + ph); g.lineTo(x + pw * 0.75, y); g.moveTo(x + pw * 0.12, y); g.lineTo(x + pw * 0.12, y + ph); g.moveTo(x + pw * 0.88, y); g.lineTo(x + pw * 0.88, y + ph); g.stroke(); }
+        g.fillStyle = '#e9fbff'; g.translate(x + pw * 0.4, y + ph / 2); g.rotate(-0.5); g.fillRect(-pw, -ph * 0.14, pw * 2, ph * 0.12); g.fillRect(-pw, ph * 0.06, pw * 2, ph * 0.05); g.restore();
         g.strokeStyle = PAL.ink; g.lineWidth = 2.5; round(g, x, y, pw, ph, Math.min(14, ph / 3)); g.stroke();
       };
       // side glass, either side, split at the B-pillar, and solid behind a van's panel
@@ -558,8 +594,15 @@ export function carMesh(body) {
       }
       // the windscreen over the front slope, the rear window over the back one
       pane(r2 + 0.015, 0.985, 0.34, 0.66);
+      // a sun strip across the top of the windscreen, its words read from in front of the car
+      if (race) {
+        const x = (r2 + 0.015) * w, sw = w * 0.07, y0 = h * 0.35, y1 = h * 0.65;
+        g.fillStyle = sc; g.fillRect(x, y0, sw, y1 - y0);
+        g.save(); g.translate(x + sw / 2, (y0 + y1) / 2); g.rotate(-Math.PI / 2); g.fillStyle = '#f4f1ea'; g.font = `${Math.round(sw * 0.62)}px Righteous, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('RING KART', 0, 1); g.restore();
+      }
       if (!st.panel) pane(0.02, Math.max(0.05, r1 - 0.015), 0.35, 0.65);
-      if (stripes) { g.fillStyle = sc; for (const v of [0.455, 0.545]) g.fillRect(r1 * w, h * v - h * 0.025, (r2 - r1) * w, h * 0.05); }
+      if (stripes && !race) { g.fillStyle = sc; for (const v of [0.455, 0.545]) g.fillRect(r1 * w, h * v - h * 0.025, (r2 - r1) * w, h * 0.05); }
+      if (race) { g.fillStyle = sc; g.fillRect(r1 * w - 6, h * 0.42, (r2 - r1) * w + 12, h * 0.16); }
     });
     cabTex.flipY = false;
     const cabGeo = loft(48, 32, (u, v) => cabAt(u, v * Math.PI), false);
@@ -584,18 +627,37 @@ export function carMesh(body) {
   // round headlights set into the nose, round tail lights into the tail, each a squashed ball on the surface
   const lamp = (f, th, size, list) => { const p = surf(f, th), n = normal(f, th); if (n.x * (f > 0.5 ? 1 : -1) < 0) n.negate(); list.push(blob(size * 0.35, size, size, p.x - n.x * 0.02, p.y - n.y * 0.02, p.z - n.z * 0.02, n.x, n.y, n.z)); };
   const LAMP = [0.95, Math.PI - 0.95];   // either side, up on the shoulder of the nose and the tail
-  for (const th of LAMP) {
-    lamp(0.982, th, Math.min(0.34, H * 0.24), heads);
-    lamp(0.018, th, Math.min(0.26, H * 0.18), tails);
+  // a 911's frog eyes sit high on the front wings, big and round, with a dark ring inside
+  const hf = race ? 0.93 : 0.982, hth = race ? [1.0, Math.PI - 1.0] : LAMP, hs = race ? Math.min(0.38, H * 0.29) : Math.min(0.34, H * 0.24), lens = [];
+  for (const th of hth) lamp(hf, th, hs, heads);
+  for (const th of LAMP) lamp(0.018, th, Math.min(0.26, H * 0.18), tails);
+  // a rim round each headlight, in ink, and for the frog eyes an inner ring
+  for (const th of hth) {
+    const p = surf(hf, th), n = normal(hf, th); if (n.x < 0) n.negate();
+    rimBits.push(blob(0.08, hs * 1.18, hs * 1.18, p.x - n.x * 0.04, p.y - n.y * 0.04, p.z - n.z * 0.04, n.x, n.y, n.z));
+    if (race) lens.push(blob(0.05, hs * 0.55, hs * 0.55, p.x + n.x * 0.045, p.y + n.y * 0.045, p.z + n.z * 0.045, n.x, n.y, n.z));
   }
-  // a rim round each headlight, in the trim colour
-  for (const th of LAMP) { const p = surf(0.982, th), n = normal(0.982, th); if (n.x < 0) n.negate(); rimBits.push(blob(0.08, Math.min(0.4, H * 0.28), Math.min(0.4, H * 0.28), p.x - n.x * 0.04, p.y - n.y * 0.04, p.z - n.z * 0.04, n.x, n.y, n.z)); }
+  // and a light bar across the tail, which glows with the round ones under braking
+  if (race) tails.push(capsule(0.03, Wd * 0.72, X(0.012), top(0.03) - 0.1));
   grp.add(new THREE.Mesh(merge(heads), headM), new THREE.Mesh(merge(tails), tail), new THREE.Mesh(merge(rimBits), toon({ color: PAL.ink })));
+  if (lens.length) grp.add(new THREE.Mesh(merge(lens), toon({ color: 0x6f8794 })));
   const noseB = bottom(0.97), tailB = bottom(0.03);
-  blackBits.push(blob(0.12, Math.max(0.12, (top(0.97) - noseB) * 0.32), Wd * 0.42, X(1) - 0.03, noseB + (top(0.97) - noseB) * 0.32, 0));
-  // a slim rounded lip under the nose and the tail
-  blackBits.push(capsule(0.05, Wd * 0.6, X(0.985), noseB + 0.04), capsule(0.05, Wd * 0.6, X(0.015), tailB + 0.04));
-  chromeBits.push(new THREE.CylinderGeometry(0.045, 0.05, 0.16, 12).rotateZ(Math.PI / 2).translate(X(0) + 0.02, tailB + 0.02, Wd * 0.26));
+  if (race) {
+    // a wide mouth with intakes at its corners, a splitter jutting out under it and canards on the corners
+    const my = noseB + (top(0.97) - noseB) * 0.34;
+    blackBits.push(blob(0.16, Math.max(0.16, (top(0.97) - noseB) * 0.42), Wd * 0.5, X(1) - 0.04, my, 0));
+    for (const s of [-1, 1]) blackBits.push(blob(0.14, 0.18, Wd * 0.16, X(0.985) - 0.04, my - 0.02, s * Wd * 0.33));
+    blackBits.push(blob(0.42, 0.06, Wd * 1.02, X(1) - 0.02, noseB - 0.01, 0));
+    for (const s of [-1, 1]) for (const dy of [0.04]) blackBits.push(slab([[X(0.93), my - 0.04 + dy], [X(1) - 0.02, my - 0.1 + dy], [X(1) - 0.02, my - 0.07 + dy], [X(0.93), my - 0.01 + dy]], 0.03, 0.008).translate(0, 0, s * (half(0.95) * plan(0.95) + 0.01)));
+    blackBits.push(capsule(0.05, Wd * 0.7, X(0.015), tailB + 0.04));
+    // twin exhausts in the middle of the tail
+    for (const s of [-1, 1]) chromeBits.push(new THREE.CylinderGeometry(0.055, 0.06, 0.16, 14).rotateZ(Math.PI / 2).translate(X(0) + 0.03, tailB + 0.1, s * 0.12));
+  } else {
+    blackBits.push(blob(0.12, Math.max(0.12, (top(0.97) - noseB) * 0.32), Wd * 0.42, X(1) - 0.03, noseB + (top(0.97) - noseB) * 0.32, 0));
+    // a slim rounded lip under the nose and the tail
+    blackBits.push(capsule(0.05, Wd * 0.6, X(0.985), noseB + 0.04), capsule(0.05, Wd * 0.6, X(0.015), tailB + 0.04));
+  }
+  if (!race) chromeBits.push(new THREE.CylinderGeometry(0.045, 0.05, 0.16, 12).rotateZ(Math.PI / 2).translate(X(0) + 0.02, tailB + 0.02, Wd * 0.26));
   // the underside between the wheels, so nothing shows through under the car
   blackBits.push(new THREE.BoxGeometry(L * 0.86, 0.12, Wd * 0.7).translate(0, wr * 0.95, 0));
   if (!plateTex) plateTex = canvas(128, 28, (g, w, h) => { g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h); g.fillStyle = '#1d3f9a'; g.fillRect(0, 0, 14, h); g.strokeStyle = '#222'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2); g.fillStyle = '#222'; for (let i = 0; i < 6; i++) g.fillRect(22 + i * 16, 7, 10, 14); });
@@ -603,7 +665,21 @@ export function carMesh(body) {
   for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.1), plate); p.position.set(s * (L / 2 + 0.105), (s > 0 ? noseB : tailB) + 0.1, 0); p.rotation.y = s * Math.PI / 2; grp.add(p); }
 
   // ---------- the wing, the roof box ----------
-  if (body.wing) {
+  if (body.wing === 'swan') {
+    // a GT3 RS's wing: a big plane hung from swan necks that rise over it, tall end plates, and the DRS flap above
+    // its trailing edge, on a pivot of its own so the page can open it
+    const tailY = top(0.05), wy = Math.max(H * 1.05, tailY + 0.5), wxp = X(0.08), span = Wd * 0.98;
+    trimBits.push(slab([[wxp - 0.24, wy + 0.02], [wxp + 0.24, wy + 0.06], [wxp + 0.24, wy + 0.1], [wxp - 0.24, wy + 0.07]], span, 0.02));
+    for (const s of [-1, 1]) {
+      trimBits.push(slab([[wxp - 0.3, wy - 0.06], [wxp + 0.26, wy - 0.02], [wxp + 0.26, wy + 0.2], [wxp - 0.3, wy + 0.26]], 0.035, 0.012).translate(0, 0, s * span / 2));
+      // the neck: up from the deck behind the engine cover, over the plane, and down onto its top
+      trimBits.push(slab([[wxp + 0.12, tailY - 0.04], [wxp + 0.22, tailY - 0.04], [wxp + 0.2, wy + 0.2], [wxp + 0.02, wy + 0.24], [wxp - 0.02, wy + 0.08], [wxp + 0.04, wy + 0.08], [wxp + 0.07, wy + 0.16], [wxp + 0.13, wy + 0.13]], 0.04, 0.012).translate(0, 0, s * Wd * 0.22));
+    }
+    const flap = new THREE.Group(); flap.position.set(wxp - 0.08, wy + 0.13, 0);
+    const fg = slab([[-0.2, 0.09], [0, 0], [0, 0.03], [-0.2, 0.12]], span - 0.06, 0.012);
+    const fm = new THREE.Mesh(fg, trim); fm.castShadow = true; flap.add(fm, new THREE.Mesh(inkNormals(fg.clone()), inkMat(0.03)));
+    grp.add(flap); grp.flap = flap;
+  } else if (body.wing) {
     const tailY = top(0.04), wy = Math.max(H * 0.84, tailY + 0.34), wxp = X(0.07);
     // a slim plane on two swan necks, with small round-cornered end plates
     trimBits.push(slab([[wxp - 0.2, wy], [wxp + 0.17, wy + 0.035], [wxp + 0.17, wy + 0.065], [wxp - 0.2, wy + 0.04]], Wd * 0.84, 0.015));
@@ -625,11 +701,15 @@ export function carMesh(body) {
   const capG = new THREE.SphereGeometry(wr * 0.22, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2).translate(0, 0, tw / 2 - 0.02);
   const slotG = merge([0, 1, 2, 3, 4].map(i => new THREE.BoxGeometry(wr * 0.13, wr * 0.22, 0.02).translate(0, wr * 0.4, tw / 2 - 0.005).rotateZ(i * Math.PI * 2 / 5)));
   const tyre = toon({ color: 0x2b2420, side: THREE.DoubleSide }), slot = toon({ color: 0x5a4a3a }), hub = toon({ color: body.trim === '#111111' || body.trim === '#1a1a1a' ? 0xd6d2c8 : body.trim });
+  // the race kit's wheels: five fat spokes in the rim colour on a dark dish, inside a bright lip, and a centre lock
+  const rimMat = race ? toon({ color: 0x0d0d0d }) : chrome, spokeG = race ? merge([0, 1, 2, 3, 4].map(i => new THREE.BoxGeometry(wr * 0.16, wr * 0.5, 0.03).translate(0, wr * 0.3, tw / 2 - 0.01).rotateZ(i * Math.PI * 2 / 5))) : slotG;
+  const lipG = new THREE.RingGeometry(wr * 0.58, wr * 0.66, 28).translate(0, 0, tw / 2 - 0.005);
+  const spoke = race ? toon({ color: body.rims || 0x3a3d42 }) : slot, lip = toon({ color: 0xd6d2c8, side: THREE.DoubleSide });
   const tyreInk = inkMat(0.03), tyreInkG = inkNormals(tyreG.clone());
   grp.wheels = [];
   for (const [f, s] of [[wf[1], 1], [wf[1], -1], [wf[0], 1], [wf[0], -1]]) {
-    const w = new THREE.Group(); w.position.set(X(f), wr, s * (Wd / 2 - tw / 2 - 0.02));
-    const face = new THREE.Group(); face.add(new THREE.Mesh(rimG, chrome), new THREE.Mesh(capG, hub), new THREE.Mesh(slotG, slot)); if (s < 0) face.rotation.y = Math.PI;
+    const w = new THREE.Group(); w.position.set(X(f), wr, s * (race ? half(f) * plan(f) - tw / 2 + 0.01 : Wd / 2 - tw / 2 - 0.02));
+    const face = new THREE.Group(); face.add(new THREE.Mesh(rimG, rimMat), new THREE.Mesh(capG, race ? spoke : hub), new THREE.Mesh(spokeG, spoke)); if (race) face.add(new THREE.Mesh(lipG, lip)); if (s < 0) face.rotation.y = Math.PI;
     w.add(new THREE.Mesh(tyreG, tyre), new THREE.Mesh(tyreInkG, tyreInk), face); grp.add(w); grp.wheels.push(w);
   }
 
