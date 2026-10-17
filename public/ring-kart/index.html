@@ -7,7 +7,7 @@
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Righteous&family=Shrikhand&display=swap">
-<link rel="stylesheet" href="style.css?v=0.5">
+<link rel="stylesheet" href="style.css?v=0.6">
 </head>
 <body>
 
@@ -55,6 +55,10 @@
 
     <div class="panel pick" id="pick">
       <h2>Pick your car</h2>
+      <div class="modes" role="group" aria-label="How much help">
+        <button data-mode="beginner" aria-pressed="false">Beginner</button><button data-mode="intermediate" aria-pressed="false">Intermediate</button><button data-mode="expert" aria-pressed="false">Expert</button>
+      </div>
+      <p class="mode-note" id="modeNote"></p>
       <div class="cars" id="cars"></div>
       <div class="row"><button class="primary" id="go">Join the queue</button><button id="watch">Watch a pro lap</button></div>
       <div class="keymap" aria-label="Controls">
@@ -105,6 +109,6 @@
 </main>
 
 <footer class="version">Ring Kart <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.5"></script>
+<script type="module" src="src/main.js?v=0.6"></script>
 </body>
 </html>

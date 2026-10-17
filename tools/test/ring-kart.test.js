@@ -1,5 +1,6 @@
 // Ring Kart's road and driving, in Node: the lap builds to its real length scaled, and every car drives it to the
-// gantry on the AI without getting stuck, in a sensible time, with the faster cars faster.
+// gantry on the AI without getting stuck, in a sensible time, with the faster cars faster; the pro drives the best line
+// clean; and the driving modes keep a clumsy driver off the Armco without slowing a good one.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -60,5 +61,37 @@ test('the pro drives the best line in every player car: clean, on the line, and 
     const ai = makeCar({ ...spec, pace: 0.8 }, t, t.gateAt, 0); let ta = 0;
     while (ai.k < finish && ta < 600) { driveAI(ai, dt, t, [ai]); step(ai, dt, t, C.race, []); ta += dt; }
     assert.ok(time < ta, `${spec.name}: the pro ${time.toFixed(1)} s, the AI ${ta.toFixed(1)} s`);
+  }
+});
+
+test('the driving modes: a clumsy driver stays off the Armco on Beginner, mostly on Intermediate, and a good one is not slowed', async () => {
+  const [{ buildTrack, pointAt }, { makeCar, step, assist, driveAI }] = await load();
+  const t = buildTrack(T), dt = 1 / 120, finish = t.n - 12, M = C.race.modes.value;
+  // flat out and never braking, aiming late at the middle of the road with all-or-nothing keys on an eased wheel
+  const clumsy = car => {
+    const p = pointAt(t, Math.min(t.n - 1, car.k + Math.round(14 / t.ds)), 0);
+    let ang = Math.atan2(p.z - car.z, p.x - car.x) - car.h; ang = Math.atan2(Math.sin(ang), Math.cos(ang));
+    const want = Math.abs(ang) > 0.04 ? Math.sign(ang) : 0;
+    car.wheel = (car.wheel || 0) + Math.max(-6 * dt, Math.min(6 * dt, want - (car.wheel || 0)));
+    car.input = { steer: car.wheel, gas: 1, brake: 0, drift: false };
+  };
+  const lap = (spec, mode, drive) => {
+    const car = makeCar(spec, t, t.gateAt, 0); car.mode = M[mode];
+    let time = 0, walls = 0, scraping = false;
+    while (car.k < finish && time < 900) {
+      drive(car); if (mode !== 'expert') assist(car, t, M[mode]); step(car, dt, t, C.race, []); time += dt;
+      if (car.scrape > 0.2 && !scraping) walls++; scraping = car.scrape > 0.2;
+    }
+    assert.ok(car.k >= finish, `${spec.name} on ${mode}: stuck at sample ${car.k}`);
+    return { time, walls };
+  };
+  for (const spec of C.player) {
+    const [e, i, b] = ['expert', 'intermediate', 'beginner'].map(m => lap(spec, m, clumsy));
+    assert.ok(e.walls >= 15, `${spec.name}: the clumsy driver should struggle on Expert, ${e.walls} hits`);
+    assert.ok(i.walls * 3 <= e.walls, `${spec.name}: Intermediate ${i.walls} hits, Expert ${e.walls}`);
+    assert.ok(b.walls === 0, `${spec.name}: Beginner ${b.walls} hits`);
+    const good = { ...spec, pace: 0.8 }, ai = car => driveAI(car, dt, t, [car]);
+    const ge = lap(good, 'expert', ai), gb = lap(good, 'beginner', ai);
+    assert.ok(gb.time < ge.time * 1.02, `${spec.name}: the AI ${ge.time.toFixed(1)} s bare, ${gb.time.toFixed(1)} s with Beginner's help`);
   }
 });

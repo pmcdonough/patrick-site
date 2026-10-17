@@ -157,6 +157,11 @@ kbd.wide { min-width: 52px; }
 #gasMode, #lineMode { font: 400 0.95rem var(--num); }
 #gasMode[aria-pressed="true"], #lineMode[aria-pressed="true"] { background: var(--avocado); color: var(--cream); border-color: var(--ink); }
 #watch { font: 400 1rem var(--num); border: var(--sticker); box-shadow: 3px 3px 0 var(--ink); background: var(--mustard); color: var(--ink); }
+.modes { flex-shrink: 0; display: grid; grid-template-columns: repeat(3, 1fr); border: var(--sticker); border-radius: 12px; overflow: hidden; box-shadow: 3px 3px 0 var(--ink); }
+.modes button { border: 0; border-radius: 0; padding: 7px 4px; font: 400 0.95rem var(--num); background: var(--panel); color: var(--fg); }
+.modes button + button { border-left: 2px solid var(--ink); }
+.modes button[aria-pressed="true"] { background: var(--avocado); color: var(--cream); }
+.mode-note { flex-shrink: 0; margin: 0; font-size: 0.82rem; color: var(--fg-dim); min-height: 2.4em; }
 .cars { display: flex; flex-direction: column; gap: 8px; }
 .carpick { text-align: left; display: grid; grid-template-columns: 16px 1fr; gap: 2px 10px; padding: 9px 12px; border-radius: 12px; font-weight: 500; }
 .carpick[aria-pressed="true"] { border: var(--sticker); box-shadow: 3px 3px 0 var(--ink); background: color-mix(in srgb, var(--mustard) 18%, var(--panel)); }

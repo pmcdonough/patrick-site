@@ -24,7 +24,7 @@ This file is the whole reference for the project: what it is, how it is put toge
 
 ## 1. What the player sees
 
-1. **Pick a car**: VW Golf GTI, Porsche 911 GT3 RS, Honda Civic Type R, Mazda MX-5 (NA) or Volvo 240 Estate, each with bars for top speed, acceleration, grip and drift, and your best time in it. The camera circles your car in the queue. The picker shows the key map and the gas switch.
+1. **Pick how much help and a car**: Beginner, Intermediate or Expert (section 6 has what each does), then VW Golf GTI, Porsche 911 GT3 RS, Honda Civic Type R, Mazda MX-5 (NA) or Volvo 240 Estate, each with bars for top speed, acceleration, grip and drift, and your best time in it on that mode. The camera circles your car in the queue. The picker shows the key map and the gas switch.
 2. **The queue**: four rivals ahead of you, two fast cars (a GT3 RS and an AMG GT R) behind. The barrier lifts for one car every 2 s and the queue creeps up. At the front, Space, Enter, a tap or the A button lifts it for you.
 3. **The race**: six rivals (two already through the gate) and the two chasers, through 22 slow cars doing the lap at their own pace and keeping right. Position counts who is furthest round; the clock runs from your barrier to the gantry, the real "bridge to gantry" time.
 4. **On the way**: position top left; the gaps to the car ahead and behind top right; the pace note top centre (the next corner, Left or Right 1 to 6, and how far) with BRAKE when you are too quick for it; corner names as you reach them; and along the bottom the onboard telemetry strip, after the broadcast laps: the map, gear and speed, the revs on an arc with a shift light, brake and gas bars, the clock in hundredths, the drift and turbo charge, and the height of the lap lit as far as you have come.
@@ -97,6 +97,7 @@ Units and coordinates: metres and seconds throughout; speeds in game m/s (times 
 | `collide(cars)` | Bumps between cars, two circles each, heavier cars push lighter ones |
 | `cornerSpeed(car, track, pace)` | The fastest the car can be going now and still make every corner within braking reach at `pace` of its grip. The AI drives to it; the page calls BRAKE against it |
 | `nextCorner(track, k, ahead)` | The next corner as a co-driver calls it: `{ dir, grade, dist, len, tightens, at }`, grade 1 (a hairpin, radius under 16 m) to 6 (under 95 m) |
+| `assist(car, track, M)` | The driving aids for the player, from a mode in `race.modes`: changes `car.input` before `step`, never the physics. The brake aid brakes to `cornerSpeed` at `M.brake` of the grip; the guard follows the car `M.guard.look` seconds ahead and, within `margin` of the Armco, blends in the AI's steering and brakes if the turn back needs more grip than there is. Returns how hard it worked, 0 to 1 |
 | `driveAI(car, dt, track, cars, opts)` | Sets `car.input` for an AI car: speed from `cornerSpeed`, a line (the inside of what is coming for racers, the right for traffic), passing on the left. `opts.paceScale` is the rubber band |
 | `revs(car)`, `REDLINE` | The gearbox the dials and the engine note share: six gears over the top speed, `{ gear, rpm }` |
 
@@ -139,7 +140,7 @@ Marked sections: data, 3D, particles, cars, the session, the car picker, input, 
 
 **The session** (`S` in `main.js`): `mode` (pick, queue, race, done, pro, proDone), `timeScale` (slow motion on the pro lap), the clock `t`, the `queue`, the barrier, `raceStart` and `raceT`, the finishers, the corner banner, the camera mode, pause.
 
-**Kept in the browser** (`localStorage`, prefix `ringkart.`, every read and write in try/catch): `car` (the last pick), `best.<car id>`, `pro.<car id>` (the pro's time, once watched), `sound`, `autoGas`, `line`.
+**Kept in the browser** (`localStorage`, prefix `ringkart.`, every read and write in try/catch): `car` (the last pick), `mode`, `best.<car id>` (Expert, and every best from before 0.6), `best.<mode>.<car id>` (Beginner and Intermediate), `pro.<car id>` (the pro's time, once watched), `sound`, `autoGas`, `line`.
 
 ## 5. The lap
 
@@ -155,11 +156,21 @@ Arcade, kart-game handling, deliberately not a simulation:
 - Steering asks for a yaw rate from a 5.2 m turning circle at full lock; grip caps it at grip × g / speed, and asking for more scrubs speed (understeer).
 - Drift (the button, steering, above 12 m/s) turns 0.75 to 1.5 times what grip allows, steered into or out of, and charges a mini-turbo: past 0.9 s a blue spark (0.8 s of boost), past 1.9 s orange (1.5 s). A boost adds push and 28% top speed.
 - Slipstream: within 26 m behind a car and 3 m of its line for 1 s, 12% more top speed.
-- Grass: hard drag and 45% of top speed. The Armco puts you back against it and turns you along it; a square hit keeps 72% of your speed.
+- Grass: hard drag and 45% of top speed. The Armco puts you back against it and turns you along it; a square hit keeps 72% of your speed. (On Expert. Beginner and Intermediate soften both; see the driving modes below.)
 - Flight: the car follows the road until the road falls away faster than game gravity (15 m/s²) would take it, then flies until the road comes back up.
 - Bumps: two circles per car; heavier cars push lighter ones.
 
 The AI looks ahead for the slowest corner it can still brake for (`cornerSpeed`, at `pace` of its grip), steers at a point down its line, and passes slower cars on the left; traffic keeps right, as on the real Touristenfahrten, and pulls further over for three seconds after a honk. Rivals get a light rubber band (`race.rubber`): far ahead they ease off, far behind they push. Every number here is in `cars.json`.
+
+**The driving modes** (`race.modes`, the player only). The walls are what beat a new player: most hits come from arriving too fast, when grip cannot turn the car and it runs wide into the rail, so the brake aid does most of the work and the guard catches the rest.
+
+| Mode | Brake aid | Guard off the Armco | Square hit keeps | Grass |
+|---|---|---|---|---|
+| Beginner | brakes to 0.9 of the grip | 0.7 s ahead, from 2.2 m, firm | 92% | 70% of top speed, light drag |
+| Intermediate | only past 1.3 of the grip | 0.5 s ahead, from 1.5 m, light | 82% | 55%, more drag |
+| Expert | none | none | 72% | 45%, the race's own |
+
+`step` reads a mode's `wall` and `grass` from `car.mode`; the page sets it on your car only, so the AI and the pro always drive on the race's own numbers, and the pro is always Expert. The aids leave a good driver alone: the AI laps every car in the same time with Beginner's help. A Help flag shows on the strip when they work hard.
 
 ## 7. The cars
 
@@ -223,6 +234,7 @@ The theme is a 1970s Saturday-morning cartoon (the Hanna-Barbera and Tom and Jer
 |---|---|
 | `node --test tools/test/ring-kart.test.js` | the lap is the real length at the game scale with its corners in order; every player car drives the whole lap on the AI in Node, and the GT3 RS beats the Volvo |
 | `node --test tools/test/ring-kart.test.js` (third test) | the best line stays on the road; in every player car every phase appears and the pro laps without grass or Armco, within 6 m of the line, quicker than the AI |
+| `node --test tools/test/ring-kart.test.js` (fourth test) | a clumsy driver (flat out, never braking, steering late) in every player car hits the Armco at least 15 times on Expert, a third as often or less on Intermediate, never on Beginner; the AI is no slower with Beginner's help |
 | `node tools/smoke.js` | the page loads with no errors, the stamps agree, and a car queues, goes through the gate and is 300 m or more down the road 20 s later on autopilot; then, last and on a page of its own (it is the heaviest thing the check does), the pro laps the GTI clean |
 
 For a change to the look, take screenshots: a short Playwright script that opens the page, calls `ringKart.start()`, drives with `ringKart.run()` and `autopilot(true)`, and screenshots `#stage` in each camera at desktop and phone widths (swiftshader works headless). Every look change in 0.2 to 0.4 was checked this way, and it caught real bugs: trees drawn black, headlights hidden inside the bodywork, and the bonnet camera inside the ink outline.
@@ -237,6 +249,7 @@ Each version was one session's work and one commit; the changelog has the detail
 - **0.4 (site 0.99)**: the controls rethought around a lap that is all gas and brake (Up for gas, Space to brake, Shift to drift), pace notes and a BRAKE cue from the AI's own corner speeds (split out of `driveAI` unchanged, so the AI drives exactly as before), gas always on, a horn, look back; and the 70s cartoon look, replacing the realistic one.
 
 - **0.5 (site 0.100)**: the pro lap and the best line, from one new pure module (`line.js`), so what you are shown and what the pro drives cannot disagree; the director's cut; and the phone fixed after a screenshot from a real phone (buttons overlapping each other and the prompt, the corner buttons under the thumbs). Found on the way: the pro reversed off the start (a brake pedal at a standstill is reverse), a speed profile that braked for wiggles in the tracing (curvature measured over too short a span), and the gas switch, which did nothing until you picked a car.
+- **0.6 (site 0.101)**: Beginner, Intermediate and Expert, after the owner found it too hard to stay off the walls. The aids were tuned in Node against a deliberately clumsy driver before anything was drawn: a guard on the steering alone barely helped, because the hits come from arriving too fast, so the brake aid (the AI's own corner speed) carries Beginner and, set past the grip, Intermediate.
 
 Decisions worth keeping:
 

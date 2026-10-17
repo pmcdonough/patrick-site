@@ -9,7 +9,7 @@
 // and a backward pass for where it must start braking. Every point on the line then has a phase, what your feet
 // should be doing there: gas, coast, brake or hard brake. The pro drives exactly that line at exactly those speeds,
 // so the line you are shown is the line the pro takes.
-import { pointAt } from './track.js?v=0.5';
+import { pointAt } from './track.js?v=0.6';
 
 const G = 9.81;
 export const PHASE = { GAS: 0, COAST: 1, BRAKE: 2, HARD: 3 };

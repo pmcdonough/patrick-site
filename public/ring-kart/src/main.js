@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.11';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.5';
-import { makeCar, step, collide, driveAI, revs, REDLINE, cornerSpeed, nextCorner } from './drive.js?v=0.5';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.5';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.5';
-import { Sound } from './audio.js?v=0.5';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.6';
+import { makeCar, step, collide, driveAI, assist, revs, REDLINE, cornerSpeed, nextCorner } from './drive.js?v=0.6';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.6';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.6';
+import { Sound } from './audio.js?v=0.6';
 
-const VERSION = '0.5';
+const VERSION = '0.6';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -79,6 +79,25 @@ let choice = store.get('car', 'gti');
 if (!SPECS.find(s => s.id === choice)) choice = 'gti';
 let cars = [], player = null, group = [];
 const meshes = new Map();
+// how much help: Beginner brakes for you and steers you off the Armco, Intermediate steps in only when you are far
+// too fast or nearly on the rail, Expert is the bare car. The numbers are in cars.json (race.modes). Each mode keeps
+// its own best laps; Expert keeps the ones from before there were modes. The pro always drives Expert.
+const MODES = RV.modes, MODE_NAME = { beginner: 'Beginner', intermediate: 'Intermediate', expert: 'Expert' };
+const MODE_NOTE = {
+  beginner: 'Brakes for you when you come in too fast and steers you off the Armco. The walls and the grass hardly slow you.',
+  intermediate: 'Brakes for you only when you are far too fast, and nudges you off the Armco. Hitting it costs a little.',
+  expert: 'No help. The Armco and the grass cost what they cost, the way the pro drives it.'
+};
+let mode = store.get('mode', 'beginner');
+if (!MODES[mode]) mode = 'beginner';
+const bestKey = id => mode === 'expert' ? 'best.' + id : `best.${mode}.${id}`;
+function setMode(m) {
+  mode = m; store.set('mode', m);
+  document.querySelectorAll('.modes [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+  $('modeNote').textContent = MODE_NOTE[m];
+  if (player && S.mode === 'pick') player.mode = MODES[m];
+}
+document.querySelectorAll('.modes [data-mode]').forEach(b => b.onclick = () => { setMode(b.dataset.mode); picker(); });
 function addCar(spec, k, lat, role) {
   const c = makeCar(spec, track, k, lat);
   c.role = role; c.traffic = role === 'traffic';
@@ -104,7 +123,7 @@ function setup() {
   const rivals = shuffle(CARS.rivals.slice()).slice(0, 4);
   S.queue = [];
   rivals.forEach((r, i) => { const c = addCar({ ...r, drift: 1 }, behind(i, r.body.len), 0, 'rival'); S.queue.push(c); });
-  player = addCar(spec, behind(4, spec.body.len), 0, 'player'); S.queue.push(player);
+  player = addCar(spec, behind(4, spec.body.len), 0, 'player'); player.mode = MODES[mode]; S.queue.push(player);
   CARS.chasers.forEach((r, i) => { const c = addCar(r, behind(5 + i, r.body.len), 0, 'chaser'); S.queue.push(c); });
   // two rivals already through the gate, a little way down the road
   shuffle(CARS.rivals.filter(r => !rivals.includes(r))).slice(0, 2).forEach((r, i) => {
@@ -132,10 +151,10 @@ function picker() {
   $('cars').innerHTML = SPECS.map(s => `<button class="carpick" data-id="${s.id}" aria-pressed="${s.id === choice}">
     <span class="sw" style="background:${s.body.color}"></span><b>${s.name}</b><p>${s.note}</p>
     <span class="bars"><span>Top speed</span><i style="--w:${(s.vmax / maxOf('vmax') * 100).toFixed(0)}%"></i><span>Acceleration</span><i style="--w:${(s.accel / maxOf('accel') * 100).toFixed(0)}%"></i><span>Grip</span><i style="--w:${(s.grip / maxOf('grip') * 100).toFixed(0)}%"></i><span>Drift</span><i style="--w:${(s.drift / maxOf('drift') * 100).toFixed(0)}%"></i></span>
-    ${store.get('best.' + s.id, 0) ? `<p>Your best: ${fmt(store.get('best.' + s.id, 0))}</p>` : ''}</button>`).join('');
+    ${store.get(bestKey(s.id), 0) ? `<p>Your best on ${MODE_NAME[mode]}: ${fmt(store.get(bestKey(s.id), 0))}</p>` : ''}</button>`).join('');
   $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); picker(); setup(); });
 }
-picker(); setup();
+setMode(mode); picker(); setup();
 // on a phone the page scrolls; put the whole stage on screen when the driving starts
 const onStage = () => { if (innerWidth < 900 || touch) $('stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
 const toRace = () => { $('result').hidden = true; $('pick').hidden = true; setup(); S.mode = 'queue'; S.t = 0; S.lastRelease = -1.2; hudFor('race'); sound.start(); cv.focus?.(); onStage(); };
@@ -306,6 +325,7 @@ function tick(dt) {
     if (S.mode === 'done') { inp.gas = 0; inp.brake = 0.4; inp.drift = false; inp.steer = Math.max(-1, Math.min(1, -player.lat * 0.1)); }
     player.input = inp;
     if (S.autopilot && player.released && S.mode === 'race') driveAI(player, dt, track, cars, { paceScale: 1.05 });
+    else S.aid = player.released && S.mode === 'race' && mode !== 'expert' ? assist(player, track, MODES[mode]) : 0;
     if (!player.released) { player.input.drift = false; }
     // everyone else
     for (const c of cars) {
@@ -370,9 +390,9 @@ function proTick(dt) {
 }
 function proResult() {
   S.resultShown = true;
-  const p = player, mine = store.get('best.' + choice, 0);
+  const p = player, mine = store.get(bestKey(choice), 0);
   $('resTitle').textContent = 'The pro, bridge to gantry';
-  $('resTime').innerHTML = `${fmt(p.time)}<small>in the ${p.spec.name}, on the best line all the way.${mine ? ` Your best in it is ${fmt(mine)}, ${(mine - p.time).toFixed(1)} s off.` : ''} Turn on the best line to follow it: green is gas, yellow coast, orange brake, red brake hard.</small>`;
+  $('resTime').innerHTML = `${fmt(p.time)}<small>in the ${p.spec.name}, on the best line all the way.${mine ? ` Your best in it on ${MODE_NAME[mode]} is ${fmt(mine)}, ${(mine - p.time).toFixed(1)} s off.` : ''} Turn on the best line to follow it: green is gas, yellow coast, orange brake, red brake hard.</small>`;
   $('resOrder').innerHTML = '';
   resultButtons([['Drive it yourself', () => { toRace(); setLine(true); }, true], ['Watch again', () => startPro()], ['Change car', toPick]]);
   $('result').hidden = false; $('touch').hidden = true;
@@ -597,10 +617,10 @@ function hud(dt) {
   if (performance.now() - lastHud > 90) {
     lastHud = performance.now();
     $('posN').textContent = ord(pos); $('posOf').textContent = '/' + group.length;
-    const best = store.get('best.' + choice, 0); $('best').textContent = best ? 'Best ' + fmt(best) + ' in the ' + p.spec.name : '';
+    const best = store.get(bestKey(choice), 0); $('best').textContent = best ? `Best ${fmt(best)} in the ${p.spec.name}, ${MODE_NAME[mode]}` : '';
     $('kmh').textContent = Math.round(Math.abs(p.v) * 3.6);
     $('gear').textContent = gb.gear < 0 ? 'R' : gb.gear === 0 ? 'N' : gb.gear;
-    $('flags').textContent = [p.boost > 0 && 'Turbo', p.drift && 'Drift', p.slipT > RV.slip.build && 'Tow', p.air && 'Air', p.grass && 'Grass'].filter(Boolean).join('  ·  ');
+    $('flags').textContent = [p.boost > 0 && 'Turbo', p.drift && 'Drift', p.slipT > RV.slip.build && 'Tow', S.mode === 'race' && S.aid > 0.25 && 'Help', p.air && 'Air', p.grass && 'Grass'].filter(Boolean).join('  ·  ');
     // the gaps: the car ahead and the car behind, in seconds at your speed
     if (S.mode === 'race') {
       const row = (c, cls) => `<div class="${cls}"><span>${c === p ? `${ord(order.indexOf(c) + 1)}  You` : `${ord(order.indexOf(c) + 1)}  ${pretty(c.spec.name)}`}</span><span>${c === p ? '' : (c.s > p.s ? '+' : '-') + (Math.abs(c.s - p.s) / Math.max(12, Math.abs(p.v))).toFixed(1) + ' s'}</span></div>`;
@@ -687,10 +707,10 @@ function result() {
   S.resultShown = true;
   const p = player, order = S.order;
   const place = order.indexOf(p) + 1;
-  const prev = store.get('best.' + choice, 0), best = !prev || p.time < prev;
-  if (best) store.set('best.' + choice, p.time);
+  const prev = store.get(bestKey(choice), 0), best = !prev || p.time < prev;
+  if (best) store.set(bestKey(choice), p.time);
   $('resTitle').textContent = place === 1 ? 'First to the gantry' : `${ord(place)} to the gantry`;
-  $('resTime').innerHTML = `${fmt(p.time)}<small>Bridge to gantry in the ${p.spec.name}${best ? (prev ? `, a new best by ${(prev - p.time).toFixed(1)} s` : ', your first time in it') : `, best ${fmt(prev)}`}</small>`;
+  $('resTime').innerHTML = `${fmt(p.time)}<small>Bridge to gantry in the ${p.spec.name} on ${MODE_NAME[mode]}${best ? (prev ? `, a new best by ${(prev - p.time).toFixed(1)} s` : ', your first time in it') : `, best ${fmt(prev)}`}</small>`;
   const proT = store.get('pro.' + choice, 0);
   if (proT) $('resTime').innerHTML += `<small>The pro does it in ${fmt(proT)}: you were ${(p.time - proT).toFixed(1)} s off.</small>`;
   resultButtons([['Go again', toRace, true], ['Watch the pro', () => { $('result').hidden = true; startPro(); }], ['Change car', toPick]]);
@@ -714,6 +734,6 @@ new ResizeObserver(resize).observe(cv); resize();
 requestAnimationFrame(t => { last = t; frame(t); });
 
 // for the checks: the track, the cars and a way to drive without a keyboard
-window.ringKart = { VERSION, track, S, get cars() { return cars; }, get player() { return player; }, get line() { return LINE; }, get shot() { return D.shot; }, keys, start: () => $('go').click(), watch: () => $('watch').click(), ticket, autopilot: v => { S.autopilot = v; },
+window.ringKart = { VERSION, track, S, get cars() { return cars; }, get player() { return player; }, get line() { return LINE; }, get shot() { return D.shot; }, keys, start: () => $('go').click(), watch: () => $('watch').click(), ticket, autopilot: v => { S.autopilot = v; }, get mode() { return mode; }, setMode,
   // play on without drawing, a step at a time, the way the checks drive a whole lap in a few seconds
   run: secs => { for (let t = 0; t < secs; t += 1 / 120) tick(1 / 120); for (let i = 0; i < 40; i++) camera3(1 / 30); draw(1 / 60); } };

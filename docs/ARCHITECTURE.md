@@ -143,7 +143,7 @@ flowchart LR
   stamps --> smoke["tools/smoke.js fails<br/>if any stamp disagrees"]
 ```
 
-- The site has one version (the home page footer, the Site section of `CHANGELOG.md`). Each project has its own (`VERSION` in its `src/main.js`, its card badge on the home page). As of this writing: site 0.100, sim 0.71, Play Review 0.10, Cathedral Lab 0.11, Ring Kart 0.5.
+- The site has one version (the home page footer, the Site section of `CHANGELOG.md`). Each project has its own (`VERSION` in its `src/main.js`, its card badge on the home page). As of this writing: site 0.101, sim 0.71, Play Review 0.10, Cathedral Lab 0.11, Ring Kart 0.6.
 - Every file a page loads, and every import inside it, carries `?v=` with its project's version. The Worker serves every file with `Cache-Control: public, max-age=0, must-revalidate`, so browsers check each file on every visit, and the stamps make sure a visitor never runs a new module against an old one during a deploy.
 - Saved browser data carries its version where a version change would make it wrong. The lab's results (`rink.lab`) and recent lab games (`rink.reviews`) are dropped when the sim version changes, because the same seed may now play differently; plans and designs are kept.
 
@@ -156,7 +156,7 @@ flowchart LR
 | `rink.systems`, `rink.admin` | Hockey Strategy Lab | the Watch plans and slider settings saved as defaults |
 | `rinkFx`, `rinkSticks`, `rinkSight` | Hockey Strategy Lab | the Watch toggles |
 | `cathedral-lab.design` | Cathedral Lab | your own design (designs are also shared by link) |
-| `ringkart.*` | Ring Kart | the chosen car, sound and automatic gas settings, the best time per car (`ringkart.best.<car>`) |
+| `ringkart.*` | Ring Kart | the chosen car and driving mode, sound, gas and line settings, the best time per car and mode (`ringkart.best.<car>` for Expert, `ringkart.best.<mode>.<car>`), the pro's time per car |
 
 Nothing leaves the browser. There are no analytics or cookies.
 

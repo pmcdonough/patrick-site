@@ -63,6 +63,11 @@
     "grass": { "value": { "drag": 1.6, "vmax": 0.45 }, "desc": "On the grass: extra slowing per second and the share of top speed you can hold." },
     "wall": { "value": 0.72, "desc": "Speed kept after hitting the Armco square on is less; glancing off it costs little." },
     "rubber": { "value": { "ahead": 150, "slow": 0.9, "behind": 150, "fast": 1.08 }, "desc": "The kart-game rubber band: a rival more than ahead metres up the road drives at slow of its pace, one more than behind metres back at fast, so the race stays close." },
+    "modes": { "value": {
+      "beginner": { "wall": 0.92, "grass": { "drag": 0.9, "vmax": 0.7 }, "brake": 0.9, "guard": { "look": 0.7, "margin": 2.2, "gain": 1.6, "brake": 0.8 } },
+      "intermediate": { "wall": 0.82, "grass": { "drag": 1.3, "vmax": 0.55 }, "brake": 1.3, "guard": { "look": 0.5, "margin": 1.5, "gain": 1, "brake": 0.5 } },
+      "expert": { "brake": 0 } },
+      "desc": "The driving modes, for the player only. wall is the speed kept hitting the Armco square on, grass the grass for that mode. brake is the share of grip the brake aid lets you carry into a corner before it brakes for you: under 1 it keeps you inside the grip, over 1 it steps in only when you are well over it, 0 is off. guard steers you off the Armco: it looks look seconds ahead and starts within margin metres of the wall, gain is how firmly, brake how hard it brakes when the turn back needs more grip than there is. Expert is the race's own grass and Armco with no aids." },
     "gravity": { "value": 15, "desc": "Game gravity, m/s2. A bit above real so the cars land from the jumps before the next corner." }
   }
 }

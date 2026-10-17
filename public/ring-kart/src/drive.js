@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.5';
+import { locate, pointAt } from './track.js?v=0.6';
 
 const G = 9.81;
 
@@ -24,7 +24,9 @@ export function step(car, dt, track, R, others = []) {
   const half = track.width / 2;
   const B = R.boost.value, S = R.slip.value;
   // ---------- along the road ----------
-  let vmax = sp.vmax * (car.grass ? R.grass.value.vmax : 1);
+  // the driving mode can soften the grass and the Armco for you; the AI and the pro always drive on the race's own
+  const M = car.mode || {}, GR = M.grass || R.grass.value, WALL = M.wall ?? R.wall.value;
+  let vmax = sp.vmax * (car.grass ? GR.vmax : 1);
   if (car.slipT > S.build) vmax *= 1 + S.gain;
   if (car.boost > 0) { vmax *= 1 + B.gain; car.boost -= dt; }
   let a = 0;
@@ -34,7 +36,7 @@ export function step(car, dt, track, R, others = []) {
     if (car.boost > 0) a += sp.accel * 1.4;
     if (inp.brake > 0) a -= car.v > 0.5 ? inp.brake * sp.brake : inp.brake * 4 * (car.v > -8 ? 1 : 0);
     a -= 0.25 + 0.00022 * car.v * Math.abs(car.v) + (inp.gas > 0 || car.boost > 0 ? 0 : 0.6);
-    if (car.grass) a -= R.grass.value.drag * Math.max(0, car.v) * 0.25;
+    if (car.grass) a -= GR.drag * Math.max(0, car.v) * 0.25;
     // climbing costs speed and falling gives it back, at a fraction of real so the hills matter without stalling anyone
     a -= G * car.slope * 0.55;
     if (car.drift) a -= 1.2;
@@ -86,7 +88,7 @@ export function step(car, dt, track, R, others = []) {
     const into = Math.sin(rel) * side;            // positive when heading into this wall
     if (into > 0) {
       const square = Math.min(1, into * 2.2);
-      car.v *= 1 - (1 - R.wall.value) * square;
+      car.v *= 1 - (1 - WALL) * square;
       car.h -= Math.sign(rel) * Math.min(Math.abs(rel), 0.5 + into);
       car.scrape = 0.25; car.bump = Math.max(car.bump, square);
     }
@@ -179,6 +181,48 @@ export function cornerSpeed(car, track, pace) {
     vt = Math.min(vt, Math.sqrt(vc * vc + 2 * sp.brake * 0.7 * dist));
   }
   return vt;
+}
+
+// The driving aids, for you only: they change your inputs before step() runs, and never the physics.
+// guard keeps you off the Armco. It follows the car `look` seconds ahead on its current heading and yaw rate, and if
+// that path comes within `margin` metres of a wall it steers you back toward the road the way the AI would, more the
+// closer it gets (`gain`), and lifts and brakes (`brake`) when the turn back is more than the grip can give.
+// brake brings you down to the speed a corner can take at that share of your grip, as the AI does, when you arrive
+// too fast; 0 leaves the braking to you. Returns how hard the aids worked, 0 to 1, for the HUD.
+export function assist(car, track, M) {
+  const inp = car.input, g = M.guard;
+  let work = 0;
+  if (car.air || car.v < 6) return 0;
+  if (M.brake) {
+    const vt = cornerSpeed(car, track, M.brake);
+    if (car.v > vt + 1) { const b = Math.min(1, (car.v - vt - 1) / 5); inp.brake = Math.max(inp.brake, b); inp.gas = 0; work = Math.max(work, b); }
+  }
+  if (g) {
+    const r = car.spec.body.wid / 2, N = 6, dt = g.look / N;
+    let x = car.x, z = car.z, h = car.h, k = car.k, worst = 0;
+    for (let i = 0; i < N; i++) {
+      h += car.yawRate * dt; x += Math.cos(h) * car.v * dt; z += Math.sin(h) * car.v * dt;
+      const f = locate(track, x, z, k, 12); k = f.k;
+      const room = (f.lat > 0 ? track.wallR[f.k] : track.wallL[f.k]) - r;
+      worst = Math.max(worst, (Math.abs(f.lat) - (room - g.margin)) / g.margin * (1 - i / (N * 1.5)));
+    }
+    if (worst > 0) {
+      const w = Math.min(1, worst * g.gain);
+      // where the AI would aim: a point down the road, pulled in from the wall you are heading for
+      const look = Math.max(5, Math.round((6 + car.v * 0.55) / track.ds));
+      const at = Math.min(track.n - 1, car.k + look), safe = Math.min(track.wallR[at], track.wallL[at]) - r - g.margin;
+      const p = pointAt(track, at, Math.max(-safe, Math.min(safe, car.lat)) * 0.4);
+      let ang = Math.atan2(p.z - car.z, p.x - car.x) - car.h; ang = Math.atan2(Math.sin(ang), Math.cos(ang));
+      const want = Math.max(-1, Math.min(1, ang * 3.2));
+      inp.steer = inp.steer * (1 - w) + want * w;
+      // more turn than the grip allows at this speed: scrub some off
+      const lim = car.spec.grip * G / car.v, ask = Math.abs(want) * car.v / 5.2;
+      if (ask > lim * 0.9) { inp.gas *= 1 - w; inp.brake = Math.max(inp.brake, w * g.brake); }
+      if (car.drift && w > 0.6) inp.drift = false;
+      work = Math.max(work, w);
+    }
+  }
+  return work;
 }
 
 // The next corner worth a note, as a rally co-driver reads it: which way, how tight on a scale of 1 (a hairpin) to 6

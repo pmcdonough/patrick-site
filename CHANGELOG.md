@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.100 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.5. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.101 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.6. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.101
+- Ring Kart 0.6 (Beginner, Intermediate and Expert). The home card says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.100
 - Ring Kart 0.5 (watch a pro lap, the best line, and the phone controls fixed). The home card says so; `tools/smoke.js` also watches a whole pro lap, last and on a page of its own. No change to the sim, Play Review or Cathedral Lab.
@@ -595,6 +598,12 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.6
+- Three driving modes, picked above the cars and kept in the browser. Beginner brakes for you when you come into a corner too fast and steers you off the Armco, and the walls and the grass hardly slow you. Intermediate brakes only when you are far too fast, nudges you off the rail, and a hit costs a little. Expert is the game as it was. New visitors start on Beginner.
+- The aids change only your inputs, never the physics, and only yours: the rivals, the traffic and the pro drive as before, and the pro is always on Expert. They are `assist()` in `src/drive.js`, with their numbers in `cars.json` (`race.modes`). A Help flag shows on the telemetry strip while they work.
+- Best laps are kept per mode; the ones from before 0.6 are the Expert ones. The picker, the strip and the result say which mode a time was set on.
+- A new test drives a clumsy driver (flat out, never braking, steering late) round the lap in every car: on Expert it hits the Armco 20 to 47 times, on Intermediate at most a third as often, on Beginner never. The AI's lap is no slower with Beginner's help.
 
 ### 0.5
 - Watch a pro lap: your car alone on the lap, driven by the pro on the best line at the best speeds from the barrier to the gantry, filmed by a director cutting between cameras like a TV broadcast: trackside at every tight corner (turning and zooming to hold the car, with a whoosh as it passes), the helicopter on the straights, low tracking shots, in front, behind, on the bonnet, slow motion off every jump, and a slow-motion finish under the gantry. C picks the director, behind or the bonnet; L hides the line; Esc or Stop ends it. The pro's time is kept per car, and your result says how far off it you were.
