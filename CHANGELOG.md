@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.95 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.9 + Ring Kart 0.2. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.96 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.10 + Ring Kart 0.2. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.96
+- Cathedral Lab 0.10 (design your own cathedral). The home card says so; the smoke check loads the design page and builds a design that falls. No change to the sim, Play Review or Ring Kart (its stamps on Cathedral Lab's Three.js move with Cathedral Lab's version).
 
 ### 0.95
 - Ring Kart 0.2 (onboard telemetry and a better-looking Eifel). The home card says so. No change to the sim, Play Review or Cathedral Lab.
@@ -212,6 +215,14 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.10
+- Design your own cathedral, a new page at /cathedral-lab/design/. Choose the vault (pointed or round, its height to the crown, the width of the nave, the depth of its stone), the walls, one or two aisles, no flyers or one or two tiers of them, the buttresses' depth, the number of bays, the towers and spires and the chapels. The cross-section is drawn with its line of thrust as you change them, with the heights of real vaults beside it (Notre-Dame, Chartres, Reims, Amiens, Beauvais), and the verdict: it stands, it stands cracked, or it falls, when the centering is struck or in the first great storm.
+- The storm: a gale with gusts of about 40 m/s presses on the roof and the clerestory, 1 kN on every square metre, and the roof passes it to the walls on the lee side. That is what makes height cost something, and what an upper tier of flyers is for. The solver's `supports()` takes the wind and an upper tier; with neither, nothing changes (Notre-Dame and Amiens are byte-identical).
+- Eight challenges, kept in the browser: make it stand, higher than Notre-Dame, not one crack, higher than Amiens (and as wide), where Beauvais fell (48 m, 15 m wide, no cracks), no flying buttresses at 25 m, round arches at 30 m, a shell of stone. Four places to start: like Notre-Dame, like Amiens, like Beauvais, Romanesque. Copy link shares a design.
+- Build it in 3D builds the design on the 3D page (?b=yours), in the masons' order, with a west front (portals, a rose, a gable, towers and spires if chosen) and a flat east end. A design that fails falls, on its step: the vault at the strike, or the lee side and the roof in the storm. The fall is drawn, not computed; the booklet says why it fell and what would hold it, and links back to the design.
+- The Gothic builder gained what a design needs: any heights for the piers and levels, round vaults, no flyers, a stop after the strike, and `front()` for the ends. The start page of each building has its own words (Amiens no longer opens on the Île de la Cité).
+- In the repo: `src/design.js` (the choices, the checks, the challenges, the link; no page), `src/yours.js` (make(design)), `design/` (the page). Three new unit tests: the storm in the solver, the verdicts and the challenges, and designs at the ends of every slider.
 
 ### 0.9
 - Zooming in could stop dead, and sliding crawl, once the point the camera turns around ended up 8 m in front of it, even with the stone you pointed at far away. Each scroll now moves that point to the depth of what is under the pointer, and the zoom stops 1.5 m short of what you point at. Turning and sliding then work on what you are looking at, at any distance.

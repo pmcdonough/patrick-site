@@ -40,7 +40,7 @@ const { open, openPage } = require('./harness');
   const ks = await openPage(browser, srv, 'cathedral-lab/', () => !!window.cathedralLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
   if (ks.page) {
     const v = await ks.page.evaluate(() => window.cathedralLab.VERSION);
-    checkStamps('cathedral-lab', v, ['', 'arch-lab']);
+    checkStamps('cathedral-lab', v, ['', 'arch-lab', 'design']);
     const shown = await ks.page.evaluate(() => ({ nogl: !!document.querySelector('.nogl'), pieces: window.cathedralLab.pieces.length, steps: window.cathedralLab.steps.length }));
     if (shown.nogl) errors.push('cathedral-lab/: the 3D graphics did not start');
     else console.log(`cathedral-lab/ draws ${shown.pieces} pieces in ${shown.steps} steps (Cathedral Lab ${v}).`);
@@ -48,6 +48,25 @@ const { open, openPage } = require('./harness');
     if (al.page && await al.page.evaluate(() => window.archLab.VERSION) !== v) errors.push('cathedral-lab/arch-lab/: its VERSION differs from the 3D page');
     // close pages when done: an open 3D page keeps the CPU busy on a machine with no graphics card, and slows the next one
     await ks.page.close(); if (al.page) await al.page.close();
+    // Design your own: a preset gets its verdict, and a design that falls is built in 3D and falls without an error
+    const dp = await openPage(browser, srv, 'cathedral-lab/design/', () => !!window.designLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+    errors.push(...dp.errors.map(e => `cathedral-lab/design/: ${e}`));
+    if (dp.page) {
+      if (await dp.page.evaluate(() => window.designLab.VERSION) !== v) errors.push('cathedral-lab/design/: its VERSION differs from the 3D page');
+      const verdict = await dp.page.evaluate(() => { window.designLab.set({ crown: 36, span: 12, thick: 0.3 }); return window.designLab.assessment.verdict; });
+      if (verdict !== 'falls') errors.push(`cathedral-lab/design/: a vault 0.3 m deep ${verdict}`);
+      const href = await dp.page.getAttribute('#build', 'href'); await dp.page.close();
+      const yp = await openPage(browser, srv, 'cathedral-lab/' + href.replace(/^\.\.\//, ''), () => !!window.cathedralLab && window.cathedralLab.building === 'yours').catch(e => ({ errors: [e.message.split('\n')[0]] }));
+      errors.push(...yp.errors.map(e => `cathedral-lab/?b=yours: ${e}`));
+      if (yp.page) {
+        const f = await yp.page.evaluate(() => { const L = window.cathedralLab; L.go(L.falls, false); L.go(L.falls + 1, true); return { falls: L.falls, pieces: L.pieces.length }; });
+        await yp.page.waitForTimeout(2500);
+        if (f.falls == null) errors.push('cathedral-lab/?b=yours: the design that falls did not fall');
+        else console.log(`cathedral-lab/?b=yours builds a design in ${f.pieces} pieces and it falls at step ${f.falls + 1}, as the design page said.`);
+        errors.push(...yp.errors.map(e => `cathedral-lab/?b=yours: ${e}`));
+        await yp.page.close();
+      }
+    }
   }
   // the old Keystone addresses forward to Cathedral Lab, so they too have to end up on a working page
   // Ring Kart: the 3D has to start, the queue has to move, and a car through the gate has to get down the road
@@ -68,7 +87,7 @@ const { open, openPage } = require('./harness');
     else console.log(`ring-kart/ builds a ${r.km} km lap with ${r.cars} cars; 20 s after the gate you are ${r.metres} m down the road (Ring Kart ${v}).`);
     await rk.page.close();
   }
-  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/?b=amiens', () => !!window.cathedralLab && window.cathedralLab.building === 'amiens'], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab], ['ring-kart/', () => !!window.ringKart]]) {
+  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/?b=amiens', () => !!window.cathedralLab && window.cathedralLab.building === 'amiens'], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['cathedral-lab/design/', () => !!window.designLab], ['cathedral-lab/?b=yours', () => !!window.cathedralLab && window.cathedralLab.building === 'yours'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab], ['ring-kart/', () => !!window.ringKart]]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);

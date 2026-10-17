@@ -104,6 +104,8 @@ A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked sh
 
 Build the whole of Notre-Dame (6,809 pieces in 103 steps) or Amiens (5,775 pieces in 88 steps) in 3D, piece by piece, the way the masons did, in 17 bags like a brick architecture kit. Every stone carries real load. Strike the vault's centering and the line of thrust appears through the ribs, walls, flyers and buttress piers; color by load and the piers glow at the base; tap any piece for its weight, the load it carries and the pressure where it rests. The arch lab next to it is the same physics on one arch in section: build it on its centering, strike it, and see whether it stands, and why.
 
+Design your own (`/cathedral-lab/design/`) puts the same physics in your hands: choose the vault, the walls, the aisles, the flyers and the buttresses, see the line of thrust and the verdict in calm air and in a storm, take on the challenges, then build it in 3D and watch it stand or fall.
+
 The physics is rigid-block limit analysis (Heyman): stone pushes but never pulls, an arch stands if a line of thrust fits inside the stone at every joint, and a wall or buttress stands while the resultant on its base lands inside it. One solver, `public/cathedral-lab/src/solver.js`, serves both pages and is checked in the unit tests against the classical result for a semicircular arch (minimum thickness 0.1075 of the radius). The 3D page uses Three.js r128, kept in the repo and served from the site. See `docs/CATHEDRAL-LAB.md`.
 
 ### Tools and checks

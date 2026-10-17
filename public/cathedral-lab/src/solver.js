@@ -166,20 +166,28 @@ export function pierCheck(xo, w, h, loads) {
 // metres from the wall's outer face to the buttress (default 0.4 of the span: one aisle) and lands at `bheight` (default
 // 0.8 of the wall height); a nave with double aisles passes a longer gap and a taller buttress. `flyerTop` is where the
 // flyer meets the wall (default just under the springing); a steeper flyer that leans on the wall higher up passes it.
-export function supports(arch, st, { height: h, width: w, flyer, bdepth: wb, pinnacle, gap, bheight, flyerTop }) {
+//
+// `wind` ({ F, y }) is a storm on the other side of the church: the roof and the clerestory pass F kN per metre outward
+// onto this, the leeward, side at height y. The flyers carry it with the vault's push: the lower tier alone, or, with
+// `upper` ({ yA, yB }: where an upper tier meets the wall and the buttress), the upper tier takes the wind. `btop` is the
+// buttress's full height when it rises past the lower flyer (default: it stops there). Without them, nothing changes.
+export function supports(arch, st, { height: h, width: w, flyer, bdepth: wb, pinnacle, gap, bheight, flyerTop, btop, wind, upper }) {
   const J0 = arch.joints[0], xi = J0.A[0], xo = xi - w;
-  const xs = J0.A[0] + st.sg[0] * (J0.B[0] - J0.A[0]), H = st.H;
+  const xs = J0.A[0] + st.sg[0] * (J0.B[0] - J0.A[0]), H = st.H, F = wind ? wind.F : 0;
   const wallLoads = [{ x: xs, y: h, Fx: -H, Fy: -arch.Wh }];
-  const out = { xi, xo, h, w, xs, H, V: arch.Wh };
+  if (F) wallLoads.push({ x: xo, y: wind.y, Fx: -F, Fy: 0 });
+  const out = { xi, xo, h, w, xs, H, V: arch.Wh, F };
   if (flyer) {
     const g = gap ?? 0.4 * arch.S, hb = bheight ?? 0.8 * h, xbI = xo - g, xbO = xbI - wb;
-    const yA = flyerTop ?? h - Math.min(1, 0.08 * h), yB = hb, s = (yA - yB) / g;
-    wallLoads.push({ x: xo, y: yA, Fx: H, Fy: H * s });
-    const pw = wb * 0.5, ph = pinnacle ? Math.max(3, 0.3 * hb) : 0, Wpin = pinnacle ? GAMMA * pw * ph * 0.6 : 0;
-    const bLoads = [{ x: xbI, y: yB, Fx: -H, Fy: -H * s }];
-    if (pinnacle) bLoads.push({ x: xbO + wb / 2, y: hb, Fx: 0, Fy: -Wpin });
-    out.flyer = { g, hb, xbI, xbO, wb, yA, yB, slope: s, C: H * Math.hypot(1, s), pw, ph, Wpin };
-    out.buttress = pierCheck(xbO, wb, hb, bLoads);
+    const yA = flyerTop ?? h - Math.min(1, 0.08 * h), yB = hb, s = (yA - yB) / g, up = upper && F ? upper : null, HL = H + (up ? 0 : F);
+    wallLoads.push({ x: xo, y: yA, Fx: HL, Fy: HL * s });
+    const top = Math.max(hb, btop ?? hb, up ? up.yB : 0);
+    const pw = wb * 0.5, ph = pinnacle ? Math.max(3, 0.3 * top) : 0, Wpin = pinnacle ? GAMMA * pw * ph * 0.6 : 0;
+    const bLoads = [{ x: xbI, y: yB, Fx: -HL, Fy: -HL * s }];
+    if (up) { const s2 = (up.yA - up.yB) / g; wallLoads.push({ x: xo, y: up.yA, Fx: F, Fy: F * s2 }); bLoads.push({ x: xbI, y: up.yB, Fx: -F, Fy: -F * s2 }); }
+    if (pinnacle) bLoads.push({ x: xbO + wb / 2, y: top, Fx: 0, Fy: -Wpin });
+    out.flyer = { g, hb, xbI, xbO, wb, yA, yB, slope: s, C: HL * Math.hypot(1, s), pw, ph, Wpin, top, upper: up ? { ...up, C: F * Math.hypot(1, (up.yA - up.yB) / g) } : null };
+    out.buttress = pierCheck(xbO, wb, top, bLoads);
   }
   out.wall = pierCheck(xo, w, h, wallLoads);
   return out;

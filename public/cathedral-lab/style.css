@@ -46,7 +46,7 @@ nav.views { display: flex; gap: 4px; background: var(--panel); border: 1px solid
 nav.views a { padding: 7px 13px; border-radius: 7px; font: 700 1rem var(--display); letter-spacing: 0.03em; color: var(--fg-dim); text-decoration: none; white-space: nowrap; }
 nav.views a[aria-current="page"] { background: var(--fg); color: var(--bg); }
 nav.views a:not([aria-current]):hover { color: var(--fg); }
-@media (max-width: 760px) { header.top { grid-template-columns: 1fr; } nav.views { justify-self: start; } }
+@media (max-width: 760px) { header.top { grid-template-columns: 1fr; } nav.views { justify-self: start; flex-wrap: wrap; } }
 
 button { font: 600 0.9rem var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 13px; cursor: pointer; }
 button:hover:not(:disabled) { border-color: var(--fg-dim); }
@@ -78,6 +78,8 @@ input[type=range] { accent-color: var(--link); min-width: 0; }
 .chip b { color: var(--link); font-weight: 700; }
 .chip.out { background: none; border: 1px dashed var(--line); color: var(--fg-dim); }
 .page .primary { align-self: flex-start; margin-top: 4px; }
+.page .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 4px; } .page .acts .primary { margin-top: 0; }
+.page a.back { align-self: flex-start; font: 700 1rem var(--display); letter-spacing: 0.03em; }
 .insp { position: absolute; right: 12px; bottom: 12px; width: min(290px, calc(100% - 24px)); padding: 10px 14px; font-size: 0.88rem; display: flex; flex-direction: column; gap: 4px; }
 .insp .nm { font: 800 1.15rem var(--display); }
 .insp dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin: 0; }
@@ -157,3 +159,30 @@ aside { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .inspect .name { font: 800 1.1rem var(--display); }
 @media (max-width: 700px) { .verdict { position: static; padding: 12px 12px 0; } .canvas-box { aspect-ratio: auto; max-height: none; display: flex; flex-direction: column; } #cv { aspect-ratio: 1 / 1; height: auto; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- design your own: the arch lab's layout, with two-way switches, a storm mark and the challenges ---------- */
+a.button { display: inline-block; text-decoration: none; border-radius: 8px; border: 1px solid var(--line); }
+a.button.primary { background: var(--link); border-color: var(--link); color: #fff; font: 700 1.05rem var(--display); letter-spacing: 0.03em; padding: 7px 18px; }
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.seg button:disabled { opacity: 0.35; }
+.sub { font-size: 0.86rem; color: var(--fg-dim); margin-bottom: -4px; }
+.ctrl input[type=text] { grid-column: 1 / -1; font: 500 1rem var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+.design-box { aspect-ratio: 5 / 4; max-height: 78vh; }
+.track .mark.storm { background: var(--panel); border: 3px solid var(--thrust); }
+#saved { white-space: normal; }
+.fine { margin: 0; font-size: 0.8rem; color: var(--fg-dim); display: flex; align-items: center; gap: 6px; }
+.fine .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: var(--thrust); }
+.fine .dot.storm { background: var(--panel); border: 2.5px solid var(--thrust); box-sizing: border-box; margin-left: 8px; }
+.card h2 .count { font: 500 0.88rem var(--body); margin-left: 8px; }
+.challenges { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.ch { display: flex; gap: 10px; align-items: flex-start; background: var(--bg); border-radius: 10px; padding: 9px 12px; border: 1px solid transparent; }
+.ch b { display: block; font: 700 1.02rem var(--display); letter-spacing: 0.02em; }
+.ch span:not(.tick) { font-size: 0.84rem; color: var(--fg-dim); }
+.ch .tick { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); box-sizing: border-box; margin-top: 2px; }
+.ch.done .tick { background: var(--good); border-color: var(--good); box-shadow: inset 0 0 0 3px var(--bg); }
+.ch.now { border-color: var(--good); }
+.ch.fresh { animation: met 1.2s ease-out; }
+@keyframes met { from { background: var(--good-bg); transform: scale(1.03); } to { background: var(--bg); transform: none; } }
+@media (max-width: 700px) { .design-box { aspect-ratio: auto; } .design-box #cv { aspect-ratio: 1 / 1; } }
+@media (min-width: 901px) { .grid > .drawing.sticky { position: sticky; top: 12px; } }
+.nums dt.fine { color: var(--fg-dim); }

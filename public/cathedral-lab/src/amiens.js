@@ -2,10 +2,10 @@
 // the parts that are its own: the crossing, the apse and its chapels, the west front and its two half-towers, the spire
 // and the labyrinth. The numbers are in docs/CATHEDRAL-LAB.md with their sources.
 // Units: metres, kN. x across (north negative), y up, z along the church: the crossing at 0, the west front at +62.
-import * as THREE from './vendor/three.module.js?v=0.9';
-import * as Solver from './solver.js?v=0.9';
-import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.9';
-import { frame, section, aisled, ribTop, pointed, beamG, tubeG, X, SIDES } from './gothic.js?v=0.9';
+import * as THREE from './vendor/three.module.js?v=0.10';
+import * as Solver from './solver.js?v=0.10';
+import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.10';
+import { frame, section, aisled, ribTop, pointed, beamG, tubeG, X, SIDES } from './gothic.js?v=0.10';
 
 const K = createKit();
 const { pieces, steps, step, add, removeAt, placeArch, placeCentering } = K;
@@ -15,7 +15,8 @@ let BAG = 0; const bag = name => K.bag(++BAG, name);
 // A 13.6 m vault 0.8 m deep springing at 30 m, so its crown is at 42.2 m (42.3 in the real nave); walls 1.4 m; aisles 8.6 m
 // wide, vaulted at 13.5 to 20 m; buttresses 4 m deep; the lower flyer lands at 26 m, the upper at 33 m.
 const SEC = section({ span: 13.6, thick: 0.8, springing: 30, wall: 1.4, aisle: 8.6, aisleWall: 1.2, aisleSpring: 13.5, aisleTop: 20.5, aisleRoofTop: 25.5,
-  levels: { arcade: 18.6, triforium: 24.5, cornice: 42.6 }, bdepth: 4, flyerLow: 26, flyerHigh: 33, tiers: 2, chapelTop: 15 });
+  levels: { arcade: 18.6, triforium: 24.5, cornice: 42.6 }, bdepth: 4, flyerLow: 26, flyerHigh: 33, tiers: 2, chapelTop: 15,
+  piers: { drums: [1.2, 5.4, 9.6, 13.5, 17.6] }, aislePiers: { drums: [1.2, 5.3, 9.4, 12.9] } });
 const { ARCH, XI, XO, XW, XA1, XA2, springing: H0 } = SEC, CORN = SEC.levels.cornice;
 const NL = [7.1, 15.7, 23.4, 31.1, 38.8, 46.5, 54.2, 61.9], TL = [7.1, 15.7, 24.3, 32.5], CL = [7.1, 15.7, 23.4, 31.1, 38.8];
 const SN = s => s < 0 ? 'north' : 'south', NS = s => s < 0 ? 'A' : 'B';
@@ -364,7 +365,7 @@ export const HIDERS = [{ step: STEP_FRONT, west: ZF, msg: 'From the west, the fr
 K.finish();
 export const { live, computeLoads } = K;
 export { pieces, steps };
-export const KIT = { id: 'amiens', name: 'Amiens', cut: { min: -76, max: 70, value: 27 }, place: 'Notre-Dame d\'Amiens', title: 'The whole cathedral', matchup: 'Amiens, the tallest in France',
+export const KIT = { id: 'amiens', start: { title: 'An empty site in Amiens', note: 'Bishop Évrard de Fouilloy laid the first stone in 1220, after the old cathedral burned. Press Next step to set the first footing.' }, name: 'Amiens', cut: { min: -76, max: 70, value: 27 }, place: 'Notre-Dame d\'Amiens', title: 'The whole cathedral', matchup: 'Amiens, the tallest in France',
   lede: 'Amiens, built from 1220, the tallest complete cathedral in France: a vault 42 m up on piers 18 m tall, walls that are mostly glass, flyers in two tiers, a choir with double aisles and seven chapels round its apse, two unequal towers and a spire of oak and lead 112.7 m high. Every piece is a separate stone or timber, and every one carries real load.',
   about: [
     'The nave first, as the masons did from 1220: seven bays with an aisle on each side, four-part vaults 42 m up, an arcade half the height of the church, a triforium and a clerestory that is almost all glass. Its flyers come in two tiers at every buttress.',

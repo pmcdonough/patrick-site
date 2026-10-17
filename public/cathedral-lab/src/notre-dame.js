@@ -2,9 +2,9 @@
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
-import * as THREE from './vendor/three.module.js?v=0.9';
-import * as Solver from './solver.js?v=0.9';
-import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.9';
+import * as THREE from './vendor/three.module.js?v=0.10';
+import * as Solver from './solver.js?v=0.10';
+import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.10';
 
 
 // ---------- The nave in section and in plan ----------
@@ -33,7 +33,7 @@ const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, 
 const GT = 18.8;                                                     // the top of the gallery's outer wall, under the flyers
 // what the page says about this building: its name in the header, the line under the title, the introduction, and the
 // paragraphs of What you're building
-export const KIT = { id: 'notre-dame', name: 'Notre-Dame', cut: { min: -90, max: 48, value: 1 }, place: 'Notre-Dame de Paris', title: 'The whole cathedral', matchup: 'Notre-Dame, stone by stone',
+export const KIT = { id: 'notre-dame', start: { title: 'An empty site on the Île de la Cité', note: 'Bishop Maurice de Sully laid the first stone in 1163. Press Next step to set the first footing.' }, name: 'Notre-Dame', cut: { min: -90, max: 48, value: 1 }, place: 'Notre-Dame de Paris', title: 'The whole cathedral', matchup: 'Notre-Dame, stone by stone',
   lede: "The whole of Notre-Dame, built the way the masons did: the nave and the choir with their piers, arcades, flying buttresses, vaults and oak roofs; the west front with its portals, rose and towers; the transept, the crossing and the spire; and the apse, with the longest flyers in the building. Every piece is a separate stone or timber, and every one carries real load.",
   about: [
     "The nave: ten bays, 60 m from the crossing to the west front. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.",

@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>Cathedral Lab</title>
-<meta name="description" content="Build the whole of Notre-Dame in 3D, piece by piece, the way the masons did. Every stone carries real load.">
+<meta name="description" content="Build Notre-Dame or Amiens in 3D, piece by piece, the way the masons did, or design your own and see whether it stands. Every stone carries real load.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.9">
+<link rel="stylesheet" href="style.css?v=0.10">
 </head>
 <body>
 
@@ -25,7 +25,7 @@
 
 <main class="wrap">
   <div class="stage" id="stage">
-    <canvas id="gl" aria-label="3D model of three nave bays of Notre-Dame under construction"></canvas>
+    <canvas id="gl" aria-label="3D model of the cathedral under construction"></canvas>
     <div class="page" id="page" aria-live="polite"></div>
     <div class="keys">
       <div class="legend" id="fkey" hidden>
@@ -65,6 +65,10 @@
     <p><b>Why does the vault need flying buttresses?</b> The same physics on one arch, in a slice: build it on its centering, strike it, and watch it stand or fall.</p>
     <a href="arch-lab/">How an arch stands</a>
   </div>
+  <div class="card labpromo" id="designpromo">
+    <p><b>How high could you build?</b> Design your own cathedral: the vault, the walls, the flying buttresses. See whether it stands, then build it here and watch it go up, or come down.</p>
+    <a href="design/">Design your own</a>
+  </div>
 
   <section class="notes">
     <div class="card" id="about"><h2>What you're building</h2></div>
@@ -72,11 +76,11 @@
       <p>The red line is the line of thrust through the vault's ribs, down the wall, along each flyer and through each buttress pier, worked out the same way as in How an arch stands. They appear when the vault's centering is struck, the moment the vault starts carrying itself.</p>
       <p>Color by load follows each piece's weight down to the ground and divides by the area it rests on. It ignores the sideways push, so it shows how load piles up, not exact stresses.</p></div>
     <div class="card"><h2>Next</h2>
-      <p>A treadwheel crane lifting each stone, real physics when something is removed, the cut face drawn as a solid section, and the dome of Florence built the same way.</p></div>
+      <p>A transept and an apse for your own design, a treadwheel crane lifting each stone, real physics when something falls, and the dome of Florence built the same way.</p></div>
   </section>
 </main>
 
 <footer class="version">Cathedral Lab <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.9"></script>
+<script type="module" src="src/main.js?v=0.10"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // Everything you see: the sky and its clouds, the Eifel hills and spruce forest, the road with its kerbs, Armco, catch
 // fences and painted tarmac, the gate with its barrier and the gantry at the end, corner boards, and the cars, each built from a few shaped blocks to its own
 // proportions and colours. Three.js r128, the copy Cathedral Lab keeps on the site.
-import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.9';
+import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.10';
 import { pointAt } from './track.js?v=0.2';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.

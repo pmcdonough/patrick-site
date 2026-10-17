@@ -95,3 +95,46 @@ test('Amiens: a taller vault pushes harder, and its buttresses are just deep eno
   const thin = section({ ...A, bdepth: 3.2 }).supports(1);
   assert.equal(thin.buttress.verdict, 'cracks');
 });
+
+// Design your own: the storm in the solver, the verdicts, the link, and that any design builds
+test('a storm on the roof: no wind changes nothing, wind pushes the lee side out, an upper tier of flyers takes it', async () => {
+  const S = await imp(), A = S.build({ shape: 'pointed', span: 13.6, thick: 0.8, count: 11 }), st = S.solve(A).state;
+  const base = { height: 30, width: 1.4, flyer: true, bdepth: 4, pinnacle: true, gap: 8, bheight: 26 };
+  assert.deepEqual(S.supports(A, st, { ...base, wind: { F: 0, y: 40 } }).wall.e, S.supports(A, st, base).wall.e);
+  const calm = S.supports(A, st, base), one = S.supports(A, st, { ...base, wind: { F: 30, y: 40 } }), two = S.supports(A, st, { ...base, wind: { F: 30, y: 40 }, upper: { yA: 37, yB: 33 }, btop: 33 });
+  assert.ok(one.wall.e < calm.wall.e && one.buttress.e < calm.buttress.e, 'the wind moves both resultants outward');
+  assert.ok(two.wall.e > one.wall.e + 0.1, `the upper tier keeps the wall's resultant in: ${two.wall.e.toFixed(2)} against ${one.wall.e.toFixed(2)}`);
+  assert.equal(two.wall.verdict, 'solid');
+});
+
+test('design your own: the verdicts, the link, and every challenge can be met', async () => {
+  const D = await lab('design.js');
+  assert.equal(D.assess(D.DEFAULT).falls, null);
+  assert.deepEqual(D.assess({ ...D.DEFAULT, thick: 0.3 }).falls, { when: 'strike', what: 'vault' });
+  assert.deepEqual(D.assess({ ...D.DEFAULT, tiers: 0, wall: 0.9 }).falls, { when: 'strike', what: 'wall' });
+  assert.equal(D.assess({ ...D.DEFAULT, bdepth: 2 }).falls.when, 'storm');
+  const d = D.clamp({ ...D.DEFAULT, crown: 44.5, shape: 'round', aisles: 2, tiers: 0, towers: 2, chapels: true, name: 'Saint <b>Anne</b>' });
+  assert.equal(d.name, 'Saint bAnneb', 'the name keeps letters, digits and a little punctuation');
+  assert.ok(!/[<>]/.test(d.name));
+  assert.deepEqual(D.decode(D.encode(d), d.name), d);
+  assert.equal(D.clamp({ ...D.DEFAULT, aisles: 2, tiers: 2 }).tiers, 1, 'two tiers need a single aisle');
+  assert.ok(D.clamp({ ...D.DEFAULT, span: 17, crown: 16 }).crown >= D.minCrown({ ...D.DEFAULT, span: 17 }));
+  const met = { stand: { crown: 22, span: 9, thick: 0.35, wall: 0.8, tiers: 2, bdepth: 3 }, nocrack: { crown: 34, span: 9, thick: 0.35, wall: 0.8, tiers: 2, bdepth: 3 },
+    amiens: { crown: 43, span: 13.6, thick: 0.5, wall: 0.8, tiers: 2, bdepth: 3 }, beauvais: { crown: 48, span: 15, thick: 0.8, wall: 1.5, tiers: 1, bdepth: 6 },
+    roman: { crown: 26.5, span: 13.6, thick: 0.5, wall: 2.5, tiers: 0, bdepth: 1.5 }, round: { crown: 30, span: 9, thick: 0.5, shape: 'round', wall: 0.8, tiers: 1, bdepth: 3 } };
+  for (const [id, x] of Object.entries(met)) assert.ok(D.CHALLENGES.find(c => c.id === id).test(D.assess({ ...D.DEFAULT, aisles: 1, ...x })), id);
+});
+
+test('design your own: designs at the ends of every slider build, and one that falls says which pieces fall', async () => {
+  const { make } = await lab('yours.js');
+  for (const d of [{ crown: 16, span: 9, thick: 0.3, shape: 'round', wall: 3.5, aisles: 2, tiers: 0, bdepth: 7, bays: 3, towers: 2, chapels: true },
+    { crown: 52, span: 17, thick: 1.2, shape: 'pointed', wall: 0.8, aisles: 2, tiers: 1, bdepth: 7, bays: 12, towers: 2, chapels: true },
+    { crown: 52, span: 17, thick: 1.2, shape: 'round', wall: 3.5, aisles: 1, tiers: 2, bdepth: 1.5, bays: 12, towers: 1, chapels: true },
+    { crown: 36, span: 12, thick: 0.7, shape: 'pointed', wall: 1.3, aisles: 1, tiers: 1, bdepth: 3.6, bays: 7, towers: 0, chapels: false }]) {
+    const B = make(d);
+    assert.equal(new Set(B.pieces.map(p => p.id)).size, B.pieces.length);
+    for (const p of B.pieces) assert.ok(p.geo.attributes.position.array.every(Number.isFinite), `${p.id}: a vertex that is not a number`);
+    B.computeLoads(B.steps.length);
+    if (B.KIT.falls) { assert.ok(Object.keys(B.KIT.falls.motions).length > 50); assert.equal(B.KIT.falls.step, B.steps.length - 1); }
+  }
+});

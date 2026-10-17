@@ -4,7 +4,7 @@ Called Keystone until 0.6; renamed in 0.7 (site 0.91) for what it became, a lab 
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.9 (site 0.93). Live at `/cathedral-lab/` (the 3D build) and `/cathedral-lab/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.10 (site 0.96). Live at `/cathedral-lab/` (the 3D build), `/cathedral-lab/design/` (design your own) and `/cathedral-lab/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -39,7 +39,7 @@ The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m 
 
 1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire. Since 0.6: the choir and apse, so the whole cathedral; since 0.7 its chapels, 6,809 pieces in 103 steps in 17 bags.
 2. Amiens (0.8): the tallest complete French cathedral, 5,775 pieces in 88 steps in 17 bags, the first made with `gothic.js`.
-3. Next: build your own, on `gothic.js`, with Beauvais as the challenge.
+3. Your own (0.10): designed on the design page, built by `gothic.js` from its section. See Design your own below.
 4. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
 5. Later: the Taj Mahal as a double-dome comparison.
 
@@ -98,6 +98,31 @@ Simplified at Amiens (said on the page): the crossing has a plain four-part vaul
 
 Amiens is not laid out piece by piece like Notre-Dame. `section(o)` takes a cross-section (span, vault depth, springing, wall, aisle width and heights, the elevation's levels, buttress depth, flyer heights and tiers) and solves it once: the arch, the line of thrust, the wall and buttress checks, the positions of every face. `aisled(K, sec, runs, text)` then builds runs of bays from that section in local frames (`frame(ox, oz, u, v)`: the nave runs east, the transept arms north and south, the choir east), in the masons' order (footings, piers, arcades, aisles, walls, buttresses, flyers, vault, roofs), and leaves chapels, glazing and paving as calls the building makes when it wants them. Each side of a run says what stands at each bay line (a buttress, a corner, nothing, or a support of the building's own), so the crossing, the apse and the west front join the runs by name. Build your own will be a section and a plan handed to the same two functions.
 
+## Design your own (0.10)
+
+The goal: the question every Gothic master mason faced, how high can you go, played as a game a freshman can win and lose. The loop is short: change something, see the line of thrust move and the verdict change at once, try to meet a challenge, build it in 3D, watch it go up, and if the design was wrong, watch it come down.
+
+The choices, and nothing else, so each one teaches something:
+
+- The vault: pointed or round (round pushes harder and needs deeper stone), its height to the crown (16 to 52 m, with a floor so the walls are at least 14 m to the springing), the width of the nave (9 to 17 m), the depth of its stone (0.3 to 1.2 m; too thin and no line of thrust fits).
+- Holding it up: the walls (0.8 to 3.5 m), one aisle or two on each side, flying buttresses (none, one tier, two tiers; two tiers with one aisle only), the buttresses' depth (1.5 to 7 m).
+- The rest: bays (3 to 12), the west front's towers (none, two, with spires), chapels between the buttresses.
+- A name, which is kept to letters, digits, spaces and a little punctuation so it can go anywhere on the page.
+
+Everything else follows from those in Amiens' proportions (`sectionOf` in `design.js`): the arcade at 0.62 of the springing height, the aisle walls at 0.68, the aisle roofs at 0.85, the lower flyers landing at 0.87, the upper ones at the springing plus 3 m; aisles 0.63 of the span, bays 0.57. In a low or narrow church the arcade comes down so its arches fit under the triforium, and bays stay long enough for the piers. Amiens' own numbers come out of those ratios exactly.
+
+The verdict (`assess`) has two moments. When the centering is struck: the vault must hold a line of thrust (else it falls), and on each side the wall and, with flyers, the buttress must keep the push inside their bases. In the first great storm: a gale with gusts of about 40 m/s (q = ½ρv², about 1 kN/m²) presses on everything above the aisle roofs, the clerestory and the roof, and the roof passes it to the lee side's walls; the lower flyers take it with the vault's push, or, with two tiers, the upper tier takes the wind (`supports()` with `wind`, `upper` and `btop`). Inside the middle third every base presses down (stands); outside it a joint opens (stands, cracked); outside the base it tips (falls).
+
+Why the storm: in rigid-block statics a taller wall or buttress carries proportionally more weight as well as more moment, so without wind height costs almost nothing, which is wrong in a way a player would notice. The wind's push grows with the height above the aisle roofs, which is what made the upper flyers at Amiens necessary, and it makes the high challenges a real trade between height, width, buttress depth and flyers. Real Gothic sections stand in it, cracked at worst: the Amiens preset comes out with its wall solid and the buttress just outside the middle third.
+
+The challenges (each checked against the verdict, kept in the browser): make it stand; higher than Notre-Dame (33 m); not one crack, over 33 m; higher than Amiens (42.3 m) and at least as wide (13.6 m); where Beauvais fell (48 m, 15 m wide, no cracks); no flying buttresses at 25 m; round arches at 30 m; a vault 0.5 m deep or less. A unit test shows a design that meets each one. Vault heights to compare (to the crown, inside): Notre-Dame 33 m, Chartres 37, Reims 38, Amiens 42.3, Beauvais 48 (Wikipedia's articles on each cathedral).
+
+In 3D (`yours.js`, `make(design)`): the nave built by `aisled()` exactly as Amiens' is, then `front()` for a west front (a portal into the nave and each aisle, a rose as wide as the nave allows, a gable, two towers with belfries open on four sides and octagonal stone spires if chosen) and a flat east end (three lancets and a rose), the chapels, the glass and the paving, and last a step for the storm. A design that fails at the strike stops there: the next step is It falls. One that fails in the storm falls on the storm step. The 3D page opens on the design just before its fall (`KIT.open`), the picture on the box, and the fall plays when you step into it: each falling piece drops to the ground with a push outward and a turn, the top of a tipping wall first, moved in its batch on the processor (`KIT.falls`), and put back when you step back. The vault alone falls if it has no line of thrust; a tipping wall takes the vault and the flyers; a tipping buttress takes those and itself; in the storm only the lee side (the side the camera opens on) and the roof fall.
+
+The design lives in the address (`?d=c36-s12-t0.7-pp-w1.3-a1-f1-b3.6-n7-T1-C0&name=...`), so Copy link shares it and the 3D page reads it; the last one is also kept in the browser.
+
+Simplified, and said on the page: every bay is the same; the levels follow Amiens' proportions; the ends are plain walls with a rose; the storm is a steady pressure on one side with a net coefficient of 1; the collapse is drawn, not computed (the solver says that it falls, not how); crushing, settlement, mortar and the slenderness of tall piers are not modeled.
+
 ## Current simplifications in the Notre-Dame build
 
 - The vault's crown is about 35 m up (33 m in the real nave).
@@ -120,6 +145,10 @@ public/cathedral-lab/
   src/main.js                the 3D page: scene, booklet, step controls, Inspect, load coloring, cutaway; VERSION
   src/gothic.js              the Gothic builder: a section solved once, then aisled runs of bays built from it
   src/amiens.js              Amiens, made with gothic.js
+  src/design.js              design your own: the choices, sectionOf, assess (calm and storm), the challenges, the link
+  src/yours.js               make(design): a design built with gothic.js, its ends (front()) and its collapse (KIT.falls)
+  design/index.html          the design page
+  design/src/main.js         its page: the section drawing, the controls, the gauges, the challenges
   src/notre-dame.js          the building as a kit: every piece with geometry, weight, bearing area and supports, in
                              steps and bags; the load model and the force lines. No page in it
   src/kit.js                 the kit: createKit() gives a building its pieces, steps, bags, arches and centering, and the
@@ -148,7 +177,7 @@ Matched to the Hockey Strategy Lab, not to a CAD drawing: Barlow and Barlow Cond
 | Run | When | Passes when |
 |---|---|---|
 | `node --test tools/test` | any change to the solver | `fail 0` (the Cathedral Lab tests run in under a second) |
-| `node tools/smoke.js` | every change | `ERRORS: []`; it loads both Cathedral Lab pages and Amiens, checks the 3D graphics started and the stamps agree |
+| `node tools/smoke.js` | every change | `ERRORS: []`; it loads every Cathedral Lab page and Amiens, checks the 3D graphics started and the stamps agree, gets a verdict on the design page and builds a design that falls |
 
 Before shipping a visible change, look at both pages at desktop and phone widths, light and dark.
 

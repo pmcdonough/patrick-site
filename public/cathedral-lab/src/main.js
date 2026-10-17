@@ -3,18 +3,28 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.9';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.9';
+import * as THREE from './vendor/three.module.js?v=0.10';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.10';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
-// one, ?b=notre-dame; with none, the first.
+// one, ?b=notre-dame; with none, the first. Your own is made from a design: make(design) gives the same exports, and the
+// design comes from the address (?b=yours&d=...), or else the last one saved on the design page.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.9') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.9') },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.10') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.10') },
+  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.10'), design: true },
 ];
-const CHOSEN = BUILDINGS.find(b => b.id === new URLSearchParams(location.search).get('b')) || BUILDINGS[0];
-const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = await CHOSEN.load();
+const Q = new URLSearchParams(location.search);
+const CHOSEN = BUILDINGS.find(b => b.id === Q.get('b')) || BUILDINGS[0];
+const MOD = await CHOSEN.load();
+let DESIGN = null;
+if (MOD.make) {
+  const D = await import('./design.js?v=0.10');
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('cathedral-lab.design')); } catch (e) { /* none saved */ }
+  DESIGN = Q.get('d') ? D.decode(Q.get('d'), Q.get('name')) : D.clamp(saved || D.DEFAULT);
+}
+const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = MOD.make ? MOD.make(DESIGN) : MOD;
 
-const VERSION = '0.9';
+const VERSION = '0.10';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
@@ -22,7 +32,9 @@ document.title = `Cathedral Lab: ${KIT.matchup}`;
 $('matchup').textContent = KIT.matchup; $('lede').textContent = KIT.lede;
 $('about').insertAdjacentHTML('beforeend', KIT.about.map(p => `<p>${p}</p>`).join(''));
 Object.assign($('v-cutz'), { min: KIT.cut.min, max: KIT.cut.max, value: KIT.cut.value });
-$('buildings').innerHTML = BUILDINGS.map(b => `<a href="?b=${b.id}"${b === CHOSEN ? ' aria-current="page"' : ''}>${b.name}</a>`).join('');
+// your own is designed on its own page, and its link goes back to the design
+if (KIT.back) $('designpromo').hidden = true;
+$('buildings').innerHTML = BUILDINGS.map(b => `<a href="${b.design ? (KIT.back ? KIT.back.href : 'design/') : '?b=' + b.id}"${b === CHOSEN ? ' aria-current="page"' : ''}>${b.name}</a>`).join('');
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const on = id => $(id).getAttribute('aria-pressed') === 'true';
@@ -53,7 +65,7 @@ const ground = new THREE.Mesh(new THREE.CircleGeometry(1600, 96), new THREE.Mesh
 const person = new THREE.Group(), pm = new THREE.MeshStandardMaterial({ color: lin(0x4a5a6c), roughness: 0.8 });
 const pb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.45, 16), pm); pb.position.y = 0.73;
 const ph = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), pm); ph.position.y = 1.65;
-person.add(pb, ph); person.position.set(-2.2, 0.08, 8.2); person.traverse(o => o.castShadow = true); scene.add(person);
+person.add(pb, ph); person.position.set(...(KIT.person ? [KIT.person[0], 0.08, KIT.person[1]] : [-2.2, 0.08, 8.2])); person.traverse(o => o.castShadow = true); scene.add(person);
 
 const cutPlane = new THREE.Plane(V3(0, 0, -1), 99);
 const MATS = {
@@ -161,7 +173,7 @@ function rampColor(mpa) {
 }
 
 // ---------- State and animation ----------
-const NSTEPS = steps.length, NBAGS = new Set(steps.map(s => s.bag)).size;
+const NSTEPS = steps.length, NBAGS = new Set(steps.map(s => s.bag)).size, OPEN = KIT.open ?? NSTEPS;
 const state = { n: NSTEPS, follow: true, playing: false, sel: null, camT: null, loadView: false, started: false };
 function applyStep(n, animate) {
   const prevN = state.n, now = performance.now(); state.n = n;
@@ -173,8 +185,50 @@ function applyStep(n, animate) {
     else B.mesh.visible = show;
     B.fresh = B.step === n - 1 && show;
   }
+  if (FALL) fallTo(n, animate);
   computeLoads(n); recolor(); syncUI();
   if (animate && state.follow && n > 0) frameStep(n - 1);
+}
+
+// ---------- The collapse ----------
+// A design that fails falls at its step (KIT.falls): each falling piece drops to the ground with a push outward and a turn,
+// the top of a tipping wall first. Drawn, not computed: the solver says that it falls, not how. The pieces are moved on the
+// processor, in their batches, and put back when you step back before the fall.
+const FALL = KIT.falls ? (() => {
+  const list = [];
+  for (const p of pieces) { const mo = KIT.falls.motions[p.id]; if (!mo) continue;
+    const c = p.box.getCenter(V3()), h = p.box.max.y - p.box.min.y, pos = p.batch.mesh.geometry.attributes.position, nor = p.batch.mesh.geometry.attributes.normal;
+    const g = 16, drop = Math.max(0, c.y - Math.min(h / 2, 0.8) - mo.rest * 0.4), T = Math.sqrt(2 * drop / g) || 0.3;
+    list.push({ p, mo, c, drop, T, delay: mo.delay + (mo.side ? Math.max(0, 40 - c.y) * 0.012 : 0), out: mo.side * mo.out * c.y,
+      axis: V3(mo.axis[0], 0, mo.axis[2]).normalize(), P0: pos.array.slice(p.v0 * 3, (p.v0 + p.vn) * 3), N0: nor.array.slice(p.v0 * 3, (p.v0 + p.vn) * 3) }); }
+  return { list, t0: null, done: false, pose: -1 };
+})() : null;
+const fq = new THREE.Quaternion(), fv = V3();
+function fallPose(t) {
+  // t: seconds since the fall began (Infinity: at rest); -1: standing
+  const touched = new Set();
+  for (const f of FALL.list) {
+    const pos = f.p.batch.mesh.geometry.attributes.position, nor = f.p.batch.mesh.geometry.attributes.normal, a = pos.array, b = nor.array;
+    const k = t < 0 ? 0 : Math.max(0, Math.min(1, (t - f.delay) / f.T)), dy = -f.drop * k * k, dx = f.out * k;
+    fq.setFromAxisAngle(f.axis, f.mo.spin * k);
+    for (let j = 0; j < f.p.vn; j++) {
+      fv.set(f.P0[3 * j] - f.c.x, f.P0[3 * j + 1] - f.c.y, f.P0[3 * j + 2] - f.c.z).applyQuaternion(fq);
+      a[(f.p.v0 + j) * 3] = f.c.x + fv.x + dx; a[(f.p.v0 + j) * 3 + 1] = f.c.y + fv.y + dy; a[(f.p.v0 + j) * 3 + 2] = f.c.z + fv.z;
+      fv.set(f.N0[3 * j], f.N0[3 * j + 1], f.N0[3 * j + 2]).applyQuaternion(fq); b[(f.p.v0 + j) * 3] = fv.x; b[(f.p.v0 + j) * 3 + 1] = fv.y; b[(f.p.v0 + j) * 3 + 2] = fv.z;
+    }
+    touched.add(f.p.batch);
+  }
+  for (const B of touched) { const g = B.mesh.geometry; g.attributes.position.needsUpdate = true; g.attributes.normal.needsUpdate = true; g.computeBoundingSphere(); }
+  FALL.done = t === Infinity || FALL.list.every(f => t - f.delay >= f.T);
+  // once at rest, each piece's box follows it, so a tap still finds it on the ground
+  if (FALL.done || t < 0) for (const f of FALL.list) { const box = f.p.box.makeEmpty(), a = f.p.batch.mesh.geometry.attributes.position.array; for (let j = 0; j < f.p.vn; j++) box.expandByPoint(fv.set(a[(f.p.v0 + j) * 3], a[(f.p.v0 + j) * 3 + 1], a[(f.p.v0 + j) * 3 + 2])); }
+  redraw();
+}
+function fallTo(n, animate) {
+  const fell = n > KIT.falls.step;
+  if (!fell) { FALL.t0 = null; if (FALL.pose !== -1) { fallPose(-1); FALL.pose = -1; } return; }
+  if (animate && n === KIT.falls.step + 1 && !reduce) { fallPose(-1); FALL.t0 = performance.now() + 500; FALL.pose = 0; }
+  else { FALL.t0 = null; fallPose(Infinity); FALL.pose = Infinity; }
 }
 const FRESH = lin(0xe8a23a).multiplyScalar(0.28), SEL = lin(0x5b8fe0), NONE = new THREE.Color(0), want = new THREE.Color();
 function recolor() {
@@ -194,7 +248,7 @@ function recolor() {
     if (B.group === 'roof') B.mesh.visible = roofOn && live(B.pieces[0], state.n);
   }
   redraw();
-  state.forces = on('v-forces') && state.n > STEP_STRUCK;
+  state.forces = on('v-forces') && state.n > STEP_STRUCK && !(KIT.falls && state.n > KIT.falls.step);
   $('fkey').hidden = !state.forces;
   showForces();
 }
@@ -222,6 +276,7 @@ function frameBox(box, minDist = 26) {
 function frameStep(i) {
   const box = new THREE.Box3(); let any = false;
   pieces.forEach(p => { if (p.step === i || p.until === i) { box.union(p.box); any = true; } });
+  if (KIT.falls && i === KIT.falls.step) return frameAll();
   if (steps[i].focus === 'forces' || !any) box.set(V3(-17, 0, -10), V3(17, 36, 10));
   frameBox(box);
 }
@@ -287,6 +342,7 @@ function tick(now) {
     if (t > B.last) { if (B.anim.mode === 2) B.mesh.visible = false; B.anim = null; B.u.uMode.value = 0; }
   }
   if (state.camT) { const t = ease((now - state.camT.t0) / (reduce ? 1 : 900)); controls.target.lerpVectors(state.camT.fromT, state.camT.toT, t); camera.position.lerpVectors(state.camT.fromP, state.camT.toP, t); if (t >= 1) state.camT = null; busy = true; }
+  if (FALL && FALL.t0 != null && now >= FALL.t0) { fallPose((now - FALL.t0) / 1000); busy = true; if (FALL.done) { FALL.t0 = null; FALL.pose = Infinity; } }
   if (controls.update()) busy = true;
   if (!state.camT) clampTarget();
   if (state.forces) { showForces(); if (forceGroup.visible) pickBayLine(); }
@@ -304,9 +360,10 @@ function partsOf(i) {
 }
 function syncUI() {
   const n = state.n, pg = $('page');
-  if (n === 0) pg.innerHTML = `<div class="top"><span>Start</span><span class="stepno">${NSTEPS} steps</span></div><h2>An empty site on the Île de la Cité</h2><p>Bishop Maurice de Sully laid the first stone in 1163. Press Next step to set the first footing.</p>`;
-  else if (n === NSTEPS && !state.started) pg.innerHTML = `<div class="top"><span>${KIT.place}</span><span class="stepno">${pieces.length} pieces</span></div><h2>${KIT.title}</h2><p>${NSTEPS} steps in ${NBAGS} bags, from footings to stained glass. Every stone, rib and roof timber goes in on its own, in the order the masons used.</p><button class="primary" id="begin">Start building</button>`;
-  else { const s = steps[n - 1]; pg.innerHTML = `<div class="top"><span>Bag ${s.bag}: ${s.bagName}</span><span class="stepno">Step ${n} of ${NSTEPS}</span></div><h2>${s.title}</h2><p>${s.note}</p><div class="parts">${partsOf(n - 1)}</div>`; }
+  const back = KIT.back && (n === 0 || n === NSTEPS || n === OPEN) ? `<a class="back" href="${KIT.back.href}">${KIT.back.label}</a>` : '';
+  if (n === 0) pg.innerHTML = `<div class="top"><span>Start</span><span class="stepno">${NSTEPS} steps</span></div><h2>${KIT.start.title}</h2><p>${KIT.start.note}</p>${back}`;
+  else if (n === OPEN && !state.started) pg.innerHTML = `<div class="top"><span>${KIT.place}</span><span class="stepno">${pieces.length} pieces</span></div><h2>${KIT.title}</h2><p>${NSTEPS} steps in ${NBAGS} bags, from footings to ${KIT.falls ? 'the moment of truth' : 'stained glass'}. Every stone, rib and roof timber goes in on its own, in the order the masons used.</p><div class="acts"><button class="primary" id="begin">Start building</button>${back}</div>`;
+  else { const s = steps[n - 1]; pg.innerHTML = `<div class="top"><span>Bag ${s.bag}: ${s.bagName}</span><span class="stepno">Step ${n} of ${NSTEPS}</span></div><h2>${s.title}</h2><p>${s.note}</p><div class="parts">${partsOf(n - 1)}</div>${back}`; }
   const b = $('begin'); if (b) b.onclick = () => { state.started = true; go(0, false); setTimeout(() => go(1, true), 350); };
   $('prev').disabled = n === 0; $('next').disabled = n === NSTEPS;
   $('scrub').max = NSTEPS; $('scrub').value = n;
@@ -387,7 +444,7 @@ new MutationObserver(theme).observe(document.documentElement, { attributes: true
 function resize() { const r = $('stage').getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); redraw(); }
 new ResizeObserver(resize).observe($('stage'));
 theme(); resize();
-// open on the finished model, like the picture on the box
-go(NSTEPS, false); frameAll(); state.camT.t0 = -1e9;
+// open on the finished model, like the picture on the box (a design that falls: just before it does)
+go(OPEN, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id };
+window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id, falls: KIT.falls ? KIT.falls.step : null };

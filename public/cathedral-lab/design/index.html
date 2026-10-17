@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Cathedral Lab: design your own</title>
+<meta name="description" content="Design a Gothic cathedral: how high, how wide, how thick, how many flying buttresses. See whether it stands, then build it stone by stone in 3D.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css?v=0.10">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Cathedral Lab</h1>
+    <p class="matchup">Design your own cathedral</p>
+    <p>How high can you go? Choose the vault, the walls and the flying buttresses, and the line of thrust shows whether it stands: when the centering is struck, and in the first great storm. Then build it in 3D, stone by stone, and watch.</p>
+  </div>
+  <nav class="views" aria-label="Pages">
+    <a href="../?b=notre-dame">Notre-Dame</a>
+    <a href="../?b=amiens">Amiens</a>
+    <a href="./" aria-current="page">Design your own</a>
+    <a href="../arch-lab/">How an arch stands</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="drawing sticky" aria-label="Section drawing">
+      <div class="canvas-box design-box" id="box">
+        <canvas id="cv" role="img" aria-label="Cross-section of your cathedral with its line of thrust"></canvas>
+        <div class="verdict" aria-live="polite"><span class="pill" id="pill"></span><p id="msg"></p></div>
+      </div>
+      <div class="bar">
+        <a class="button primary" id="build" href="../?b=yours">Build it in 3D</a>
+        <button class="toggle" id="storm" aria-pressed="false">Show the storm</button>
+        <button id="share">Copy link</button>
+        <span class="count" id="saved" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h2>Your cathedral</h2>
+        <div class="ctrl"><label for="name">Its name</label><input type="text" id="name" maxlength="40" placeholder="Your cathedral" autocomplete="off"></div>
+        <div class="try" id="presets"></div>
+      </div>
+      <div class="card">
+        <h2>The vault</h2>
+        <div class="seg two" role="group" aria-label="Vault shape"><button data-k="shape" data-v="pointed">Pointed</button><button data-k="shape" data-v="round">Round</button></div>
+        <div class="ctrl"><label for="crown">Height to the top of the vault</label><output id="o-crown"></output><input type="range" id="crown"></div>
+        <div class="ctrl"><label for="span">Width of the nave</label><output id="o-span"></output><input type="range" id="span"></div>
+        <div class="ctrl"><label for="thick">Depth of the vault's stone</label><output id="o-thick"></output><input type="range" id="thick"></div>
+      </div>
+      <div class="card">
+        <h2>Holding it up</h2>
+        <div class="ctrl"><label for="wall">Walls</label><output id="o-wall"></output><input type="range" id="wall"></div>
+        <span class="sub">Aisles on each side</span>
+        <div class="seg two" role="group" aria-label="Aisles"><button data-k="aisles" data-v="1">One</button><button data-k="aisles" data-v="2">Two</button></div>
+        <span class="sub">Flying buttresses</span>
+        <div class="seg" role="group" aria-label="Flying buttresses"><button data-k="tiers" data-v="0">None</button><button data-k="tiers" data-v="1">One tier</button><button data-k="tiers" data-v="2">Two tiers</button></div>
+        <div class="ctrl" id="bd-row"><label for="bdepth">Buttresses</label><output id="o-bdepth"></output><input type="range" id="bdepth"></div>
+      </div>
+      <div class="card">
+        <h2>The rest</h2>
+        <div class="ctrl"><label for="bays">Bays in the nave</label><output id="o-bays"></output><input type="range" id="bays"></div>
+        <span class="sub">West front</span>
+        <div class="seg" role="group" aria-label="Towers"><button data-k="towers" data-v="0">No towers</button><button data-k="towers" data-v="1">Two towers</button><button data-k="towers" data-v="2">With spires</button></div>
+        <div class="checks"><button class="toggle" id="chapels" aria-pressed="false">Chapels between the buttresses</button></div>
+      </div>
+      <div class="card">
+        <h2>The numbers</h2>
+        <dl class="nums" id="nums"></dl>
+        <div class="gauge" id="g-wall"></div>
+        <div class="gauge" id="g-butt"></div>
+        <p class="fine"><span class="dot calm"></span>calm air <span class="dot storm"></span>in the storm</p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="card">
+    <h2>Challenges <span class="count" id="score"></span></h2>
+    <div class="challenges" id="challenges"></div>
+  </section>
+
+  <section class="notes">
+    <div class="card"><h2>How it is checked</h2>
+      <p>The same physics as How an arch stands. The vault is a pointed or round arch of stone blocks that can push but never pull: it stands if a line of thrust fits inside it. Its push goes into the walls, and with flying buttresses on to the buttresses. Each stands while the push on its base lands inside it. Inside the middle third the whole base presses down; outside it, a joint opens; outside the base, it tips.</p></div>
+    <div class="card"><h2>The storm</h2>
+      <p>Height costs more than stone. A gale with gusts of about 40 m/s (145 km/h) presses on the roof and the clerestory, about 1 kN on every square metre, and the roof hands it to the walls on the lee side. That is what the upper tier of flyers at Amiens is for. The push grows with the height of everything above the aisle roofs.</p></div>
+    <div class="card"><h2>What is simplified</h2>
+      <p>Everything not chosen here follows Amiens' proportions: the arcade, the triforium and the aisles scale with the height of the walls. Every bay is the same, the forces are per metre of the nave, and the collapse in 3D is drawn, not computed. Crushing, settlement, mortar and the slenderness of tall piers are not modeled.</p></div>
+  </section>
+</main>
+
+<footer class="version">Cathedral Lab <span id="version"></span></footer>
+<script type="module" src="src/main.js?v=0.10"></script>
+</body>
+</html>
