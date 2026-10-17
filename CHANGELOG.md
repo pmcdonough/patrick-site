@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.91 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.7. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.92 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.92
+- Cathedral Lab 0.8 (a second cathedral, Amiens). The home card says so; the smoke check loads both buildings. No change to the sim or Play Review.
 
 ### 0.91
 - Keystone is now Cathedral Lab (0.7), at /cathedral-lab/; /keystone/ and /keystone/arch-lab/ forward there. The home card, Under the hood and the docs say so. No change to the sim or Play Review.
@@ -200,6 +203,11 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.8
+- A second cathedral: Amiens, the tallest complete one in France, 5,775 pieces in 88 steps and 17 bags. The nave of seven bays with its four-part vault 42 m up, two tiers of flyers at every buttress; the west front with three porches, the Gallery of Kings, the rose, the bell-ringers' gallery and the two unequal half-towers (68 m and 61.7 m); the transept with aisled arms; the choir with double aisles and a glazed triforium; the seven-sided apse with its ambulatory, seven chapels and two-flight flyers; the nave chapels, the spire to 112.7 m and the labyrinth. Its push is about 50 kN a metre, a quarter more than Notre-Dame's, and its buttresses hold it with the resultant at 0.37, just inside the middle third.
+- The header lists the buildings; `?b=amiens` opens Amiens. Each building brings its own words for the page and its own cutaway range.
+- In the repo: `src/gothic.js`, a builder for aisled Gothic stretches from a cross-section (span, heights, aisles, buttresses, flyer tiers), which Amiens is made with and which build your own will use; `src/amiens.js`. Notre-Dame is unchanged (fingerprint). Two new unit tests: both cathedrals build with unique names and every support present, and Amiens' section checks out (a 3.2 m buttress cracks).
 
 ### 0.7
 - Renamed Cathedral Lab, for what it has become: a lab for building cathedrals. New address /cathedral-lab/; the old /keystone/ pages forward to it, the hash included. The arch lab stays, as How an arch stands. In the repo: `public/cathedral-lab/`, `docs/CATHEDRAL-LAB.md`, `tools/test/cathedral-lab.test.js`, `node tools/bump.js cathedral`, `window.cathedralLab`; the smoke check also loads the old addresses.

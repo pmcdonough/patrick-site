@@ -4,7 +4,7 @@ Called Keystone until 0.6; renamed in 0.7 (site 0.91) for what it became, a lab 
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.7 (site 0.91). Live at `/cathedral-lab/` (the 3D build) and `/cathedral-lab/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.8 (site 0.92). Live at `/cathedral-lab/` (the 3D build) and `/cathedral-lab/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -37,9 +37,11 @@ The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m 
 
 ## Buildings
 
-1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire. Since 0.6: the choir and apse, so the whole cathedral, 6,631 pieces in 101 steps in 17 bags. Next: the choir and apse, whose flyers (Jean Ravy's, 14th century) reach about 15 m in a single flight.
-2. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
-3. Later: the Taj Mahal as a double-dome comparison.
+1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire. Since 0.6: the choir and apse, so the whole cathedral; since 0.7 its chapels, 6,809 pieces in 103 steps in 17 bags.
+2. Amiens (0.8): the tallest complete French cathedral, 5,775 pieces in 88 steps in 17 bags, the first made with `gothic.js`.
+3. Next: build your own, on `gothic.js`, with Beauvais as the challenge.
+4. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
+5. Later: the Taj Mahal as a double-dome comparison.
 
 ## The nave as built (0.3)
 
@@ -75,7 +77,28 @@ The apse, centred on the choir's last line: six lines at 36° (the end ones are 
 
 Two pictures (an elevation and plan drawing, and an aerial photo of the chevet) showed what the model lacked: chapels between all the buttresses with a row of gables, slender flyers sweeping down steeply to tall pinnacled piers. Added: the chapels along the nave and choir (outer wall at the buttresses' outer faces, 0.9 m, a window, a gable with a small oculus and a pinnacle, a lead roof back to the old outer wall; none in the bays next to the crossing, where the transept walls stand) and the ring of five round the apse; flyers 0.45 m deep with a 0.7 m arched underside, landing at 18 m on the nave's buttresses and 16 m at the apse; pinnacles 10.9 m tall. The steeper flyers needed the gallery's outer wall and roof 0.8 m lower (`GT`). The physics: `supports()` gained `flyerTop`. Raising the flyer's head above the springing pushes the wall in (base resultant 0.69 at 27 m, 0.78 at 29 m: the inner joint opens), which is why the steepness comes from landing lower instead (wall 0.52, buttress 0.40, both in the middle third).
 
-## Current simplifications in the 3D build
+## Amiens (0.8)
+
+Notre-Dame d'Amiens, begun in 1220 by Robert de Luzarches, nave finished about 1236, choir about 1269; the tallest complete cathedral in France and the largest by volume. The dimensions used (nave vault about 42.3 m to the crown, transept about 70 m, west towers 61.7 m south and 68 m north, spire 112.7 m, labyrinth 1288, spire 1533) come from the Wikipedia and Britannica articles on Amiens Cathedral, Structurae, and Columbia University's Amiens project (Media Center for Art History). The vault's span (13.6 m clear), the bay lengths, the aisle widths and the elevation's levels are read from the published plan and section, not from a survey.
+
+As built here:
+
+- Nave: seven bays, aisles 8.6 m wide with vaults springing at 13.5 m, arcade to 18.6 m, triforium to 24.5 m, clerestory to the cornice at 42.6 m, vault 0.8 m deep springing at 30 m with its crown at 42.2 m. Buttresses 4 m deep; two tiers of flyers, landing at 26 m and 33 m.
+- West front: three porches with gables, the Gallery of Kings (22), the rose, the bell-ringers' gallery, the half-towers.
+- Transept: arms of three bays with an aisle on each side (east and west), the crossing on four piers, rose windows in the ends.
+- Choir: four bays with double aisles and a glazed triforium (the upper choir was rebuilt after 1258 with the triforium's outer wall in glass).
+- Apse: seven sides, an ambulatory and seven chapels, the axial one longest; its flyers cross two aisles in two flights with an intermediate pier.
+- Chapels between the nave buttresses (1290s to 1370s), the spire of 1533 and the labyrinth of 1288 in the nave floor.
+
+The physics at Amiens' section: the vault pushes out about 50 kN per metre (39 at Notre-Dame's); the wall alone tips, the flyers carry the push to the buttresses, and the buttresses' base resultant lands at 0.37 of their depth, just inside the middle third (a 3.2 m buttress cracks). The nave pier carries about 678 t, about 3.3 MPa at its base. That margin is the point the page makes about Beauvais.
+
+Simplified at Amiens (said on the page): the crossing has a plain four-part vault where Amiens has a star vault; the aisle vaults are plain curved webs; the rose tracery is rings and spokes; the half-towers are boxes with openings; the labyrinth is rings, not its real path; the upper flyers are drawn but carry nothing in the solver; every bay line carries the same share of the vault.
+
+### `gothic.js`, the builder
+
+Amiens is not laid out piece by piece like Notre-Dame. `section(o)` takes a cross-section (span, vault depth, springing, wall, aisle width and heights, the elevation's levels, buttress depth, flyer heights and tiers) and solves it once: the arch, the line of thrust, the wall and buttress checks, the positions of every face. `aisled(K, sec, runs, text)` then builds runs of bays from that section in local frames (`frame(ox, oz, u, v)`: the nave runs east, the transept arms north and south, the choir east), in the masons' order (footings, piers, arcades, aisles, walls, buttresses, flyers, vault, roofs), and leaves chapels, glazing and paving as calls the building makes when it wants them. Each side of a run says what stands at each bay line (a buttress, a corner, nothing, or a support of the building's own), so the crossing, the apse and the west front join the runs by name. Build your own will be a section and a plan handed to the same two functions.
+
+## Current simplifications in the Notre-Dame build
 
 - The vault's crown is about 35 m up (33 m in the real nave).
 - Every bay line takes the same share of the vault. In a real six-part vault the heavy transverse lines carry more than the intermediate ones; Notre-Dame's nave piers are nevertheless all round.
@@ -95,6 +118,8 @@ Each is said on the page.
 public/cathedral-lab/
   index.html, style.css      the 3D build; style.css is shared with the arch lab
   src/main.js                the 3D page: scene, booklet, step controls, Inspect, load coloring, cutaway; VERSION
+  src/gothic.js              the Gothic builder: a section solved once, then aisled runs of bays built from it
+  src/amiens.js              Amiens, made with gothic.js
   src/notre-dame.js          the building as a kit: every piece with geometry, weight, bearing area and supports, in
                              steps and bags; the load model and the force lines. No page in it
   src/kit.js                 the kit: createKit() gives a building its pieces, steps, bags, arches and centering, and the
@@ -123,7 +148,7 @@ Matched to the Hockey Strategy Lab, not to a CAD drawing: Barlow and Barlow Cond
 | Run | When | Passes when |
 |---|---|---|
 | `node --test tools/test` | any change to the solver | `fail 0` (the Cathedral Lab tests run in under a second) |
-| `node tools/smoke.js` | every change | `ERRORS: []`; it loads both Cathedral Lab pages, checks the 3D graphics started and the stamps agree |
+| `node tools/smoke.js` | every change | `ERRORS: []`; it loads both Cathedral Lab pages and Amiens, checks the 3D graphics started and the stamps agree |
 
 Before shipping a visible change, look at both pages at desktop and phone widths, light and dark.
 

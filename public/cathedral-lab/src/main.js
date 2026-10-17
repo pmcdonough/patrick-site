@@ -3,23 +3,25 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.7';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.7';
+import * as THREE from './vendor/three.module.js?v=0.8';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.8';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.7') },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.8') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.8') },
 ];
 const CHOSEN = BUILDINGS.find(b => b.id === new URLSearchParams(location.search).get('b')) || BUILDINGS[0];
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = await CHOSEN.load();
 
-const VERSION = '0.7';
+const VERSION = '0.8';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
 document.title = `Cathedral Lab: ${KIT.matchup}`;
 $('matchup').textContent = KIT.matchup; $('lede').textContent = KIT.lede;
 $('about').insertAdjacentHTML('beforeend', KIT.about.map(p => `<p>${p}</p>`).join(''));
+Object.assign($('v-cutz'), { min: KIT.cut.min, max: KIT.cut.max, value: KIT.cut.value });
 $('buildings').innerHTML = BUILDINGS.map(b => `<a href="?b=${b.id}"${b === CHOSEN ? ' aria-current="page"' : ''}>${b.name}</a>`).join('');
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -64,6 +66,8 @@ const MATS = {
   pave: () => new THREE.MeshStandardMaterial({ color: lin(0xd2c9b7), roughness: 0.95 }),
   bronze: () => new THREE.MeshStandardMaterial({ color: lin(0x8c6a3c), roughness: 0.45, metalness: 0.6 }),
   copper: () => new THREE.MeshStandardMaterial({ color: lin(0x6aa596), roughness: 0.6, metalness: 0.3 }),
+  gilt: () => new THREE.MeshStandardMaterial({ color: lin(0xc9a44c), roughness: 0.35, metalness: 0.7 }),
+  dark: () => new THREE.MeshStandardMaterial({ color: lin(0x4a4f57), roughness: 0.8 }),
 };
 // ---------- Batches ----------
 // Thousands of pieces can't each be their own object on a phone, so the pieces that come and go together (same step, same

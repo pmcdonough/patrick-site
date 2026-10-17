@@ -17,7 +17,7 @@ public/
     index.html, style.css, src/    shot versus pass review of a real game, scored with the sim's own expected-goal model
     data/game-2025020812.json      the game, built from the NHL play-by-play and shift chart
   cathedral-lab/
-    index.html, style.css, src/    Notre-Dame stone by stone in 3D (Three.js, served from the site), on a masonry solver
+    index.html, style.css, src/    Notre-Dame and Amiens stone by stone in 3D (Three.js, served from the site), on a masonry solver
     arch-lab/                      the 2D arch lab: one arch on its centering, its walls and flying buttresses
 tools/                             data fits (xg_fit.py, mp_extract.py, game_load.py), the engine in Node, unit tests and checks
 docs/ENGINE.md                     how the engine is organized, invariants, baselines, lessons learned
@@ -102,7 +102,7 @@ A real game, Montreal 3 at Boston 4 on January 24, 2026, with every unblocked sh
 
 ## Cathedral Lab
 
-Build the whole of Notre-Dame in 3D, piece by piece, the way the masons did: 6,631 pieces in 101 steps grouped in 17 bags, like a brick architecture kit. Every stone carries real load. Strike the vault's centering and the line of thrust appears through the ribs, walls, flyers and buttress piers; color by load and the piers glow at the base; tap any piece for its weight, the load it carries and the pressure where it rests. The arch lab next to it is the same physics on one arch in section: build it on its centering, strike it, and see whether it stands, and why.
+Build the whole of Notre-Dame (6,809 pieces in 103 steps) or Amiens (5,775 pieces in 88 steps) in 3D, piece by piece, the way the masons did, in 17 bags like a brick architecture kit. Every stone carries real load. Strike the vault's centering and the line of thrust appears through the ribs, walls, flyers and buttress piers; color by load and the piers glow at the base; tap any piece for its weight, the load it carries and the pressure where it rests. The arch lab next to it is the same physics on one arch in section: build it on its centering, strike it, and see whether it stands, and why.
 
 The physics is rigid-block limit analysis (Heyman): stone pushes but never pulls, an arch stands if a line of thrust fits inside the stone at every joint, and a wall or buttress stands while the resultant on its base lands inside it. One solver, `public/cathedral-lab/src/solver.js`, serves both pages and is checked in the unit tests against the classical result for a semicircular arch (minimum thickness 0.1075 of the radius). The 3D page uses Three.js r128, kept in the repo and served from the site. See `docs/CATHEDRAL-LAB.md`.
 

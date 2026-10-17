@@ -67,3 +67,31 @@ test('a pier with no load but its own weight stands with its resultant at the mi
   assert.ok(Math.abs(c.e - 0.5) < 1e-12);
   assert.equal(c.verdict, 'solid');
 });
+
+// The buildings: every piece has a unique name and rests on pieces that exist (the kit refuses anything else), and the
+// Gothic builder's section for Amiens checks out the way the page says.
+const lab = f => import(pathToFileURL(path.join(__dirname, '..', '..', 'public', 'cathedral-lab', 'src', f)).href);
+
+test('both cathedrals build: unique names, every support exists, loads come out positive', async () => {
+  for (const f of ['notre-dame.js', 'amiens.js']) {
+    const M = await lab(f);
+    assert.ok(M.pieces.length > 4000, `${f}: ${M.pieces.length} pieces`);
+    assert.equal(new Set(M.pieces.map(p => p.id)).size, M.pieces.length, `${f}: duplicate piece names`);
+    M.computeLoads(M.steps.length);
+    for (const p of M.pieces) if (p.until == null) assert.ok(p.load >= p.w - 1e-9, `${f}: ${p.id} carries less than its own weight`);
+    assert.ok(M.forceLines().length > 0, `${f}: no force lines`);
+  }
+});
+
+test('Amiens: a taller vault pushes harder, and its buttresses are just deep enough', async () => {
+  const { section } = await lab('gothic.js');
+  const A = section({ span: 13.6, thick: 0.8, springing: 30, wall: 1.4, aisle: 8.6, aisleWall: 1.2, aisleSpring: 13.5, aisleTop: 20.5, aisleRoofTop: 25.5,
+    levels: { arcade: 18.6, triforium: 24.5, cornice: 42.6 }, bdepth: 4, flyerLow: 26, flyerHigh: 33, tiers: 2, chapelTop: 15 });
+  assert.ok(Math.abs(A.crown - 42.2) < 0.1, `crown at ${A.crown}`);
+  assert.ok(A.SOL.state.H > 45 && A.SOL.state.H < 55, `push ${A.SOL.state.H}`);
+  const s = A.supports(1);
+  assert.equal(s.wall.verdict, 'solid'); assert.equal(s.buttress.verdict, 'solid');
+  assert.ok(s.buttress.e > 1 / 3 && s.buttress.e < 0.4, `buttress resultant at ${s.buttress.e}`);
+  const thin = section({ ...A, bdepth: 3.2 }).supports(1);
+  assert.equal(thin.buttress.verdict, 'cracks');
+});

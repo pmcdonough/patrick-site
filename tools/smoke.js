@@ -48,7 +48,7 @@ const { open, openPage } = require('./harness');
     await ks.page.close(); if (al.page) await al.page.close();
   }
   // the old Keystone addresses forward to Cathedral Lab, so they too have to end up on a working page
-  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab]]) {
+  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/?b=amiens', () => !!window.cathedralLab && window.cathedralLab.building === 'amiens'], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab]]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);
