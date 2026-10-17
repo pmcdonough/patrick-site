@@ -71,7 +71,7 @@ The 3D page loads a building with `import()` and reads these exports. A module e
 | `forceLines()` | `[{ z, at, normal, radial, end, lines: [{ pts, r }], bases }]`: one entry per bay line, drawn as red tubes; the page shows the nearest one seen broadside, or the one just behind the cut, among those whose vault stands |
 | `STEP_STRUCK` | The first strike of a main vault; no line is drawn before it |
 | `HIDERS` | `[{ step, west | east, msg }]`: past that step, from beyond that z, the front hides the line, and the key says so |
-| `KIT` | The page's words and settings: `id`, `name` (in the header's list), `place`, `title`, `matchup`, `lede`, `about` (paragraphs), `start` (the empty-site page), `cut` (`{ min, max, value }` for the cutaway), and optionally `open` (the step to open on), `person` (`[x, z]` for the figure for scale), `back` (`{ href, label }` to the design), `falls` (the collapse) |
+| `KIT` | The page's words and settings: `id`, `name` (in the header's list), `place`, `title`, `matchup`, `lede`, `about` (paragraphs), `start` (the empty-site page), `cut` (`{ min, max, value }` for the cutaway), and optionally `open` (the step to open on), `person` (`[x, z]` for the figure for scale), `back` (`{ href, label }` to the design), `falls` (the collapse). A building that is not masonry (the house) also gives `mats` (its own materials, each a function that makes one; textured ones get texture coordinates in the batches), `load` (`{ legend, xray }`: color each piece by `p.util`, the share of its allowable strength, instead of by pressure, and hide the cladding materials in `xray` meanwhile), `inspect(p, n)` (its own Inspect rows), `forces` (`{ label, note, off }`), `cards` (notes that replace the cathedral ones), `intro`, `aria`, `camera`, `near`, `whole`, `cutView` (`{ y, from }`), `ground` (a color), `shadow` (the sun's shadow box) and `pit` (a cellar hole dug at a step). Pieces with `site: true` (trees, lawns, cars) stay out of the framing and the camera's bounds |
 
 `BUILDINGS` at the top of `src/main.js` lists them; `?b=<id>` picks one.
 
@@ -125,6 +125,8 @@ The camera: the wheel is caught before the orbit controls and zooms toward the p
 ## How to extend it
 
 **Add a building by hand** (as Notre-Dame): create `src/<id>.js`, `createKit()`, add pieces step by step with real supports, export the contract above, add it to `BUILDINGS` in `src/main.js`, and add `?b=<id>` to the clean-load list in `tools/smoke.js`. Put its sources in `CATHEDRAL-LAB.md`.
+
+**Add a building that is not stone** (as the house): build it on the kit in feet or whatever its drawings use, converting at the edge; give checked members `check(on)` returning one of `wood.js`'s results, and the load sources `lv` tags so `computeLoads(n)` knows what is built; export the contract with the optional `KIT` fields above. Put its sources and its assumptions in `CATHEDRAL-LAB.md`.
 
 **Add a Gothic building** (as Amiens): describe its section with `section()`, its stretches as runs in frames with their bay lines and sides, call `aisled()` with words for each step, then add what is its own (the crossing with `crossing()` or by hand, `front()` or a custom west front, `apse()` or a custom one). Read `amiens.js` first; it is the worked example.
 

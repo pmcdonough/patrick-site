@@ -2,8 +2,8 @@
 // by step; each piece has its geometry, its weight, the area it bears on and the pieces it rests on, so the kit can
 // work out the load every piece carries. The geometry helpers below need no kit and are plain functions.
 // Units: metres, kN. Nothing here touches the page.
-import * as THREE from './vendor/three.module.js?v=0.11';
-import * as Solver from './solver.js?v=0.11';
+import * as THREE from './vendor/three.module.js?v=0.12';
+import * as Solver from './solver.js?v=0.12';
 
 export const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 export const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead

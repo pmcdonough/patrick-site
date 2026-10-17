@@ -3,34 +3,40 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.11';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.11';
+import * as THREE from './vendor/three.module.js?v=0.12';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.12';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first. Your own is made from a design: make(design) gives the same exports, and the
 // design comes from the address (?b=yours&d=...), or else the last one saved on the design page.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.11') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.11') },
-  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.11'), design: true },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.12') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.12') },
+  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.12'), design: true },
+  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.12') },
 ];
 const Q = new URLSearchParams(location.search);
 const CHOSEN = BUILDINGS.find(b => b.id === Q.get('b')) || BUILDINGS[0];
 const MOD = await CHOSEN.load();
 let DESIGN = null;
 if (MOD.make) {
-  const D = await import('./design.js?v=0.11');
+  const D = await import('./design.js?v=0.12');
   let saved = null; try { saved = JSON.parse(localStorage.getItem('cathedral-lab.design')); } catch (e) { /* none saved */ }
   DESIGN = Q.get('d') ? D.decode(Q.get('d'), Q.get('name')) : D.clamp(saved || D.DEFAULT);
 }
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = MOD.make ? MOD.make(DESIGN) : MOD;
 
-const VERSION = '0.11';
+const VERSION = '0.12';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
 document.title = `Cathedral Lab: ${KIT.matchup}`;
 $('matchup').textContent = KIT.matchup; $('lede').textContent = KIT.lede;
 $('about').insertAdjacentHTML('beforeend', KIT.about.map(p => `<p>${p}</p>`).join(''));
+// a building that is not a cathedral brings its own words for the forces, the load colors and the notes
+if (KIT.cards) { document.querySelectorAll('.labpromo, .notes .card:not(#about)').forEach(e => e.remove()); $('about').insertAdjacentHTML('afterend', KIT.cards.map(c => `<div class="card"><h2>${c.h}</h2>${c.ps.map(p => `<p>${p}</p>`).join('')}</div>`).join('')); }
+if (KIT.forces) { $('v-forces').textContent = KIT.forces.label; $('fkey').querySelector('b').lastChild.textContent = KIT.forces.label; $('fkeyMsg').textContent = KIT.forces.note; if (KIT.forces.off) $('v-forces').setAttribute('aria-pressed', 'false'); }
+if (KIT.load) $('legend').innerHTML = KIT.load.legend;
+if (KIT.aria) $('gl').setAttribute('aria-label', KIT.aria);
 Object.assign($('v-cutz'), { min: KIT.cut.min, max: KIT.cut.max, value: KIT.cut.value });
 // your own is designed on its own page, and its link goes back to the design
 if (KIT.back) $('designpromo').hidden = true;
@@ -55,17 +61,29 @@ renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESF
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.localClippingEnabled = true;
 const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.5, 2400);
 const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 1.5; controls.maxDistance = 480;
-camera.position.set(-60, 34, 66); controls.target.set(0, 16, 0);
+camera.position.set(...(KIT.camera || [-60, 34, 66])); controls.target.set(0, 16, 0);
 const lin = h => new THREE.Color(h).convertSRGBToLinear();
 const hemi = new THREE.HemisphereLight(lin(0xeef2f6), lin(0xb9b1a3), 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(lin(0xfff3e2), 1.15); sun.position.set(-40, 70, 45); sun.castShadow = true;
-Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 120, bottom: -90, near: 10, far: 500 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
+Object.assign(sun.shadow.camera, KIT.shadow || { left: -110, right: 110, top: 120, bottom: -90, near: 10, far: 500 }); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; scene.add(sun);
 const ground = new THREE.Mesh(new THREE.CircleGeometry(1600, 96), new THREE.MeshLambertMaterial()); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
+// A building with a cellar digs a hole in the ground (KIT.pit: its corners in x and z, its depth, the step it is dug at):
+// from that step the ground has a hole and the pit its earth sides and floor. What fills it back is the building's own.
+const PIT = KIT.pit ? (() => {
+  const { x0, x1, z0, z1, depth } = KIT.pit, sh = new THREE.Shape([[-1600, -1600], [1600, -1600], [1600, 1600], [-1600, 1600]].map(([a, b]) => new THREE.Vector2(a, b)));
+  sh.holes.push(new THREE.Path([[x0, -z0], [x0, -z1], [x1, -z1], [x1, -z0]].map(([a, b]) => new THREE.Vector2(a, b))));
+  const holed = new THREE.Mesh(new THREE.ShapeGeometry(sh), ground.material); holed.rotation.x = -Math.PI / 2; holed.position.y = -0.01; holed.receiveShadow = true;
+  const earth = new THREE.MeshLambertMaterial({ color: lin(0x8a7357), side: THREE.BackSide }), box = new THREE.BoxGeometry(x1 - x0, depth, z1 - z0); box.translate((x0 + x1) / 2, -depth / 2 - 0.01, (z0 + z1) / 2);
+  const idx = box.index.array.slice(); box.setIndex(Array.from(idx).filter((_, i) => Math.floor(i / 6) !== 2));   // no lid
+  const sides = new THREE.Mesh(box, earth); sides.receiveShadow = true;
+  holed.visible = sides.visible = false; scene.add(holed, sides);
+  return { holed, sides, step: KIT.pit.step };
+})() : null;
 // a person for scale, by the west end of the nave
 const person = new THREE.Group(), pm = new THREE.MeshStandardMaterial({ color: lin(0x4a5a6c), roughness: 0.8 });
 const pb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.45, 16), pm); pb.position.y = 0.73;
 const ph = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), pm); ph.position.y = 1.65;
-person.add(pb, ph); person.position.set(...(KIT.person ? [KIT.person[0], 0.08, KIT.person[1]] : [-2.2, 0.08, 8.2])); person.traverse(o => o.castShadow = true); scene.add(person);
+person.add(pb, ph); person.position.set(...(KIT.person ? [KIT.person[0], KIT.person[2] ?? 0.08, KIT.person[1]] : [-2.2, 0.08, 8.2])); person.traverse(o => o.castShadow = true); scene.add(person);
 
 const cutPlane = new THREE.Plane(V3(0, 0, -1), 99);
 const MATS = {
@@ -80,6 +98,7 @@ const MATS = {
   copper: () => new THREE.MeshStandardMaterial({ color: lin(0x6aa596), roughness: 0.6, metalness: 0.3 }),
   gilt: () => new THREE.MeshStandardMaterial({ color: lin(0xc9a44c), roughness: 0.35, metalness: 0.7 }),
   dark: () => new THREE.MeshStandardMaterial({ color: lin(0x4a4f57), roughness: 0.8 }),
+  ...(KIT.mats || {}),   // a building's own materials, each a function that makes it
 };
 // ---------- Batches ----------
 // Thousands of pieces can't each be their own object on a phone, so the pieces that come and go together (same step, same
@@ -99,12 +118,15 @@ const DUR = reduce ? 0.001 : 0.52, batches = [], meshes = [];
     for (const { geo: g } of B.pieces) { nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
     const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = new Float32Array(nv * 3), dly = new Float32Array(nv), idx = new Uint32Array(ni);
     const mat = MATS[B.mat](B.pieces[0].tint), base = mat.color.clone(), stagger = Math.min(0.045, 1.1 / B.pieces.length);
+    // texture coordinates come along when the material has a texture (a building's siding or shingles)
+    const uvs = mat.map ? new Float32Array(nv * 2) : null;
     mat.color.set(0xffffff); mat.vertexColors = true; mat.clippingPlanes = [cutPlane];
     let v = 0, i = 0;
     B.pieces.forEach((p, k) => {
       const g = p.geo, n = g.attributes.position.count, m = g.index ? g.index.count : n;
       if (!g.attributes.normal) g.computeVertexNormals();
       pos.set(g.attributes.position.array, v * 3); nor.set(g.attributes.normal.array, v * 3); dly.fill(k * stagger, v, v + n);
+      if (uvs && g.attributes.uv) uvs.set(g.attributes.uv.array, v * 2);
       for (let j = 0; j < n; j++) col.set([base.r, base.g, base.b], (v + j) * 3);
       if (g.index) for (let j = 0; j < m; j++) idx[i + j] = g.index.array[j] + v; else for (let j = 0; j < m; j++) idx[i + j] = v + j;
       g.computeBoundingBox(); p.box = g.boundingBox.clone();
@@ -114,6 +136,7 @@ const DUR = reduce ? 0.001 : 0.52, batches = [], meshes = [];
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.setAttribute('aDelay', new THREE.BufferAttribute(dly, 1));
+    if (uvs) geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeBoundingSphere();
     B.u = { uTime: { value: 0 }, uMode: { value: 0 } };
     mat.onBeforeCompile = sh => {
@@ -177,6 +200,13 @@ function rampColor(mpa) {
   for (let i = 1; i < RAMP.length; i++) if (t <= RAMP[i][0]) return RAMP[i - 1][1].clone().lerp(RAMP[i][1], (t - RAMP[i - 1][0]) / (RAMP[i][0] - RAMP[i - 1][0]));
   return RAMP.at(-1)[1].clone();
 }
+// a building checked member by member (KIT.load) colors each by the share of its allowable strength it uses: blue at
+// none, yellow at half, orange at all of it, red past a quarter more
+function utilColor(u) {
+  const t = Math.max(0, Math.min(1, u / 1.25)), R = RAMP;
+  for (let i = 1; i < R.length; i++) if (t <= R[i][0]) return R[i - 1][1].clone().lerp(R[i][1], (t - R[i - 1][0]) / (R[i][0] - R[i - 1][0]));
+  return R.at(-1)[1].clone();
+}
 
 // ---------- State and animation ----------
 const NSTEPS = steps.length, NBAGS = new Set(steps.map(s => s.bag)).size, OPEN = KIT.open ?? NSTEPS;
@@ -192,6 +222,7 @@ function applyStep(n, animate) {
     B.fresh = B.step === n - 1 && show;
   }
   if (FALL) fallTo(n, animate);
+  if (PIT) PIT.holed.visible = PIT.sides.visible = !(ground.visible = n <= PIT.step);
   computeLoads(n); recolor(); syncUI();
   if (animate && state.follow && n > 0) frameStep(n - 1);
 }
@@ -236,11 +267,12 @@ function fallTo(n, animate) {
   if (animate && n === KIT.falls.step + 1 && !reduce) { fallPose(-1); FALL.t0 = performance.now() + 500; FALL.pose = 0; }
   else { FALL.t0 = null; fallPose(Infinity); FALL.pose = Infinity; }
 }
+const XRAY = new Set(KIT.load && KIT.load.xray || []);
 const FRESH = lin(0xe8a23a).multiplyScalar(0.28), SEL = lin(0x5b8fe0), NONE = new THREE.Color(0), want = new THREE.Color();
 function recolor() {
   // a piece's vertex colors are rewritten only when its color changes, so stepping through the build stays cheap
   for (const p of pieces) {
-    if (state.loadView && p.bear > 0 && p.mat === 'stone' && live(p, state.n)) want.copy(rampColor(Math.max(0.01, p.stress))); else want.copy(p.base);
+    if (state.loadView && live(p, state.n) && (KIT.load ? p.util != null : p.bear > 0 && p.mat === 'stone')) want.copy(KIT.load ? utilColor(p.util) : rampColor(Math.max(0.01, p.stress))); else want.copy(p.base);
     if (state.sel === p) want.lerp(SEL, 0.55);
     if (want.equals(p.shown)) continue;
     p.shown.copy(want);
@@ -252,6 +284,8 @@ function recolor() {
   for (const B of batches) {
     if (B.mat !== 'glass') B.mesh.material.emissive.copy(B.fresh && !state.loadView ? FRESH : NONE);
     if (B.group === 'roof') B.mesh.visible = roofOn && live(B.pieces[0], state.n);
+    // a building whose frame is clad (KIT.load.xray: its siding, roofing, glass) shows the bare frame when colored by load
+    if (XRAY.has(B.mat) && !B.anim) B.mesh.visible = !state.loadView && live(B.pieces[0], state.n) && (B.group !== 'roof' || roofOn);
   }
   redraw();
   state.forces = on('v-forces') && state.n > STEP_STRUCK && !(KIT.falls && state.n > KIT.falls.step);
@@ -264,7 +298,7 @@ function showForces() {
   const by = on('v-cut') ? null : HIDERS.find(h => state.n > h.step && (h.west != null ? camera.position.z > h.west : camera.position.z < h.east));
   const hidden = state.forces && !!by;
   if (forceGroup.visible !== (state.forces && !hidden)) { forceGroup.visible = state.forces && !hidden; redraw(); }
-  if ((by && by.msg) !== state.fHidden) { state.fHidden = by && by.msg; $('fkeyMsg').textContent = hidden ? `${by.msg} Go round to the side, or turn on Cutaway.` : 'The path the vault\'s weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.'; }
+  if ((by && by.msg) !== state.fHidden) { state.fHidden = by && by.msg; $('fkeyMsg').textContent = hidden ? `${by.msg} Go round to the side, or turn on Cutaway.` : KIT.forces ? KIT.forces.note : 'The path the vault\'s weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.'; }
 }
 
 // ---------- Camera ----------
@@ -283,16 +317,17 @@ function frameStep(i) {
   const box = new THREE.Box3(); let any = false;
   pieces.forEach(p => { if (p.step === i || p.until === i) { box.union(p.box); any = true; } });
   if (KIT.falls && i === KIT.falls.step) return frameAll();
-  if (steps[i].focus === 'forces' || !any) box.set(V3(-17, 0, -10), V3(17, 36, 10));
-  frameBox(box);
+  if (steps[i].focus === 'forces' || !any) box.copy(KIT.whole ? BOUNDS : box.set(V3(-17, 0, -10), V3(17, 36, 10)));
+  frameBox(box, KIT.near);
 }
 function frameAll() {
   const box = new THREE.Box3();
-  pieces.forEach(p => { if (p.batch.mesh.visible) box.union(p.box); });
+  // the trees and the lawn round a house are not the building
+  pieces.forEach(p => { if (p.batch.mesh.visible && !p.site) box.union(p.box); });
   if (box.isEmpty()) box.set(V3(-17, 0, -10), V3(17, 6, 10));
-  frameBox(box);
+  frameBox(box, KIT.near);
 }
-const BOUNDS = new THREE.Box3(); pieces.forEach(p => BOUNDS.union(p.box)); BOUNDS.expandByScalar(2);
+const BOUNDS = new THREE.Box3(); pieces.forEach(p => { if (!p.site) BOUNDS.union(p.box); }); BOUNDS.expandByScalar(2);
 function clampTarget() {
   const before = controls.target.clone(); controls.target.clamp(BOUNDS.min, BOUNDS.max);
   if (!before.equals(controls.target)) { camera.position.add(controls.target.clone().sub(before)); redraw(); }
@@ -368,7 +403,7 @@ function syncUI() {
   const n = state.n, pg = $('page');
   const back = KIT.back && (n === 0 || n === NSTEPS || n === OPEN) ? `<a class="back" href="${KIT.back.href}">${KIT.back.label}</a>` : '';
   if (n === 0) pg.innerHTML = `<div class="top"><span>Start</span><span class="stepno">${NSTEPS} steps</span></div><h2>${KIT.start.title}</h2><p>${KIT.start.note}</p>${back}`;
-  else if (n === OPEN && !state.started) pg.innerHTML = `<div class="top"><span>${KIT.place}</span><span class="stepno">${pieces.length} pieces</span></div><h2>${KIT.title}</h2><p>${NSTEPS} steps in ${NBAGS} bags, from footings to ${KIT.falls ? 'the moment of truth' : 'stained glass'}. Every stone, rib and roof timber goes in on its own, in the order the masons used.</p><div class="acts"><button class="primary" id="begin">Start building</button>${back}</div>`;
+  else if (n === OPEN && !state.started) pg.innerHTML = `<div class="top"><span>${KIT.place}</span><span class="stepno">${pieces.length} pieces</span></div><h2>${KIT.title}</h2><p>${KIT.intro || `${NSTEPS} steps in ${NBAGS} bags, from footings to ${KIT.falls ? 'the moment of truth' : 'stained glass'}. Every stone, rib and roof timber goes in on its own, in the order the masons used.`}</p><div class="acts"><button class="primary" id="begin">Start building</button>${back}</div>`;
   else { const s = steps[n - 1]; pg.innerHTML = `<div class="top"><span>Bag ${s.bag}: ${s.bagName}</span><span class="stepno">Step ${n} of ${NSTEPS}</span></div><h2>${s.title}</h2><p>${s.note}</p><div class="parts">${partsOf(n - 1)}</div>${back}`; }
   const b = $('begin'); if (b) b.onclick = () => { state.started = true; go(0, false); setTimeout(() => go(1, true), 350); };
   $('prev').disabled = n === 0; $('next').disabled = n === NSTEPS;
@@ -389,6 +424,7 @@ function syncInspect() {
   if (!p || !live(p, state.n)) { el.hidden = true; return; }
   el.hidden = false;
   const t = x => `${(x / 9.81).toFixed(x / 9.81 >= 10 ? 0 : 1)} t`;
+  if (KIT.inspect) { el.innerHTML = `<span class="nm">${p.name}</span><dl>${KIT.inspect(p, state.n)}</dl>`; return; }
   el.innerHTML = `<span class="nm">${p.name}</span><dl><dt>Weight</dt><dd>${p.w ? t(p.w) : 'light'}</dd>${p.bear ? `<dt>Carrying, including itself</dt><dd>${t(p.load)}</dd><dt>Pressure where it rests</dt><dd>${p.stress.toFixed(2)} MPa</dd>` : ''}<dt>Placed in</dt><dd>step ${p.step + 1}</dd></dl>`;
 }
 function go(n, animate) { n = Math.max(0, Math.min(NSTEPS, n)); applyStep(n, animate); }
@@ -416,7 +452,8 @@ toggle('v-follow', v => { state.follow = v; if (v && state.n) frameStep(state.n 
 const setCut = () => { const v = on('v-cut'); $('cutpos').hidden = !v; cutPlane.constant = v ? +$('v-cutz').value : 99; redraw(); };
 toggle('v-cut', v => {
   setCut();
-  if (v) state.camT = { t0: performance.now(), fromT: controls.target.clone(), toT: V3(0, 18, +$('v-cutz').value), fromP: camera.position.clone(), toP: V3(-6, 24, +$('v-cutz').value + 80) };
+  const cv3 = KIT.cutView || { y: 18, from: [-6, 24, 80] };
+  if (v) state.camT = { t0: performance.now(), fromT: controls.target.clone(), toT: V3(0, cv3.y, +$('v-cutz').value), fromP: camera.position.clone(), toP: V3(cv3.from[0], cv3.from[1], +$('v-cutz').value + cv3.from[2]) };
 });
 $('v-cutz').oninput = setCut;
 
@@ -440,7 +477,7 @@ function theme() {
   // the background and the fog are both drawn after the color conversion, so both take the page's color as is,
   // and the ground fades into the sky with no horizon
   const sky = new THREE.Color(cs.getPropertyValue('--sky').trim());
-  scene.background = sky; ground.material.color.copy(css('--ground'));
+  scene.background = sky; ground.material.color.copy(KIT.ground ? lin(KIT.ground) : css('--ground'));
   scene.fog = new THREE.Fog(sky, 480, 1200);
   forceMat.color.copy(css('--thrust'));
   redraw();

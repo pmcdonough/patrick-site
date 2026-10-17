@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.102 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.7. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.103 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.12 + Ring Kart 0.7. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.103
+- Cathedral Lab 0.12 (a 1972 house, built from its drawings). The home card says so. No change to the sim, Play Review or Ring Kart.
 
 ### 0.102
 - Ring Kart 0.7 (round cartoon cars, a real engine note and gearbox, reverse fixed). The home card says so. No change to the sim, Play Review or Cathedral Lab.
@@ -233,6 +236,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.12
+- A fourth building, and the first that is not stone: a house built by N. L. Mitton, Inc. in 1972, from its nine sheets of drawings (foundation plan, both floor plans, front and side elevations, a typical framing section, the entrance detail). 45 steps in 10 bags: the wooded lot, the batter boards, the cellar hole, footings, forms, the pour (with its ready-mix truck), the girder on six lally columns, sills, 2x10 joists, plywood decks, 2x4 walls with their headers, the bearing wall and every room, the stair, ceiling joists, 2x8 rafters and the wing's lopsided roof, the garage, sheathing and shingles, the chimneys, windows, trim, cedar shingles and shutters, the porch, the drive, the oil burner, and the move-in with a station wagon. Then on: the Blizzard of '78 on the roofs, the thaw, new clapboards, the porch screened in, and the house as it is today, from photographs. No address.
+- Its load model is wood's, not masonry's: `wood.js` checks each joist, rafter, girder and header in bending, shear and sag, each stud and column for buckling, each footing against the soil, with today's design values and loads, and the loads on it at that step (the floors, the ceilings and the roof once built, the snow in 1978). Color by load colors each by the share of its allowable strength it uses, and sees through the siding and the roof to the frame. Inspect gives the size, span, load and share. Load paths shows where the weight goes at a slice: rafters to the long walls and the footings, floors to the bearing wall, the girder and a column.
+- The cellar is dug: a building can open a pit in the ground at a step (`KIT.pit`), its earth sides drawn by the page.
+- In the repo: `src/house.js` and `src/wood.js`. The 3D page takes a building's own materials (textured siding, shingles, brick), its load coloring and legend, its Inspect rows, its words for the forces and the notes, its cut view, camera, ground color and shadow box; trees and lawns (`site` pieces) stay out of the framing. Notre-Dame, Amiens and design your own are unchanged. Two new unit tests (the wood checks against hand calculations; the house builds and its loads grow with it and with the snow); `smoke.js` builds the house and colors it.
 
 ### 0.11
 - Design your own gets a plan. A transept (one aisle only, for now), with arms of 1 to 3 bays and a choir of 2 to 6 bays east of the crossing; the crossing gets its own vault on diagonal ribs, built and struck with the vaults round it, a groined roof where the four roofs meet, and, if chosen, a spire of oak and lead as tall again as the ridge. Each transept arm ends in a wall with a portal and a rose.

@@ -42,6 +42,7 @@ The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m 
 1. Notre-Dame de Paris. The cross-section through a nave bay is the key teaching view. In 0.1 and 0.2: three bays, 871 pieces in 39 steps. Since 0.3: the whole nave, ten bays and 60 m. Since 0.4: the west front and its towers. Since 0.5: the transept, crossing and spire. Since 0.6: the choir and apse, so the whole cathedral; since 0.7 its chapels, 6,809 pieces in 103 steps in 17 bags.
 2. Amiens (0.8): the tallest complete French cathedral, 5,775 pieces in 88 steps in 17 bags, the first made with `gothic.js`.
 3. Your own (0.10): designed on the design page, built by `gothic.js` from its section. See Design your own below.
+6. A 1972 house (0.12): the first wood frame, `?b=house`. See A 1972 house below.
 4. Brunelleschi's dome in Florence: drum, ribs, herringbone courses, two shells, stone and iron chains, lantern.
 5. Later: the Taj Mahal as a double-dome comparison.
 
@@ -128,6 +129,16 @@ The plan (0.11): `layoutOf()` in `design.js` places every stretch, and both the 
 The design lives in the address (`?d=c36-s12-t0.7-pp-w1.3-a1-f1-b3.6-n7-T1-C0&name=...`), so Copy link shares it and the 3D page reads it; the last one is also kept in the browser.
 
 Simplified, and said on the page: every bay is the same; the levels follow Amiens' proportions; the ends are plain walls with a rose; the storm is a steady pressure on one side with a net coefficient of 1; the collapse is drawn, not computed (the solver says that it falls, not how); crushing, settlement, mortar and the slenderness of tall piers are not modeled.
+
+## A 1972 house (0.12)
+
+A two-storey Colonial with a one-and-a-half-storey wing, a breezeway and a two-car garage, built by N. L. Mitton, Inc. in 1972, from photographs of its nine drawing sheets: the foundation plan, the first and second floor plans, the front and right side elevations (with a left side on the first sheet), a typical framing section and the front entrance detail. 2,190 pieces in 45 steps in 10 bags, from the woods to the house today. Its owner gave the drawings and photographs; the address is left out of the repo and the page on purpose, and so are the photographs themselves.
+
+From the drawings, as drawn: the 54 by 28 foot foundation with the wing's 2 foot jog, 10 inch walls on 22 inch footings; six 3 1/2 inch lally columns on 2 foot pads in 7 equal spaces of 52'-4"; the 8x10 girder; a 4x6 sill; 2x10 joists 12 inches apart on both floors; 2x4 studs 16 inches apart; 2x8 ceiling joists and rafters 16 inches apart, 2x6 collar ties, a 2x10 ridge; the main roof at 8 in 12, the wing's at 10.7 in 12 to its one-storey front and 4 in 12 to its two-storey back, the garage's at 8 and 4 in 12; the 24 by 24 garage 15 1/2 feet back from the front with two 9 by 7 overhead doors; the 14 foot porch with its brick floor; every room's partitions, the stair and every window and door from the plans' dimension strings; wood shingles on the house and boards and battens on the garage.
+
+Filled in the usual 1972 way, and said on the page: heights the sheets do not mark (8 inches of foundation above the ground, a cellar 8 feet deep, 92 5/8 inch studs), the back of the house (no rear elevation), the garage's framing (2x8 rafters in front, 2x10 on the long back slope), headers, the oil burner and tank. Today's look (gray clapboards, the screened porch, the arches over the garage doors, the west chimney, the patio) is from the owner's photographs; which way the house faces and the woods round it are from an aerial photograph. Dates of the later changes are not known and not given.
+
+The load model is not the masonry one. `wood.js` checks each joist, rafter, girder and ceiling joist as a simple span in bending, shear and sag; each stud and the lally columns for buckling; each column pad against the soil. The values are today's: No. 2 spruce-pine-fir for the 2x framing and No. 1 Douglas fir-larch for the girder (the NDS), the IRC's design loads (40 psf for living rooms, 30 for bedrooms, 10 for an attic without storage, 20 for a roofer), and 3,000 psf for the soil (sandy gravel, assumed). The loads on a member are the ones built at that step. The Blizzard of '78 puts 27 inches of settled snow at 15 lb per cubic foot on every roof, about 34 psf. Results: joists about 64%, rafters about 63% under a roofer and 98 to 103% in the blizzard, studs under 50%, lally columns 36%, the girder 103% and the column pads about 110% with every room fully loaded at once.
 
 ## Current simplifications in the Notre-Dame build
 

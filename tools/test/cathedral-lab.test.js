@@ -158,3 +158,52 @@ test('design your own: a transept, a crossing and an apse build, alone or togeth
   assert.ok(Object.keys(fall.KIT.falls.motions).some(i => i.startsWith('AP')), 'the apse falls with the lee side');
   assert.ok(!Object.keys(fall.KIT.falls.motions).some(i => /^T[NS]/.test(i)), 'the transept arms stand in the storm');
 });
+
+// ---------- The 1972 house ----------
+const src = f => pathToFileURL(path.join(__dirname, '..', '..', 'public', 'cathedral-lab', 'src', f)).href;
+
+test('wood checks match hand calculations', async () => {
+  const W = await import(src('wood.js'));
+  // a 2x10 floor joist, 12 inches apart, 14 feet: 50 lb per foot, M = 14,700 in-lb, S = 21.39 in3
+  const j = W.beam({ size: '2x10', span: 14, w: 50, wLive: 40 });
+  assert.ok(Math.abs(j.M - 14700) < 1e-6);
+  assert.ok(Math.abs(j.fb - 14700 / (1.5 * 9.25 * 9.25 / 6)) < 1e-9);
+  assert.ok(Math.abs(j.Fb - 875 * 1.1 * 1.15) < 1e-9);
+  assert.ok(j.util > 0.6 && j.util < 0.65, `joist uses ${j.util}`);
+  // a longer span, a heavier load or a smaller size always uses more of the member
+  assert.ok(W.beam({ size: '2x10', span: 16, w: 50 }).util > j.util);
+  assert.ok(W.beam({ size: '2x8', span: 14, w: 50 }).util > j.util);
+  // snow lasts two months, so wood takes 15% more of it than of a floor's load
+  assert.ok(Math.abs(W.beam({ size: '2x8', span: 14, w: 50, duration: 'snow' }).bend * 1.15 - W.beam({ size: '2x8', span: 14, w: 50 }).bend) < 1e-12);
+  // a stud taller is weaker; a steel pipe column the drawings call for takes about 34,000 lb at 7 1/2 feet
+  assert.ok(W.post({ size: '2x4', height: 10, P: 1000 }).cap < W.post({ size: '2x4', height: 8, P: 1000 }).cap);
+  const c = W.steelColumn({ height: 7.5, P: 10000 });
+  assert.ok(c.cap > 30000 && c.cap < 38000, `column takes ${c.cap}`);
+  assert.equal(W.footing({ P: 6000, area: 4 }).q, 1500);
+  assert.ok(Math.abs(W.snowLoad(24) - 30) < 1e-12);
+});
+
+test('the 1972 house builds, and its loads grow as it goes up and in the blizzard', async () => {
+  const H = await import(src('house.js'));
+  const ids = new Set(H.pieces.map(p => p.id));
+  assert.equal(ids.size, H.pieces.length);
+  assert.ok(H.pieces.length > 1500 && H.steps.length > 30);
+  const at = title => H.steps.findIndex(s => s.title.startsWith(title)) + 1;
+  const util = (n, pick) => { H.computeLoads(n); return Math.max(...H.pieces.filter(p => pick(p) && p.util != null).map(p => p.util)); };
+  const girder = p => p.kind === 'girder', rafter = p => p.kind === 'rafter';
+  // the girder carries more once the second floor and the ceilings are on
+  assert.ok(util(at('Floor joists'), girder) < util(at('Second floor deck'), girder));
+  assert.ok(util(at('Second floor deck'), girder) < util(at('Ceiling joists'), girder));
+  // the snow of 1978 loads the rafters close to their limit, and spring takes it off again
+  const calm = util(at('Move in'), rafter), snow = util(at('The Blizzard'), rafter);
+  assert.ok(calm > 0.5 && calm < 0.75, `rafters calm ${calm}`);
+  assert.ok(snow > 0.9 && snow < 1.15, `rafters in the snow ${snow}`);
+  assert.ok(Math.abs(util(at('Spring'), rafter) - calm) < 1e-12);
+  // every checked piece gives a finite share, and the cedar shingles give way to clapboards
+  H.computeLoads(H.steps.length);
+  for (const p of H.pieces) if (p.util != null) assert.ok(Number.isFinite(p.util) && p.util >= 0, p.name);
+  const live = (p, n) => H.live(p, n);
+  assert.ok(H.pieces.some(p => p.mat === 'cedar' && live(p, at('Move in')) && !live(p, H.steps.length)));
+  assert.ok(H.pieces.some(p => p.mat === 'clap' && live(p, H.steps.length)));
+  assert.ok(H.forceLines().length > 0 && H.KIT.inspect(H.pieces.find(girder), H.steps.length).includes('allowable'));
+});

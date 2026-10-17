@@ -71,6 +71,19 @@ const { open, openPage } = require('./harness');
       }
     }
   }
+  // the 1972 house: it builds, it steps from the empty lot to today, and the load colors see through its siding
+  const hp = await openPage(browser, srv, 'cathedral-lab/?b=house', () => !!window.cathedralLab && window.cathedralLab.building === 'house').catch(e => ({ errors: [e.message.split('\n')[0]] }));
+  errors.push(...hp.errors.map(e => `cathedral-lab/?b=house: ${e}`));
+  if (hp.page) {
+    const h = await hp.page.evaluate(() => { const L = window.cathedralLab; L.go(0, false); L.go(1, true); L.go(L.steps.length, false); document.getElementById('v-load').click();
+      const colored = L.pieces.filter(p => p.util != null).length, hidden = L.batches.filter(B => B.mat === 'clap').every(B => !B.mesh.visible);
+      return { pieces: L.pieces.length, steps: L.steps.length, colored, hidden }; });
+    if (!h.colored) errors.push('cathedral-lab/?b=house: no piece is checked for load');
+    if (!h.hidden) errors.push('cathedral-lab/?b=house: the siding still shows when colored by load');
+    console.log(`cathedral-lab/?b=house builds a 1972 house in ${h.pieces} pieces and ${h.steps} steps, ${h.colored} of them checked for load.`);
+    errors.push(...hp.errors.map(e => `cathedral-lab/?b=house: ${e}`));
+    await hp.page.close();
+  }
   // the old Keystone addresses forward to Cathedral Lab, so they too have to end up on a working page
   // Ring Kart: the 3D has to start, the queue has to move, and a car through the gate has to get down the road
   const rk = await openPage(browser, srv, 'ring-kart/', () => !!window.ringKart).catch(e => ({ errors: [e.message.split('\n')[0]] }));
