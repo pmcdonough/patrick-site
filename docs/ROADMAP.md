@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.97 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.98 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -46,9 +46,9 @@ From the brief, in order:
 4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
 
-## Cathedral Lab (0.10, Keystone until 0.6)
+## Cathedral Lab (0.11, Keystone until 0.6)
 
-The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, the transept and spire 0.5, the choir and apse 0.6), and the 2D arch lab, on one masonry solver. Amiens, the tallest complete French cathedral, is the second building since 0.8, made with `gothic.js`, a builder for aisled stretches from a cross-section. Design your own since 0.10: the vault, walls, aisles, flyers and buttresses, checked as you change them in calm air and in a storm, eight challenges up to Beauvais' 48 m, and the design built in 3D, where it falls if it fails. Next for it: a transept and an apse to choose, more of the plan (bay length, aisle width), a wider choice of ends, and the storm drawn in 3D. Then (`docs/CATHEDRAL-LAB.md`):
+The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, the transept and spire 0.5, the choir and apse 0.6), and the 2D arch lab, on one masonry solver. Amiens, the tallest complete French cathedral, is the second building since 0.8, made with `gothic.js`, a builder for aisled stretches from a cross-section. Design your own since 0.10: the vault, walls, aisles, flyers and buttresses, checked as you change them in calm air and in a storm, eight challenges up to Beauvais' 48 m, and the design built in 3D, where it falls if it fails. A transept, an apse and a plan view since 0.11. Next for it: a transept with two aisles, more of the plan (bay length, aisle width), the storm drawn in 3D, and more challenges (the lightest that stands, the most glass). Then (`docs/CATHEDRAL-LAB.md`):
 
 1. A treadwheel crane lifting each stone.
 2. The cut face drawn as a solid section, with the 2D thrust diagram on it.

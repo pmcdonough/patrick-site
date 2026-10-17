@@ -4,10 +4,10 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and its imports carry the same stamp.
 // node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as Solver from '../../src/solver.js?v=0.10';
-import { DEFAULT, LIMITS, PRESETS, CHALLENGES, REFS, clamp, decode, query, assess, summary, minCrown, lands } from '../../src/design.js?v=0.10';
+import * as Solver from '../../src/solver.js?v=0.11';
+import { DEFAULT, LIMITS, PRESETS, CHALLENGES, REFS, clamp, decode, query, assess, summary, minCrown, lands, layoutOf, apseSides } from '../../src/design.js?v=0.11';
 
-const VERSION = '0.10';
+const VERSION = '0.11';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private window */ } } };
@@ -20,10 +20,12 @@ const m = (v, d = 1) => `${(+v).toFixed(d)} m`;
 const press = (el, v) => el.setAttribute('aria-pressed', String(v));
 
 // ---------- The controls ----------
-const SLIDERS = { crown: v => m(v), span: v => m(v), thick: v => m(v, 2), wall: v => m(v), bdepth: v => `${m(v)} deep`, bays: v => `${v}, ${Math.round(v * A.L)} m` };
+const SLIDERS = { crown: v => m(v), span: v => m(v), thick: v => m(v, 2), wall: v => m(v), bdepth: v => `${m(v)} deep`, bays: v => `${v}, ${Math.round(v * A.L)} m`, arms: v => `${v}`, choir: v => `${v}` };
 for (const k of Object.keys(SLIDERS)) { const el = $(k); [el.min, el.max, el.step] = LIMITS[k]; el.oninput = () => set({ [k]: +el.value }); }
-document.querySelectorAll('.seg button').forEach(b => b.onclick = () => set({ [b.dataset.k]: b.dataset.k === 'shape' ? b.dataset.v : +b.dataset.v }));
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => set({ [b.dataset.k]: b.dataset.k === 'shape' ? b.dataset.v : b.dataset.k === 'transept' ? b.dataset.v === '1' : +b.dataset.v }));
 $('chapels').onclick = () => set({ chapels: !D.chapels });
+$('spire').onclick = () => set({ spire: !D.spire });
+$('plan').onclick = () => { press($('plan'), $('plan').getAttribute('aria-pressed') !== 'true'); $('storm').hidden = $('plan').getAttribute('aria-pressed') === 'true'; draw(); };
 $('name').value = D.name;
 $('name').oninput = () => { D = clamp({ ...D, name: $('name').value }); save(); };
 $('presets').innerHTML = '<span class="sub">Start from</span>' + PRESETS.map(p => `<button data-p="${p.id}">${p.title}<span>${p.note}</span></button>`).join('');
@@ -40,8 +42,10 @@ function update() {
   A = assess(D);
   $('crown').min = minCrown(D);
   for (const k of Object.keys(SLIDERS)) { $(k).value = D[k]; $('o-' + k).textContent = SLIDERS[k](D[k]); }
-  document.querySelectorAll('.seg button').forEach(b => { press(b, String(D[b.dataset.k]) === b.dataset.v); b.disabled = b.dataset.k === 'tiers' && b.dataset.v === '2' && D.aisles === 2; });
-  press($('chapels'), D.chapels); $('bd-row').hidden = !D.tiers;
+  const val = k => k === 'transept' ? (D.transept ? '1' : '0') : String(D[k]);
+  document.querySelectorAll('.seg button').forEach(b => { press(b, val(b.dataset.k) === b.dataset.v); b.disabled = (b.dataset.k === 'tiers' || b.dataset.k === 'transept') && b.dataset.v !== '0' && (b.dataset.k === 'tiers' ? b.dataset.v === '2' : true) && D.aisles === 2; });
+  press($('chapels'), D.chapels); press($('spire'), D.spire); $('spire').hidden = !D.transept; $('bd-row').hidden = !D.tiers;
+  $('arms-row').hidden = $('choir-row').hidden = !D.transept; $('tr-note').hidden = D.aisles === 1;
   const [tone, label, msg] = summary(A); $('pill').className = `pill ${tone}`; $('pill').textContent = label; $('msg').textContent = msg;
   // where the vault ranks among the real ones
   const below = REFS.filter(([, h]) => h < A.crown).at(-1), above = REFS.find(([, h]) => h >= A.crown);
@@ -91,6 +95,7 @@ function draw() {
   const cv = $('cv'), r = cv.getBoundingClientRect(), dpr = devicePixelRatio;
   if (!r.width) return;
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  if ($('plan').getAttribute('aria-pressed') === 'true') return drawPlan(cv);
   const ctx = cv.getContext('2d'), { sec, o, d } = { ...A, d: A.d }, n = D.aisles, aw = o.aisleWall, H0 = sec.springing, storm = $('storm').getAttribute('aria-pressed') === 'true';
   const xb = sec.xbO(n) - 1.5, top = Math.max(sec.RIDGE + 3, 52), W = cv.width, Hc = cv.height, pad = 18 * dpr, padTop = (getComputedStyle(document.querySelector('.verdict')).position === 'static' ? 16 : 86) * dpr, padR = 92 * dpr;
   const sc = Math.min((W - pad - padR) / (-2 * xb), (Hc - pad - padTop) / (top + 1));
@@ -163,6 +168,65 @@ function draw() {
     for (let k = 0; k < 4; k++) { const y = y0 + (y1 - y0) * (k + 0.5) / 4, ax = Math.min(sec.XO, -sec.RX + Math.max(0, y - sec.RY) / 1.43) - 0.6; line(ctx, [[xw, y], [ax, y]], colors.link, 2.4);
       line(ctx, [[ax - 1.2, y + 0.8], [ax, y], [ax - 1.2, y - 0.8]], colors.link, 2.4); }
     text(ctx, `Wind, ${Math.round(A.F)} kN/m`, xw, y1 + 2, colors.link, 'left', 700, 12); }
+}
+// ---------- The plan ----------
+// The floor plan from above, west at the bottom like a church plan: the floor, the piers, the walls and buttresses, the
+// vault's ribs as thin lines, the fronts and towers, the apse. It reads the same layout the 3D build is made from.
+function drawPlan(cv) {
+  const ctx = cv.getContext('2d'), dpr = devicePixelRatio, { sec, L, d } = A, n = d.aisles, aw = sec.aisleWall, lay = layoutOf(d, sec, L);
+  const runs = lay.runs.map(R => ({ ...R, P: (x, z) => [R.u[0] * x + R.v[0] * z, R.u[1] * x + R.v[1] * z] }));
+  const shapes = [], add = (pts, kind) => shapes.push({ pts, kind }), RECT = (r, x0, x1, z0, z1) => [r.P(x0, z0), r.P(x1, z0), r.P(x1, z1), r.P(x0, z1)];
+  const xo = sec.outer(n) - aw / 2, W = -xo, apsed = d.east === 1, nap = apseSides(d);
+  for (const r of runs) {
+    const last = r.lines.length - 1, cross = d.transept, z0 = r.lines[0], z1 = r.lines[last];
+    add(RECT(r, xo, -xo, z0, z1), 'floor');
+    // what stands on each line of each side: as yours.js decides it
+    const mode = i => cross ? (i === 0 ? 'none' : i === 1 ? (r.key.startsWith('arm') ? 'none' : 'corner') : i === last ? ((r.key === 'choir' && apsed) ? 'buttress' : 'corner') : 'buttress')
+      : (i === last ? 'corner' : i === 0 ? (apsed ? 'buttress' : 'corner') : 'buttress');
+    for (const s of [-1, 1]) { const X = x => s < 0 ? x : -x;
+      for (let b = 0; b < last; b++) if (!(cross && b === 0)) add(RECT(r, X(sec.outer(n) - aw / 2), X(sec.outer(n) + aw / 2), r.lines[b], r.lines[b + 1]), 'wall');
+      r.lines.forEach((z, i) => { const m = mode(i);
+        if (!(cross && i === 0 && r.key.startsWith('arm'))) add([r.P(X(sec.XW), z)], 'pier');
+        if (n === 2) add([r.P(X(sec.XA1), z)], 'apier');
+        if (m === 'buttress') add(RECT(r, X(sec.xbO(n)), X(sec.xbI(n)), z - 0.75, z + 0.75), 'wall');
+        if (m === 'corner') add(RECT(r, X(sec.outer(n) - 0.85), X(sec.outer(n) + 0.85), z - 0.85, z + 0.85), 'wall'); });
+      if (d.chapels) for (let b = cross ? 2 : 1; b < last - 1; b++) add(RECT(r, X(sec.xbO(n)), X(sec.xbO(n) + 0.9), r.lines[b] + 0.75, r.lines[b + 1] - 0.75), 'wall'); }
+    // the vault's ribs
+    for (let b = 0; b < last; b++) { const za = r.lines[b], zb = r.lines[b + 1]; add([r.P(sec.XI, za), r.P(-sec.XI, zb)], 'rib'); add([r.P(-sec.XI, za), r.P(sec.XI, zb)], 'rib'); add([r.P(sec.XI, za), r.P(-sec.XI, za)], 'rib'); }
+  }
+  if (d.transept) { const c = lay.c; add([[-c, -c], [c, c]], 'rib'); add([[-c, c], [c, -c]], 'rib'); add([[-c, c], [c, c]], 'rib'); add([[-c, -c], [c, -c]], 'rib'); }
+  // the ends: the west front with its towers, the transept ends, a flat east end
+  const nave = runs[0], end = (r, i, out, T, towers) => { const z0 = r.lines[i] + out * 0.75, z1 = z0 + out * T; add(RECT(r, xo, -xo, z0, z1), 'wall');
+    if (towers) for (const s of [-1, 1]) add(RECT(r, s * sec.XO, s * xo, z0, z0 + out * (W + sec.XO)), 'wall'); };
+  end(nave, nave.lines.length - 1, 1, 2, d.towers > 0);
+  if (d.transept) for (const r of runs.slice(2)) end(r, r.lines.length - 1, 1, 2, false);
+  const er = d.transept ? runs[1] : nave, ei = d.transept ? er.lines.length - 1 : 0, eo = d.transept ? 1 : -1;
+  if (!apsed) end(er, ei, eo, 1.6, false);
+  else { const ze = er.lines[ei], at = (phi, R) => er.P(-R * Math.cos(phi), ze + eo * R * Math.sin(phi)), PH = [...Array(nap + 1).keys()].map(k => Math.PI * k / nap);
+    const R1 = -sec.XW, Ro = -sec.outer(n), Rb = -sec.xbI(n), Rbo = Rb + d.bdepth, arc = R => PH.map(p => at(p, R));
+    add([...arc(Ro - aw / 2), ...arc(-sec.XO).reverse()], 'floor'); add(arc(-sec.XI).concat([at(0, 0)]), 'floor');
+    for (let k = 0; k < nap; k++) add([at(PH[k], Ro - aw / 2), at(PH[k + 1], Ro - aw / 2), at(PH[k + 1], Ro + aw / 2), at(PH[k], Ro + aw / 2)], 'wall');
+    for (let k = 1; k < nap; k++) { const p = PH[k], a0 = at(p, Rb), a1 = at(p, Rbo), t = [a1[0] - a0[0], a1[1] - a0[1]], l = Math.hypot(...t), q = [-t[1] / l * 0.75, t[0] / l * 0.75];
+      add([[a0[0] + q[0], a0[1] + q[1]], [a1[0] + q[0], a1[1] + q[1]], [a1[0] - q[0], a1[1] - q[1]], [a0[0] - q[0], a0[1] - q[1]]], 'wall');
+      add([at(p, R1)], 'pier'); if (n === 2) add([at(p, -sec.XA1)], 'apier'); add([at(p, -sec.XI), at(0, 0)], 'rib'); }
+    if (d.chapels) for (let k = 0; k < nap; k++) add([at(PH[k], Rbo - 0.9), at(PH[k + 1], Rbo - 0.9), at(PH[k + 1], Rbo), at(PH[k], Rbo)], 'wall'); }
+  // fit, with west at the bottom: plan x is world x, plan y is world z
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const sh of shapes) for (const [x, z] of sh.pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, z); y1 = Math.max(y1, z); }
+  const W2 = cv.width, H2 = cv.height, pad = 22 * dpr, top = (getComputedStyle(document.querySelector('.verdict')).position === 'static' ? 16 : 70) * dpr;
+  const sc = Math.min((W2 - 2 * pad) / (x1 - x0 + 4), (H2 - pad - top) / (y1 - y0 + 4)), ox = W2 / 2 - (x0 + x1) / 2 * sc, oy = top + (H2 - pad - top) / 2 - (y0 + y1) / 2 * sc;
+  const T = ([x, z]) => [ox + x * sc, oy + z * sc];
+  ctx.clearRect(0, 0, W2, H2);
+  const poly = (pts, fillc, stroke, lw) => { ctx.beginPath(); pts.map(T).forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); if (fillc) { ctx.fillStyle = fillc; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw * dpr; ctx.stroke(); } };
+  for (const sh of shapes.filter(s => s.kind === 'floor')) poly(sh.pts, colors.ground, null);
+  for (const sh of shapes.filter(s => s.kind === 'rib')) { ctx.beginPath(); sh.pts.map(T).forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.strokeStyle = colors['fg-dim']; ctx.globalAlpha = 0.45; ctx.lineWidth = 1 * dpr; ctx.stroke(); ctx.globalAlpha = 1; }
+  for (const sh of shapes.filter(s => s.kind === 'wall')) poly(sh.pts, colors.stone, colors['fg-dim'], 0.6);
+  for (const sh of shapes.filter(s => s.kind === 'pier' || s.kind === 'apier')) { const [x, y] = T(sh.pts[0]); ctx.beginPath(); ctx.arc(x, y, (sh.kind === 'pier' ? sec.PIER.r : sec.APIER.r) * sc, 0, Math.PI * 2); ctx.fillStyle = colors['fg-dim']; ctx.fill(); }
+  // labels and a 10 m bar
+  ctx.font = `600 ${12 * dpr}px Barlow, "Segoe UI", sans-serif`; ctx.fillStyle = colors['fg-dim']; ctx.textAlign = 'center';
+  ctx.fillText('West front', W2 / 2, oy + (y1 + 2.5) * sc + 14 * dpr > H2 - 4 * dpr ? H2 - 6 * dpr : oy + (y1 + 2.5) * sc + 14 * dpr);
+  const bx = pad, by = H2 - pad; ctx.fillRect(bx, by, 10 * sc, 3 * dpr); ctx.textAlign = 'left'; ctx.fillText('10 m', bx, by - 6 * dpr);
+  ctx.textAlign = 'right'; ctx.fillText(`${Math.round(y1 - y0)} m long`, W2 - pad, by - 6 * dpr);
 }
 function resize() { readColors(); if (A) draw(); }
 new ResizeObserver(resize).observe($('box'));

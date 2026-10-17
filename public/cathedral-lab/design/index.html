@@ -7,7 +7,7 @@
 <title>Cathedral Lab: design your own</title>
 <meta name="description" content="Design a Gothic cathedral: how high, how wide, how thick, how many flying buttresses. See whether it stands, then build it stone by stone in 3D.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="../style.css?v=0.10">
+<link rel="stylesheet" href="../style.css?v=0.11">
 </head>
 <body>
 
@@ -34,6 +34,7 @@
       </div>
       <div class="bar">
         <a class="button primary" id="build" href="../?b=yours">Build it in 3D</a>
+        <button class="toggle" id="plan" aria-pressed="false">Plan</button>
         <button class="toggle" id="storm" aria-pressed="false">Show the storm</button>
         <button id="share">Copy link</button>
         <span class="count" id="saved" aria-live="polite"></span>
@@ -63,11 +64,18 @@
         <div class="ctrl" id="bd-row"><label for="bdepth">Buttresses</label><output id="o-bdepth"></output><input type="range" id="bdepth"></div>
       </div>
       <div class="card">
-        <h2>The rest</h2>
+        <h2>The plan</h2>
         <div class="ctrl"><label for="bays">Bays in the nave</label><output id="o-bays"></output><input type="range" id="bays"></div>
+        <span class="sub">Transept</span>
+        <div class="seg two" role="group" aria-label="Transept"><button data-k="transept" data-v="0">None</button><button data-k="transept" data-v="1">A transept</button></div>
+        <p class="fine" id="tr-note" hidden>A transept needs one aisle on each side, for now.</p>
+        <div class="ctrl" id="arms-row"><label for="arms">Bays in each arm</label><output id="o-arms"></output><input type="range" id="arms"></div>
+        <div class="ctrl" id="choir-row"><label for="choir">Bays in the choir</label><output id="o-choir"></output><input type="range" id="choir"></div>
+        <span class="sub">East end</span>
+        <div class="seg two" role="group" aria-label="East end"><button data-k="east" data-v="0">Flat</button><button data-k="east" data-v="1">Apse</button></div>
         <span class="sub">West front</span>
         <div class="seg" role="group" aria-label="Towers"><button data-k="towers" data-v="0">No towers</button><button data-k="towers" data-v="1">Two towers</button><button data-k="towers" data-v="2">With spires</button></div>
-        <div class="checks"><button class="toggle" id="chapels" aria-pressed="false">Chapels between the buttresses</button></div>
+        <div class="checks"><button class="toggle" id="chapels" aria-pressed="false">Chapels</button><button class="toggle" id="spire" aria-pressed="false">Spire over the crossing</button></div>
       </div>
       <div class="card">
         <h2>The numbers</h2>
@@ -90,11 +98,11 @@
     <div class="card"><h2>The storm</h2>
       <p>Height costs more than stone. A gale with gusts of about 40 m/s (145 km/h) presses on the roof and the clerestory, about 1 kN on every square metre, and the roof hands it to the walls on the lee side. That is what the upper tier of flyers at Amiens is for. The push grows with the height of everything above the aisle roofs.</p></div>
     <div class="card"><h2>What is simplified</h2>
-      <p>Everything not chosen here follows Amiens' proportions: the arcade, the triforium and the aisles scale with the height of the walls. Every bay is the same, the forces are per metre of the nave, and the collapse in 3D is drawn, not computed. Crushing, settlement, mortar and the slenderness of tall piers are not modeled.</p></div>
+      <p>Everything not chosen here follows Amiens' proportions: the arcade, the triforium and the aisles scale with the height of the walls. A transept needs one aisle, for now. Every bay is the same, the forces are per metre of the nave, and the collapse in 3D is drawn, not computed. Crushing, settlement, mortar and the slenderness of tall piers are not modeled.</p></div>
   </section>
 </main>
 
 <footer class="version">Cathedral Lab <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.10"></script>
+<script type="module" src="src/main.js?v=0.11"></script>
 </body>
 </html>

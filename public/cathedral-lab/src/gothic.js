@@ -6,9 +6,9 @@
 //
 // This is the engine for building your own cathedral: a design is a description, and the solver checks it as it goes up.
 // Units: metres, kN. Nothing here touches the page.
-import * as THREE from './vendor/three.module.js?v=0.10';
-import * as Solver from './solver.js?v=0.10';
-import { V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, ruled } from './kit.js?v=0.10';
+import * as THREE from './vendor/three.module.js?v=0.11';
+import * as Solver from './solver.js?v=0.11';
+import { V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, ruled, archShapes } from './kit.js?v=0.11';
 
 export const SIDES = [-1, 1];
 export const X = (s, x) => s < 0 ? x : -x;                   // a position drawn on the negative side, mirrored to side s
@@ -74,7 +74,10 @@ export function aisled(K, sec, runs, text) {
   const { add, removeAt, placeArch, placeCentering } = K;
   const { ARCH, XI, XO, XW, XA1, wall: WT, springing: H0 } = sec, LV = sec.levels;
   const T = text, step = (title, note, opts) => K.step(title, note, opts), tiers = sec.tiers;
-  const stepT = (key, opts) => { if (T.bag) T.bag(key); return step(T[key][0], T[key][1], opts); };
+  // T.after(key), if given, runs at the end of each step's work, so a caller can add its own pieces to that step (a
+  // crossing's centering, ribs and webs go up with the vaults around it, and come down at the same strike)
+  let lastKey = null;
+  const stepT = (key, opts) => { if (lastKey && T.after) T.after(lastKey); lastKey = key; if (T.bag) T.bag(key); return step(T[key][0], T[key][1], opts); };
   for (const r of runs) {
     r.nb = r.lines.length - 1; r.ZC = b => (r.lines[b] + r.lines[b + 1]) / 2; r.Lb = b => r.lines[b + 1] - r.lines[b];
     r.pid = (k, s, i, c) => `${r.T}${k}-${s < 0 ? 'A' : 'B'}${i}${c != null ? '-' + c : ''}`;
@@ -298,6 +301,8 @@ export function aisled(K, sec, runs, text) {
     }
   }
 
+  if (lastKey && T.after) T.after(lastKey);
+
   // what the caller builds later: chapels between the buttresses, glass, paving, and the force lines
   const CHH = sec.chapelTop, CHG = CHH + 4, CHWIN = (zc, w) => lancet(zc, 3.4, w, 7);
   return {
@@ -419,6 +424,216 @@ export function front(K, sec, r, { i, out, west, towers = false, spires = false,
       add(pid('GR'), 'glass panel', 'Stained glass', F.across(circle(0, yr, rr - 0.3, 72), [], 0.05, zg), { mat: 'glass', tint: 0 });
       (west ? [] : used1).forEach((h, j) => add(pid(`GL${j}`), 'glass panel', 'Stained glass', F.across(h, [], 0.05, zg), { mat: 'glass', tint: (j + 1) % 3 }));
       if (west) add(pid('DR'), 'door', `${nm}, doors`, F.across(lancet(0, 0.6, pw, ph), [], 0.15, z0 + out * T * 0.5), { mat: 'oak' });
+    },
+  };
+}
+
+// ---------- The crossing ----------
+// Where a nave (west), a choir (east) and two transept arms meet, all on the same section, in frames sharing the origin:
+// their first transverse ribs are the crossing's four arches, the nave and the choir own the four crossing piers, and the
+// crossing adds a four-part vault on diagonals between them. Call centering(), ribs() and webs() from the matching steps
+// (aisled()'s after hook), so the crossing is struck with the rest. roof() covers the square where the roofs meet.
+export function crossing(K, sec, { nave, choir, armN, armS, id = 'X' }) {
+  const { add, placeArch, placeCentering } = K, { ARCH, springing: H0 } = sec, F = nave.F, c = -sec.XW, L = 2 * c;
+  const D = Math.hypot(sec.span, L), Q1 = [sec.span / D, L / D], Q2 = [sec.span / D, -L / D];
+  const P3 = (r, s) => [[r.mp('P', s, 0, 1), 1]];
+  const diag = (q, pre, fn) => { const d = F.dir(q[0], q[1]), o = F.P(0, 0, 0); fn(pre, ARCH, { sx: D / sec.span, y0: H0, ox: o.x, oz: o.z, dx: d.x, dz: d.z }); };
+  const rp = pre => K.pieces.filter(p => p.id.startsWith(pre + '-')).map(p => p.id);
+  return {
+    centering() { diag(Q1, `${id}DCa`, placeCentering); diag(Q2, `${id}DCb`, placeCentering); },
+    ribs() {
+      // line 0 of the choir is the east side (z = -c), line 0 of the nave the west (z = +c)
+      diag(Q1, `${id}DA`, (pre, B, o) => placeArch(pre, B, { ...o, depth: 0.6, withKey: false, name: 'Crossing, diagonal rib', springL: P3(choir, -1), springR: P3(nave, 1) }));
+      diag(Q2, `${id}DB`, (pre, B, o) => placeArch(pre, B, { ...o, depth: 0.6, withKey: false, name: 'Crossing, diagonal rib', springL: P3(nave, -1), springR: P3(choir, 1) }));
+      const k = ARCH.k - 1, top = ARCH.extrados.at(-1)[1] + H0, o = F.P(0, 0, 0);
+      add(`${id}BOSS`, 'boss', 'Crossing, boss', cylG(0.7, 0.7, top - 1.2, top + 0.05, o.x, o.z, 32), { w: Math.PI * 0.49 * 1.25 * GAMMA, sup: [`${id}DA`, `${id}DB`].flatMap(r => [[`${r}-L${k}`, 0.25], [`${r}-R${k}`, 0.25]]) });
+    },
+    webs() {
+      const half = (sx, cu, cv, du, dv, h) => { const t = ribTop(ARCH, sx, H0); return q => { const [x, y] = t(q), u = h < 0 ? x : -x; return F.P(cu + du * u, y, cv + dv * u); }; };
+      const Tz = (z, h) => half(1, 0, z, 1, 0, h), G = (d, h) => half(D / sec.span, 0, 0, d[0], d[1], h), Wx = (x, h) => half(1, x, 0, 0, 1, h);
+      const cells = [[Tz(-c, -1), G(Q1, -1), `${choir.T}TR0`, `${id}DA`], [Tz(-c, 1), G(Q2, 1), `${choir.T}TR0`, `${id}DB`], [Tz(c, -1), G(Q2, -1), `${nave.T}TR0`, `${id}DB`], [Tz(c, 1), G(Q1, 1), `${nave.T}TR0`, `${id}DA`],
+        [Wx(-c, -1), G(Q1, -1), `${armN.T}TR0`, `${id}DA`], [Wx(-c, 1), G(Q2, -1), `${armN.T}TR0`, `${id}DB`], [Wx(c, -1), G(Q2, 1), `${armS.T}TR0`, `${id}DB`], [Wx(c, 1), G(Q1, 1), `${armS.T}TR0`, `${id}DA`]];
+      [[0, 0.38], [0.38, 0.72], [0.72, 1]].forEach(([q0, q1], j) => cells.forEach(([A, B, r1, r2], i) => { const g = ruled(A, B, q0, q1, 6, 12), a = rp(r1), b = rp(r2);
+        add(`${id}WEB${i}-${j}`, 'web panel', 'Crossing, vault web', g.g, { w: g.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(x => [x, 0.5 / a.length]), ...b.map(x => [x, 0.5 / b.length])] }); }));
+    },
+    // the roofs of the four arms meet over the square in a groin: each quarter is two triangles down from the ridges
+    roof() {
+      const k = (sec.RIDGE - sec.RY) / sec.RX, Y = sec.RIDGE + 0.42, sup = [nave, choir].flatMap(r => SIDES.map(s => [r.mp('P', s, 0, 3), 0.25]));
+      const tri = (a, b, cc) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([a, b, cc].flatMap(p => [p.x, p.y, p.z]), 3)); g.computeVertexNormals(); return g; };
+      let j = 0;
+      for (const sx of SIDES) for (const sz of SIDES) { const C = F.P(0, Y, 0), Q = F.P(sx * c, Y - k * c, sz * c);
+        add(`${id}LD${j++}`, 'lead sheet', 'Crossing roof', tri(C, F.P(0, Y, sz * c), Q), { mat: 'lead', w: c * c * 0.6 * 0.004 * LEAD, sup, group: 'roof' });
+        add(`${id}LD${j++}`, 'lead sheet', 'Crossing roof', tri(C, F.P(sx * c, Y, 0), Q), { mat: 'lead', w: c * c * 0.6 * 0.004 * LEAD, sup, group: 'roof' }); }
+    },
+    // a spire of oak and lead over the crossing, on the four crossing piers, as tall again as the ridge
+    spire() {
+      const o = F.P(0, 0, 0), h = sec.RIDGE, rad = 0.42 * c, y0 = sec.RIDGE - 1, sup = [nave, choir].flatMap(r => SIDES.map(s => [r.mp('P', s, 0, 3), 0.25]));
+      const base = new THREE.CylinderGeometry(rad, rad, 6, 8); base.rotateY(Math.PI / 8); base.translate(o.x, y0 + 3, o.z);
+      add(`${id}SP0`, 'spire timber', 'Crossing spire, base', base, { mat: 'lead', w: Math.PI * 2 * rad * 6 * (0.004 * LEAD + 0.06 * OAK), bear: 4 * rad * rad, sup });
+      const cone = new THREE.ConeGeometry(rad, h, 8); cone.rotateY(Math.PI / 8); cone.translate(o.x, y0 + 6 + h / 2, o.z);
+      add(`${id}SP1`, 'spire timber', 'Crossing spire', cone, { mat: 'lead', w: Math.PI * rad * Math.hypot(rad, h) * (0.004 * LEAD + 0.05 * OAK), bear: 4 * rad * rad, sup: [[`${id}SP0`, 1]] });
+      const ball = new THREE.SphereGeometry(0.5, 16, 12); ball.translate(o.x, y0 + 6 + h + 0.3, o.z);
+      add(`${id}SP2`, 'finial', 'Crossing spire, cross', ball, { mat: 'gilt', w: 2, sup: [[`${id}SP1`, 1]] });
+      return y0 + 6 + h;
+    },
+  };
+}
+
+// ---------- The apse ----------
+// A half-polygon of nap sides closing a stretch at its end line i (out: the side away from the bays), on the same section:
+// slimmer piers on the half-circle through the stretch's piers, the aisles turning round it as an ambulatory, the outer
+// wall (and, with chapels, radiating chapels beyond it), buttresses and flyers on the radial lines, the wall rising to the
+// cornice, half-ribs from the wall to the keystone of the stretch's last transverse rib, and a half-cone of lead. Its own
+// steps (text: { footings, piers, arches, ambulatory, walls, buttresses, flyers, centering, vault, strike, roofs }).
+export function apse(K, sec, r, { i, out, nap = 5, chapels = false, id = 'AP', text }) {
+  const { add, removeAt, placeArch, placeCentering } = K, F = r.F, n = r.sides[-1].aisles, tiers = sec.tiers, LV = sec.levels, H0 = sec.springing, corn = LV.cornice, aw = sec.aisleWall, WT = sec.wall;
+  const ze = r.lines[i], at = (phi, R, y = 0) => F.P(-R * Math.cos(phi), y, ze + out * R * Math.sin(phi)), C0 = at(0, 0);
+  const PHI = [...Array(nap + 1).keys()].map(k => Math.PI * k / nap), MID = PHI.slice(1, -1).map((_, j) => j + 1);
+  const R1 = -sec.XW, R2 = -sec.XA1, RO = -sec.XO, RI = -sec.XI, Ro = -sec.outer(n), Rb = -sec.xbI(n), Rbo = Rb + sec.bdepth;
+  const radial = phi => at(phi, 1).sub(C0);
+  const step = key => K.step(...text[key]);
+  // the stretch's own piers at the two ends of the half-circle, the apse's in between
+  const pP = (kind, k, c) => k === 0 || k === nap ? r.mp(kind, k === 0 ? -1 : 1, i, c) : `${id}${kind}-${k}${c != null ? '-' + c : ''}`;
+  const pA = (kind, k, c) => k === 0 || k === nap ? r.ap(kind, k === 0 ? -1 : 1, i, c) : `${id}M${kind}-${k}${c != null ? '-' + c : ''}`;
+  const rbox = (phi, r0, r1, y0, y1, hw) => { const d = radial(phi), g = new THREE.BoxGeometry(r1 - r0, y1 - y0, 2 * hw); g.translate((r0 + r1) / 2, (y0 + y1) / 2, 0); g.rotateY(Math.atan2(-d.z, d.x)); g.translate(C0.x, 0, C0.z); return g; };
+  const chord = (k, R) => { const a = at(PHI[k], R), b = at(PHI[k + 1], R), t = b.clone().sub(a), len = t.length(); return { m: a.clone().add(b).multiplyScalar(0.5), t: t.normalize(), len }; };
+  const panel = (pid, kind, nm, k, R, y0, y1, depth, holes, trim, sup) => { const { m, t, len } = chord(k, R), pts = rect(-len / 2 + trim, len / 2 - trim, y0, y1);
+    return add(pid, kind, nm, extr(pts, holes, depth, m.x, m.z, t.x, t.z), { w: extrVol(pts, holes, depth) * GAMMA, bear: (len - 2 * trim) * depth * 0.8, sup }); };
+  const flat = (k, R, y, hw, hh) => { const { m, t, len } = chord(k, R), g = new THREE.BoxGeometry(len, hh, hw); g.rotateY(Math.atan2(-t.z, t.x)); g.translate(m.x, y, m.z); return g; };
+  const tri = (a, b, c) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([a, b, c].flatMap(p => [p.x, p.y, p.z]), 3)); g.computeVertexNormals(); return g; };
+  const quad = (a, b, c, d) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([a, b, c, a, c, d].flatMap(p => [p.x, p.y, p.z]), 3)); g.computeVertexNormals(); return g; };
+  const rp = sec.PIER.r * 0.75, PD = sec.PIER.drums, AD = sec.APIER.drums, ar = sec.APIER.r;
+
+  step('footings');
+  MID.forEach(k => { const p = PHI[k], a = at(p, R1);
+    add(pP('F', k), 'footing', `Footing, apse pier ${k}`, cylG(rp + 0.8, rp + 0.8, 0, 0.6, a.x, a.z, 8), { w: Math.PI * (rp + 0.8) ** 2 * 0.6 * GAMMA, bear: Math.PI * (rp + 0.8) ** 2 });
+    if (n === 2) { const b = at(p, R2); add(pA('F', k), 'footing', `Footing, ambulatory pier ${k}`, cylG(1.1, 1.1, 0, 0.6, b.x, b.z, 8), { w: 3.8 * 0.6 * GAMMA, bear: 3.8 }); }
+    add(`${id}FB-${k}`, 'footing', `Footing, apse buttress ${k}`, rbox(p, Rb - 0.4, Rbo + 0.4, 0, 0.6, 1.1), { w: (sec.bdepth + 0.8) * 2.2 * 0.6 * GAMMA, bear: (sec.bdepth + 0.8) * 2.2 }); });
+  for (let k = 0; k < nap; k++) panel(`${id}FW-${k}`, 'footing', `Footing, apse outer wall ${k + 1}`, k, Ro, 0, 0.6, 1.6, [], 0.9, []);
+
+  step('piers');
+  MID.forEach(k => { const p = PHI[k], a = at(p, R1);
+    add(pP('B', k), 'pier base', `Base, apse pier ${k}`, cylG(rp + 0.3, rp + 0.2, 0.6, 1.2, a.x, a.z, 8), { w: Math.PI * (rp + 0.25) ** 2 * 0.6 * GAMMA, bear: Math.PI * rp * rp, sup: [[pP('F', k), 1]] });
+    PD.slice(0, -1).forEach((y0, c) => add(pP('D', k, c), 'drum', `Drum ${c + 1}, apse pier ${k}`, cylG(rp, rp, y0, PD[c + 1], a.x, a.z, 32), { w: Math.PI * rp * rp * (PD[c + 1] - y0) * GAMMA, bear: Math.PI * rp * rp, sup: [[c ? pP('D', k, c - 1) : pP('B', k), 1]] }));
+    add(pP('C', k), 'capital', `Capital, apse pier ${k}`, cylG(rp, rp + 0.25, PD.at(-1), LV.arcade - 0.4, a.x, a.z, 32), { w: Math.PI * rp * rp * (LV.arcade - 0.4 - PD.at(-1)) * GAMMA, bear: Math.PI * rp * rp, sup: [[pP('D', k, PD.length - 2), 1]] });
+    add(pP('AB', k), 'abacus block', `Abacus, apse pier ${k}`, rbox(p, R1 - 0.6, R1 + 0.6, LV.arcade - 0.4, LV.arcade, 0.6), { w: 1.44 * 0.4 * GAMMA, bear: 1.44, sup: [[pP('C', k), 1]] });
+    if (n === 2) { const b = at(p, R2);
+      add(pA('B', k), 'pier base', `Base, ambulatory pier ${k}`, cylG(ar + 0.25, ar + 0.19, 0.6, 1.2, b.x, b.z, 8), { w: 0.68 * 0.6 * GAMMA, bear: Math.PI * ar * ar, sup: [[pA('F', k), 1]] });
+      AD.slice(0, -1).forEach((y0, c) => add(pA('D', k, c), 'drum', `Drum ${c + 1}, ambulatory pier ${k}`, cylG(ar, ar, y0, AD[c + 1], b.x, b.z, 32), { w: Math.PI * ar * ar * (AD[c + 1] - y0) * GAMMA, bear: Math.PI * ar * ar, sup: [[c ? pA('D', k, c - 1) : pA('B', k), 1]] }));
+      add(pA('C', k), 'capital', `Capital, ambulatory pier ${k}`, cylG(ar, ar + 0.21, AD.at(-1), sec.aisleSpring - 0.2, b.x, b.z, 32), { w: 0.3 * GAMMA, bear: Math.PI * ar * ar, sup: [[pA('D', k, AD.length - 2), 1]] });
+      add(pA('AB', k), 'abacus block', `Abacus, ambulatory pier ${k}`, rbox(p, R2 - 0.65, R2 + 0.65, sec.aisleSpring - 0.2, sec.aisleSpring, 0.65), { w: 1.69 * 0.2 * GAMMA, bear: 1.69, sup: [[pA('C', k), 1]] }); } });
+  // the outer wall goes up with the piers, and the buttresses' lower courses beside it
+  for (let k = 0; k < nap; k++) { const { len } = chord(k, Ro), win = lancet(0, 3, Math.min(3.2, len - 2.4), Math.max(1, sec.aisleTop - 5 - Math.min(3.2, len - 2.4) * 0.866));
+    panel(`${id}W-${k}`, 'wall stone', `Apse outer wall ${k + 1}`, k, Ro, 0.6, sec.aisleTop, aw, [win], 0.9, [[`${id}FW-${k}`, 1]]); }
+  MID.forEach(k => [[0.6, sec.aisleSpring], [sec.aisleSpring, sec.aisleTop]].forEach(([y0, y1], c) =>
+    add(`${id}BU-${k}-${c}`, 'buttress stone', `Apse buttress ${k}, course ${c + 1}`, rbox(PHI[k], Rb, Rbo, y0, y1, 0.75), { w: sec.bdepth * 1.5 * (y1 - y0) * GAMMA, bear: sec.bdepth * 1.5, sup: [[c ? `${id}BU-${k}-0` : `${id}FB-${k}`, 1]] })));
+
+  // arches round the apse (and round the ambulatory with two aisles), on centering, and across the ambulatory
+  const ARCA = pointed(Math.max(1, chord(0, R1).len - 1.2), 0.5, 7), ARMA = n === 2 ? pointed(Math.max(1, chord(0, R2).len - 1.3), 0.5, 9) : null;
+  const ailIn = R1 + rp, ailOut = n === 2 ? R2 - ar : Ro - aw / 2, AIL = pointed(ailOut - ailIn, 0.5, 7), AIX = (ailIn + ailOut) / 2;
+  const aolIn = R2 + ar, aolOut = Ro - aw / 2, AOL = n === 2 ? pointed(aolOut - aolIn, 0.5, 7) : null, AOX = (aolIn + aolOut) / 2;
+  step('arches');
+  for (let k = 0; k < nap; k++) { const a = chord(k, R1); placeCentering(`${id}AC-${k}`, ARCA, { y0: LV.arcade, ox: a.m.x, oz: a.m.z, dx: a.t.x, dz: a.t.z });
+    if (n === 2) { const b = chord(k, R2); placeCentering(`${id}MC-${k}`, ARMA, { y0: sec.aisleSpring, ox: b.m.x, oz: b.m.z, dx: b.t.x, dz: b.t.z }); } }
+  const STEP_AC = K.at();
+  for (let k = 0; k < nap; k++) { const a = chord(k, R1);
+    placeArch(`${id}A-${k}`, ARCA, { y0: LV.arcade, depth: WT, ox: a.m.x, oz: a.m.z, dx: a.t.x, dz: a.t.z, springL: [[pP('AB', k), 1]], springR: [[pP('AB', k + 1), 1]], name: `Apse arch ${k + 1}` });
+    if (n === 2) { const b = chord(k, R2); placeArch(`${id}M-${k}`, ARMA, { y0: sec.aisleSpring, depth: 0.8, ox: b.m.x, oz: b.m.z, dx: b.t.x, dz: b.t.z, springL: [[pA('AB', k), 1]], springR: [[pA('AB', k + 1), 1]], name: `Ambulatory arch ${k + 1}` }); } }
+  MID.forEach(k => { const d = radial(PHI[k]), a = at(PHI[k], AIX);
+    placeArch(`${id}AI-${k}`, AIL, { y0: sec.aisleSpring, depth: 0.5, ox: a.x, oz: a.z, dx: d.x, dz: d.z, springL: [[pP('D', k, 2), 1]], springR: n === 2 ? [[pA('AB', k), 1]] : [[`${id}BU-${k}-0`, 1]], name: `Ambulatory cross arch ${k}` });
+    if (n === 2) { const b = at(PHI[k], AOX); placeArch(`${id}AO-${k}`, AOL, { y0: sec.aisleSpring, depth: 0.5, ox: b.x, oz: b.z, dx: d.x, dz: d.z, springL: [[pA('AB', k), 1]], springR: [[`${id}BU-${k}-0`, 1]], name: `Outer ambulatory arch ${k}` }); } });
+
+  step('ambulatory');
+  removeAt(p => p.step === STEP_AC && p.mat === 'timber');
+  // the ambulatory's vaults: wedges between the arches across it, following their curve
+  const ring = (B, X0, key, sup) => { const cl = B.c, kk = u => { const p = cl.p(u), m = cl.n(u); return [p[0] + m[0] * 0.2, p[1] + m[1] * 0.2 + sec.aisleSpring]; };
+    for (let k = 0; k < nap; k++) for (const h of [-1, 1]) { const A = (q, phi) => { const [x, y] = kk(q * cl.uCrown); return at(phi, X0 - (h < 0 ? x : -x), y); };
+      const g = ruled(q => A(q, PHI[k] + 0.012), q => A(q, PHI[k + 1] - 0.012), 0, 1, 10, 12);
+      add(`${id}${key}-${k}-${h < 0 ? 'a' : 'b'}`, 'web panel', `Ambulatory vault ${k + 1}`, g.g, { w: g.area * 0.3 * GAMMA, mat: 'web', sup: sup(k) }); } };
+  ring(AIL, AIX, 'VI', k => [[pP('D', k, 2), 0.25], [pP('D', k + 1, 2), 0.25], ...(n === 2 ? [[pA('AB', k), 0.25], [pA('AB', k + 1), 0.25]] : [[`${id}W-${k}`, 0.5]])]);
+  if (n === 2) ring(AOL, AOX, 'VO', k => [[pA('AB', k), 0.25], [pA('AB', k + 1), 0.25], [`${id}W-${k}`, 0.5]]);
+  const CHH = sec.chapelTop, Rch = Rbo - 0.45;
+  if (chapels) for (let k = 0; k < nap; k++) { const { len } = chord(k, Rch), win = lancet(0, 3.4, Math.min(3, len - 3), 7);
+    panel(`${id}CHF-${k}`, 'footing', `Footing, radiating chapel ${k + 1}`, k, Rch, 0, 0.6, 1.7, [], 0.6, []);
+    panel(`${id}CH-${k}`, 'wall stone', `Radiating chapel ${k + 1}`, k, Rch, 0.6, CHH, 0.9, [win], 0.6, [[`${id}CHF-${k}`, 1]]);
+    add(`${id}CHT-${k}`, 'lead sheet', `Radiating chapel roof ${k + 1}`, quad(at(PHI[k] + 0.02, Ro + aw / 2, CHH + 0.6), at(PHI[k + 1] - 0.02, Ro + aw / 2, CHH + 0.6), at(PHI[k + 1] - 0.02, Rch + 0.5, CHH), at(PHI[k] + 0.02, Rch + 0.5, CHH)), { mat: 'lead', w: len * (Rch - Ro) * 0.004 * LEAD, sup: [[`${id}CH-${k}`, 0.5], [`${id}W-${k}`, 0.5]], group: 'roof' }); }
+
+  step('walls');
+  const LVU = [LV.arcade, LV.triforium, H0, (H0 + corn) / 2, corn];
+  MID.forEach(k => LVU.slice(0, -1).forEach((y0, c) => add(pP('P', k, c), 'wall-pier stone', `Apse wall pier ${k}, course ${c + 1}`, rbox(PHI[k], RI, RO, y0, LVU[c + 1], 0.55), { w: WT * 1.1 * (LVU[c + 1] - y0) * GAMMA, bear: WT * 1.1, sup: [[c ? pP('P', k, c - 1) : pP('AB', k), 1]] })));
+  const archTop = LV.arcade + ARCA.extrados.at(-1)[1] + 0.05, triH = Math.max(0.3, Math.min(2.4, H0 - LV.triforium - 1.6)), clW = Math.min(2.2, chord(0, R1).len - 2.2), clH = Math.max(0.3, corn - H0 - 2.2 - clW * 0.866);
+  const TRI = [lancet(-0.45, LV.triforium + 0.6, 0.6, triH), lancet(0.45, LV.triforium + 0.6, 0.6, triH)], CLW = lancet(0, H0 + 1, clW, clH);
+  for (let k = 0; k < nap; k++) { const ps = c => [[pP('P', k, c), 0.5], [pP('P', k + 1, c), 0.5]];
+    panel(`${id}WS-${k}`, 'spandrel', `Apse spandrel ${k + 1}`, k, R1, Math.min(archTop, LV.triforium - 0.2), LV.triforium, WT, [], 0.55, [[`${id}A-${k}-K`, 1]]);
+    panel(`${id}WT-${k}`, 'wall stone', `Apse triforium ${k + 1}`, k, R1, LV.triforium, H0, WT, TRI, 0.55, ps(1));
+    panel(`${id}WC-${k}`, 'wall stone', `Apse clerestory ${k + 1}`, k, R1, H0, corn, WT, [CLW], 0.55, ps(2));
+    add(`${id}CO-${k}`, 'cornice stone', `Apse cornice ${k + 1}`, flat(k, R1, corn + 0.2, WT + 0.4, 0.4), { w: (WT + 0.4) * chord(k, R1).len * 0.4 * GAMMA, bear: (WT + 0.4) * chord(k, R1).len, sup: [[`${id}WC-${k}`, 1]] }); }
+
+  // buttresses and flyers on the radial lines, as on the stretch
+  const low = sec.flyerLow, high = sec.flyerHigh, upper = sec.upperTier(n), bTop = !tiers ? sec.aisleTop : upper ? high : low;
+  const ym = H0 - 1 + (low - (H0 - 1)) * (R2 - RO) / (Rb - RO);
+  step('buttresses');
+  MID.forEach(k => { const p = PHI[k];
+    if (tiers) [[sec.aisleTop, low], ...(upper ? [[low, high]] : [])].forEach(([y0, y1], j) => add(`${id}BU-${k}-${j + 2}`, 'buttress stone', `Apse buttress ${k}, course ${j + 3}`, rbox(p, Rb, Rbo, y0, y1, 0.75), { w: sec.bdepth * 1.5 * (y1 - y0) * GAMMA, bear: sec.bdepth * 1.5, sup: [[`${id}BU-${k}-${j + 1}`, 1]] }));
+    if (tiers && n === 2) add(`${id}BI-${k}`, 'buttress stone', `Apse flyer pier ${k}`, rbox(p, R2 - 0.6, R2 + 0.6, sec.aisleSpring, ym - 0.2, 0.7), { w: 1.2 * 1.4 * (ym - sec.aisleSpring) * GAMMA, bear: 1.68, sup: [[pA('AB', k), 1]] });
+    const pin = (pid, nm, c, y0, sup) => { add(`${pid}-0`, 'pinnacle stone', `${nm}, shaft`, boxG(c.x - 0.8, c.x + 0.8, y0, y0 + 3.2, c.z - 0.8, c.z + 0.8), { w: 8.2 * GAMMA, bear: 2.56, sup });
+      const sp = new THREE.ConeGeometry(0.85, 7.5, 4); sp.rotateY(Math.PI / 4); sp.translate(c.x, y0 + 6.95, c.z); add(`${pid}-1`, 'spire stone', `${nm}, spire`, sp, { w: 3.6 * GAMMA, bear: 1.4, sup: [[`${pid}-0`, 1]] }); };
+    pin(`${id}PN-${k}`, `Apse pinnacle ${k}`, at(p, (Rb + Rbo) / 2), bTop, [[`${id}BU-${k}-${!tiers ? 1 : upper ? 3 : 2}`, 1]]);
+    if (tiers && n === 2) pin(`${id}PI-${k}`, `Apse flyer pier pinnacle ${k}`, at(p, R2), ym - 0.2, [[`${id}BI-${k}`, 1]]); });
+  if (tiers) { step('flyers');
+    MID.forEach(k => { const p = PHI[k], d = radial(p);
+      const fl = (x0, x1, y0, y1, nst, dd, sag, tag, land, wall) => { const top = x => y0 + (y1 - y0) * (x - x0) / (x1 - x0) + dd / 2;
+        for (let j = 0; j < nst; j++) { const a = x0 + (x1 - x0) * j / nst, b = x0 + (x1 - x0) * (j + 1) / nst, pts = [];
+          for (let q = 0; q <= 6; q++) { const x = a + (b - a) * q / 6; pts.push([x, top(x)]); }
+          for (let q = 6; q >= 0; q--) { const x = a + (b - a) * q / 6; pts.push([x, top(x) - dd - sag * Math.sin(Math.PI * (x - x0) / (x1 - x0))]); }
+          add(`${id}FY${tag}-${k}-${j}`, 'flyer stone', `Apse flyer ${k}, stone ${j + 1}`, extr(pts, [], 0.8, C0.x, C0.z, d.x, d.z), { w: extrVol(pts, [], 0.8) * GAMMA, bear: 0.8 * dd, sup: [[land, 0.5], [wall, 0.5]] }); } };
+      if (n === 2) { fl(RO, R2 - 0.6, H0 - 1, ym, 5, 0.45, 0.5, 'L', `${id}BI-${k}`, pP('P', k, 1)); fl(R2 + 0.6, Rb, ym, low, 5, 0.45, 0.5, 'O', `${id}BU-${k}-2`, `${id}BI-${k}`); }
+      else fl(RO, Rb, H0 - 1, low, 7, 0.5, 0.7, 'L', `${id}BU-${k}-2`, pP('P', k, 1));
+      if (upper) fl(RO, Rb, sec.yU, high, 7, 0.4, 0.55, 'U', `${id}BU-${k}-3`, pP('P', k, 3)); }); }
+
+  // the vault: a half-rib from the wall at every radial line to the crown of the stretch's last transverse rib
+  const { ARCH } = sec;
+  step('centering');
+  MID.forEach(k => { const half = ARCH.intrados.map(([x, y]) => at(PHI[k], -x, y + H0 - 0.14));
+    add(`${id}VC-${k}`, 'centering timber', 'Apse centering, curved rib', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(half), 32, 0.13, 6, false), { mat: 'timber' });
+    [0.4, 0.75].forEach((q, j) => { const c = at(PHI[k], R1 * q); add(`${id}VC-${k}-${j}`, 'centering timber', 'Apse centering, prop', cylG(0.1, 0.1, 0, H0 + ARCH.rise * (1 - q * q) * 0.9, c.x, c.z, 8), { mat: 'timber' }); }); });
+  const STEP_VC = K.at();
+  step('vault');
+  MID.forEach(k => { const d = radial(PHI[k]), rid = j => `${id}R${k}-L${j}`;
+    archShapes(ARCH).filter(a => a.side < 0).forEach(a => { const pts = a.pts.map(([s, y]) => [s, y + H0]);
+      add(rid(a.j), 'voussoir', `Apse rib ${k}, voussoir ${a.j + 1}`, extr(pts, [], 0.5, C0.x, C0.z, -d.x, -d.z), { w: a.A * 0.5 * GAMMA, bear: ARCH.t * 0.5, sup: a.j ? [[rid(a.j - 1), 1]] : [[pP('P', k, 1), 1]] }); }); });
+  { const trv = ribTop(ARCH, 1, H0), curve = phi => q => { const [x, y] = trv(q); return at(phi, -x, y); }, ribOf = k => k === 0 || k === nap ? `${r.T}TR${i}` : `${id}R${k}`;
+    const rps = pre => K.pieces.filter(p => p.id.startsWith(pre + '-')).map(p => p.id);
+    [[0, 0.38], [0.38, 0.72], [0.72, 1]].forEach(([q0, q1], c) => { for (let k = 0; k < nap; k++) {
+      const g = ruled(curve(PHI[k]), curve(PHI[k + 1]), q0, q1, 6, 10), a = rps(ribOf(k)), b = rps(ribOf(k + 1));
+      add(`${id}WEB-${k}-${c}`, 'web panel', 'Apse, vault web', g.g, { w: g.area * 0.3 * GAMMA, mat: 'web', sup: [...a.map(x => [x, 0.5 / a.length]), ...b.map(x => [x, 0.5 / b.length])] }); } }); }
+  step('strike', { focus: 'forces' });
+  removeAt(p => p.step === STEP_VC);
+  const STEP_STRUCK = K.at();
+
+  step('roofs');
+  { const apex = at(0, 0, sec.RIDGE);
+    MID.forEach((k, j) => add(`${id}RF${j}`, 'rafter', 'Apse rafter', beamG(at(PHI[k], sec.RX - 0.1, sec.RY + 0.36), apex, 0.3), { mat: 'oak', w: 1.2 * OAK, sup: [[`${id}CO-${Math.min(nap - 1, k)}`, 1]], group: 'roof' }));
+    for (let k = 0; k < nap; k++) {
+      add(`${id}LD-${k}`, 'lead sheet', 'Apse roof', tri(at(0, 0, sec.RIDGE + 0.42), at(PHI[k], sec.RX + 0.25, sec.RY + 0.2), at(PHI[k + 1], sec.RX + 0.25, sec.RY + 0.2)), { mat: 'lead', w: sec.RX * chord(k, sec.RX).len * 0.6 * 0.004 * LEAD, sup: [[`${id}CO-${k}`, 1]], group: 'roof' });
+      add(`${id}LA-${k}`, 'lead sheet', 'Ambulatory roof', quad(at(PHI[k], RO + 0.1, sec.aisleRoofTop), at(PHI[k + 1], RO + 0.1, sec.aisleRoofTop), at(PHI[k + 1], Ro + aw / 2 + 0.1, sec.aisleTop + 0.3), at(PHI[k], Ro + aw / 2 + 0.1, sec.aisleTop + 0.3)), { mat: 'lead', w: (Ro - RO) * chord(k, Ro).len * 0.004 * LEAD, sup: [[`${id}WS-${k}`, 0.5], [`${id}W-${k}`, 0.5]], group: 'roof' }); } }
+
+  return {
+    STEP_STRUCK,
+    glaze() {
+      for (let k = 0; k < nap; k++) { const { len } = chord(k, Ro);
+        const cm = chord(k, R1), g1 = extr(CLW, [], 0.05, cm.m.x, cm.m.z, cm.t.x, cm.t.z); add(`${id}GLC-${k}`, 'glass panel', 'Stained glass', g1, { mat: 'glass', tint: k % 3 });
+        const om = chord(k, Ro), w = Math.min(3.2, len - 2.4), g2 = extr(lancet(0, 3, w, Math.max(1, sec.aisleTop - 5 - w * 0.866)), [], 0.05, om.m.x, om.m.z, om.t.x, om.t.z); add(`${id}GLW-${k}`, 'glass panel', 'Stained glass', g2, { mat: 'glass', tint: (k + 1) % 3 });
+        if (chapels) { const ch = chord(k, Rch), wc = Math.min(3, ch.len - 3), g3 = extr(lancet(0, 3.4, wc, 7), [], 0.05, ch.m.x, ch.m.z, ch.t.x, ch.t.z); add(`${id}GLH-${k}`, 'glass panel', 'Stained glass', g3, { mat: 'glass', tint: (k + 2) % 3 }); } }
+    },
+    pave() { for (let k = 0; k < nap; k++) add(`${id}PV-${k}`, 'paving slab', 'Paving, apse', tri(at(0, 0, 0.08), at(PHI[k], Ro - aw / 2, 0.08), at(PHI[k + 1], Ro - aw / 2, 0.08)), { mat: 'pave' }); },
+    forceLines() {
+      const SUP = sec.supports(n), tp = Solver.thrustPoints(ARCH, sec.SOL.state);
+      return MID.map(k => { const p = PHI[k], w = (x, y) => at(p, -x, y);
+        const lines = [{ pts: tp.map(([x, y]) => w(x, y + H0)), r: 0.16 }, { pts: SUP.wall.line.filter(q => isFinite(q[0])).map(([x, y]) => w(x, y)), r: 0.13 }];
+        if (SUP.flyer) lines.push({ pts: [w(sec.XO, SUP.flyer.yA), w(SUP.flyer.xbI, SUP.flyer.yB)], r: 0.15 }, { pts: SUP.buttress.line.filter(q => isFinite(q[0])).map(([x, y]) => w(x, y)), r: 0.13 });
+        const a = at(p, R1 * 2, 20), d = radial(p);
+        return { z: a.z, end: false, radial: true, at: a, normal: V3(-d.z, 0, d.x).normalize(), lines, bases: [SUP.wall, SUP.buttress].filter(c => c && isFinite(c.x0)).map(c => w(c.x0, 0.2)) }; });
     },
   };
 }

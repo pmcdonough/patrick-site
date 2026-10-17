@@ -138,3 +138,23 @@ test('design your own: designs at the ends of every slider build, and one that f
     if (B.KIT.falls) { assert.ok(Object.keys(B.KIT.falls.motions).length > 50); assert.equal(B.KIT.falls.step, B.steps.length - 1); }
   }
 });
+
+test('design your own: a transept, a crossing and an apse build, alone or together, and fall when they should', async () => {
+  const { make } = await lab('yours.js'), D = await lab('design.js');
+  assert.equal(D.clamp({ ...D.DEFAULT, aisles: 2, transept: true }).transept, false, 'a transept needs one aisle');
+  assert.deepEqual(D.decode(D.encode(D.clamp({ ...D.DEFAULT, transept: true, arms: 3, choir: 5, east: 1, spire: true })), ''), D.clamp({ ...D.DEFAULT, transept: true, arms: 3, choir: 5, east: 1, spire: true }));
+  for (const d of [{ east: 1 }, { east: 1, aisles: 2, chapels: true }, { transept: true }, { transept: true, east: 1, spire: true, chapels: true, tiers: 2, towers: 2 },
+    { transept: true, east: 1, tiers: 0, wall: 2.8, crown: 26 }, { transept: true, east: 1, arms: 1, choir: 2, span: 9, crown: 20, shape: 'round', wall: 3.5, tiers: 0 }, { transept: true, east: 1, span: 17, crown: 52, arms: 3, choir: 6 }]) {
+    const B = make({ ...D.DEFAULT, ...d }), ids = B.pieces.map(p => p.id);
+    assert.equal(new Set(ids).size, ids.length, JSON.stringify(d));
+    if (d.east) assert.ok(ids.some(i => i.startsWith('APR')), 'the apse has its half-ribs');
+    if (d.transept) assert.ok(ids.includes('XBOSS') && ids.some(i => i.startsWith('TNE-')) && ids.some(i => i.startsWith('TSE-')), 'the crossing and both transept ends');
+    for (const p of B.pieces) assert.ok(p.geo.attributes.position.array.every(Number.isFinite), `${p.id}: a vertex that is not a number`);
+    B.computeLoads(B.steps.length);
+    assert.ok(B.forceLines().length > 3);
+  }
+  const fall = make({ ...D.DEFAULT, transept: true, east: 1, bdepth: 2 });
+  assert.equal(fall.KIT.falls.step, fall.steps.length - 1);
+  assert.ok(Object.keys(fall.KIT.falls.motions).some(i => i.startsWith('AP')), 'the apse falls with the lee side');
+  assert.ok(!Object.keys(fall.KIT.falls.motions).some(i => /^T[NS]/.test(i)), 'the transept arms stand in the storm');
+});

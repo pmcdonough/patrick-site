@@ -3,28 +3,28 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.10';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.10';
+import * as THREE from './vendor/three.module.js?v=0.11';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.11';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first. Your own is made from a design: make(design) gives the same exports, and the
 // design comes from the address (?b=yours&d=...), or else the last one saved on the design page.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.10') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.10') },
-  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.10'), design: true },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.11') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.11') },
+  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.11'), design: true },
 ];
 const Q = new URLSearchParams(location.search);
 const CHOSEN = BUILDINGS.find(b => b.id === Q.get('b')) || BUILDINGS[0];
 const MOD = await CHOSEN.load();
 let DESIGN = null;
 if (MOD.make) {
-  const D = await import('./design.js?v=0.10');
+  const D = await import('./design.js?v=0.11');
   let saved = null; try { saved = JSON.parse(localStorage.getItem('cathedral-lab.design')); } catch (e) { /* none saved */ }
   DESIGN = Q.get('d') ? D.decode(Q.get('d'), Q.get('name')) : D.clamp(saved || D.DEFAULT);
 }
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = MOD.make ? MOD.make(DESIGN) : MOD;
 
-const VERSION = '0.10';
+const VERSION = '0.11';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
@@ -147,8 +147,13 @@ function tube(pts, r) {
   return g;
 }
 const baseBall = new THREE.SphereGeometry(0.4, 20, 14);
+// Each line appears only once its own vault stands: when the centering under its crown has come out. Until then that
+// part of the building may not even be begun, and the line would hang in the air.
+const timber = pieces.filter(p => p.mat === 'timber' && p.until != null);
+const readyAt = crown => { let s = null; for (const p of timber) if (p.box.clone().expandByScalar(1.5).containsPoint(crown)) s = Math.max(s ?? -1, p.until); return s ?? STEP_STRUCK; };
 const bayLines = forceLines().map(({ z, end, radial, at, normal, lines, bases }) => {
-  const g = new THREE.Group(); Object.assign(g.userData, { z, end, radial, at, normal });
+  const crown = lines[0].pts.reduce((a, p) => p.y > a.y ? p : a);
+  const g = new THREE.Group(); Object.assign(g.userData, { z, end, radial, at, normal, ready: readyAt(crown) });
   lines.forEach(l => g.add(tube(l.pts, l.r)));
   bases.forEach(p => { const b = onTop(new THREE.Mesh(baseBall, forceMat)); b.position.copy(p); g.add(b); });
   forceGroup.add(g); return g;
@@ -159,7 +164,8 @@ function pickBayLine() {
   const cut = on('v-cut') ? cutPlane.constant : null, look = camera.getWorldDirection(V3());
   const score = g => cut != null ? (!g.userData.radial && g.userData.z <= cut + 1e-6 ? cut - g.userData.z : Infinity) : camera.position.distanceTo(g.userData.at) / (0.15 + Math.abs(look.dot(g.userData.normal)));
   // the lines next to the crossing and the towers end up inside the transept walls and the towers, so they are never shown
-  const best = bayLines.filter(g => !g.userData.end).reduce((a, g) => score(g) < score(a) ? g : a);
+  const ready = bayLines.filter(g => !g.userData.end && state.n > g.userData.ready);
+  const best = ready.length ? ready.reduce((a, g) => score(g) < score(a) ? g : a) : null;
   bayLines.forEach(g => { if (g.visible !== (g === best)) { g.visible = g === best; redraw(); } });
 }
 forceGroup.visible = false;
@@ -199,7 +205,7 @@ const FALL = KIT.falls ? (() => {
   for (const p of pieces) { const mo = KIT.falls.motions[p.id]; if (!mo) continue;
     const c = p.box.getCenter(V3()), h = p.box.max.y - p.box.min.y, pos = p.batch.mesh.geometry.attributes.position, nor = p.batch.mesh.geometry.attributes.normal;
     const g = 16, drop = Math.max(0, c.y - Math.min(h / 2, 0.8) - mo.rest * 0.4), T = Math.sqrt(2 * drop / g) || 0.3;
-    list.push({ p, mo, c, drop, T, delay: mo.delay + (mo.side ? Math.max(0, 40 - c.y) * 0.012 : 0), out: mo.side * mo.out * c.y,
+    list.push({ p, mo, c, drop, T, delay: mo.delay + (mo.dir[0] || mo.dir[1] ? Math.max(0, 40 - c.y) * 0.012 : 0), ox: mo.dir[0] * mo.out * c.y, oz: mo.dir[1] * mo.out * c.y,
       axis: V3(mo.axis[0], 0, mo.axis[2]).normalize(), P0: pos.array.slice(p.v0 * 3, (p.v0 + p.vn) * 3), N0: nor.array.slice(p.v0 * 3, (p.v0 + p.vn) * 3) }); }
   return { list, t0: null, done: false, pose: -1 };
 })() : null;
@@ -209,11 +215,11 @@ function fallPose(t) {
   const touched = new Set();
   for (const f of FALL.list) {
     const pos = f.p.batch.mesh.geometry.attributes.position, nor = f.p.batch.mesh.geometry.attributes.normal, a = pos.array, b = nor.array;
-    const k = t < 0 ? 0 : Math.max(0, Math.min(1, (t - f.delay) / f.T)), dy = -f.drop * k * k, dx = f.out * k;
+    const k = t < 0 ? 0 : Math.max(0, Math.min(1, (t - f.delay) / f.T)), dy = -f.drop * k * k, dx = f.ox * k, dz = f.oz * k;
     fq.setFromAxisAngle(f.axis, f.mo.spin * k);
     for (let j = 0; j < f.p.vn; j++) {
       fv.set(f.P0[3 * j] - f.c.x, f.P0[3 * j + 1] - f.c.y, f.P0[3 * j + 2] - f.c.z).applyQuaternion(fq);
-      a[(f.p.v0 + j) * 3] = f.c.x + fv.x + dx; a[(f.p.v0 + j) * 3 + 1] = f.c.y + fv.y + dy; a[(f.p.v0 + j) * 3 + 2] = f.c.z + fv.z;
+      a[(f.p.v0 + j) * 3] = f.c.x + fv.x + dx; a[(f.p.v0 + j) * 3 + 1] = f.c.y + fv.y + dy; a[(f.p.v0 + j) * 3 + 2] = f.c.z + fv.z + dz;
       fv.set(f.N0[3 * j], f.N0[3 * j + 1], f.N0[3 * j + 2]).applyQuaternion(fq); b[(f.p.v0 + j) * 3] = fv.x; b[(f.p.v0 + j) * 3 + 1] = fv.y; b[(f.p.v0 + j) * 3 + 2] = fv.z;
     }
     touched.add(f.p.batch);
@@ -447,4 +453,4 @@ theme(); resize();
 // open on the finished model, like the picture on the box (a design that falls: just before it does)
 go(OPEN, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id, falls: KIT.falls ? KIT.falls.step : null };
+window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id, falls: KIT.falls ? KIT.falls.step : null, bayLines };

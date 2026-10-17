@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.97 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.10 + Ring Kart 0.3. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.98 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.3. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.98
+- Cathedral Lab 0.11 (a transept, an apse and a plan for your own cathedral). The home card says so. No change to the sim, Play Review or Ring Kart (its stamps on Cathedral Lab's Three.js move with Cathedral Lab's version).
 
 ### 0.97
 - Ring Kart 0.3 (cars that look like cars, and smoother keyboard steering). No change to the sim, Play Review or Cathedral Lab.
@@ -218,6 +221,14 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.11
+- Design your own gets a plan. A transept (one aisle only, for now), with arms of 1 to 3 bays and a choir of 2 to 6 bays east of the crossing; the crossing gets its own vault on diagonal ribs, built and struck with the vaults round it, a groined roof where the four roofs meet, and, if chosen, a spire of oak and lead as tall again as the ridge. Each transept arm ends in a wall with a portal and a rose.
+- An apse instead of a flat east end: a half-polygon of 5 sides (7 on a nave 13 m wide or more) with an ambulatory, one ring of piers per aisle, buttresses and flyers on the radial lines like spokes, half-ribs to the keystone of the last transverse rib, a half-cone roof and, with chapels, radiating chapels. Its line of thrust is drawn on the radial lines.
+- The design page has The plan (nave bays, transept, arms, choir, east end, west front, chapels, spire) and a Plan view: the floor plan from above, with the piers, walls, buttresses, vault ribs, fronts, towers and apse, drawn from the same layout the 3D build uses. The presets have plans: Notre-Dame and Beauvais with apses, Amiens and the Romanesque church with transepts.
+- A design that fails falls everywhere it should: at the strike every stretch and the apse; in the storm the lee side of the nave, the choir and the apse with their vaults and roofs, while the transept arms stand. Each piece falls outward from its own wall.
+- Fixed: a line of thrust could hang in the air over a part of the building not yet begun (Amiens' choir, seen while the west front went up). Each line now waits until the centering under its own crown comes out. The smoke check checks it.
+- In the repo: `crossing()` and `apse()` in `gothic.js`, with an `after` hook in `aisled()` so a caller can add pieces to its steps; `layoutOf()` and `apseSides()` in `design.js`. Notre-Dame and Amiens unchanged (fingerprints). A new unit test builds transepts and apses alone and together, at the ends of the sliders, and checks what falls.
 
 ### 0.10
 - Design your own cathedral, a new page at /cathedral-lab/design/. Choose the vault (pointed or round, its height to the crown, the width of the nave, the depth of its stone), the walls, one or two aisles, no flyers or one or two tiers of them, the buttresses' depth, the number of bays, the towers and spires and the chapels. The cross-section is drawn with its line of thrust as you change them, with the heights of real vaults beside it (Notre-Dame, Chartres, Reims, Amiens, Beauvais), and the verdict: it stands, it stands cracked, or it falls, when the centering is struck or in the first great storm.

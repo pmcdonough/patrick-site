@@ -44,6 +44,9 @@ const { open, openPage } = require('./harness');
     const shown = await ks.page.evaluate(() => ({ nogl: !!document.querySelector('.nogl'), pieces: window.cathedralLab.pieces.length, steps: window.cathedralLab.steps.length }));
     if (shown.nogl) errors.push('cathedral-lab/: the 3D graphics did not start');
     else console.log(`cathedral-lab/ draws ${shown.pieces} pieces in ${shown.steps} steps (Cathedral Lab ${v}).`);
+    // each line of thrust waits for its own vault: Notre-Dame's apse lines come long after the nave's
+    const ready = await ks.page.evaluate(() => { const r = window.cathedralLab.bayLines.map(g => g.userData.ready); return [Math.min(...r), Math.max(...r)]; });
+    if (ready[1] <= ready[0]) errors.push('cathedral-lab/: every line of thrust appears at the same step, even where the building is not yet up');
     const al = await openPage(browser, srv, 'cathedral-lab/arch-lab/', () => !!window.archLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
     if (al.page && await al.page.evaluate(() => window.archLab.VERSION) !== v) errors.push('cathedral-lab/arch-lab/: its VERSION differs from the 3D page');
     // close pages when done: an open 3D page keeps the CPU busy on a machine with no graphics card, and slows the next one
