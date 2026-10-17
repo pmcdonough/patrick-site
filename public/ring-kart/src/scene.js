@@ -4,7 +4,7 @@
 // view to its own proportions, with racing stripes. Everything is cel-shaded (three flat bands of light, no gradients)
 // and the cars and trees carry a brown ink outline. Three.js r128, the copy Cathedral Lab keeps on the site.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { pointAt } from './track.js?v=0.13';
+import { pointAt } from './track.js?v=0.14';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.
 const col = c => new THREE.Color(c).convertSRGBToLinear();
@@ -419,7 +419,7 @@ function kerb() { return canvas(32, 64, (g, w, h) => { g.fillStyle = PAL.red; g.
 function paint(text, i) {
   const cols = [PAL.cream, PAL.mustard, PAL.orange, '#7fd6d0', '#ffffff'];
   const t = canvas(512, 128, (g, w, h) => {
-    g.clearRect(0, 0, w, h); g.font = '72px Shrikhand, "Barlow Condensed", Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.85;
+    g.clearRect(0, 0, w, h); g.font = '72px "Racing Sans One", "Barlow Condensed", Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.85;
     g.lineWidth = 10; g.strokeStyle = PAL.ink; g.lineJoin = 'round'; g.strokeText(text, w / 2, h / 2 + 4); g.fillStyle = cols[i % cols.length]; g.fillText(text, w / 2, h / 2 + 4);
   });
   return new THREE.Mesh(new THREE.PlaneGeometry(9, 2.25), new THREE.MeshToonMaterial({ gradientMap: RAMP, map: t, transparent: true, depthWrite: false }));
@@ -428,17 +428,19 @@ function paint(text, i) {
 export function label(text, sub) {
   const t = canvas(512, 128, (g, w, h) => {
     g.fillStyle = PAL.cream; g.strokeStyle = PAL.ink; g.lineWidth = 8; round(g, 8, 14, w - 16, h - 28, 40); g.fill(); g.stroke();
-    g.fillStyle = PAL.brown; g.font = '44px Righteous, Barlow, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, sub ? h / 2 - 12 : h / 2 + 2);
-    if (sub) { g.font = '26px Righteous, Barlow, sans-serif'; g.fillText(sub, w / 2, h / 2 + 24); }
+    g.fillStyle = PAL.brown; fit(g, text, 44, 'Bungee, Barlow, sans-serif', w - 70); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, sub ? h / 2 - 12 : h / 2 + 2);
+    if (sub) { g.font = '26px Bungee, Barlow, sans-serif'; g.fillText(sub, w / 2, h / 2 + 24); }
   });
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: true, transparent: true })); sp.scale.set(4.4, 1.1, 1); return sp;
 }
+// set a font no bigger than px that fits text in maxW: Bungee is wide, and a long car name would spill out
+function fit(g, text, px, fam, maxW) { do { g.font = `${px}px ${fam}`; px -= 2; } while (px > 12 && g.measureText(text).width > maxW); }
 function round(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function board(name) {
   const t = canvas(512, 160, (g, w, h) => {
     g.clearRect(0, 0, w, h); g.fillStyle = PAL.cream; g.strokeStyle = PAL.ink; g.lineWidth = 10; round(g, 6, 6, w - 12, h - 12, 34); g.fill(); g.stroke();
     for (const [c, y] of [[PAL.mustard, 22], [PAL.orange, 34], [PAL.red, 46]]) { g.fillStyle = c; g.fillRect(16, h - y - 6, w - 32, 10); }
-    g.fillStyle = PAL.brown; g.font = `${name.length > 14 ? 44 : 56}px Shrikhand, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, w / 2, h / 2 - 14);
+    g.fillStyle = PAL.brown; fit(g, name, 60, '"Racing Sans One", "Barlow Condensed", sans-serif', w - 60); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, w / 2, h / 2 - 14);
   });
   const grp = new THREE.Group();
   const face = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2), new THREE.MeshToonMaterial({ gradientMap: RAMP, map: t, transparent: true, alphaTest: 0.5 })); face.position.y = 3.2; grp.add(face);
@@ -457,7 +459,7 @@ function gateHouse(track) {
   const booth = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 2.2), new THREE.MeshToonMaterial({ gradientMap: RAMP, color: col(0xfff1cf) })); booth.position.set(0.8, 1.3, W / 2 + 1.6); grp.add(booth);
   const roof = new THREE.Mesh(new THREE.BoxGeometry(14, 0.35, W + 8), new THREE.MeshToonMaterial({ gradientMap: RAMP, color: col(0xec6f2b) })); roof.position.set(0, 5.2, 0); grp.add(roof);
   for (const z of [-W / 2 - 2, W / 2 + 3]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5.2, 0.4), new THREE.MeshToonMaterial({ gradientMap: RAMP, color: col(0x6d747c) })); c.position.set(0, 2.6, z); grp.add(c); }
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.4), new THREE.MeshBasicMaterial({ map: canvas(1024, 144, (g, w, hh) => { g.fillStyle = PAL.brown; g.fillRect(0, 0, w, hh); for (const [c, y] of [[PAL.mustard, 8], [PAL.orange, 18], [PAL.red, 28]]) { g.fillStyle = c; g.fillRect(0, hh - y - 4, w, 8); } g.fillStyle = PAL.cream; g.font = '78px Shrikhand, "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Nordschleife Touristenfahrten', w / 2, hh / 2 - 8); }), side: THREE.DoubleSide }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.4), new THREE.MeshBasicMaterial({ map: canvas(1024, 144, (g, w, hh) => { g.fillStyle = PAL.brown; g.fillRect(0, 0, w, hh); for (const [c, y] of [[PAL.mustard, 8], [PAL.orange, 18], [PAL.red, 28]]) { g.fillStyle = c; g.fillRect(0, hh - y - 4, w, 8); } g.fillStyle = PAL.cream; fit(g, 'Nordschleife Touristenfahrten', 78, '"Racing Sans One", "Barlow Condensed", sans-serif', w - 60); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Nordschleife Touristenfahrten', w / 2, hh / 2 - 8); }), side: THREE.DoubleSide }));
   sign.position.set(-0.25, 5.2 - 1.05, 0); sign.rotation.y = -Math.PI / 2; grp.add(sign);
   // the arm pivots at the booth and lies across the road
   const pivot = new THREE.Group(); pivot.position.set(0.2, 1.05, W / 2 + 0.4); grp.add(pivot);
@@ -472,7 +474,7 @@ function gantry(track, k, text) {
   const steel = toon({ color: PAL.orange });
   for (const z of [-W / 2 - 1.2, W / 2 + 1.2]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.5, 7, 0.5), steel); c.position.set(0, 3.5, z); grp.add(c); }
   const beam = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, W + 3), steel); beam.position.y = 7; grp.add(beam);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(W - 1, 1.4), new THREE.MeshBasicMaterial({ map: canvas(1024, 144, (g, w, h) => { g.fillStyle = PAL.brown; g.fillRect(0, 0, w, h); g.fillStyle = PAL.mustard; g.font = '84px Shrikhand, "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, h / 2 - 2); }), side: THREE.DoubleSide }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(W - 1, 1.4), new THREE.MeshBasicMaterial({ map: canvas(1024, 144, (g, w, h) => { g.fillStyle = PAL.brown; g.fillRect(0, 0, w, h); g.fillStyle = PAL.mustard; fit(g, text, 84, '"Racing Sans One", "Barlow Condensed", sans-serif', w - 80); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, h / 2 - 2); }), side: THREE.DoubleSide }));
   sign.position.set(-0.75, 7, 0); sign.rotation.y = -Math.PI / 2; grp.add(sign);
   return grp;
 }
@@ -620,7 +622,7 @@ export function carMesh(body) {
     for (const [v, flip] of [[0.444, false], [0.056, true]]) {
       g.save(); g.translate(w * ru, h * v); if (flip) g.rotate(Math.PI); g.scale(1, rh / rw);
       g.fillStyle = '#f4f1ea'; g.beginPath(); g.arc(0, 0, rw / 2, 0, 7); g.fill(); g.lineWidth = rw * 0.06; g.strokeStyle = '#151515'; g.stroke();
-      g.fillStyle = '#151515'; g.font = `${Math.round(rw * 0.62)}px Righteous, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(body.number || '', 0, rw * 0.04);
+      g.fillStyle = '#151515'; g.font = `${Math.round(rw * 0.62)}px Bungee, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(body.number || '', 0, rw * 0.04);
       g.restore();
     }
   }
@@ -668,7 +670,7 @@ export function carMesh(body) {
       if (race) {
         const x = (r2 + 0.015) * w, sw = w * 0.07, y0 = h * 0.35, y1 = h * 0.65;
         g.fillStyle = sc; g.fillRect(x, y0, sw, y1 - y0);
-        g.save(); g.translate(x + sw / 2, (y0 + y1) / 2); g.rotate(-Math.PI / 2); g.fillStyle = '#f4f1ea'; g.font = `${Math.round(sw * 0.62)}px Righteous, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('RING KART', 0, 1); g.restore();
+        g.save(); g.translate(x + sw / 2, (y0 + y1) / 2); g.rotate(-Math.PI / 2); g.fillStyle = '#f4f1ea'; g.font = `${Math.round(sw * 0.62)}px Bungee, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('RING KART', 0, 1); g.restore();
       }
       if (!st.panel) pane(0.02, Math.max(0.05, r1 - 0.015), 0.35, 0.65);
       if (stripes && !race) { g.fillStyle = sc; for (const v of [0.455, 0.545]) g.fillRect(r1 * w, h * v - h * 0.025, (r2 - r1) * w, h * 0.05); }

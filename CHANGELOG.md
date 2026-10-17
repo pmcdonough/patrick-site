@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.112 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.13. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.113 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.14. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.113
+- Ring Kart 0.14 (new fonts, new controls). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.112
 - Ring Kart 0.13 (car names no longer block your view when passing). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
@@ -652,6 +655,10 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.14
+- New type: Racing Sans One for the big words and Bungee for the numbers and labels, chosen by the owner from five pairings set in the game's own words, in place of Shrikhand and Righteous, which made it look generic. Names painted on signs and over cars shrink to fit, since Bungee is wide; the phone's pedal buttons and strip label are sized for it.
+- New controls, as the owner asked: the right hand steers on Left and Right; the left hand has the gas on Z and the brake on Shift, and drifts with the thumb on Space. Up still works as gas, Down still brakes and reverses, X is DRS. The key map, the hints and the gas switch say so.
 
 ### 0.13
 - Fixed: the name bubble over a car you were passing filled your view (the owner found it). Names showed for any car 9 to 70 m away, alongside and behind included; now only for cars 22 to 90 m up the road ahead, fading in, so nothing you are passing or racing side by side carries one.

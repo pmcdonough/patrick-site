@@ -6,8 +6,8 @@
 <link rel="icon" href="data:,">
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Righteous&family=Shrikhand&display=swap">
-<link rel="stylesheet" href="style.css?v=0.13">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Bungee&family=Racing+Sans+One&display=swap">
+<link rel="stylesheet" href="style.css?v=0.14">
 </head>
 <body>
 
@@ -67,12 +67,12 @@
       <div class="cars" id="cars"></div>
       <div class="row"><button class="primary" id="go">Join the queue</button><button id="watch">Watch a pro lap</button></div>
       <div class="keymap" aria-label="Controls">
-        <span><kbd>↑</kbd>Gas</span><span><kbd>←</kbd><kbd>→</kbd>Steer</span><span><kbd class="wide">Space</kbd>Brake</span><span><kbd class="wide">Shift</kbd>Drift</span>
+        <span><kbd>←</kbd><kbd>→</kbd>Steer</span><span><kbd>Z</kbd>Gas</span><span><kbd class="wide">Shift</kbd>Brake</span><span><kbd class="wide">Space</kbd>Drift</span>
         <span><kbd>↓</kbd>Reverse</span><span><kbd>E</kbd>Horn</span><span><kbd>Q</kbd>Look back</span><span><kbd>C</kbd>Camera</span>
         <span><kbd>L</kbd>Best line</span><span><kbd>R</kbd>Back on road</span><span><kbd>X</kbd>DRS (GT3 RS)</span>
       </div>
       <div class="row switches"><button id="gasMode" aria-pressed="false" title="G switches it during the race">Gas: hold Up</button><button id="lineMode" aria-pressed="false" title="L switches it during the race">Best line: off</button></div>
-      <p class="keys-line">Right hand on the arrows, left thumb on Space, little finger on Shift. WASD works too, and a gamepad. With the gas always on you only steer, brake and drift.</p>
+      <p class="keys-line">Right hand steers on the arrows; left hand on Z for gas and Shift for the brake, thumb on Space to drift. Up is gas too. WASD works, and a gamepad. With the gas always on you only steer, brake and drift.</p>
     </div>
 
     <div class="panel result" id="result" hidden>
@@ -99,7 +99,7 @@
     <button class="corner-btn full" id="full" title="Full screen (F)">Full screen</button>
     <div class="loading" id="loading">Building the track</div>
   </div>
-  <p class="hint">Up: gas. Left and right: steer. Space: brake (Down brakes too, and reverses). Shift: drift; hold it through a corner and let go for a mini-turbo, blue then orange. The card at the top calls the next corner, Left 1 a hairpin to Right 6 nearly flat, and shouts Brake when you are too quick for it. E honks the slow cars out of the way, Q looks back, G puts the gas on for you, C changes the camera (behind, high, on the bonnet), R puts you back on the road, Esc pauses, M mutes.</p>
+  <p class="hint">Left and right arrows: steer. Z: gas (Up works too). Shift: brake (Down brakes too, and reverses). Space: drift; hold it through a corner and let go for a mini-turbo, blue then orange. X opens DRS on a straight. The card at the top calls the next corner, Left 1 a hairpin to Right 6 nearly flat, and shouts Brake when you are too quick for it. E honks the slow cars out of the way, Q looks back, G puts the gas on for you, C changes the camera (behind, high, on the bonnet), R puts you back on the road, Esc pauses, M mutes.</p>
 
   <section class="notes">
     <div class="card"><h2>The lap</h2>
@@ -114,6 +114,6 @@
 </main>
 
 <footer class="version">Ring Kart <span id="version"></span> · The lap is the real Nordschleife from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, with heights from the Copernicus EU-DEM, shrunk to a third; Laguna Seca from the same map with heights from the USGS.</footer>
-<script type="module" src="src/main.js?v=0.13"></script>
+<script type="module" src="src/main.js?v=0.14"></script>
 </body>
 </html>

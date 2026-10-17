@@ -1,5 +1,5 @@
 /* Ring Kart's styles: a 1970s Saturday-morning cartoon. Cream paper, brown ink, mustard, orange and red racing
-   stripes; Shrikhand for the big words, Righteous for numbers, Barlow for reading. The page around the game is
+   stripes; Racing Sans One for the big words, Bungee for numbers and labels, Barlow for reading. The page around the game is
    cream in light mode and dark brown in dark mode; the game itself is a full-bleed 3D stage with the HUD on top as
    inked stickers: position, the gaps, the pace notes and BRAKE cue, the corner name, and along the bottom the
    onboard telemetry strip (map, gear and speed, revs, pedals, clock, height of the lap). */
@@ -20,8 +20,8 @@
   --teal: #2f9c9a;
   --strip: #3b2414;
   --stripes: linear-gradient(var(--mustard) 0 33%, var(--orange) 33% 66%, var(--red) 66%);
-  --display: 'Shrikhand', 'Barlow Condensed', Georgia, serif;
-  --num: 'Righteous', 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --display: 'Racing Sans One', 'Barlow Condensed', Impact, sans-serif;
+  --num: 'Bungee', 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --body: 'Barlow', 'Segoe UI', system-ui, sans-serif;
   --sticker: 3px solid var(--ink);
   --drop: 4px 4px 0 var(--ink);
@@ -261,7 +261,9 @@ kbd.wide { min-width: 52px; }
   .corner { top: 138px; font-size: 1.3rem; }
   #sound { bottom: 112px; } .corner-btn.full { bottom: 150px; }
   .touch .lr, .touch .pedals { bottom: 112px; }
-  .tele .lbl { white-space: nowrap; font-size: 0.68rem; }
+  .tele .lbl { white-space: nowrap; font-size: 0.58rem; letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  /* Bungee is wide: the pedal buttons' words get a size that fits */
+  .touch .pedals button { font-size: 0.82rem; letter-spacing: 0; padding: 0 2px; }
   /* on a phone the picker is the whole screen, not a box over the race */
   .pick { position: fixed; inset: 0; width: auto; max-height: none; border-radius: 0; border: 0; box-shadow: none; z-index: 60; padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); }
   .trackpick { grid-template-columns: 1fr; } .trackpick button { display: flex; gap: 10px; align-items: baseline; } .trackpick button b { flex: none; }

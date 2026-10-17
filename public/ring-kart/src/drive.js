@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.13';
+import { locate, pointAt } from './track.js?v=0.14';
 
 const G = 9.81;
 

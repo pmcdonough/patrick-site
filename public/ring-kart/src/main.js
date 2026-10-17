@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.13';
-import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.13';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.13';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.13';
-import { Sound } from './audio.js?v=0.13';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.14';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.14';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.14';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.14';
+import { Sound } from './audio.js?v=0.14';
 
-const VERSION = '0.13';
+const VERSION = '0.14';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -59,7 +59,7 @@ Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, n
 sun.shadow.bias = -0.0008;
 scene.add(sun, sun.target);
 // the signs and the names over the cars are painted with the page's 70s fonts, so wait for them (but not for long)
-await Promise.race([Promise.all(['56px Shrikhand', '44px Righteous'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
+await Promise.race([Promise.all(['56px "Racing Sans One"', '44px Bungee'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
 const world = buildWorld(scene, track, TRACK.look || {});
 // the best line: one path for every car, its speeds and phases for the car you pick
 const PATH = racingPath(track), lineMesh = buildLine(track, PATH, ...(CIRCUIT && track.laps > 1 ? [track.lineK[1], track.lineK[2]] : [track.drawA, track.drawB])); scene.add(lineMesh.mesh);
@@ -236,8 +236,8 @@ function nextCamera() {
 }
 let toastT = 0;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 1300); }
-// The layout: right hand on the arrows (up for gas, left and right to steer, down to brake and reverse), left thumb on
-// Space for the brake, left little finger on Shift for the drift. WASD works too, for the other way round.
+// The layout: the right hand steers on Left and Right (Down brakes and reverses, Up is gas too); the left hand has the
+// gas on Z and the brake on Shift, and the thumb drifts on Space. WASD works too, for the other way round.
 // Keys and touch buttons are all or nothing; the wheel and the brake pedal are not. Steering eases toward the key you
 // hold, in about a sixth of a second, and back to straight a little quicker, so a tap is a small correction and a hold
 // is full lock. The brake comes on over a tenth of a second, so a tap of Space is a dab and a hold is everything.
@@ -250,13 +250,14 @@ function readInput(dt) {
   const rate = want === 0 ? 8 : Math.sign(want) !== Math.sign(wheel.v) && wheel.v ? 10 : 6;
   wheel.v += Math.max(-rate * dt, Math.min(rate * dt, want - wheel.v));
   let steer = wheel.v;
-  // Space only brakes: at a standstill it holds the car rather than backing it up, which is Down's job
-  const reverse = k('arrowdown') || k('s') || ctl.brake ? 1 : 0, space = k(' ') && (!player || player.v > 0.5) ? 1 : 0;
-  const pedal = Math.max(reverse, space);
+  // the left hand: Z is the gas and Shift the brake, which only brakes (at a standstill it holds the car rather than
+  // backing it up, which is Down's job); the left thumb drifts on Space. Up still works as gas
+  const reverse = k('arrowdown') || k('s') || ctl.brake ? 1 : 0, foot = k('shift') && (!player || player.v > 0.5) ? 1 : 0;
+  const pedal = Math.max(reverse, foot);
   wheel.brake = pedal ? Math.min(1, wheel.brake + dt * 10) : 0;
   let brake = reverse && player && player.v <= 0.5 ? 1 : wheel.brake;
-  let gas = k('arrowup') || k('w') || ctl.gas || (autoGas && !pedal && S.mode === 'race') ? 1 : 0;
-  let drift = k('shift') || !!ctl.drift;
+  let gas = k('z') || k('arrowup') || k('w') || ctl.gas || (autoGas && !pedal && S.mode === 'race') ? 1 : 0;
+  let drift = (k(' ') && S.mode !== 'queue') || !!ctl.drift;
   for (const gp of navigator.getGamepads ? navigator.getGamepads() : []) {
     if (!gp) continue;
     const ax = gp.axes[0] || 0; if (Math.abs(ax) > 0.12) steer += Math.sign(ax) * (Math.abs(ax) - 0.12) / 0.88;
@@ -277,7 +278,7 @@ function setLine(v) {
   const t = $('touchLine'); if (t) t.classList.toggle('on', lineOn());
 }
 const lineOn = () => (S.mode === 'pro' || S.mode === 'proDone') ? S.proLine !== false : showLine && S.mode !== 'pick';
-function setGasMode(v) { autoGas = v; store.set('autoGas', v); const b = $('gasMode'); if (b) { b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Gas: always on' : 'Gas: hold Up'; } }
+function setGasMode(v) { autoGas = v; store.set('autoGas', v); const b = $('gasMode'); if (b) { b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Gas: always on' : 'Gas: hold Z'; } }
 // the horn: slow traffic within a stone's throw ahead pulls over to the right and lets you by
 function honk() {
   sound.horn();
@@ -664,7 +665,7 @@ function drawTach(rpm, gear, E) {
     tg.fillStyle = !on ? 'rgba(255,241,207,0.12)' : flash ? '#2f9c9a' : r > REDLINE ? '#d8402b' : r > shift * 0.93 ? '#f2b631' : '#a8c043';
     tg.fillRect(x, base - h, w, h);
   }
-  tg.font = '24px Righteous, Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'top';
+  tg.font = '24px Bungee, Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'top';
   for (let t = 0, T = top / 1000; t <= T; t++) { tg.fillStyle = t * 1000 > REDLINE ? '#ec6f2b' : '#fff1cf'; tg.fillText(t, x0 + (x1 - x0) * t / T, base + 8); }
 }
 // the rear wing in profile: the main plane, and the flap above it that tilts flat when DRS is open
@@ -717,7 +718,7 @@ function drawInset(p, gb, dt) {
   // shift lights: ten across the top of the hub, green, yellow, red, then all blue at the change
   const shift = E.shift || E.redline * 0.97, f = Math.max(0, (gb.rpm - E.redline * 0.6) / (shift - E.redline * 0.6));
   for (let i = 0; i < 10; i++) { const lit = f * 10 > i, all = f >= 1; ig.fillStyle = !lit ? '#4a3a2a' : all ? '#2f9cff' : i < 4 ? '#8ccf3f' : i < 7 ? '#f6d23c' : '#d8402b'; ig.beginPath(); ig.arc(-45 + i * 10, -24, 4, 0, 7); ig.fill(); }
-  ig.fillStyle = '#f2b631'; ig.font = '30px Righteous, Barlow, sans-serif'; ig.textAlign = 'center'; ig.textBaseline = 'middle';
+  ig.fillStyle = '#f2b631'; ig.font = '30px Bungee, Barlow, sans-serif'; ig.textAlign = 'center'; ig.textBaseline = 'middle';
   ig.fillText(gb.gear < 0 ? 'R' : gb.gear === 0 ? 'N' : gb.gear, 0, 4);
   // gloves at a quarter to three
   for (const s of [-1, 1]) { ig.fillStyle = '#d8402b'; ig.beginPath(); ig.ellipse(s * (R - 8), -8, 20, 26, s * -0.3, 0, 7); ig.fill(); ig.stroke(); ig.fillStyle = '#fff1cf'; ig.beginPath(); ig.ellipse(s * (R - 2), 14, 14, 7, 0, 0, 7); ig.fill(); ig.stroke(); }

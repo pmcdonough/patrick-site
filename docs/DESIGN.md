@@ -27,7 +27,7 @@ How the site looks, reads and behaves, and the rules a new page or feature follo
 | Display: titles, scoreboard, view switcher, buttons | Barlow Condensed 600 and 800 | the projects (`--display`) |
 | Body | Barlow 400 to 600 | the projects (`--body`) |
 | Everything | Inter 400 to 700 | the home page, Under the hood, Play Review |
-| Ring Kart's big words, and its numbers | Shrikhand, and Righteous; Barlow for reading | Ring Kart |
+| Ring Kart's big words, and its numbers | Racing Sans One, and Bungee (since Ring Kart 0.14; Shrikhand and Righteous before, which read as generic 70s retro); Barlow for reading | Ring Kart |
 | Code | the system monospace | Under the hood |
 
 Each has a real fallback stack (`'Arial Narrow'`, `system-ui`) so a page still reads before the fonts arrive. Titles use `clamp()` sizes and `text-wrap: balance`. Running text is capped at about 62 to 80 characters a line.

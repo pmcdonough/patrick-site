@@ -35,15 +35,15 @@ This file is the whole reference for the project: what it is, how it is put toge
 
 **The best line** (a switch on the picker, L, or Line on a phone): the pro's line painted on the road as inked chevrons, each stretch coloured for what your feet should be doing there: green gas, yellow coast, orange brake, red brake hard. A coach sticker on the left says the same a moment ahead, with the speed the line carries there. The colours are worked out for the car you pick, so they always match the pro in that car.
 
-Controls, chosen so a lap that is all gas and brake sits under two hands:
+Controls, chosen so a lap that is all gas and brake sits under two hands (since 0.14, as the owner asked: the right hand steers on the arrows, the left hand works the pedals on Z and Shift and drifts with the thumb on Space):
 
 | Key | Does |
 |---|---|
-| Up (or W) | Gas |
+| Z (or Up, or W) | Gas |
 | Left, Right (or A, D) | Steer; eased in over about a sixth of a second, so a tap is a correction and a hold is full lock |
-| Space | Brake; a tap is a dab, a hold is everything; never reverses |
+| Shift | Brake; a tap is a dab, a hold is everything; never reverses |
 | Down (or S) | Brake, and reverse from a standstill; let go and the car stops, or press Up to drive forward |
-| Shift | Drift; hold through a corner, let go for a mini-turbo (blue, then orange) |
+| Space | Drift; hold through a corner, let go for a mini-turbo (blue, then orange) |
 | E | Horn; slow traffic just ahead pulls over |
 | Q | Look back, while held |
 | G | Gas always on (also a switch on the picker) |
@@ -235,11 +235,11 @@ The theme is a 1970s Saturday-morning cartoon (the Hanna-Barbera and Tom and Jer
 
 **Motion**: cars squash on a hard landing and stretch under a turbo; the turbo also draws zoom lines and warms the vignette; drift smoke and dust are round inked puffs; the BRAKE cue thumps.
 
-**Type**: Shrikhand for the big words (title, position, corner names, signs, BRAKE), Righteous for numbers and labels, Barlow for reading. Canvas textures use the same fonts, so the page waits up to 2.5 s for them before painting the signs.
+**Type**: Racing Sans One for the big words (title, position, corner names, signs, BRAKE), a slanted motorsport-decal face; Bungee, a signage face, for numbers and labels; Barlow for reading. Since 0.14: the owner found Shrikhand and Righteous, the faces before, made it look generic and AI-made, and chose this pair from five set side by side in the game's own words. Bungee is wide, so names painted in the world shrink to fit (`fit` in `scene.js`). Canvas textures use the same fonts, so the page waits up to 2.5 s for them before painting the signs.
 
 **HUD rules**: everything over the picture is an inked sticker (cream, 3 px ink border, a hard 4 px drop shadow, round corners) or inked lettering; the telemetry strip is a brown dashboard under three racing stripes. Information sits where a broadcast puts it: position and gaps in the top corners, the next corner top centre, telemetry along the bottom. Nothing animates unless it means something (a turbo, a late brake, a new corner).
 
-**The page around the game** uses the same tokens: cream and brown in light mode, dark brown in dark mode, the title in Shrikhand over the three stripes.
+**The page around the game** uses the same tokens: cream and brown in light mode, dark brown in dark mode, the title in Racing Sans One over the three stripes.
 
 ## 9. The page: session, input, camera, HUD, sound
 
@@ -281,6 +281,7 @@ Each version was one session's work and one commit; the changelog has the detail
 - **0.4 (site 0.99)**: the controls rethought around a lap that is all gas and brake (Up for gas, Space to brake, Shift to drift), pace notes and a BRAKE cue from the AI's own corner speeds (split out of `driveAI` unchanged, so the AI drives exactly as before), gas always on, a horn, look back; and the 70s cartoon look, replacing the realistic one.
 
 - **0.5 (site 0.100)**: the pro lap and the best line, from one new pure module (`line.js`), so what you are shown and what the pro drives cannot disagree; the director's cut; and the phone fixed after a screenshot from a real phone (buttons overlapping each other and the prompt, the corner buttons under the thumbs). Found on the way: the pro reversed off the start (a brake pedal at a standstill is reverse), a speed profile that braked for wiggles in the tracing (curvature measured over too short a span), and the gas switch, which did nothing until you picked a car.
+- **0.14 (site 0.113)**: new type and new controls, both the owner's choice (see the design system and the controls).
 - **0.13 (site 0.112)**: car names shown only over cars well up the road ahead, after the owner found the bubble over a car being passed blocking the view.
 - **0.12 (site 0.111)**: two tracks after the owner asked how hard another would be, a real one popular in games and a made-up one: Laguna Seca with laps, and the Coast Road. Laps came almost free by laying a circuit out lap after lap as one long road. Laguna showed the pro slower than the AI; the cause was the best line hugging the inside of hairpins (curve shortening), fixed with passes that lower the line's bending, which also took 8 s off the pro on the Ring. On phones the picker became the whole screen.
 - **0.11 (site 0.110)**: the owner found a GT3 RS stuck behind the barrier on the climb to the Karussell. Shrunk to a third, the road up and the road out had come to overlap, and the car's road search jumped from one to the other. Fixed in the map builder (close stretches eased apart), the barriers (one between close stretches) and the search (a few metres only); a new test drives cars every which way and fails on any escape.
