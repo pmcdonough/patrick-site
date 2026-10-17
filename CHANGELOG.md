@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.98 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.3. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.99 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.4. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.99
+- Ring Kart 0.4 (a 70s cartoon look, new controls and pace notes). The home card says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.98
 - Cathedral Lab 0.11 (a transept, an apse and a plan for your own cathedral). The home card says so. No change to the sim, Play Review or Ring Kart (its stamps on Cathedral Lab's Three.js move with Cathedral Lab's version).
@@ -589,6 +592,14 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.4
+- New controls, for a lap that is all gas and brake: right hand on the arrows (Up for gas, Left and Right to steer, Down to brake and reverse), left thumb on Space for the brake, little finger on Shift for the drift. A tap of Space is a dab of brake and a hold is everything; Space never backs you up. WASD and the gamepad still work. A key map on the car picker.
+- Pace notes, as a rally co-driver calls them: the next corner on a card at the top, an arrow that curls as tight as the corner, Left or Right 1 (a hairpin) to 6 (nearly flat), whether it tightens, and how far; and BRAKE when you are too quick to make what is coming. Both read the AI's own corner speeds (`cornerSpeed`, `nextCorner` in `src/drive.js`).
+- Gas always on, a switch on the picker or G: you only steer, brake and drift.
+- E honks a cartoon horn and slow traffic just ahead pulls over to let you by. Q looks back.
+- The look: a 1970s Saturday-morning cartoon. Cel shading in three flat bands, a brown ink outline round the cars and trees, a turquoise sky over a striped sun, painted hills on the horizon, puffy outlined clouds, lollipop trees and spruces with autumn ones among them, a patchwork of fields, cartoon tarmac with a dashed line, cream Armco. Cars with fat rounded edges, wheels a size too big with whitewalls, streaky cartoon glass and twin racing stripes; they squash on a hard landing and stretch under a turbo, which also draws zoom lines. Signs, labels and HUD in Shrikhand and Righteous, as inked stickers over a brown dashboard with mustard, orange and red stripes.
+- The page around the game in cream and brown to match, light and dark.
 
 ### 0.3
 - New cars. Each is drawn from a side view for its style: the lower body's outline cut round the wheel arches with the wings bulging over them, extruded across the car with rounded edges; a glasshouse that narrows toward the roof, with painted roof, A-, B- and C-pillars (a van's load bay is solid); door mirrors, bumpers, side skirts, a grille, headlights and tail lights, German number plates, an exhaust, five-spoke rims, and a soft shadow underneath. The MX-5 has its windscreen, seats and driver; wings stand on uprights with end plates. A few draw calls per car.

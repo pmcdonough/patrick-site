@@ -1,7 +1,7 @@
 // The sound, made in the browser: an engine from two oscillators through a filter that opens with the throttle, the
 // tyres squealing in a drift, wind that rises with speed, a whoosh for a mini-turbo, a thud for a bump, and the beep
 // of the barrier. Nothing plays until the first click or key, as browsers require.
-import { revs } from './drive.js?v=0.3';
+import { revs } from './drive.js?v=0.4';
 export class Sound {
   constructor() { this.on = true; this.ctx = null; this.rpm = 900; this.lastBoost = 0; this.lastBump = 0; }
   start() {
@@ -35,6 +35,16 @@ export class Sound {
   tone(f, dur, vol = 0.2, when = 0) {
     if (!this.ctx) return; const ctx = this.ctx, o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + when;
     o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  // a cartoon horn: two notes a third apart, sliding up into the first
+  horn() {
+    if (!this.ctx) return; const ctx = this.ctx, t = ctx.currentTime;
+    for (const [f, d] of [[311, 0], [392, 0.22]]) {
+      const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter(); o.type = 'sawtooth'; lp.type = 'lowpass'; lp.frequency.value = 1800;
+      o.frequency.setValueAtTime(f * 0.7, t + d); o.frequency.exponentialRampToValueAtTime(f, t + d + 0.08);
+      g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.16, t + d + 0.03); g.gain.setValueAtTime(0.16, t + d + 0.18); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.3);
+      o.connect(lp); lp.connect(g); g.connect(this.master); o.start(t + d); o.stop(t + d + 0.35);
+    }
   }
   beep() { this.tone(880, 0.18, 0.12); this.tone(1320, 0.3, 0.12, 0.2); }
   finish() { [660, 880, 1100, 1320].forEach((f, i) => this.tone(f, 0.25, 0.1, i * 0.12)); }

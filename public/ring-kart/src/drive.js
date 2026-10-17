@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.3';
+import { locate, pointAt } from './track.js?v=0.4';
 
 const G = 9.81;
 
@@ -164,16 +164,10 @@ function circles(c) {
   return [[c.x + fx * o, c.z + fz * o, r], [c.x - fx * o, c.z - fz * o, r]];
 }
 
-// ---------- the AI driver ----------
-// Looks ahead along the road for the slowest corner it can still brake for, picks a line (the inside of what is
-// coming for racers, the right-hand side for traffic, as on the real Ring), steers at a point down that line, and
-// moves over to pass on the left when a slower car is in the way.
-export function driveAI(car, dt, track, cars, opts = {}) {
-  const sp = car.spec, ai = car.ai || (car.ai = { lane: 0 });
-  const half = track.width / 2;
-  const n = track.n;
-  const pace = (sp.pace || 0.8) * (opts.paceScale || 1);
-  // speed target: the slowest corner within braking reach
+// The fastest a car can be going now and still make every corner within braking reach, using `pace` of its grip:
+// what the AI drives to, and what the page's pace notes call BRAKE against.
+export function cornerSpeed(car, track, pace) {
+  const sp = car.spec, n = track.n;
   let vt = sp.vmax;
   const reach = Math.min(n - 1, car.k + Math.ceil((car.v * car.v / (2 * sp.brake * 0.7) + 30) / track.ds));
   for (let j = car.k + 1; j <= reach; j += 2) {
@@ -184,11 +178,38 @@ export function driveAI(car, dt, track, cars, opts = {}) {
     const dist = (j - car.k) * track.ds;
     vt = Math.min(vt, Math.sqrt(vc * vc + 2 * sp.brake * 0.7 * dist));
   }
+  return vt;
+}
+
+// The next corner worth a note, as a rally co-driver reads it: which way, how tight on a scale of 1 (a hairpin) to 6
+// (barely a bend), how far away it starts, and whether it tightens. Bends gentler than a 6 are left out.
+export function nextCorner(track, k, ahead = 260) {
+  const n = track.n, on = 1 / 140, end = Math.min(n - 1, k + Math.round(ahead / track.ds));
+  let j = k + 1; while (j < end && Math.abs(track.curv[j]) < on) j++;
+  if (j >= end) return null;
+  const dir = Math.sign(track.curv[j]);
+  let a = j, peak = 0, peakAt = j;
+  while (j < n - 1 && track.curv[j] * dir > on * 0.6) { const c = Math.abs(track.curv[j]); if (c > peak) { peak = c; peakAt = j; } j++; }
+  const R = 1 / peak, grade = R < 16 ? 1 : R < 26 ? 2 : R < 40 ? 3 : R < 60 ? 4 : R < 95 ? 5 : 6;
+  return { dir: dir > 0 ? 'right' : 'left', grade, dist: (a - k) * track.ds, len: (j - a) * track.ds, tightens: peakAt > a + (j - a) * 0.6, at: a };
+}
+
+// ---------- the AI driver ----------
+// Looks ahead along the road for the slowest corner it can still brake for, picks a line (the inside of what is
+// coming for racers, the right-hand side for traffic, as on the real Ring), steers at a point down that line, and
+// moves over to pass on the left when a slower car is in the way.
+export function driveAI(car, dt, track, cars, opts = {}) {
+  const sp = car.spec, ai = car.ai || (car.ai = { lane: 0 });
+  const half = track.width / 2;
+  const n = track.n;
+  const pace = (sp.pace || 0.8) * (opts.paceScale || 1);
+  // speed target: the slowest corner within braking reach
+  let vt = cornerSpeed(car, track, pace);
   // jumps: racers lift before a big crest so they do not land in the trees
   if (opts.cap) vt = Math.min(vt, opts.cap);
   // line
   let lane;
-  if (car.traffic) lane = half * 0.42;
+  if (car.traffic) lane = half * (car.yieldT > 0 ? 0.72 : 0.42);   // a honk sends them over to the verge
   else {
     let cAhead = 0; for (let j = car.k + 8; j < Math.min(n, car.k + 40); j += 4) cAhead += track.curv[j];
     lane = -Math.sign(cAhead) * Math.min(half * 0.55, Math.abs(cAhead) * 40);
@@ -205,6 +226,7 @@ export function driveAI(car, dt, track, cars, opts = {}) {
     lane = left > -half + 1.5 ? left : right < half - 1.5 && !car.traffic ? right : lane;
     if (Math.abs(lane - blocked.lat) < 3) vt = Math.min(vt, blocked.v);
   }
+  if (car.yieldT > 0) { car.yieldT -= dt; vt = Math.min(vt, sp.vmax * 0.5); }
   ai.lane += (lane - ai.lane) * Math.min(1, dt * 1.5);
   // steer at a point down the line
   const look = Math.max(5, Math.round((6 + car.v * 0.55) / track.ds));

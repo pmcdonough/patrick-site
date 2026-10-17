@@ -4,12 +4,12 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.11';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.3';
-import { makeCar, step, collide, driveAI, revs, REDLINE } from './drive.js?v=0.3';
-import { buildWorld, buildSky, HORIZON, carMesh, label } from './scene.js?v=0.3';
-import { Sound } from './audio.js?v=0.3';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.4';
+import { makeCar, step, collide, driveAI, revs, REDLINE, cornerSpeed, nextCorner } from './drive.js?v=0.4';
+import { buildWorld, buildSky, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.4';
+import { Sound } from './audio.js?v=0.4';
 
-const VERSION = '0.3';
+const VERSION = '0.4';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -37,8 +37,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(HORIZON).convertSRGBToLinear();
 scene.fog = new THREE.Fog(scene.background.getHex(), 170, 820);
 const sky = buildSky(); scene.add(sky);
-// the car paint and the Armco reflect the sky: an environment map made once from a cloudless copy of it
-{ const pm = new THREE.PMREMGenerator(renderer), env = new THREE.Scene(); env.add(buildSky(false)); scene.environment = pm.fromScene(env, 0.02).texture; pm.dispose(); }
+setInkFog(scene.fog);
 const camera = new THREE.PerspectiveCamera(68, 1, 0.3, 1400);
 scene.add(new THREE.HemisphereLight(0xdfeeff, 0x41532f, 0.75));
 const sun = new THREE.DirectionalLight(0xfff1dc, 1.25);
@@ -46,6 +45,8 @@ sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 260 });
 sun.shadow.bias = -0.0008;
 scene.add(sun, sun.target);
+// the signs and the names over the cars are painted with the page's 70s fonts, so wait for them (but not for long)
+await Promise.race([Promise.all(['56px Shrikhand', '44px Righteous'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
 const world = buildWorld(scene, track);
 const gate = world.gate;
 $('loading').hidden = true;
@@ -53,7 +54,9 @@ $('loading').hidden = true;
 // ---------- particles: sparks from drifts, smoke from the tyres, dust off the grass ----------
 const PN = 600, pPos = new Float32Array(PN * 3), pCol = new Float32Array(PN * 3), pLife = new Float32Array(PN), pVel = new Float32Array(PN * 3);
 const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3)); pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
-const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.32, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false }));
+// each particle a cartoon puff: a round dab of colour with an ink rim
+const puff = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#2a1a0e'; g.beginPath(); g.arc(32, 32, 30, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(32, 32, 24, 0, 7); g.fill(); const t = new THREE.CanvasTexture(c); return t; })();
+const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.7, map: puff, vertexColors: true, transparent: true, alphaTest: 0.4, depthWrite: false }));
 points.frustumCulled = false; scene.add(points);
 let pNext = 0;
 function emit(x, y, z, vx, vy, vz, col, life) { const i = pNext; pNext = (pNext + 1) % PN; pPos.set([x, y, z], i * 3); pVel.set([vx, vy, vz], i * 3); pCol.set(col, i * 3); pLife[i] = life; }
@@ -78,7 +81,7 @@ function addCar(spec, k, lat, role) {
   const m = carMesh(spec.body); m.rotation.order = 'YZX'; scene.add(m);
   if (role !== 'player') { const l = label(pretty(spec.name)); l.position.y = spec.body.hgt + 1.3; l.visible = false; m.add(l); m.label = l; }
   if (role === 'player') {
-    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.6, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0.85 }));
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.34, 1.9, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb238, transparent: true, opacity: 0.95 }));
     flame.rotation.z = Math.PI / 2; flame.position.set(-spec.body.len / 2 - 0.7, 0.42, -0.45); flame.visible = false; m.add(flame); m.flame = flame;
   }
   meshes.set(c, m); cars.push(c); return c;
@@ -124,7 +127,8 @@ function picker() {
     <span class="sw" style="background:${s.body.color}"></span><b>${s.name}</b><p>${s.note}</p>
     <span class="bars"><span>Top speed</span><i style="--w:${(s.vmax / maxOf('vmax') * 100).toFixed(0)}%"></i><span>Acceleration</span><i style="--w:${(s.accel / maxOf('accel') * 100).toFixed(0)}%"></i><span>Grip</span><i style="--w:${(s.grip / maxOf('grip') * 100).toFixed(0)}%"></i><span>Drift</span><i style="--w:${(s.drift / maxOf('drift') * 100).toFixed(0)}%"></i></span>
     ${store.get('best.' + s.id, 0) ? `<p>Your best: ${fmt(store.get('best.' + s.id, 0))}</p>` : ''}</button>`).join('');
-  $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); picker(); setup(); });
+  $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); picker(); setup(); setGasMode(autoGas);
+$('gasMode').onclick = () => setGasMode(!autoGas); });
 }
 picker(); setup();
 $('go').onclick = () => { S.mode = 'queue'; S.t = 0; S.lastRelease = -1.2; $('pick').hidden = true; $('hud').hidden = false; sound.start(); cv.focus?.(); };
@@ -139,12 +143,14 @@ const ctl = { left: 0, right: 0, gas: 0, brake: 0, drift: 0 };
 addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input,textarea')) return;
   const k = e.key.toLowerCase();
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) && S.mode !== 'pick') e.preventDefault();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift'].includes(k) && S.mode !== 'pick') e.preventDefault();
   if (e.repeat) return;
   keys.add(k);
   if (k === 'escape' || k === 'p') { if (S.mode === 'queue' || S.mode === 'race') pause(!S.paused); }
   if (k === 'm') toggleSound();
   if (k === 'c') S.camMode = (S.camMode + 1) % 3;
+  if (k === 'e' && player && S.mode === 'race') honk();
+  if (k === 'g') setGasMode(!autoGas);
   if (k === 'f') full();
   if (k === 'r' && player && S.mode === 'race') rescue();
   if ((k === ' ' || k === 'enter') && S.mode === 'queue') ticket();
@@ -161,17 +167,27 @@ $('touch').querySelectorAll('button').forEach(b => {
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => on(0));
 });
 cv.addEventListener('pointerdown', () => { if (S.mode === 'queue') ticket(); });
-// Keys and touch buttons are all or nothing; the wheel is not. Steering eases toward the key you hold, in about a
-// sixth of a second, and back to straight a little quicker, so a tap is a small correction and a hold is full lock.
-const wheel = { v: 0 };
+// The layout: right hand on the arrows (up for gas, left and right to steer, down to brake and reverse), left thumb on
+// Space for the brake, left little finger on Shift for the drift. WASD works too, for the other way round.
+// Keys and touch buttons are all or nothing; the wheel and the brake pedal are not. Steering eases toward the key you
+// hold, in about a sixth of a second, and back to straight a little quicker, so a tap is a small correction and a hold
+// is full lock. The brake comes on over a tenth of a second, so a tap of Space is a dab and a hold is everything.
+// With the gas always on (G, or the switch by the cars), the car drives itself forward unless you brake.
+const wheel = { v: 0, brake: 0 };
+let autoGas = store.get('autoGas', false);
 function readInput(dt) {
   const k = n => keys.has(n);
   const want = (k('arrowright') || k('d') ? 1 : 0) - (k('arrowleft') || k('a') ? 1 : 0) + ctl.right - ctl.left;
   const rate = want === 0 ? 8 : Math.sign(want) !== Math.sign(wheel.v) && wheel.v ? 10 : 6;
   wheel.v += Math.max(-rate * dt, Math.min(rate * dt, want - wheel.v));
   let steer = wheel.v;
-  let gas = k('arrowup') || k('w') || ctl.gas ? 1 : 0, brake = k('arrowdown') || k('s') || ctl.brake ? 1 : 0;
-  let drift = k(' ') || k('shift') || !!ctl.drift;
+  // Space only brakes: at a standstill it holds the car rather than backing it up, which is Down's job
+  const reverse = k('arrowdown') || k('s') || ctl.brake ? 1 : 0, space = k(' ') && (!player || player.v > 0.5) ? 1 : 0;
+  const pedal = Math.max(reverse, space);
+  wheel.brake = pedal ? Math.min(1, wheel.brake + dt * 10) : 0;
+  let brake = reverse && player && player.v <= 0.5 ? 1 : wheel.brake;
+  let gas = k('arrowup') || k('w') || ctl.gas || (autoGas && !pedal && S.mode === 'race') ? 1 : 0;
+  let drift = k('shift') || !!ctl.drift;
   for (const gp of navigator.getGamepads ? navigator.getGamepads() : []) {
     if (!gp) continue;
     const ax = gp.axes[0] || 0; if (Math.abs(ax) > 0.12) steer += Math.sign(ax) * (Math.abs(ax) - 0.12) / 0.88;
@@ -181,6 +197,13 @@ function readInput(dt) {
     if (b(9) && !S.padPause) { S.padPause = true; if (S.mode === 'race' || S.mode === 'queue') pause(!S.paused); } else if (!b(9)) S.padPause = false;
   }
   return { steer: Math.max(-1, Math.min(1, steer)), gas, brake, drift };
+}
+function setGasMode(v) { autoGas = v; store.set('autoGas', v); const b = $('gasMode'); if (b) { b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Gas: always on' : 'Gas: hold Up'; } }
+// the horn: slow traffic within a stone's throw ahead pulls over to the right and lets you by
+function honk() {
+  sound.horn();
+  for (const c of cars) if (c.traffic && !c.hidden && c.s > player.s && c.s - player.s < 90) c.yieldT = 3;
+  S.honkT = 0.6;
 }
 function pause(v) { S.paused = v; $('paused').hidden = !v; if (v) sound.quiet(); }
 function rescue() {
@@ -280,12 +303,16 @@ function draw(dt) {
     if (c.hidden) continue;
     m.position.set(c.x, c.y, c.z);
     m.rotation.set(c.roll, -c.h - (c === player || c.drift ? c.slide : 0), c.pitch);
+    // squash and stretch, the cartoon way: squash on a hard landing, stretch out under a turbo
+    const sq = Math.min(0.22, (c.landed || 0) * 0.3), st = c.boost > 0 ? 0.07 : 0;
+    m.scale.set(1 + sq * 0.6 + st, 1 - sq - st * 0.5, 1 + sq * 0.6);
     // brake lights
     if (m.tail) { const on = c.input.brake > 0 && c.v > 0.5; if (m.tail.on !== on) { m.tail.on = on; m.tail.color.copy(on ? TAIL_ON : TAIL_OFF); } }
     if (m.label) { const d = Math.hypot(c.x - player.x, c.z - player.z); m.label.visible = S.mode !== 'pick' && d < 70 && d > 9; }
   }
   for (const [c, m] of meshes) if (!c.hidden) for (const w of m.wheels) w.rotation.z -= c.v * dt / 0.33;
   const pm = meshes.get(player);
+  if (pm.ink) pm.ink.visible = S.camMode !== 2 || S.mode === 'pick';
   if (pm.flame) { pm.flame.visible = player.boost > 0; pm.flame.scale.set(1, 0.8 + Math.random() * 0.5, 1); }
   // effects behind your car
   if (S.mode !== 'pick') {
@@ -296,7 +323,7 @@ function draw(dt) {
       for (const s of [-1, 1]) {
         const ox = -Math.sin(player.h) * s * 0.8, oz = Math.cos(player.h) * s * 0.8;
         emit(bx + ox, player.y + 0.15, bz + oz, (Math.random() - 0.5) * 3, 1 + Math.random() * 2, (Math.random() - 0.5) * 3, col, 0.35);
-        if (Math.random() < 0.5) emit(bx + ox, player.y + 0.3, bz + oz, (Math.random() - 0.5), 0.8, (Math.random() - 0.5), [0.8, 0.8, 0.82], 0.9);
+        if (Math.random() < 0.5) emit(bx + ox, player.y + 0.3, bz + oz, (Math.random() - 0.5), 0.8, (Math.random() - 0.5), [1, 0.97, 0.9], 0.9);
       }
     }
     if (player.grass && player.v > 5) emit(bx, player.y + 0.2, bz, (Math.random() - 0.5) * 2, 1.5, (Math.random() - 0.5) * 2, [0.45, 0.38, 0.25], 0.7);
@@ -321,11 +348,13 @@ function camera3(dt) {
     // behind, high, and on the bonnet: just behind the windscreen, low enough to see the nose ahead of you
     const b = c.spec.body, onboard = S.camMode === 2;
     const dist = [7.2, 13, -b.len * (camera.aspect < 1 ? 0.3 : 0.06)][S.camMode], ht = [2.8, 5, b.hgt * 0.8][S.camMode];
-    want = new THREE.Vector3(c.x, c.y + ht, c.z).addScaledVector(f, -dist);
-    look = new THREE.Vector3(c.x, c.y + (onboard ? b.hgt * 0.62 : 1.2), c.z).addScaledVector(f, onboard ? 24 : 7);
+    // Q looks back over your shoulder: the camera turns round, in front of the car
+    const back = keys.has('q') && S.mode === 'race' ? -1 : 1;
+    want = new THREE.Vector3(c.x, c.y + ht, c.z).addScaledVector(f, -dist * back + (back < 0 ? b.len * 0.2 : 0));
+    look = new THREE.Vector3(c.x, c.y + (onboard ? b.hgt * 0.62 : 1.2), c.z).addScaledVector(f, (onboard ? 24 : 7) * back);
     const near = onboard ? 0.08 : 0.3; if (camera.near !== near) { camera.near = near; camera.updateProjectionMatrix(); }
     if (!camInit) { camPos.copy(want); camLook.copy(look); camInit = true; }
-    const k = S.camMode === 2 ? 1 : 1 - Math.exp(-dt * 7);
+    const k = S.camMode === 2 || back < 0 || S.wasBack ? 1 : 1 - Math.exp(-dt * 7); S.wasBack = back < 0;
     camPos.lerp(want, k); camLook.lerp(look, S.camMode === 2 ? 1 : 1 - Math.exp(-dt * 12));
     // keep the camera above the ground it is over
     const g = track.y[Math.max(0, c.k - 4)] + 1.0;
@@ -355,9 +384,9 @@ function drawMapBase() {
   const ox = (W - (x1 - x0) * s) / 2 - x0 * s, oz = (H - (z1 - z0) * s) / 2 - z0 * s;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.lineJoin = 'round'; g.lineCap = 'round';
-  for (const [w, col] of [[9, 'rgba(0,0,0,0.6)'], [4, ORANGE]]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let k = 0; k < track.n; k += 4) g[k ? 'lineTo' : 'moveTo'](track.x[k] * s + ox, track.z[k] * s + oz); g.stroke(); }
+  for (const [w, col] of [[10, '#1a0f07'], [5, ORANGE]]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let k = 0; k < track.n; k += 4) g[k ? 'lineTo' : 'moveTo'](track.x[k] * s + ox, track.z[k] * s + oz); g.stroke(); }
   const dot = (k, col) => { g.fillStyle = col; g.beginPath(); g.arc(track.x[k] * s + ox, track.z[k] * s + oz, 6, 0, 7); g.fill(); };
-  dot(track.gateAt, '#4fd14a'); dot(finishK, '#ffd400');
+  dot(track.gateAt, '#a8c043'); dot(finishK, '#f2b631');
   mapBase = { c, s, ox, oz };
 }
 // the height of the lap from the gate to the gantry, as a silhouette
@@ -367,7 +396,7 @@ function drawProfileBase() {
   const X = k => (k - a) / (b - a) * W, Y = k => H - 6 - (track.y[k] - lo) / (hi - lo || 1) * (H - 14);
   const shape = (g, fill) => { g.beginPath(); g.moveTo(0, H); for (let k = a; k <= b; k += 3) g.lineTo(X(k), Y(k)); g.lineTo(W, H); g.closePath(); g.fillStyle = fill; g.fill(); };
   const mk = fill => { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); shape(g, fill); g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 2; g.beginPath(); for (let k = a; k <= b; k += 3) g[k === a ? 'moveTo' : 'lineTo'](X(k), Y(k)); g.stroke(); return c; };
-  profBase = { dim: mk('rgba(255,255,255,0.12)'), lit: mk('rgba(245,166,35,0.55)'), X, Y };
+  profBase = { dim: mk('rgba(255,241,207,0.14)'), lit: mk('rgba(236,111,43,0.75)'), X, Y };
 }
 // the revs: an arc of bars from 0 to 8,000, green, then amber, red past the redline
 function drawTach(rpm, gear) {
@@ -375,15 +404,15 @@ function drawTach(rpm, gear) {
   tg.clearRect(0, 0, W, H);
   for (let i = 0; i < N; i++) {
     const f = (i + 0.5) / N, r = f * top, a = a0 + (a1 - a0) * f, on = r <= rpm;
-    tg.strokeStyle = !on ? 'rgba(255,255,255,0.12)' : r > REDLINE ? '#ff3b3b' : r > 6000 ? '#ffc93b' : '#4fd14a';
+    tg.strokeStyle = !on ? 'rgba(255,241,207,0.14)' : r > REDLINE ? '#d8402b' : r > 6000 ? '#ec6f2b' : r > 4500 ? '#f2b631' : '#a8c043';
     tg.lineWidth = 5; tg.beginPath();
     tg.moveTo(cx + Math.cos(a) * (R - 22), cy + Math.sin(a) * (R - 22)); tg.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); tg.stroke();
   }
-  tg.font = '700 22px Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'middle';
-  for (let t = 0; t <= 8; t++) { const a = a0 + (a1 - a0) * t / 8; tg.fillStyle = t * 1000 > REDLINE ? '#ff6b6b' : 'rgba(255,255,255,0.8)'; tg.fillText(t, cx + Math.cos(a) * (R - 40), cy + Math.sin(a) * (R - 40)); }
+  tg.font = '22px Righteous, Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'middle';
+  for (let t = 0; t <= 8; t++) { const a = a0 + (a1 - a0) * t / 8; tg.fillStyle = t * 1000 > REDLINE ? '#ec6f2b' : '#fff1cf'; tg.fillText(t, cx + Math.cos(a) * (R - 40), cy + Math.sin(a) * (R - 40)); }
   // a shift light when it is time to change up
-  if (rpm > 6500 && gear > 0 && gear < 6) { tg.fillStyle = '#4fb7ff'; tg.beginPath(); tg.arc(cx, cy - 4, 9, 0, 7); tg.fill(); }
-  tg.fillStyle = 'rgba(255,255,255,0.7)'; tg.font = '600 18px Barlow, sans-serif'; tg.fillText('rpm × 1000', cx, H - 12);
+  if (rpm > 6500 && gear > 0 && gear < 6) { tg.fillStyle = '#2f9c9a'; tg.strokeStyle = '#fff1cf'; tg.lineWidth = 3; tg.beginPath(); tg.arc(cx, cy - 4, 10, 0, 7); tg.fill(); tg.stroke(); }
+  tg.fillStyle = '#f2b631'; tg.font = '18px Righteous, Barlow, sans-serif'; tg.fillText('rpm × 1000', cx, H - 12);
 }
 drawMapBase(); drawProfileBase();
 const fmt2 = t => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s < 10 ? '0' : ''}${s.toFixed(2)}`; };
@@ -422,10 +451,13 @@ function hud(dt) {
   else if (p.drift) { ch.className = p.drift.t > B.t2 ? 't2' : ''; ch.style.width = Math.min(100, p.drift.t / B.t2 * 100) + '%'; }
   else ch.style.width = '0';
   $('vignette').classList.toggle('boost', p.boost > 0);
+  $('zoom').classList.toggle('on', p.boost > 0 && S.mode === 'race');
   // corner names as you reach them
   const name = cornerAt(track, p.k + 14);
   if (name !== S.cornerName && S.mode === 'race') { S.cornerName = name; S.cornerT = 2.4; $('corner').textContent = corner(name); }
   S.cornerT -= dt; $('corner').classList.toggle('on', S.cornerT > 0);
+  // pace notes: the next corner, how tight, how far, and BRAKE when you are too quick to make it
+  paceNotes(p);
   // prompts
   const pr = $('prompt');
   let msg = '';
@@ -439,14 +471,40 @@ function hud(dt) {
   // the map: you in red, the race in white, the traffic in grey
   mg.clearRect(0, 0, map.width, map.height); mg.drawImage(mapBase.c, 0, 0);
   const at = (c, r, fill, ring) => { mg.fillStyle = fill; mg.beginPath(); mg.arc(c.x * mapBase.s + mapBase.ox, c.z * mapBase.s + mapBase.oz, r, 0, 7); mg.fill(); if (ring) { mg.strokeStyle = ring; mg.lineWidth = 3; mg.stroke(); } };
-  for (const c of cars) if (!c.hidden && c !== p) at(c, c.role === 'traffic' ? 3 : 5, c.role === 'traffic' ? 'rgba(190,196,204,0.6)' : '#ffffff');
-  at(p, 8, '#ff2d2d', '#ffffff');
+  for (const c of cars) if (!c.hidden && c !== p) at(c, c.role === 'traffic' ? 3 : 5, c.role === 'traffic' ? 'rgba(255,241,207,0.45)' : '#fff1cf');
+  at(p, 8, '#d8402b', '#fff1cf');
   // the height of the lap, lit as far as you have come
   const W = prof.width, H = prof.height, frac = Math.max(0, Math.min(1, (p.k - track.gateAt) / (finishK - track.gateAt)));
   pg.clearRect(0, 0, W, H); pg.drawImage(profBase.dim, 0, 0);
   if (frac > 0) pg.drawImage(profBase.lit, 0, 0, W * frac, H, 0, 0, W * frac, H);
   for (const c of group) if (!c.hidden && c !== p && c.k > track.gateAt) { const x = profBase.X(Math.min(finishK, c.k)); pg.fillStyle = '#fff'; pg.fillRect(x - 1.5, profBase.Y(Math.min(finishK, c.k)) - 9, 3, 7); }
   if (p.k >= track.gateAt) { const k = Math.min(finishK, p.k), x = profBase.X(k), y = profBase.Y(k); pg.fillStyle = '#ff2d2d'; pg.strokeStyle = '#fff'; pg.lineWidth = 2; pg.beginPath(); pg.arc(x, y, 6, 0, 7); pg.fill(); pg.stroke(); }
+}
+
+const nc = $('noteArrow').getContext('2d');
+let lastNote = '';
+function paceNotes(p) {
+  const note = S.mode === 'race' ? nextCorner(track, p.k, Math.max(140, p.v * 4.5)) : null;
+  $('note').classList.toggle('on', !!note);
+  const vt = cornerSpeed(p, track, 1.0), late = S.mode === 'race' && !p.air && p.v > vt + 2.5;
+  $('brakecue').classList.toggle('on', late);
+  if (!note) { lastNote = ''; return; }
+  $('noteDist').textContent = note.dist < 12 ? 'now' : Math.round(note.dist / 10) * 10 + ' m';
+  const key = note.dir + note.grade + note.tightens;
+  if (key === lastNote) return; lastNote = key;
+  $('noteTxt').textContent = `${note.dir === 'left' ? 'Left' : 'Right'} ${note.grade}${note.tightens ? ', tightens' : ''}`;
+  // the arrow: the tighter the corner, the more it curls
+  const W = 120, sweep = [0, 2.9, 2.3, 1.8, 1.35, 0.95, 0.6][note.grade], r = 30, s = note.dir === 'left' ? -1 : 1;
+  nc.clearRect(0, 0, W, W); nc.save(); nc.translate(W / 2 - s * r * 0.6, 92); nc.scale(s, 1);
+  const a0 = Math.PI, a1 = Math.PI + sweep, ex = r * Math.cos(a1) + r, ey = r * Math.sin(a1);
+  for (const [w, c] of [[22, '#3b1f0e'], [13, '#ffd23f']]) {
+    nc.strokeStyle = c; nc.lineWidth = w; nc.lineCap = 'round'; nc.beginPath(); nc.moveTo(0, 18); nc.lineTo(0, 0); nc.arc(r, 0, r, a0, a1); nc.stroke();
+  }
+  // the head, pointing along the curve
+  const tx = -Math.sin(a1), ty = Math.cos(a1), nx = -ty, ny = tx;
+  nc.beginPath(); nc.moveTo(ex + tx * 20, ey + ty * 20); nc.lineTo(ex + nx * 16, ey + ny * 16); nc.lineTo(ex - nx * 16, ey - ny * 16); nc.closePath();
+  nc.fillStyle = '#ffd23f'; nc.strokeStyle = '#3b1f0e'; nc.lineWidth = 5; nc.lineJoin = 'round'; nc.stroke(); nc.fill();
+  nc.restore();
 }
 
 function result() {
