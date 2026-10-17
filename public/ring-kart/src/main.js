@@ -3,7 +3,7 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
-import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.14';
+import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
 import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.9';
 import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.9';
 import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.9';

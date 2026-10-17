@@ -2,9 +2,9 @@
 // way Amiens is, with a west front, an east end and, if it fails, the collapse. make(design) returns what every building
 // module exports (pieces, steps, KIT, forceLines and the rest); the 3D page calls it with the design in its address.
 // Units: metres, kN. x across (left negative), y up, z along the church: the west front at +z. Nothing here touches the page.
-import { createKit } from './kit.js?v=0.14';
-import { frame, aisled, front, crossing, apse, SIDES } from './gothic.js?v=0.14';
-import { assess, query, advise, lands, layoutOf, apseSides } from './design.js?v=0.14';
+import { createKit } from './kit.js?v=0.15';
+import { frame, aisled, front, crossing, apse, SIDES } from './gothic.js?v=0.15';
+import { assess, query, advise, lands, layoutOf, apseSides } from './design.js?v=0.15';
 
 const m = (v, d = 1) => `${(+v).toFixed(d).replace(/\.0$/, '')} m`;
 const kNm = v => `${Math.round(v)} kN`;

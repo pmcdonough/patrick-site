@@ -3,30 +3,30 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.14';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.14';
-import { installInside } from './inside.js?v=0.14';
+import * as THREE from './vendor/three.module.js?v=0.15';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.15';
+import { installInside } from './inside.js?v=0.15';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first. Your own is made from a design: make(design) gives the same exports, and the
 // design comes from the address (?b=yours&d=...), or else the last one saved on the design page.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.14') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.14') },
-  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.14'), design: true },
-  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.14') },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.15') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.15') },
+  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.15'), design: true },
+  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.15') },
 ];
 const Q = new URLSearchParams(location.search);
 const CHOSEN = BUILDINGS.find(b => b.id === Q.get('b')) || BUILDINGS[0];
 const MOD = await CHOSEN.load();
 let DESIGN = null;
 if (MOD.make) {
-  const D = await import('./design.js?v=0.14');
+  const D = await import('./design.js?v=0.15');
   let saved = null; try { saved = JSON.parse(localStorage.getItem('cathedral-lab.design')); } catch (e) { /* none saved */ }
   DESIGN = Q.get('d') ? D.decode(Q.get('d'), Q.get('name')) : D.clamp(saved || D.DEFAULT);
 }
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = MOD.make ? MOD.make(DESIGN) : MOD;
 
-const VERSION = '0.14';
+const VERSION = '0.15';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building

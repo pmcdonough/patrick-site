@@ -9,9 +9,9 @@
 // loads that are on it at that step, and colored by the share of its allowable strength it uses.
 // Units: the drawings' feet inside this file; the kit and the page get metres and kN. u runs east along the house from
 // its west wall, v back from its front wall, y up from the ground; the street side is -x, the garage end +z.
-import * as THREE from './vendor/three.module.js?v=0.14';
-import { createKit, V3, boxG, cylG, extr } from './kit.js?v=0.14';
-import * as Wood from './wood.js?v=0.14';
+import * as THREE from './vendor/three.module.js?v=0.15';
+import { createKit, V3, boxG, cylG, extr } from './kit.js?v=0.15';
+import * as Wood from './wood.js?v=0.15';
 
 const F = 0.3048, KN = 0.004448;                    // a foot in metres, a pound in kN
 const X = v => (v - 14) * F, Z = u => (u - 36) * F, Y = y => y * F;
@@ -386,11 +386,13 @@ function wall({ axis, at, inward, a0, a1, y0, top, openings = [], name, studChec
 
 // ---------- Windows and doors, from the plans and the elevations ----------
 // double-hung windows, 2'-9" by 4'-4", heads 6'-10" above the floor; a = the window's middle along its wall
-const WIN = (a, f, o = {}) => ({ a, w: o.w || 2.75, y0: f + (o.sill || 2.5), y1: f + (o.head || 6.83), lights: o.lights || [3, 2], kind: o.kind || 'window', name: o.name || 'Window' });
+const WIN = (a, f, o = {}) => ({ a, w: o.w || 2.75, y0: f + (o.sill || 2.5), y1: f + (o.head || 6.83), lights: o.lights || [3, 2], kind: o.kind || 'window', name: o.name || 'Window', shutters: o.shutters });
 const FACES = {
   front1: { axis: 'u', at: 0, inward: 1, items: [WIN(6.25, F1), WIN(12.25, F1), WIN(18.25, F1), { a: 27.25, w: 4.7, y0: F1, y1: F1 + 6.83, kind: 'front door', name: 'Front door' }] },
   front2: { axis: 'u', at: 0, inward: 1, items: [WIN(6.25, F2), WIN(12.25, F2), WIN(18.25, F2), WIN(27.25, F2)] },
-  wingfront: { axis: 'u', at: 2, inward: 1, items: [WIN(38, F1, { w: 2, sill: 3.5, lights: [2, 2], name: 'Lavatory window' }), WIN(45.8, F1, { name: 'Den window' }), WIN(48.7, F1, { name: 'Den window' })] },
+  // the wing's front, from photographs: a small six-over-six at the lavatory with its own shutters, and the den's two
+  // windows side by side as a pair, a shutter at each outer side
+  wingfront: { axis: 'u', at: 2, inward: 1, items: [WIN(37.6, F1, { w: 2.1, sill: 3.6, name: 'Lavatory window', shutters: 'both' }), WIN(45.4, F1, { w: 2.8, sill: 1.95, name: 'Den window', shutters: 'left' }), WIN(48.4, F1, { w: 2.8, sill: 1.95, name: 'Den window', shutters: 'right' })] },
   // the back, from the plans and from photographs of the back: a wide two-pane window over the sink and another in the
   // dinette, a back door with a full-glass storm door, double-hung windows either side of the family room chimney
   back1: { axis: 'u', at: 28, inward: -1, items: [{ a: 7.6, w: 5, y0: F1, y1: F1 + 6.83, kind: 'french doors', name: 'French doors to the porch' }, WIN(20.1, F1, { w: 5, sill: 3.4, kind: 'slider', name: 'Window over the sink' }), { a: 27.5, w: 3, y0: F1, y1: F1 + 6.83, kind: 'storm door', name: 'Back door' }, WIN(31.8, F1, { w: 4, sill: 2.4, kind: 'slider', name: 'Dinette window' }), WIN(38.2, F1, { name: 'Family room window' }), WIN(48.4, F1, { name: 'Family room window' })] },
@@ -656,9 +658,10 @@ function windows(face, off, stepShutters) {
     }
     trim.push(...bars, B(a0 - cw, a0, it.y0, it.y1 + cw, off, off + 0.08), B(a1, a1 + cw, it.y0, it.y1 + cw, off, off + 0.08), B(a0 - cw - 0.08, a1 + cw + 0.08, it.y1 + cw - 0.02, it.y1 + cw + 0.14, off, off + 0.14), B(a0 - cw, a1 + cw, it.y0 - 0.12, it.y0, off, off + 0.16));
     out.win.push(add('window', it.name, merge(trim), 'trim', { lb: 45 }), add('glass', `${it.name}, glass`, merge(glass), 'glass', { lb: 20 }));
-    if (stepShutters && it.w >= 2.6 && !it.noShutter) {
+    if (stepShutters && (it.shutters || it.w >= 2.6)) {
       const sh = [], h = it.y1 - it.y0 + 0.1, w = it.w / 2 + 0.1;
-      for (const [s0, s1] of [[a0 - cw - w - 0.05, a0 - cw - 0.05], [a1 + cw + 0.05, a1 + cw + w + 0.05]]) {
+      const sides = [[a0 - cw - w - 0.05, a0 - cw - 0.05], [a1 + cw + 0.05, a1 + cw + w + 0.05]].filter((_, k) => !it.shutters || it.shutters === 'both' || (k === 0) === (it.shutters === 'left'));
+      for (const [s0, s1] of sides) {
         sh.push(B(s0, s1, it.y0 - 0.05, it.y0 - 0.05 + h, off + 0.02, off + 0.08));
         for (let k = 0; k < 18; k++) { const y = it.y0 + 0.15 + k * (h - 0.4) / 18; sh.push(B(s0 + 0.08, s1 - 0.08, y, y + 0.08, off + 0.08, off + 0.12)); }
       }
@@ -729,7 +732,7 @@ for (const [u, v, y, along] of [[0, 14, RIDGE - 4.6, 'v'], [33, 14, RIDGE - 4.6,
   for (let k = 0; k < 8; k++) g.push(bx(u + s * (d - 0.05), u + s * (d + 0.06), v - 1.1, v + 1.1, y + 0.1 + k * (h - 0.2) / 8, y + 0.1 + k * (h - 0.2) / 8 + 0.1));
   add('vent', 'Gable vent', merge(g), 'trim', { lb: 15 });
 }
-const S_SHUT = step('Shutters', 'Louvered shutters, painted black, either side of every full-size window. They are for looks; on this house they never closed.');
+const S_SHUT = step('Shutters', 'Louvered shutters, painted black, beside the windows on the front and the ends; the den\'s pair gets one at each outer side. They are for looks; on this house they never closed.');
 SHUTTERS.forEach((g, k) => add('shutter', 'Shutters', merge(g), 'shutter', { lb: 30 }));
 
 // ---------- Bag 9: move in ----------
@@ -832,7 +835,7 @@ const S_SCREEN = step('The porch screened in', 'The open porch becomes a screene
   add('trim', 'Screened porch frames and railings', merge(g), 'trim', { lb: 500 });
   add('screen', 'Porch screens', merge(sc), 'screen', { lb: 60 });
 }
-const S_NOW = step('Today', 'Arched trim over the garage doors, a second chimney at the west end (it is not on the 1972 drawings), and out back a brick patio with a fieldstone wall, hydrangeas round the chimney and hostas along the wall. The station wagon is long gone. This is the house in the photographs.');
+const S_NOW = step('Today', 'Arched trim over the garage doors, a second chimney outside the west end wall (it is not on the 1972 drawings), and out back a brick patio with a fieldstone wall, hydrangeas round the chimney and hostas along the wall. The station wagon is long gone. This is the house in the photographs.');
 until(WAGON, S_NOW);
 {
   const g = [];
@@ -845,8 +848,9 @@ until(WAGON, S_NOW);
   }
   add('trim', 'Arches over the garage doors', merge(g), 'bnb', { lb: 60 });
   const wc = RIDGE + 3.0;
-  add('chimney', 'West chimney', bx(2.0, 4.6, 16.2, 18.4, RIDGE - 3.0, wc), 'brick', { lb: 3000 });
-  add('chimney', 'West chimney, cap', bx(1.8, 4.8, 16.0, 18.6, wc, wc + 0.3), 'concrete', { lb: 150 });
+  // the west chimney stands outside the west end wall, centred under the ridge, from the ground to above the roof
+  add('chimney', 'West chimney', bx(-2.6, -0.6, 12.6, 15.4, 0, wc), 'brick', { lb: 2 * 2.8 * wc * 120 * 0.8 });
+  add('chimney', 'West chimney, cap', bx(-2.8, -0.4, 12.4, 15.6, wc, wc + 0.3), 'concrete', { lb: 150 });
   // the back yard as in the photographs: a brick patio from the porch past the back steps, a bed of hydrangeas round
   // the family room chimney and hostas along the wall, a fieldstone wall and pillars at its far edge, a grill, and a
   // table under a red umbrella

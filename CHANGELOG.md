@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.107 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.14 + Ring Kart 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.108 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.108
+- Cathedral Lab 0.15 (the 1972 house's wing windows and west chimney, from photographs). The home card's badge says so. No change to the sim, Play Review or Ring Kart.
 
 ### 0.107
 - Ring Kart 0.9 (the whole Döttinger Höhe back). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
@@ -248,6 +251,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.15
+- The 1972 house's wing, from photographs of the front: a small six-over-six at the lavatory with shutters of its own, and the den's two windows as a pair, side by side, with a shutter at each outer side (they had been two separate windows with four shutters crowded between them).
+- The west chimney stands outside the west end wall, centred under the ridge, from the ground to above the roof, as in the photographs; it had been drawn coming out of the roof.
 
 ### 0.14
 - Step inside: a new button puts you inside the building at eye height, at whatever step it is at. Drag to look around, tap a floor to walk there, or walk with the arrow keys or WASD (Shift to hurry); pinch or scroll to zoom; Esc or Step outside to leave. The step controls keep working, so you can stand in the nave and watch the centering go up and the vault close over you, or stand in the cellar while the joists go on above.

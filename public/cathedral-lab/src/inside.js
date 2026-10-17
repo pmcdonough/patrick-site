@@ -6,7 +6,7 @@
 // where you are.
 //
 // The 3D page installs it with what it needs and calls tick() every frame; nothing here knows any building.
-import * as THREE from './vendor/three.module.js?v=0.14';
+import * as THREE from './vendor/three.module.js?v=0.15';
 
 const EYE = 1.6, STEP_UP = 0.45, RADIUS = 0.25, WALK = 1.5, RUN = 4, G = 9.8;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
