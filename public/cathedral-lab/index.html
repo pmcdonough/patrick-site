@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:,">
-<title>Cathedral Lab: Notre-Dame, stone by stone</title>
+<title>Cathedral Lab</title>
 <meta name="description" content="Build the whole of Notre-Dame in 3D, piece by piece, the way the masons did. Every stone carries real load.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="style.css?v=0.7">
@@ -14,11 +14,11 @@
 <header class="top">
   <div class="brand">
     <h1>Cathedral Lab</h1>
-    <p class="matchup">Notre-Dame, stone by stone</p>
-    <p>The whole of Notre-Dame, built the way the masons did: the nave and the choir with their piers, arcades, flying buttresses, vaults and oak roofs; the west front with its portals, rose and towers; the transept, the crossing and the spire; and the apse, with the longest flyers in the building. Every piece is a separate stone or timber, and every one carries real load.</p>
+    <p class="matchup" id="matchup"></p>
+    <p id="lede"></p>
   </div>
   <nav class="views" aria-label="Pages">
-    <a href="./" aria-current="page">Build Notre-Dame</a>
+    <span id="buildings" class="views-list"></span>
     <a href="arch-lab/">How an arch stands</a>
   </nav>
 </header>
@@ -67,12 +67,7 @@
   </div>
 
   <section class="notes">
-    <div class="card"><h2>What you're building</h2>
-      <p>The nave: ten bays, 60 m from the crossing to the west front. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.</p>
-      <p>Then the west front, 43.5 m wide: two square towers 69 m tall over the ends of the aisles, three portals, the Gallery of Kings, the rose 9.6 m across behind the Gallery of the Virgin, the grand gallery, and Emmanuel, the great bell, in the south tower. Between the towers the last bay of the nave gets a four-part vault.</p>
-      <p>Then the transept, 48 m from end to end: each arm with a six-part vault and a short end bay, a portal, a row of windows, a rose 13.1 m across and a gable. Over the crossing, on four piers, Viollet-le-Duc's spire of oak and lead, 96 m to the top of its cross: the one that fell in the fire of 2019, rebuilt to the same design, with the twelve copper apostles at its foot.</p>
-      <p>East of the crossing, the choir: two more six-part vaults, built with the nave because they are the same design (in the real cathedral they came first, from 1163). It ends in the apse, a half-circle with a double ambulatory round it, a half-umbrella vault of four ribs, and flyers about 15 m long leaping both ambulatories to buttress piers. Chapels fill the spaces between the buttresses all round: added from 1235 along the nave and around 1300 at the apse, they give the outside its row of gables.</p>
-      <p>Simplified: the vault's crown is about 35 m up here (33 m in the real nave); every bay line carries the same share of the vault; the sculpture is plain shapes and the chimeras are left out; the transept's side walls are 3 m thick and carry the vault's push alone, where the real ones share it with the aisles and buttresses around them; the apse is five-sided; the chapels are plain boxes under gables, with no vaults of their own.</p></div>
+    <div class="card" id="about"><h2>What you're building</h2></div>
     <div class="card"><h2>The forces</h2>
       <p>The red line is the line of thrust through the vault's ribs, down the wall, along each flyer and through each buttress pier, worked out the same way as in How an arch stands. They appear when the vault's centering is struck, the moment the vault starts carrying itself.</p>
       <p>Color by load follows each piece's weight down to the ground and divides by the area it rests on. It ignores the sideways push, so it shows how load piles up, not exact stresses.</p></div>

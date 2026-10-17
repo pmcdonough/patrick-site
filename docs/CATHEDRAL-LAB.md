@@ -97,6 +97,8 @@ public/cathedral-lab/
   src/main.js                the 3D page: scene, booklet, step controls, Inspect, load coloring, cutaway; VERSION
   src/notre-dame.js          the building as a kit: every piece with geometry, weight, bearing area and supports, in
                              steps and bags; the load model and the force lines. No page in it
+  src/kit.js                 the kit: createKit() gives a building its pieces, steps, bags, arches and centering, and the
+                             load model; the geometry helpers (boxes, extrusions, lancets, ruled webs) are plain exports
   src/solver.js              the masonry solver, pure functions; both pages import it, the unit tests run it in Node
   src/vendor/                Three.js r128 (three.module.js, OrbitControls.js, LICENSE, README.md)
   arch-lab/index.html        the arch lab
@@ -109,6 +111,7 @@ public/cathedral-lab/
 - The camera: scroll or pinch zooms toward the point under the pointer (the page catches the wheel before the orbit controls, which only zoom toward their target); a double tap flies to a piece or, on the sky, to the whole building; the target is kept inside the building's bounds. The line of thrust is drawn for one bay line at a time (the one nearest the camera, or just behind the cut), over the stone and without tone mapping.
 - Batches: the pieces that come and go together (same step, same removal, same material, same roof group) are merged into one mesh, about 40 for the nave, about 60 draw calls a frame with shadows. Each piece keeps its range of vertices and triangles: its colors are rewritten only when they change, picking tests a ray against piece boxes and then that piece's triangles, and the drop into place runs in the vertex shader with a delay per piece.
 - Drawn on demand: the render loop draws only when something changed (the camera, an animation, a step, a toggle, a resize). Anything that changes the scene calls `redraw()`.
+- More than one building: `main.js` keeps a list (`BUILDINGS`), each a module with the same exports (`pieces`, `steps`, `KIT` with the page's words for it, `forceLines`, `computeLoads`, `live`, `STEP_STRUCK`, `HIDERS`), loaded with `import()`; `?b=` in the address picks one, and the header lists them all. Moving Notre-Dame onto `kit.js` was checked by fingerprint: byte-identical pieces.
 - `window.cathedralLab` (the 3D page) and `window.archLab` are the hooks the smoke check waits on.
 
 ## The look

@@ -35,7 +35,9 @@ public/bruins-vs-canadiens/
 public/cathedral-lab/
   index.html, style.css            the 3D build; style.css is shared with the arch lab
   src/main.js                      the 3D page (Three.js): scene, booklet, steps, Inspect, load coloring, cutaway
-  src/notre-dame.js                the whole cathedral as a kit: pieces, steps, bags, loads, force lines
+  src/kit.js                       the kit every building is made of: createKit() (pieces, steps, arches, centering, loads)
+                                   and the geometry helpers
+  src/notre-dame.js                Notre-Dame on the kit: its layout, steps, words for the page (KIT), force lines
   src/solver.js                    the masonry solver, pure functions; both pages import it, the unit tests run it
   src/vendor/                      Three.js r128, served from the site (its README says how to upgrade)
   arch-lab/index.html, src/main.js the 2D arch lab

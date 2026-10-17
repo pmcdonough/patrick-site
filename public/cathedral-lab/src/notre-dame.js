@@ -4,9 +4,8 @@
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
 import * as THREE from './vendor/three.module.js?v=0.7';
 import * as Solver from './solver.js?v=0.7';
+import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.7';
 
-const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
-const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead
 
 // ---------- The nave in section and in plan ----------
 // Ten bays of 6 m (five six-part vaults), a 12 m nave and two aisles each side, the inner one with a gallery over it.
@@ -32,93 +31,20 @@ const SIDES = [-1, 1], SN = s => s < 0 ? 'north' : 'south', X = (s, x) => s < 0 
 const lr = (s, a, b) => s < 0 ? [a, b] : [-b, -a];                  // an x range on the north side, mirrored to the south
 const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, gallery, band, clerestory courses, cornice
 const GT = 18.8;                                                     // the top of the gallery's outer wall, under the flyers
-export const KIT = { place: 'Notre-Dame de Paris', title: 'The whole cathedral', bays: NB, length: NB * L };
+// what the page says about this building: its name in the header, the line under the title, the introduction, and the
+// paragraphs of What you're building
+export const KIT = { id: 'notre-dame', name: 'Notre-Dame', place: 'Notre-Dame de Paris', title: 'The whole cathedral', matchup: 'Notre-Dame, stone by stone',
+  lede: "The whole of Notre-Dame, built the way the masons did: the nave and the choir with their piers, arcades, flying buttresses, vaults and oak roofs; the west front with its portals, rose and towers; the transept, the crossing and the spire; and the apse, with the longest flyers in the building. Every piece is a separate stone or timber, and every one carries real load.",
+  about: [
+    "The nave: ten bays, 60 m from the crossing to the west front. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.",
+    "Then the west front, 43.5 m wide: two square towers 69 m tall over the ends of the aisles, three portals, the Gallery of Kings, the rose 9.6 m across behind the Gallery of the Virgin, the grand gallery, and Emmanuel, the great bell, in the south tower. Between the towers the last bay of the nave gets a four-part vault.",
+    "Then the transept, 48 m from end to end: each arm with a six-part vault and a short end bay, a portal, a row of windows, a rose 13.1 m across and a gable. Over the crossing, on four piers, Viollet-le-Duc's spire of oak and lead, 96 m to the top of its cross: the one that fell in the fire of 2019, rebuilt to the same design, with the twelve copper apostles at its foot.",
+    "East of the crossing, the choir: two more six-part vaults, built with the nave because they are the same design (in the real cathedral they came first, from 1163). It ends in the apse, a half-circle with a double ambulatory round it, a half-umbrella vault of four ribs, and flyers about 15 m long leaping both ambulatories to buttress piers. Chapels fill the spaces between the buttresses all round: added from 1235 along the nave and around 1300 at the apse, they give the outside its row of gables.",
+    "Simplified: the vault's crown is about 35 m up here (33 m in the real nave); every bay line carries the same share of the vault; the sculpture is plain shapes and the chimeras are left out; the transept's side walls are 3 m thick and carry the vault's push alone, where the real ones share it with the aisles and buttresses around them; the apse is five-sided; the chapels are plain boxes under gables, with no vaults of their own."] };
 
-// ---------- Pieces and steps ----------
-const pieces = [], byId = {}, steps = [];
-let cur = -1;
-function bag(n, name) { BAGNO = n; BAGNAME = name; }
-let BAGNO = 0, BAGNAME = '';
-function step(title, note, opts = {}) { steps.push({ bag: BAGNO, bagName: BAGNAME, title, note, focus: opts.focus || null }); cur = steps.length - 1; }
-function add(id, kind, name, geo, o = {}) {
-  const p = { id, kind, name, geo, step: cur, until: null, mat: o.mat || 'stone', w: o.w || 0, bear: o.bear || 0, sup: o.sup || [], group: o.group || null, tint: o.tint };
-  pieces.push(p); byId[id] = p; return p;
-}
-function removeAt(filter) { pieces.filter(filter).forEach(p => p.until = cur); }
-
-// geometry helpers, all built in world coordinates
-function boxG(x0, x1, y0, y1, z0, z1) { const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); return g; }
-function cylG(r0, r1, y0, y1, x, z, seg = 32) { const g = new THREE.CylinderGeometry(r1, r0, y1 - y0, seg); g.translate(x, (y0 + y1) / 2, z); return g; }
-function shapeOf(pts, holes = []) {
-  const sh = new THREE.Shape(pts.map(([a, b]) => new THREE.Vector2(a, b)));
-  holes.forEach(h => sh.holes.push(new THREE.Path(h.map(([a, b]) => new THREE.Vector2(a, b))))); return sh;
-}
-function area2(pts) { return Math.abs(THREE.ShapeUtils.area(pts.map(([a, b]) => new THREE.Vector2(a, b)))); }
-// extrude a vertical profile drawn in (s, y), s along direction (dx, dz) from (ox, oz), centered on the extrusion axis
-function extr(pts, holes, depth, ox, oz, dx, dz) {
-  const g = new THREE.ExtrudeGeometry(shapeOf(pts, holes), { depth, bevelEnabled: false, curveSegments: 12 });
-  const m = new THREE.Matrix4().set(dx, 0, -dz, ox + dz * depth / 2, 0, 1, 0, 0, dz, 0, dx, oz - dx * depth / 2, 0, 0, 0, 1);
-  g.applyMatrix4(m); g.computeVertexNormals(); return g;
-}
-function extrVol(pts, holes, depth) { return (area2(pts) - holes.reduce((a, h) => a + area2(h), 0)) * depth; }
-function lancet(cx, y0, w, hr) {
-  const ys = y0 + hr, pts = [[cx - w / 2, y0], [cx + w / 2, y0]];
-  for (let i = 0; i <= 16; i++) { const a = Math.PI / 3 * i / 16; pts.push([cx - w / 2 + w * Math.cos(a), ys + w * Math.sin(a)]); }
-  for (let i = 16; i >= 0; i--) { const a = Math.PI / 3 * i / 16; pts.push([cx + w / 2 - w * Math.cos(a), ys + w * Math.sin(a)]); }
-  return pts;
-}
-const rect = (a0, a1, y0, y1) => [[a0, y0], [a1, y0], [a1, y1], [a0, y1]];
-function circle(cx, cy, r, n = 48) { const p = []; for (let i = 0; i < n; i++) { const a = 2 * Math.PI * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; }
-// voussoir outlines of an arch, both halves, optional keystone
-// (the solver draws each curved edge with 11 points; every other one is plenty on screen, and the weights come from the
-// solver's exact areas, so thinning them changes nothing but the vertex count)
-const thin = pts => pts.filter((_, i) => (i % 11) % 2 === 0);
-function archShapes(B, sx = 1, withKey = true) {
-  const out = [];
-  B.blocks.forEach((b, j) => { const pts = thin(b.poly); out.push({ j, side: -1, A: b.A * sx, pts: pts.map(([x, y]) => [x * sx, y]) }); out.push({ j, side: 1, A: b.A * sx, pts: pts.map(([x, y]) => [-x * sx, y]) }); });
-  if (withKey) out.push({ j: B.k, side: 0, key: true, A: B.key.A * 2 * sx, pts: thin(B.key.full).map(([x, y]) => [x * sx, y]) });
-  return out;
-}
-// place an arch as pieces with a load chain toward its springers
-function placeArch(prefix, B, { sx = 1, y0, depth, ox, oz, dx, dz, springL, springR, kind = 'voussoir', name, withKey = true, mat = 'stone' }) {
-  const ids = [];
-  for (const a of archShapes(B, sx, withKey)) {
-    const pts = a.pts.map(([s, y]) => [s, y + y0]);
-    const id = `${prefix}-${a.key ? 'K' : (a.side < 0 ? 'L' : 'R') + a.j}`;
-    let sup;
-    if (a.key) sup = [[`${prefix}-L${B.k - 1}`, 0.5], [`${prefix}-R${B.k - 1}`, 0.5]];
-    else if (a.j > 0) sup = [[`${prefix}-${a.side < 0 ? 'L' : 'R'}${a.j - 1}`, 1]];
-    else sup = a.side < 0 ? springL : springR;
-    add(id, a.key ? 'keystone' : kind, a.key ? `${name}, keystone` : `${name}, ${kind} ${a.j + 1}`, extr(pts, [], depth, ox, oz, dx, dz),
-      { w: a.A * depth * GAMMA * (mat === 'timber' ? OAK / GAMMA : 1), bear: B.t * depth, sup, mat });
-    ids.push(id);
-  }
-  return ids;
-}
-// timber centering under an arch: a curved lagging rib, a tie and three posts
-function placeCentering(prefix, B, { sx = 1, y0, ox, oz, dx, dz, ground = 0 }) {
-  const W = (s, y, e = 0) => V3(ox + s * dx - e * dz, y, oz + s * dz + e * dx);
-  const half = B.intrados.map(([x, y]) => [x * sx, y]);
-  const pts = [...half, ...half.slice().reverse().map(([x, y]) => [-x, y])].map(([s, y]) => W(s, y + y0 - 0.14));
-  const lag = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, 0.13, 6, false);
-  add(`${prefix}-lag`, 'centering timber', 'Centering, curved rib', lag, { mat: 'timber' });
-  const xs = half[0][0], tie = y0 - 0.3;
-  const beam = (a, b, r, id, nm) => { const d = b.clone().sub(a), g = new THREE.CylinderGeometry(r, r, d.length(), 6, 1, true); g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize()))); const m = a.clone().add(b).multiplyScalar(0.5); g.translate(m.x, m.y, m.z); add(id, 'centering timber', nm, g, { mat: 'timber' }); };
-  beam(W(xs, tie), W(-xs, tie), 0.12, `${prefix}-tie`, 'Centering, tie beam');
-  const yAt = s => { let best = half[0]; for (const p of [...half, ...half.map(([x, y]) => [-x, y])]) if (Math.abs(p[0] - s) < Math.abs(best[0] - s)) best = p; return best[1] + y0 - 0.2; };
-  for (const [q, n] of [[0.5, 'a'], [0, 'b'], [-0.5, 'c']]) beam(W(xs * q, tie), W(xs * q, yAt(xs * q)), 0.09, `${prefix}-post${n}`, 'Centering, strut');
-  for (const q of [0.5, -0.5]) beam(W(xs * q, ground), W(xs * q, tie), 0.1, `${prefix}-leg${q > 0 ? 'a' : 'b'}`, 'Centering, prop');
-}
-// ruled surface between two curves for vault webbing
-function ruled(A, B, q0, q1, nq = 8, nr = 10) {
-  const pos = [], idx = []; let area = 0;
-  for (let i = 0; i <= nq; i++) { const q = q0 + (q1 - q0) * i / nq, a = A(q), b = B(q); for (let j = 0; j <= nr; j++) { const v = a.clone().lerp(b, j / nr); pos.push(v.x, v.y, v.z); } }
-  for (let i = 0; i < nq; i++) for (let j = 0; j < nr; j++) { const a = i * (nr + 1) + j, b = a + nr + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-  const P = i => V3(pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]);
-  for (let t = 0; t < idx.length; t += 3) area += P(idx[t + 1]).sub(P(idx[t])).cross(P(idx[t + 2]).sub(P(idx[t]))).length() / 2;
-  return { g, area };
-}
+// ---------- The kit ----------
+const K = createKit();
+const { pieces, steps, bag, step, add, removeAt, placeArch, placeCentering } = K;
 
 // ---------- Bag 1: Foundations ----------
 bag(1, 'Foundations');
@@ -177,7 +103,7 @@ eachSeg(() => {
     placeCentering(pid('MC', s, b), ARM, { y0: 9.2, ox: X(s, XM), oz: ZC(b), dx: 0, dz: 1 });
   }
 });
-const STEP_ARC_CEN = cur;
+const STEP_ARC_CEN = K.at();
 step('Nave arcade', 'Nine stones in each arch, laid from both piers at once and closed with a keystone. Until the keystone is in, the centering carries every stone.');
 eachSeg(() => {
   for (const s of SIDES) for (let b = 0; b < NB; b++)
@@ -325,7 +251,7 @@ eachSeg(() => {
     [0.25, 0.5, 0.75].forEach((q, k) => { const x = xa + (xb - xa) * q, y = ya + (yb - ya) * q; add(pid('FC', s, i, k), 'centering timber', 'Flyer centering, prop', cylG(0.09, 0.09, LEV[1], y, x, z, 10), { mat: 'timber' }); });
   });
 });
-const STEP_FLY_CEN = cur;
+const STEP_FLY_CEN = K.at();
 step('Flying buttresses', `${NFLY} stones each, from the top of the nave wall down to the buttress pier, ${Math.round(FL.g)} m away, in a single flight over both aisles. They will carry the vault's sideways push out over the aisles, about ${Math.round(FL.C / 5) * 5} kN for every metre of vault.`);
 eachSeg(() => {
   for (const s of SIDES) ZS.forEach((z, i) => flyerPolys().forEach((poly, k) => {
@@ -360,7 +286,7 @@ eachSeg(() => {
 eachSeg(() => {
   for (let d = 0; d < ND; d++) for (const [n, dir] of [['a', D1], ['b', D2]]) placeCentering(`${TG}DC${d}${n}`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZS[2 * d + 1], dx: dir[0], dz: dir[1] });
 });
-const STEP_VAULT_CEN = cur;
+const STEP_VAULT_CEN = K.at();
 step('Transverse ribs', 'Eleven stones across the nave at every bay line, the arch from How an arch stands at full size. Every other one is a heavy rib between vaults, closed with a keystone; the lighter one between them runs to the boss.');
 eachSeg(() => {
   ZS.forEach((z, i) => i % 2 === 0
@@ -411,7 +337,7 @@ const ribPieces = pre => pieces.filter(p => p.id.startsWith(pre + '-')).map(p =>
 });
 step('Strike the centering', 'The moment of truth. The timber comes out and the vault carries itself, pushing out on the walls. The flyers catch that push and carry it over the aisles to the buttresses. The red line is that path, the line of thrust, from the crown of the vault to the ground.', { focus: 'forces' });
 removeAt(p => p.step === STEP_VAULT_CEN);
-const STEP_STRUCK = cur;
+const STEP_STRUCK = K.at();
 
 // ---------- Bag 8: Roof ----------
 bag(8, 'Roofs and chapels');
@@ -518,7 +444,7 @@ for (const s of SIDES) add(`TF-${s < 0 ? 'N' : 'S'}`, 'footing', `Footing, ${TOW
 add('CF', 'footing', 'Footing, central wall', boxG(TX1, -TX1, -0.6, 0.65, WB - 0.5, TZ1 + 2.2), { w: 11.3 * 7.5 * 1.25 * GAMMA, bear: 11.3 * 7.5 });
 step('The ground storey', 'The towers\' walls rise 2.6 m thick, with the three portals cut through them: the Virgin on the north, the Last Judgement in the middle, Saint Anne on the south. Four big buttresses divide the front into three.');
 towerLevel(0); centreLevel(0);
-const STEP_FRONT = cur;
+const STEP_FRONT = K.at();
 BUTX.forEach((x, i) => add(`WBU-${i}-0`, 'buttress stone', `West buttress ${i + 1}, course 1`, boxG(x - 1.3, x + 1.3, 0.65, TL[1], TZ1, TZ1 + 2), { w: 2.6 * 2 * 13.35 * GAMMA, bear: 2.6 * 2, sup: [[x < 0 ? 'TF-N' : 'TF-S', 1]] }));
 // the portals: three arches one inside the other, stepping out from the wall, each on its own pair of jamb columns
 const PORTALS = [[-1, PX, 5.6, 'Portal of the Virgin'], [0, 0, 6.4, 'Portal of the Last Judgement'], [1, -PX, 5.6, 'Portal of Saint Anne']];
@@ -532,7 +458,7 @@ PORTALS.forEach(([sd, cx, w, nm], p) => {
 });
 step('Centering for the portals', 'Each portal is framed by three arches, each one a step further out than the last. Every ring gets its own centering.');
 PORTALS.forEach(([, cx, w], p) => RINGS.forEach(i => placeCentering(`PCN-${p}-${i}`, ringOf(w, i), { y0: 7, ox: cx, oz: ringZ(i), dx: 1, dz: 0 })));
-const STEP_PORTAL_CEN = cur;
+const STEP_PORTAL_CEN = K.at();
 step('Portal arches', 'Nine stones to each ring, springing from slender columns set into the jambs. A lintel spans each doorway, and over it sits the tympanum, the carved stone that fills the arch.');
 PORTALS.forEach(([sd, cx, w, nm], p) => {
   RINGS.forEach(i => placeArch(`PR-${p}-${i}`, ringOf(w, i), { y0: 7, depth: 0.6, ox: cx, oz: ringZ(i), dx: 1, dz: 0, springL: [[`PC-${p}--1-${i}`, 1]], springR: [[`PC-${p}-1-${i}`, 1]], name: `${nm}, arch ${i + 1}`, kind: 'archivolt stone' }));
@@ -576,7 +502,7 @@ const WRZ = WB - 0.3, P3W = s => [[fid(s, 'inner', 2), 1]], ZWC = 36;
 step('Centering for the last bay', 'Between the towers, the last bay of the nave is vaulted now: a four-part vault, with two diagonals and a rib against the west front.');
 placeCentering('WC', ARCH, { y0: H0, ox: 0, oz: WRZ, dx: 1, dz: 0 });
 for (const [n, dir] of [['a', D1], ['b', D2]]) placeCentering(`WDC${n}`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZWC, dx: dir[0], dz: dir[1] });
-const STEP_WEST_CEN = cur;
+const STEP_WEST_CEN = K.at();
 step('The last vault', 'The rib against the front, the two diagonals and a boss where they meet, and a wall rib along each tower. The towers\' walls stand in for the flying buttresses here: they are thick enough to take the push.');
 placeArch('TRW', ARCH, { y0: H0, depth: RIBW, ox: 0, oz: WRZ, dx: 1, dz: 0, springL: P3W(-1), springR: P3W(1), name: 'West rib' });
 placeArch('DAW', ARCH, { sx: D / S, y0: H0, depth: RIBW * 0.9, ox: 0, oz: ZWC, dx: D1[0], dz: D1[1], springL: P3(-1, NB), springR: P3W(1), name: 'Diagonal rib, last bay', withKey: false });
@@ -698,7 +624,7 @@ const armStorey = k => { for (const s of SIDES) for (const [side, z0, z1] of ARM
     [[k ? aw(s, side, b, k - 1) : `TAF-${N(s)}${side}-${b}`, 1]])); };
 step('Transept walls, lower storey', `The side walls of the arms, ${AW} m thick, open at the bottom where the aisles run through. The arms have no flying buttresses of their own: walls this thick hold the vault's push by themselves.`);
 armStorey(0);
-const STEP_TWALL = cur;
+const STEP_TWALL = K.at();
 step('Transept walls, upper storeys', 'The walls rise to the cornice, with an opening onto the gallery and a window in every bay.');
 armStorey(1); armStorey(2);
 for (const s of SIDES) for (const [side, z0, z1] of ARMSIDES) add(`TAC-${N(s)}${side}`, 'cornice stone', `${ARMN(s)}, cornice`, boxG(...lr(s, -VEND, -XO * -1), 34.8, 35.2, z0 - 0.3, z1 + 0.3), { w: (VEND + XO) * 0.4 * (AW + 0.6) * GAMMA, bear: 10, sup: ARMB.map((_, b) => [aw(s, side, b, 2), 1 / 3]) });
@@ -718,7 +644,7 @@ for (const s of SIDES) {
 }
 step('Centering for the transept portals', 'Two rings of arches frame each transept portal, each on its own centering.');
 for (const s of SIDES) TRING.forEach(i => placeCentering(`TPN-${N(s)}-${i}`, tring(i), { y0: 7, ox: tringX(s, i), oz: ZT, dx: 0, dz: 1 }));
-const STEP_TPORTAL_CEN = cur;
+const STEP_TPORTAL_CEN = K.at();
 step('Transept portal arches', 'Nine stones to each ring, a lintel over the doorway and the tympanum above it.');
 for (const s of SIDES) {
   TRING.forEach(i => placeArch(`TPR-${N(s)}-${i}`, tring(i), { y0: 7, depth: 0.6, ox: tringX(s, i), oz: ZT, dx: 0, dz: 1, springL: [[`TPC-${N(s)}-1-${i}`, 1]], springR: [[`TPC-${N(s)}1-${i}`, 1]], name: `${TNAME(s)}, arch ${i + 1}`, kind: 'archivolt stone' }));
@@ -760,7 +686,7 @@ for (const s of SIDES) {
   cenIn(`TDaC${t}`, ARCH, { F, cv: VI, du: DD[0], dv: DD[1], sx: D / S }); cenIn(`TDbC${t}`, ARCH, { F, cv: VI, du: DE[0], dv: DE[1], sx: D / S });
   cenIn(`TQaC${t}`, ARCH, { F, cv: VQ, du: Q1[0], dv: Q1[1], sx: DQ / S }); cenIn(`TQbC${t}`, ARCH, { F, cv: VQ, du: Q2[0], dv: Q2[1], sx: DQ / S });
 }
-const STEP_X_CEN = cur;
+const STEP_X_CEN = K.at();
 step('Crossing arches', 'Four great arches frame the crossing: the nave\'s last transverse rib on the west, the choir\'s first on the east, and now one opening into each arm.');
 for (const s of SIDES) ribIn(`TX${N(s)}`, ARCH, { F: armF(s), cv: VX, du: 1, dv: 0, depth: RIBW, name: `Crossing arch, ${ARMN(s)}` });
 step('Transept ribs', 'In each arm: a heavy rib and a lighter one across, two diagonals meeting at a boss, the short end bay with its own diagonals, and a wall rib in every bay.');
@@ -912,7 +838,7 @@ MID.forEach(k => add(`AP-BU-${k}-0`, 'buttress stone', `Apse buttress ${k}, cour
 step('Centering for the apse arcades', 'Timber frames for the five arches round the apse, narrow and steep because the piers stand so close, and for the wider arches of the ambulatory.');
 for (let k = 0; k < 5; k++) { const a = chord(k, R1), b = chord(k, R2);
   placeCentering(`APAC-${k}`, ARCA, { y0: 9.2, ox: a.m.x, oz: a.m.z, dx: a.t.x, dz: a.t.z }); placeCentering(`APMC-${k}`, ARMA, { y0: 9.2, ox: b.m.x, oz: b.m.z, dx: b.t.x, dz: b.t.z }); }
-const STEP_APC = cur;
+const STEP_APC = K.at();
 step('Apse arcades', 'Seven stones to each arch round the apse, nine to each ambulatory arch, then arches across both ambulatories on every line.');
 for (let k = 0; k < 5; k++) { const a = chord(k, R1), b = chord(k, R2);
   placeArch(`APA-${k}`, ARCA, { y0: 9.2, depth: WT, ox: a.m.x, oz: a.m.z, dx: a.t.x, dz: a.t.z, springL: [[apId('AB', k), 1]], springR: [[apId('AB', k + 1), 1]], name: `Apse arch ${k + 1}` });
@@ -960,7 +886,7 @@ MID.forEach(k => { const p = PHI[k], a = at(p, RO, FLA.yA - 1.8), b = at(p, RB, 
   const tube = new THREE.CylinderGeometry(0.12, 0.12, d.length(), 10); tube.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize()))); tube.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
   add(`APFC-${k}`, 'centering timber', 'Flyer centering, rib', tube, { mat: 'timber' });
   [0.25, 0.5, 0.75].forEach((q, j) => { const c = a.clone().lerp(b, q); add(`APFC-${k}-${j}`, 'centering timber', 'Flyer centering, prop', cylG(0.09, 0.09, 13, c.y, c.x, c.z, 10), { mat: 'timber' }); }); });
-const STEP_APF_CEN = cur;
+const STEP_APF_CEN = K.at();
 step('Chevet flyers', `${NFA} stones each, from the top of the apse wall down to the buttress ${Math.round(RB - RO)} m away. Jean Ravy built flyers like these round the apse in the 1300s. To the solver a flyer is a strut, so its length does not change the answer: the walls and buttresses stand as in the nave. What a long flyer makes harder is carrying its own weight.`);
 MID.forEach(k => { const p = PHI[k], d = at(p, 1).sub(at(p, 0));
   flyerA().forEach((poly, j) => add(`APFY-${k}-${j}`, 'flyer stone', `Chevet flyer ${k}, stone ${j + 1}`, extr(poly, [], 0.8, 0, ZA, d.x, d.z), { w: extrVol(poly, [], 0.8) * GAMMA, bear: 0.48, sup: [[`AP-BU-${k}-2`, 0.5], [apId('P', k, 2), 0.5]] })); });
@@ -974,7 +900,7 @@ step('Centering for the apse vault', 'A half-frame of timber under each of the f
 MID.forEach(k => { const p = PHI[k], half = ARCH.intrados.map(([x, y]) => at(p, -x, y + H0 - 0.14));
   add(`APVC-${k}`, 'centering timber', 'Apse centering, curved rib', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(half), 48, 0.13, 10, false), { mat: 'timber' });
   [0.4, 0.75].forEach((q, j) => { const c = at(p, R1 * q, 0); add(`APVC-${k}-${j}`, 'centering timber', 'Apse centering, prop', cylG(0.1, 0.1, 0, H0 + ARCH.rise * (1 - q * q) * 0.9, c.x, c.z, 10), { mat: 'timber' }); }); });
-const STEP_APV_CEN = cur;
+const STEP_APV_CEN = K.at();
 step('Apse ribs', 'Four half-ribs climb from the apse wall to the keystone of the choir\'s last transverse rib, so the apse vault is a half-umbrella round it.');
 MID.forEach(k => { const d = at(PHI[k], 1).sub(at(PHI[k], 0)), id = j => `APR${k}-L${j}`;
   archShapes(ARCH).filter(a => a.side < 0).forEach(a => { const pts = a.pts.map(([s, y]) => [s, y + H0]);
@@ -1074,17 +1000,8 @@ export function forceLines() {
   }));
 }
 
-// ---------- Load model ----------
-// Each piece carries its own weight plus its share of everything resting on it, down to the ground. Weight only:
-// the vault's sideways push is in the force lines, not here.
-const dependents = new Map();
-pieces.forEach(p => p.sup.forEach(([id, f]) => { if (!byId[id]) throw new Error(`missing support ${id} under ${p.id}`); if (!dependents.has(id)) dependents.set(id, []); dependents.get(id).push([p, f]); }));
-export const live = (p, n) => p.step < n && !(p.until != null && p.until < n);
-export function computeLoads(n) {
-  const memo = new Map();
-  const carried = p => { if (memo.has(p.id)) return memo.get(p.id); let w = p.w; for (const [q, f] of dependents.get(p.id) || []) if (live(q, n)) w += f * carried(q); memo.set(p.id, w); return w; };
-  pieces.forEach(p => { p.load = live(p, n) ? carried(p) : 0; p.stress = p.bear ? p.load / p.bear / 1000 : 0; });
-}
+K.finish();
+export const { live, computeLoads } = K;
 
 // what hides the line of thrust once it is built: the west front, from the west (from the east, the apse's own lines show)
 export const HIDERS = [{ step: STEP_FRONT, west: TZ0, msg: 'From the west, the front hides the vault.' }];

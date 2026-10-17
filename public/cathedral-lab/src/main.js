@@ -5,11 +5,22 @@
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
 import * as THREE from './vendor/three.module.js?v=0.7';
 import { OrbitControls } from './vendor/OrbitControls.js?v=0.7';
-import { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.7';
+// The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
+// one, ?b=notre-dame; with none, the first.
+const BUILDINGS = [
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.7') },
+];
+const CHOSEN = BUILDINGS.find(b => b.id === new URLSearchParams(location.search).get('b')) || BUILDINGS[0];
+const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = await CHOSEN.load();
 
 const VERSION = '0.7';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
+// the page's words for this building, and a link to every building
+document.title = `Cathedral Lab: ${KIT.matchup}`;
+$('matchup').textContent = KIT.matchup; $('lede').textContent = KIT.lede;
+$('about').insertAdjacentHTML('beforeend', KIT.about.map(p => `<p>${p}</p>`).join(''));
+$('buildings').innerHTML = BUILDINGS.map(b => `<a href="?b=${b.id}"${b === CHOSEN ? ' aria-current="page"' : ''}>${b.name}</a>`).join('');
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const on = id => $(id).getAttribute('aria-pressed') === 'true';
@@ -370,4 +381,4 @@ theme(); resize();
 // open on the finished model, like the picture on the box
 go(NSTEPS, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.cathedralLab = { go, state, steps, pieces, batches, renderer, VERSION };
+window.cathedralLab = { go, state, steps, pieces, batches, renderer, VERSION, building: KIT.id };

@@ -21,7 +21,8 @@ const { open, openPage } = require('./harness');
     const files = pages.flatMap(pg => ['index.html', ...fs.readdirSync(path.join(root, pg, 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join('src', f))].map(f => path.join(pg, f)));
     for (const f of files) {
       const text = fs.readFileSync(path.join(root, f), 'utf8');
-      const refs = f.endsWith('.html') ? [...text.matchAll(/(?:href|src)="([^"]+\.(?:js|css)[^"]*)"/g)].map(m => m[1]) : [...text.matchAll(/^\s*import\s[^'"]*['"]([^'"]+)['"]/gm)].map(m => m[1]);
+      // static imports, and dynamic ones (Cathedral Lab loads its buildings with import())
+      const refs = f.endsWith('.html') ? [...text.matchAll(/(?:href|src)="([^"]+\.(?:js|css)[^"]*)"/g)].map(m => m[1]) : [...text.matchAll(/^\s*import\s[^'"]*['"]([^'"]+)['"]/gm), ...text.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g)].map(m => m[1]);
       for (const ref of refs) {
         if (/^https?:/.test(ref)) continue;
         const want = ref.includes('bruins-vs-canadiens/') && project !== 'bruins-vs-canadiens' ? simVersion : version, got = (ref.match(/\?v=([0-9.]+)$/) || [])[1];

@@ -42,6 +42,7 @@ header.top { display: grid; grid-template-columns: 1fr auto; gap: 10px 24px; ali
 .brand p { margin: 4px 0 0; color: var(--fg-dim); max-width: 66ch; }
 .brand p.matchup { margin: 6px 0 0; font-family: var(--display); font-weight: 800; font-size: clamp(1.15rem, 2.2vw, 1.45rem); line-height: 1.1; color: var(--fg); }
 nav.views { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.views-list { display: contents; }
 nav.views a { padding: 7px 13px; border-radius: 7px; font: 700 1rem var(--display); letter-spacing: 0.03em; color: var(--fg-dim); text-decoration: none; white-space: nowrap; }
 nav.views a[aria-current="page"] { background: var(--fg); color: var(--bg); }
 nav.views a:not([aria-current]):hover { color: var(--fg); }
