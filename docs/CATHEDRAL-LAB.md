@@ -140,6 +140,17 @@ Filled in the usual 1972 way, and said on the page: heights the sheets do not ma
 
 The load model is not the masonry one. `wood.js` checks each joist, rafter, girder and ceiling joist as a simple span in bending, shear and sag; each stud and the lally columns for buckling; each column pad against the soil. The values are today's: No. 2 spruce-pine-fir for the 2x framing and No. 1 Douglas fir-larch for the girder (the NDS), the IRC's design loads (40 psf for living rooms, 30 for bedrooms, 10 for an attic without storage, 20 for a roofer), and 3,000 psf for the soil (sandy gravel, assumed). The loads on a member are the ones built at that step. The Blizzard of '78 puts 27 inches of settled snow at 15 lb per cubic foot on every roof, about 34 psf. Results: joists about 64%, rafters about 63% under a roofer and 98 to 103% in the blizzard, studs under 50%, lally columns 36%, the girder 103% and the column pads about 110% with every room fully loaded at once.
 
+## Going inside (0.14)
+
+Step inside puts the camera at eye height (1.6 m) inside the building at the step shown, and the step controls keep working. The design choices:
+
+- Look and hop, like a street-level photo viewer, rather than free walking alone: drag to look, tap a floor to glide there. It works the same with a mouse and a finger, and it cannot get you stuck. Walking with the arrow keys or WASD is there too, for a keyboard; walls stop you (rays at three heights) and you step up anything under 0.45 m, so the house's stair can be climbed.
+- You stand on what is built. Your floor is the highest level surface under you: the top of any square-cut piece under your feet (a joist, a plank, a slab, so the house's ceiling joists hold you with gaps between them) or what rays find on anything shaped (a vault's back, a tower's terrace), else the ground or the cellar hole's bottom. Step back past your floor and you sink to the one below; step forward and a floor built above you stays above you.
+- Named places, because at an early step there is nothing to find your way by, and a plan cut at waist height above your feet, drawn from the pieces' boxes, with you on it. A place whose floor is not built yet is marked so.
+- Inside, a lantern above and behind you lights the dark; the line of thrust is drawn at half strength; Follow the build and Cutaway are turned off, since both move the camera.
+
+Next: rooms for your own design, finished interior walls and floors for the house (it is shown as framed, with no plaster or oak), and a slower look at what each place shows.
+
 ## Current simplifications in the Notre-Dame build
 
 - The vault's crown is about 35 m up (33 m in the real nave).

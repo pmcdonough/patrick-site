@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.105 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.13 + Ring Kart 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.106 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.14 + Ring Kart 0.8. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.106
+- Cathedral Lab 0.14 (step inside any building at any step). The home card says so. No change to the sim, Play Review or Ring Kart.
 
 ### 0.105
 - Ring Kart 0.8 (the real lap, DRS, an engine matched to a recording, a broadcast strip, the widebody GT3 RS). The home card says so. `tools/ring_track.py` is new: it builds the lap from OpenStreetMap and the EU elevation model, and `docs/RAW-INPUTS.md` lists both. No change to the sim, Play Review or Cathedral Lab.
@@ -242,6 +245,13 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.14
+- Step inside: a new button puts you inside the building at eye height, at whatever step it is at. Drag to look around, tap a floor to walk there, or walk with the arrow keys or WASD (Shift to hurry); pinch or scroll to zoom; Esc or Step outside to leave. The step controls keep working, so you can stand in the nave and watch the centering go up and the vault close over you, or stand in the cellar while the joists go on above.
+- You stand on whatever is built under you: step back past the floor you are on and you sink to the one below, down to the ground or the bottom of the cellar hole. Walls stop you, and you climb a step or a stair tread.
+- A panel says where you are (the nave, an aisle, the crossing; the house's kitchen, the upstairs hall, the attic) and has a plan cut at waist height, with you as a dot and the way you face; tap it to walk there. Go to takes you to the places worth standing in: for Notre-Dame the west door, the nave looking up, the gallery, the crossing, the apse, on the vaults under the roof and the south tower; Amiens the same with the bell-ringers' gallery; your own the west door, the nave, the aisle, the crossing and the vaults; the house the foyer, the cellar, the living room, the kitchen, the family room, the upstairs hall, the wing's bedroom, the attic on its joists, the garage and the porch. A place not built yet says so.
+- A lantern you carry lights a roofed nave or a cellar; the line of thrust is drawn lighter while you are inside.
+- In the repo: `src/inside.js`, installed by the 3D page; buildings give `KIT.views` and `KIT.rooms`.
 
 ### 0.13
 - The back of the 1972 house, from photographs of it (the drawings have no rear elevation): a wide two-pane window over the sink and another in the dinette, a full-glass storm door on the back door, upstairs windows over the family room's, no shutters on the back, brick steps with iron railings, a steel bulkhead over the cellar stair, the family room chimney stepping in to a narrower flue above the first floor, and the breezeway's red back door. Today's back yard: the patio from the porch past the steps, a fieldstone wall and pillars, hydrangeas round the chimney and hostas along the wall, a grill and a table under a red umbrella.

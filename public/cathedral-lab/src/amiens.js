@@ -2,10 +2,10 @@
 // the parts that are its own: the crossing, the apse and its chapels, the west front and its two half-towers, the spire
 // and the labyrinth. The numbers are in docs/CATHEDRAL-LAB.md with their sources.
 // Units: metres, kN. x across (north negative), y up, z along the church: the crossing at 0, the west front at +62.
-import * as THREE from './vendor/three.module.js?v=0.13';
-import * as Solver from './solver.js?v=0.13';
-import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.13';
-import { frame, section, aisled, ribTop, pointed, beamG, tubeG, X, SIDES } from './gothic.js?v=0.13';
+import * as THREE from './vendor/three.module.js?v=0.14';
+import * as Solver from './solver.js?v=0.14';
+import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.14';
+import { frame, section, aisled, ribTop, pointed, beamG, tubeG, X, SIDES } from './gothic.js?v=0.14';
 
 const K = createKit();
 const { pieces, steps, step, add, removeAt, placeArch, placeCentering } = K;
@@ -365,7 +365,32 @@ export const HIDERS = [{ step: STEP_FRONT, west: ZF, msg: 'From the west, the fr
 K.finish();
 export const { live, computeLoads } = K;
 export { pieces, steps };
-export const KIT = { id: 'amiens', start: { title: 'An empty site in Amiens', note: 'Bishop Évrard de Fouilloy laid the first stone in 1220, after the old cathedral burned. Press Next step to set the first footing.' }, name: 'Amiens', cut: { min: -76, max: 70, value: 27 }, place: 'Notre-Dame d\'Amiens', title: 'The whole cathedral', matchup: 'Amiens, the tallest in France',
+export const KIT = { id: 'amiens', start: { title: 'An empty site in Amiens', note: 'Bishop Évrard de Fouilloy laid the first stone in 1220, after the old cathedral burned. Press Next step to set the first footing.' }, name: 'Amiens', cut: { min: -76, max: 70, value: 27 },
+  views: [
+    { name: 'At the west door', at: [0, 0, 58], look: [0, 20, 0] },
+    { name: 'In the nave, looking up', at: [0, 0, 30], look: [0, 40, 22] },
+    { name: 'In the aisle', at: [-11, 0, 30], look: [-11, 8, 8] },
+    { name: 'Under the crossing', at: [0, 0, 0], look: [0, 40, -3] },
+    { name: 'In the choir, looking west', at: [0, 0, -44], look: [0, 20, 30] },
+    { name: 'On the vaults, under the roof', at: [0, 44.5, 30], look: [0, 46, 8] },
+    { name: 'The bell-ringers\' gallery', at: [0, 47.5, 67.4], look: [0, 30, 0] },
+    { name: 'On the north tower', at: [-14, 69, 66], look: [0, 40, 0] },
+  ],
+  rooms: [
+    { name: 'In the nave', x0: -7.3, x1: 7.3, z0: 8.4, z1: 62, y0: -1, y1: 4 },
+    { name: 'In the north aisle', x0: -20, x1: -7.3, z0: 8.4, z1: 62, y0: -1, y1: 4 },
+    { name: 'In the south aisle', x0: 7.3, x1: 20, z0: 8.4, z1: 62, y0: -1, y1: 4 },
+    { name: 'Under the crossing', x0: -8.4, x1: 8.4, z0: -8.4, z1: 8.4, y0: -1, y1: 4 },
+    { name: 'In the north transept', x0: -36, x1: -8.4, z0: -8.4, z1: 8.4, y0: -1, y1: 4 },
+    { name: 'In the south transept', x0: 8.4, x1: 36, z0: -8.4, z1: 8.4, y0: -1, y1: 4 },
+    { name: 'In the choir', x0: -7.3, x1: 7.3, z0: -38.6, z1: -8.4, y0: -1, y1: 4 },
+    { name: 'In the choir aisles', x0: -27, x1: 27, z0: -38.6, z1: -8.4, y0: -1, y1: 4 },
+    { name: 'In the apse', x0: -27, x1: 27, z0: -69, z1: -38.6, y0: -1, y1: 4 },
+    { name: 'Under the west front', x0: -34, x1: 34, z0: 62, z1: 76, y0: -1, y1: 4 },
+    { name: 'The bell-ringers\' gallery', x0: -9, x1: 9, z0: 62, z1: 76, y0: 42, y1: 50 },
+    { name: 'On the vaults, under the roof', x0: -9, x1: 9, z0: -69, z1: 76, y0: 40, y1: 55 },
+  ],
+  place: 'Notre-Dame d\'Amiens', title: 'The whole cathedral', matchup: 'Amiens, the tallest in France',
   lede: 'Amiens, built from 1220, the tallest complete cathedral in France: a vault 42 m up on piers 18 m tall, walls that are mostly glass, flyers in two tiers, a choir with double aisles and seven chapels round its apse, two unequal towers and a spire of oak and lead 112.7 m high. Every piece is a separate stone or timber, and every one carries real load.',
   about: [
     'The nave first, as the masons did from 1220: seven bays with an aisle on each side, four-part vaults 42 m up, an arcade half the height of the church, a triforium and a clerestory that is almost all glass. Its flyers come in two tiers at every buttress.',

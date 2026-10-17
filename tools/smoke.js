@@ -81,6 +81,15 @@ const { open, openPage } = require('./harness');
     if (!h.colored) errors.push('cathedral-lab/?b=house: no piece is checked for load');
     if (!h.hidden) errors.push('cathedral-lab/?b=house: the siding still shows when colored by load');
     console.log(`cathedral-lab/?b=house builds a 1972 house in ${h.pieces} pieces and ${h.steps} steps, ${h.colored} of them checked for load.`);
+    // inside: upstairs in the wing, then back to before the second floor: you sink to the deck below
+    await hp.page.evaluate(() => { const L = window.cathedralLab; document.getElementById('v-load').click(); document.getElementById('v-inside').click(); L.inside.goTo(L.inside.views.find(v => /wing/.test(v.name))); });
+    await hp.page.waitForTimeout(600);
+    const up = await hp.page.evaluate(() => window.cathedralLab.inside.feet.y);
+    await hp.page.evaluate(() => window.cathedralLab.go(window.cathedralLab.steps.findIndex(s => s.title.startsWith('Outside walls')) + 1, false));
+    await hp.page.waitForTimeout(3000);
+    const down = await hp.page.evaluate(() => ({ y: window.cathedralLab.inside.feet.y, room: document.getElementById('room').textContent }));
+    if (!(up > 3 && down.y > 0.3 && down.y < 0.7)) errors.push(`cathedral-lab/?b=house: inside, the floor did not hold or did not give way (${up.toFixed(2)} m, then ${down.y.toFixed(2)} m)`);
+    else console.log(`cathedral-lab/?b=house: inside, upstairs at ${up.toFixed(1)} m, and back at the first floor walls you stand on the deck at ${down.y.toFixed(1)} m (${down.room}).`);
     errors.push(...hp.errors.map(e => `cathedral-lab/?b=house: ${e}`));
     await hp.page.close();
   }

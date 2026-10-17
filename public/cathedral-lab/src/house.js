@@ -9,9 +9,9 @@
 // loads that are on it at that step, and colored by the share of its allowable strength it uses.
 // Units: the drawings' feet inside this file; the kit and the page get metres and kN. u runs east along the house from
 // its west wall, v back from its front wall, y up from the ground; the street side is -x, the garage end +z.
-import * as THREE from './vendor/three.module.js?v=0.13';
-import { createKit, V3, boxG, cylG, extr } from './kit.js?v=0.13';
-import * as Wood from './wood.js?v=0.13';
+import * as THREE from './vendor/three.module.js?v=0.14';
+import { createKit, V3, boxG, cylG, extr } from './kit.js?v=0.14';
+import * as Wood from './wood.js?v=0.14';
 
 const F = 0.3048, KN = 0.004448;                    // a foot in metres, a pound in kN
 const X = v => (v - 14) * F, Z = u => (u - 36) * F, Y = y => y * F;
@@ -944,6 +944,28 @@ export const KIT = {
   cut: { min: Z(-1), max: Z(GAR.u1 + 1), value: Z(10) }, cutView: { y: 4, from: [-2, 6, 24] },
   camera: [-34, 12, 26], near: 8, whole: true, person: false, ground: 0x6f8f4e,
   shadow: { left: -60, right: 60, top: 60, bottom: -60, near: 10, far: 400 },
+  // inside: places to stand, and the rooms from the plans, so the page can say where you are
+  views: [
+    ['Front door, in the foyer', 27, 3, F1, 27, 20, F1 + 5],
+    ['In the cellar, by the columns', 18, 10, CELLAR, 40, 14, CELLAR + 4],
+    ['Living room', 4, 3, F1, 20, 11, F1 + 3],
+    ['Kitchen', 20, 18, F1, 32, 26, F1 + 3],
+    ['Family room, by the fireplace', 48, 18, F1, 42, 28, F1 + 3],
+    ['Upstairs hall, at the top of the stair', 21, 16.5, F2, 30, 11, F2 + 1],
+    ['The big bedroom in the wing', 50, 18, F2, 36, 6, F2 + 3],
+    ['In the attic, on the joists', 20, 12, P2 + 0.6, 4, 14, RIDGE - 2],
+    ['In the garage', 76, 34, GSLAB, 64, 15.5, 4],
+    ['On the porch', 8, 38, PORCH.floor, 8, 26, F1 + 4],
+  ].map(([name, u, v, y, lu, lv, ly]) => ({ name, at: [X(v), Y(y), Z(u)], look: [X(lv), Y(ly), Z(lu)] })),
+  rooms: [
+    ['Cellar', 0, 54, 0, 28, FTG - 2, 0], ['Living room', 0, 24, 0, 14, F1 - 1, F2 - 0.5], ['Dining room', 0, 14, 14, 28, F1 - 1, F2 - 0.5], ['Kitchen', 14, 25, 14, 28, F1 - 1, F2 - 0.5],
+    ['Dinette', 25, 36, 14, 28, F1 - 1, F2 - 0.5], ['Family room', 36, 54, 14, 28, F1 - 1, F2 - 0.5], ['Foyer', 24, 33, 0, 14, F1 - 1, F2 - 0.5], ['Lavatory', 33, 41.8, 2, 8.5, F1 - 1, F2 - 0.5],
+    ['Den', 41.8, 54, 2, 14, F1 - 1, F2 - 0.5], ['Front hall', 33, 41.8, 8.5, 14, F1 - 1, F2 - 0.5],
+    ['Bedroom 3', 0, 16.8, 0, 14, F2 - 0.5, P2], ['Bedroom 2', 0, 16.8, 14, 28, F2 - 0.5, P2], ['Bedroom 4', 16.8, 33, 0, 9, F2 - 0.5, P2], ['Upstairs hall', 16.8, 33, 9, 19, F2 - 0.5, P2],
+    ['Bathrooms', 16.8, 33, 19, 28, F2 - 0.5, P2], ['Bedroom 1, in the wing', 33, 54, 2, 28, F2 - 0.5, P2], ['Attic', 0, 54, 0, 28, P2, RIDGE + 2],
+    ['Garage', GAR.u0, GAR.u1, GAR.v0, GAR.v1, -1, GP], ['Breezeway', 54, GAR.u0, GAR.v0, 28, -1, GP], ['Porch', PORCH.u0, PORCH.u1, PORCH.v0, PORCH.v1, -1, PORCH.plate],
+  ].map(([name, u0, u1, v0, v1, y0, y1]) => ({ name, x0: X(v0), x1: X(v1), z0: Z(u0), z1: Z(u1), y0: Y(y0), y1: Y(y1) })),
+  insideName: 'Outside',
   pit: { x0: X(PIT.v0), x1: X(PIT.v1), z0: Z(PIT.u0), z1: Z(PIT.u1), depth: Y(-FTG + 0.6), step: S_DIG },
   mats: MATS,
 };

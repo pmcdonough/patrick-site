@@ -3,29 +3,30 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.13';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.13';
+import * as THREE from './vendor/three.module.js?v=0.14';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.14';
+import { installInside } from './inside.js?v=0.14';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first. Your own is made from a design: make(design) gives the same exports, and the
 // design comes from the address (?b=yours&d=...), or else the last one saved on the design page.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.13') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.13') },
-  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.13'), design: true },
-  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.13') },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.14') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.14') },
+  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.14'), design: true },
+  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.14') },
 ];
 const Q = new URLSearchParams(location.search);
 const CHOSEN = BUILDINGS.find(b => b.id === Q.get('b')) || BUILDINGS[0];
 const MOD = await CHOSEN.load();
 let DESIGN = null;
 if (MOD.make) {
-  const D = await import('./design.js?v=0.13');
+  const D = await import('./design.js?v=0.14');
   let saved = null; try { saved = JSON.parse(localStorage.getItem('cathedral-lab.design')); } catch (e) { /* none saved */ }
   DESIGN = Q.get('d') ? D.decode(Q.get('d'), Q.get('name')) : D.clamp(saved || D.DEFAULT);
 }
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = MOD.make ? MOD.make(DESIGN) : MOD;
 
-const VERSION = '0.13';
+const VERSION = '0.14';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
@@ -159,7 +160,7 @@ const DUR = reduce ? 0.001 : 0.52, batches = [], meshes = [];
 // like a diagram, because most of it runs inside walls and piers, and in its true color (no tone mapping, which washes
 // red to pink). Rounded tubes with a ball at each end, so it reads as one smooth stroke.
 const forceGroup = new THREE.Group(); scene.add(forceGroup);
-const forceMat = new THREE.MeshBasicMaterial({ clippingPlanes: [cutPlane], depthTest: false, depthWrite: false, toneMapped: false });
+const forceMat = new THREE.MeshBasicMaterial({ clippingPlanes: [cutPlane], depthTest: false, depthWrite: false, toneMapped: false, transparent: true });
 const onTop = m => { m.renderOrder = 10; return m; };
 function tube(pts, r) {
   const g = new THREE.Group(), path = new THREE.CurvePath();
@@ -223,8 +224,8 @@ function applyStep(n, animate) {
   }
   if (FALL) fallTo(n, animate);
   if (PIT) PIT.holed.visible = PIT.sides.visible = !(ground.visible = n <= PIT.step);
-  computeLoads(n); recolor(); syncUI();
-  if (animate && state.follow && n > 0) frameStep(n - 1);
+  computeLoads(n); recolor(); syncUI(); if (INSIDE) INSIDE.stepped();
+  if (animate && state.follow && n > 0 && !(INSIDE && INSIDE.on)) frameStep(n - 1);
 }
 
 // ---------- The collapse ----------
@@ -360,7 +361,9 @@ function pointUnder(e) {
 // caught on the way down to the canvas, before the orbit controls' own zoom, which only zooms toward the middle
 $('stage').addEventListener('wheel', e => {
   if (e.target !== cv) return;
-  e.preventDefault(); e.stopPropagation(); stopFollow();
+  e.preventDefault(); e.stopPropagation();
+  if (INSIDE.on) { INSIDE.zoom(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY); return; }
+  stopFollow();
   const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   const p = pointUnder(e), d = camera.position.distanceTo(p);
   // the stop is a step short of what you point at, not of the point the camera turns around, which may be much nearer
@@ -374,6 +377,12 @@ $('stage').addEventListener('wheel', e => {
   clampTarget(); redraw();
 }, { capture: true, passive: false });
 $('fit').onclick = frameAll;
+// ---------- Inside ----------
+// Stand in the building at eye height (inside.js). The page gives it the pieces, the ground and the picking it already has.
+const INSIDE = installInside({ scene, camera, controls, cv, pieces, live, state, KIT, BOUNDS, hitAt, redraw, forceMat, $,
+  groundY: (x, z) => PIT && PIT.sides.visible && x > KIT.pit.x0 && x < KIT.pit.x1 && z > KIT.pit.z0 && z < KIT.pit.z1 ? -KIT.pit.depth : 0,
+  select: p => { state.sel = p; recolor(); syncInspect(); } });
+$('v-inside').onclick = () => { if (INSIDE.on) INSIDE.exit(); else { if (on('v-cut')) $('v-cut').click(); state.follow = false; press('v-follow', false); INSIDE.enter(); } };
 const ease = t => t < 0 ? 0 : t > 1 ? 1 : 1 - (1 - t) * (1 - t) * (1 - t);
 function tick(now) {
   requestAnimationFrame(tick);
@@ -384,8 +393,9 @@ function tick(now) {
   }
   if (state.camT) { const t = ease((now - state.camT.t0) / (reduce ? 1 : 900)); controls.target.lerpVectors(state.camT.fromT, state.camT.toT, t); camera.position.lerpVectors(state.camT.fromP, state.camT.toP, t); if (t >= 1) state.camT = null; busy = true; }
   if (FALL && FALL.t0 != null && now >= FALL.t0) { fallPose((now - FALL.t0) / 1000); busy = true; if (FALL.done) { FALL.t0 = null; FALL.pose = Infinity; } }
-  if (controls.update()) busy = true;
-  if (!state.camT) clampTarget();
+  if (INSIDE.tick(now)) busy = true;
+  else if (!INSIDE.on && controls.update()) busy = true;
+  if (!state.camT && !INSIDE.on) clampTarget();
   if (state.forces) { showForces(); if (forceGroup.visible) pickBayLine(); }
   if (busy || dirty) { renderer.render(scene, camera); dirty = false; }
 }
@@ -464,6 +474,7 @@ let down = null, lastTap = null;
 cv.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
 cv.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+  if (INSIDE.on) { INSIDE.tap(e); return; }
   const hit = hitAt(e), now = performance.now();
   const dbl = lastTap && now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 25;
   lastTap = dbl ? null : { t: now, x: e.clientX, y: e.clientY };
@@ -490,4 +501,4 @@ theme(); resize();
 // open on the finished model, like the picture on the box (a design that falls: just before it does)
 go(OPEN, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id, falls: KIT.falls ? KIT.falls.step : null, bayLines };
+window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id, falls: KIT.falls ? KIT.falls.step : null, bayLines, inside: INSIDE };

@@ -2,9 +2,9 @@
 // way Amiens is, with a west front, an east end and, if it fails, the collapse. make(design) returns what every building
 // module exports (pieces, steps, KIT, forceLines and the rest); the 3D page calls it with the design in its address.
 // Units: metres, kN. x across (left negative), y up, z along the church: the west front at +z. Nothing here touches the page.
-import { createKit } from './kit.js?v=0.13';
-import { frame, aisled, front, crossing, apse, SIDES } from './gothic.js?v=0.13';
-import { assess, query, advise, lands, layoutOf, apseSides } from './design.js?v=0.13';
+import { createKit } from './kit.js?v=0.14';
+import { frame, aisled, front, crossing, apse, SIDES } from './gothic.js?v=0.14';
+import { assess, query, advise, lands, layoutOf, apseSides } from './design.js?v=0.14';
 
 const m = (v, d = 1) => `${(+v).toFixed(d).replace(/\.0$/, '')} m`;
 const kNm = v => `${Math.round(v)} kN`;
@@ -183,6 +183,17 @@ export function make(design) {
     start: { title: 'An empty site', note: `${name}, ready to build: ${steps.length} steps. Press Next step to set the first footing.` },
     open: falls ? falls.step : steps.length,
     falls, person: [-2.2, zW + 6],
+    views: (() => {
+      const zm = +(nave.lines[Math.floor(nave.lines.length / 2)] + L / 2), xa = -(d.span / 2 + d.wall + 0.32 * d.span), cr = a.crown;
+      const X = pieces.filter(p => /^X/.test(p.id)), zX = X.length ? X.reduce((s, p) => s + (p.geo.boundingBox.min.z + p.geo.boundingBox.max.z) / 2, 0) / X.length : null;
+      return [
+        { name: 'At the west door', at: [0, 0, zW - 3], look: [0, cr * 0.5, zmin] },
+        { name: 'In the nave, looking up', at: [0, 0, zm], look: [0, cr, zm - cr * 0.25] },
+        { name: 'In the aisle', at: [xa, 0, zm], look: [xa, 5, zmin] },
+        ...(zX != null ? [{ name: 'Under the crossing', at: [0, 0, zX], look: [0, cr, zX - cr * 0.1] }] : []),
+        { name: 'On the vaults, under the roof', at: [0, cr + 1.2, zm], look: [0, cr + 2, zmin] },
+      ];
+    })(),
     back: { href: `design/?${query(d)}`, label: 'Change the design' },
     assessment: { verdict: a.verdict, falls: a.falls, crown: a.crown },
   };

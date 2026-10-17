@@ -2,9 +2,9 @@
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
-import * as THREE from './vendor/three.module.js?v=0.13';
-import * as Solver from './solver.js?v=0.13';
-import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.13';
+import * as THREE from './vendor/three.module.js?v=0.14';
+import * as Solver from './solver.js?v=0.14';
+import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.14';
 
 
 // ---------- The nave in section and in plan ----------
@@ -33,7 +33,33 @@ const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, 
 const GT = 18.8;                                                     // the top of the gallery's outer wall, under the flyers
 // what the page says about this building: its name in the header, the line under the title, the introduction, and the
 // paragraphs of What you're building
-export const KIT = { id: 'notre-dame', start: { title: 'An empty site on the Île de la Cité', note: 'Bishop Maurice de Sully laid the first stone in 1163. Press Next step to set the first footing.' }, name: 'Notre-Dame', cut: { min: -90, max: 48, value: 1 }, place: 'Notre-Dame de Paris', title: 'The whole cathedral', matchup: 'Notre-Dame, stone by stone',
+export const KIT = { id: 'notre-dame', start: { title: 'An empty site on the Île de la Cité', note: 'Bishop Maurice de Sully laid the first stone in 1163. Press Next step to set the first footing.' }, name: 'Notre-Dame', cut: { min: -90, max: 48, value: 1 },
+  // places to stand inside: where your feet go, roughly (you stand on what is built there) and where you look
+  views: [
+    { name: 'At the west door', at: [0, 0, 26], look: [0, 14, -30] },
+    { name: 'In the nave, looking up', at: [0, 0, 0], look: [0, 30, -9] },
+    { name: 'In the inner aisle', at: [-9.6, 0, 3], look: [-9.6, 6, -20] },
+    { name: 'In the gallery', at: [-9.6, 15.5, 8], look: [4, 20, -12] },
+    { name: 'Under the crossing', at: [0, 0, -36], look: [0, 30, -39] },
+    { name: 'In the apse, looking west', at: [0, 0, -76], look: [0, 14, 0] },
+    { name: 'On the vaults, under the roof', at: [0, 36.5, 0], look: [0, 38, -25] },
+    { name: 'On the south tower', at: [14, 70, 39], look: [0, 40, -40] },
+  ],
+  rooms: [
+    { name: 'In the nave', x0: -6, x1: 6, z0: -29.5, z1: 30, y0: -1, y1: 4 },
+    { name: 'In the north aisles', x0: -20, x1: -6, z0: -29.5, z1: 30, y0: -1, y1: 4 },
+    { name: 'In the south aisles', x0: 6, x1: 20, z0: -29.5, z1: 30, y0: -1, y1: 4 },
+    { name: 'Under the crossing', x0: -7.6, x1: 7.6, z0: -42.5, z1: -29.5, y0: -1, y1: 4 },
+    { name: 'In the north transept', x0: -27, x1: -7.6, z0: -42.5, z1: -29.5, y0: -1, y1: 4 },
+    { name: 'In the south transept', x0: 7.6, x1: 27, z0: -42.5, z1: -29.5, y0: -1, y1: 4 },
+    { name: 'In the choir', x0: -6, x1: 6, z0: -66, z1: -42.5, y0: -1, y1: 4 },
+    { name: 'In the choir aisles', x0: -22, x1: 22, z0: -66, z1: -42.5, y0: -1, y1: 4 },
+    { name: 'In the apse', x0: -22, x1: 22, z0: -92, z1: -66, y0: -1, y1: 4 },
+    { name: 'Under the towers', x0: -23, x1: 23, z0: 30, z1: 49, y0: -1, y1: 4 },
+    { name: 'In the gallery', x0: -20, x1: 20, z0: -92, z1: 49, y0: 10, y1: 20 },
+    { name: 'On the vaults, under the roof', x0: -8, x1: 8, z0: -92, z1: 49, y0: 30, y1: 45 },
+  ],
+  place: 'Notre-Dame de Paris', title: 'The whole cathedral', matchup: 'Notre-Dame, stone by stone',
   lede: "The whole of Notre-Dame, built the way the masons did: the nave and the choir with their piers, arcades, flying buttresses, vaults and oak roofs; the west front with its portals, rose and towers; the transept, the crossing and the spire; and the apse, with the longest flyers in the building. Every piece is a separate stone or timber, and every one carries real load.",
   about: [
     "The nave: ten bays, 60 m from the crossing to the west front. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.",
