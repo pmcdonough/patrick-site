@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.109 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.10. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.110 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.11. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.110
+- Ring Kart 0.11 (no way through the barriers at the Karussell). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.109
 - Ring Kart 0.10 (Ring etiquette, the family Bronco, a reggae soundtrack). The home card says so. No change to the sim, Play Review or Cathedral Lab.
@@ -643,6 +646,11 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.11
+- Fixed: a car could end up behind the barrier on the climb to the Karussell, stuck on the grass (found by the owner in a GT3 RS). At a third of real size, the road up to the Karussell and the road out of it, about 30 m apart in life, came within 9.9 m of each other with a 13 m road, so they overlapped; the search that tells a car which bit of road it is on could jump to the other one, and that road's barrier then pushed the car out through the wrong side.
+- Three changes. `tools/ring_track.py` eases any two stretches of the lap that pass too close apart (only the Karussell, by up to 13 m), so they are now 18 m apart. Where two stretches pass close, one barrier runs halfway between them, including between the two legs of a hairpin. And a car only ever looks for its road a few metres either side of where it was, so it cannot jump to another stretch.
+- A new test drives cars every which way round the lap and fails if any ends up outside its barriers or on the wrong road; on 0.10 it caught the bug.
 
 ### 0.10
 - Ring etiquette. A slower car with a quicker one closing from behind puts its right blinker on (it flashes amber), moves over to the right, eases off a little and lets it pass on the left, then pulls back. Not perfectly, as on the real Ring: each driver has their own reaction time and courtesy, some never bother, and nobody moves over in a tight corner, where a coordinated pass is hard. Traffic does it for anyone quicker; rivals only for a car much quicker. The numbers are in `cars.json` (`race.etiquette`). When a quicker car is closing on you, a sticker says so (keep right, let it by on the left), and your own right indicator flashes once you move over.

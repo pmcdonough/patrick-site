@@ -74,6 +74,24 @@ export function buildTrack(T) {
     wallR[k] = c > 0 ? inside : base; wallL[k] = c < 0 ? inside : base;
   }
 
+  // where two stretches of the lap pass close (the climb to the Karussell and the way out of it), one barrier runs
+  // between them, halfway: each road's wall on that side stops there, so neither road's barrier stands on the other
+  // road, and a car cannot cross from one to the other
+  {
+    const cell = 24, grid = new Map(), key = (a, b) => a * 100003 + b;
+    for (let j = 0; j < n; j++) { const q = key(Math.floor(x[j] / cell), Math.floor(z[j] / cell)); (grid.get(q) || grid.set(q, []).get(q)).push(j); }
+    for (let k = 0; k < n; k++) {
+      const gx = Math.floor(x[k] / cell), gz = Math.floor(z[k] / cell), fx = Math.cos(h[k]), fz = Math.sin(h[k]);
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const j of grid.get(key(gx + a, gz + b)) || []) {
+        if (Math.abs(j - k) < 20) continue;   // 40 m along the road: the two legs of a hairpin count, its own curve does not
+        const dx = x[j] - x[k], dz = z[j] - z[k], along = dx * fx + dz * fz, lat = -dx * fz + dz * fx;
+        if (Math.abs(along) > 6 || Math.abs(lat) > 2 * base) continue;
+        const mid = Math.max(B.width / 2 + 0.4, Math.abs(lat) / 2);
+        if (lat > 0) wallR[k] = Math.min(wallR[k], mid); else wallL[k] = Math.min(wallL[k], mid);
+      }
+    }
+  }
+
   // DRS zones: where the road runs straight for the next 80 m (no bend tighter than 100 m), past the gate. A car with
   // DRS may open its wing flap there; the flap shuts itself when the straight ends, as the real one does on the brakes
   const drsZone = new Uint8Array(n), clear = Math.round(80 / ds), gate = Math.round(B.gateAt / ds) + 20;
@@ -91,7 +109,10 @@ function smooth(a, r) {
 
 // Where a point is relative to the road, searching near a hint sample (cars move a few samples a frame).
 // Returns the sample index, distance along (s), signed lateral offset (positive right), and the road height there.
-export function locate(track, px, pz, hint = 0, span = 40) {
+// The span is short on purpose: a car moves well under a metre a step, and a wider search could jump to another stretch
+// of road that passes close by (until 0.11 it was 40 samples, and at the Karussell a car could land on the road out of
+// it, then be pushed through the barrier).
+export function locate(track, px, pz, hint = 0, span = 8) {
   const { n, x, z } = track;
   let best = -1, bd = Infinity;
   const lo = Math.max(0, hint - span), hi = Math.min(n - 1, hint + span);

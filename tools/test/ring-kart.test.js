@@ -2,7 +2,7 @@
 // gantry on the AI without getting stuck, in a sensible time, with the faster cars faster; the pro drives the best line
 // clean; the driving modes keep a clumsy driver off the Armco without slowing a good one; reverse stops when you
 // let go; the gearbox works through every gear; DRS opens only where it should; and slower cars keep the Ring's
-// etiquette for quicker ones behind.
+// etiquette for quicker ones behind; and nobody gets through a barrier.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -170,4 +170,21 @@ test('Ring etiquette: a slower car signals, moves right and is passed on the lef
   const fast = makeCar(C.player[1], t, tight - 10, 0); fast.released = true; fast.v = 25;
   for (let i = 0; i < 30; i++) etiquette(slow, dt, t, [slow, fast], E);
   assert.ok(!slow.yld.on, 'nobody moves over in a tight corner');
+});
+
+test('no way through the barriers: cars driven every which way stay on their own stretch of road, even where two pass close', async () => {
+  const [{ buildTrack, pointAt, locateGlobal }, { makeCar, step }] = await load();
+  const t = buildTrack(T), dt = 1 / 120, escapes = [];
+  for (const spec of [C.player[0], C.player[1]]) for (const aimLat of [-6, 0, 6]) for (const look of [8, 22]) {
+    const car = makeCar(spec, t, t.gateAt, 0); let time = 0, wheel = 0;
+    while (car.k < t.n - 12 && time < 600) {
+      const p = pointAt(t, Math.min(t.n - 1, car.k + Math.round(look / t.ds)), aimLat);
+      let ang = Math.atan2(p.z - car.z, p.x - car.x) - car.h; ang = Math.atan2(Math.sin(ang), Math.cos(ang));
+      wheel += Math.max(-6 * dt, Math.min(6 * dt, (Math.abs(ang) > 0.04 ? Math.sign(ang) : 0) - wheel));
+      car.input = { steer: wheel, gas: 1, brake: 0, drift: false }; step(car, dt, t, C.race, []); time += dt;
+      const wall = car.lat > 0 ? t.wallR[car.k] : t.wallL[car.k];
+      if (Math.abs(car.lat) > wall + 0.5 || Math.abs(locateGlobal(t, car.x, car.z).k - car.k) > 30) { escapes.push(`${spec.name} aiming ${aimLat} m at sample ${car.k}`); break; }
+    }
+  }
+  assert.deepStrictEqual(escapes, []);
 });

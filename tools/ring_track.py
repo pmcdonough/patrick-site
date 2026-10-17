@@ -25,6 +25,12 @@ UA = 'patrick-site ring-kart track builder (pmcdonough.com)'
 BBOX = (50.31, 6.92, 50.39, 7.02)
 SPACING = 50            # metres between points along the lap
 SMOOTH = 120            # sigma of the blur on the heights, metres (see smooth)
+# Two stretches of road that pass close (the climb to the Karussell and the way out of it, about 30 m apart) must stay
+# far enough apart at the game's scale for both roads and a barrier: the game's road is 13 m wide at a third of real
+# size, so their centres must be SEPARATE real metres apart. Points closer than that, and more than CLOSE_PATH metres
+# apart along the lap (so not the two sides of one hairpin), are pushed apart.
+SEPARATE = 58
+CLOSE_PATH = 180
 LAT0 = 50.35            # the lap's middle latitude, for metres per degree of longitude
 START_AT = 'T13'        # the lap starts where this segment starts (the Touristenfahrten entry, where the queue waits)
 # and ends where this one starts. The real Touristenfahrten gantry is before Antoniusbuche, where the speed limits step
@@ -141,6 +147,34 @@ def smooth(v, sigma):
     return out
 
 
+def separate(pts):
+    """Push apart points of the lap that pass too close to each other (see SEPARATE), a little at a time, each push
+    eased along the road on either side so the line stays smooth. Returns how far the furthest point moved."""
+    xy = [[(lon - pts[0][1]) * 111320 * math.cos(math.radians(LAT0)), (lat - pts[0][0]) * 111320] for lat, lon, s in pts]
+    s = [p[2] for p in pts]
+    moved = [0.0] * len(xy)
+    for _ in range(60):
+        push = [[0.0, 0.0] for _ in xy]; any_ = False
+        for i in range(len(xy)):
+            for j in range(i + 1, len(xy)):
+                if s[j] - s[i] < CLOSE_PATH: continue
+                dx, dy = xy[j][0] - xy[i][0], xy[j][1] - xy[i][1]; d = math.hypot(dx, dy)
+                if d >= SEPARATE or d == 0: continue
+                k = (SEPARATE - d) / d * 0.25; any_ = True
+                push[i][0] -= dx * k; push[i][1] -= dy * k; push[j][0] += dx * k; push[j][1] += dy * k
+        if not any_: break
+        # ease each push onto the neighbours, so the road bends rather than kinks
+        eased = [[0.0, 0.0] for _ in xy]
+        for i in range(len(xy)):
+            for o, w in ((-2, 0.25), (-1, 0.6), (0, 1.0), (1, 0.6), (2, 0.25)):
+                j = i + o
+                if 0 < j < len(xy) - 1: eased[j][0] += push[i][0] * w / 2.7 * 1.6; eased[j][1] += push[i][1] * w / 2.7 * 1.6
+        for i in range(1, len(xy) - 1):
+            xy[i][0] += eased[i][0]; xy[i][1] += eased[i][1]; moved[i] += math.hypot(*eased[i])
+    out = [(pts[0][0] + y / 111320, pts[0][1] + x / (111320 * math.cos(math.radians(LAT0))), s0) for (x, y), s0 in zip(xy, s)]
+    return out, max(moved)
+
+
 def build():
     ways = raceways()
     pts, ids = loop(ways)
@@ -159,6 +193,8 @@ def build():
             corner_at.append((n, cum[i]))
     samp, _, total = resample(lap, SPACING)
     els = smooth(heights([(p[0], p[1]) for p in samp]), SMOOTH / SPACING)
+    # heights are looked up where the map puts the road; then the two close stretches are eased apart
+    samp, moved = separate(samp)
     lat0, lon0 = samp[0][0], samp[0][1]
     P = []
     for (lat, lon, s), el in zip(samp, els):
@@ -182,11 +218,11 @@ def build():
             P[top]['crest'] = dict(CRESTS[n])
     P[0]['name'] = 'Touristenfahrten'
     P[-1]['name'] = 'Gantry'
-    return P, total
+    return P, total, moved
 
 
 def main():
-    P, total = build()
+    P, total, moved = build()
     T = json.load(open(OUT))
     T['about'] = ('The Nordschleife from the Touristenfahrten entry at T13, clockwise, to a gantry before Tiergarten: the real one '
                   'stands before Antoniusbuche, but the game keeps the whole straight. '
@@ -215,7 +251,8 @@ def main():
         sys.exit(0 if same else 1)
     open(OUT, 'w', encoding='utf-8').write(text + '\n')
     print(f'{len(P)} points, {total:.0f} m bridge to gantry, {sum(1 for p in P if "name" in p)} names, '
-          f'{sum(1 for p in P if "crest" in p)} crests, heights {min(p["el"] for p in P):.0f} to {max(p["el"] for p in P):.0f} m')
+          f'{sum(1 for p in P if "crest" in p)} crests, heights {min(p["el"] for p in P):.0f} to {max(p["el"] for p in P):.0f} m, '
+          f'close stretches eased apart by up to {moved:.0f} m')
 
 
 if __name__ == '__main__':

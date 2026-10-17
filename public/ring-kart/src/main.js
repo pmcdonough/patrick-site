@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.10';
-import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.10';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.10';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.10';
-import { Sound } from './audio.js?v=0.10';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.11';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.11';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.11';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.11';
+import { Sound } from './audio.js?v=0.11';
 
-const VERSION = '0.10';
+const VERSION = '0.11';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };

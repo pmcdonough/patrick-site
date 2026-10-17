@@ -143,7 +143,7 @@ flowchart LR
   stamps --> smoke["tools/smoke.js fails<br/>if any stamp disagrees"]
 ```
 
-- The site has one version (the home page footer, the Site section of `CHANGELOG.md`). Each project has its own (`VERSION` in its `src/main.js`, its card badge on the home page). As of this writing: site 0.109, sim 0.71, Play Review 0.10, Cathedral Lab 0.15, Ring Kart 0.10.
+- The site has one version (the home page footer, the Site section of `CHANGELOG.md`). Each project has its own (`VERSION` in its `src/main.js`, its card badge on the home page). As of this writing: site 0.110, sim 0.71, Play Review 0.10, Cathedral Lab 0.15, Ring Kart 0.11.
 - Every file a page loads, and every import inside it, carries `?v=` with its project's version. The Worker serves every file with `Cache-Control: public, max-age=0, must-revalidate`, so browsers check each file on every visit, and the stamps make sure a visitor never runs a new module against an old one during a deploy.
 - Saved browser data carries its version where a version change would make it wrong. The lab's results (`rink.lab`) and recent lab games (`rink.reviews`) are dropped when the sim version changes, because the same seed may now play differently; plans and designs are kept.
 
