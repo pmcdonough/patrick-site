@@ -1,13 +1,14 @@
 # Ring Kart
 
-A kart-style race round the Nürburgring Nordschleife in real cars. Version 0.1 (site 0.92), live at `/ring-kart/`. Built in a chat session from the idea: start outside the Ring in the Touristenfahrten queue behind Porsches, GTIs and a few fun old cars, tap your ticket, and race.
+A kart-style race round the Nürburgring Nordschleife in real cars. Version 0.2 (site 0.95; 0.1 shipped in site 0.94), live at `/ring-kart/`. Built in a chat session from the idea: start outside the Ring in the Touristenfahrten queue behind Porsches, GTIs and a few fun old cars, tap your ticket, and race.
 
 ## The session
 
 1. Pick a car: VW Golf GTI, Porsche 911 GT3 RS, Honda Civic Type R, Mazda MX-5 (NA) or Volvo 240 Estate. The camera circles your car in the queue while you choose.
 2. The queue: four rivals ahead of you, two fast cars (a GT3 RS and an AMG GT R) behind. The barrier lifts for one car every 2 s; the queue creeps up. At the front, Space, Enter, a tap or the A button lifts it for you.
 3. The race: six rivals (two already through the gate when you join) and the two behind you, through 22 slow cars on the lap. Position counts who is furthest round; the clock runs from your barrier to the gantry, the real "bridge to gantry" time. Corner names come up as you reach them.
-4. The gantry: your time, your place, the order with each car's time, and your best per car (kept in the browser).
+4. On the way: position top left, the gaps to the car ahead and behind top right, corner names as you reach them, and along the bottom the onboard telemetry, after the broadcast laps: the map (you in red), gear and speed, the revs on an arc with a shift light, brake and gas bars, the clock in hundredths, the drift and turbo charge, and the height of the lap with how far you have come. C cycles the camera: behind, high, on the bonnet.
+5. The gantry: your time, your place, the order with each car's time, and your best per car (kept in the browser).
 
 ## The lap (`data/track.json`, `src/track.js`)
 
@@ -37,7 +38,7 @@ Real models, arcade numbers in the right order: top speed, acceleration, grip, b
 
 ## The world (`src/scene.js`)
 
-The road with its edge lines and patched tarmac, kerbs on the inside of corners, the Armco on posts, a ground height field that sits under the road and rolls into hills away from it, about ten thousand trees, painted words on the tarmac, corner boards, the gate with its barrier and light, and the gantry. Three.js r128 is Cathedral Lab's copy, imported with its stamp.
+A sky dome from deep blue to a hazy horizon with clouds, which follows the camera; a cloudless copy of it is the environment map the car paint, glass and Armco reflect, and its horizon colour is the fog. The road with its edge lines, rubbered-in line, seams and patched tarmac, kerbs on the inside of corners, W-beam Armco on posts, catch fences on the outside of the bends, a ground height field that sits under the road and rolls into hills away from it, about ten thousand trees (spruces in tiers of branches and broadleaves, each instance its own colour on a white material), painted words on the tarmac, corner boards, the gate with its barrier and light, and the gantry. Brake lights light up when a car brakes. The dials and the engine note read the same gearbox, `revs()` in `src/drive.js`. Three.js r128 is Cathedral Lab's copy, imported with its stamp.
 
 ## Checks
 

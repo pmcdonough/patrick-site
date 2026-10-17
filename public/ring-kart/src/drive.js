@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.1';
+import { locate, pointAt } from './track.js?v=0.2';
 
 const G = 9.81;
 
@@ -215,4 +215,18 @@ export function driveAI(car, dt, track, cars, opts = {}) {
   car.input.gas = car.v < vt - 0.6 ? 1 : car.v < vt ? 0.4 : 0;
   car.input.brake = car.v > vt + 1.2 ? Math.min(1, (car.v - vt) / 6) : 0;
   car.input.drift = false;
+}
+
+// The gearbox the sound and the dials share: six gears spread over the top speed, and the revs in that gear, from
+// 2,600 when it drops into a gear to 6,800 at the change, a little more flat out in top. At a standstill the throttle
+// just revs it. Returns the gear (0 for neutral, -1 for reverse) and the revs it wants; the page eases toward them.
+export const REDLINE = 7200;
+export function revs(car) {
+  const v = Math.abs(car.v), band = car.spec.vmax / 6.2, gas = car.input.gas || car.boost > 0 ? 1 : 0;
+  if (car.v < -0.5) return { gear: -1, rpm: 2600 + Math.min(1, v / 8) * 2400 };
+  if (v < 1.5) return { gear: 0, rpm: gas ? 6400 : 900 };
+  const g = Math.min(5, Math.floor(v / band)), inGear = Math.min(1.3, (v - g * band) / band);
+  let rpm = 2600 + Math.min(1, inGear) * 4200 + (g === 5 ? Math.max(0, v - 6 * band) / band * 1200 : 0);
+  if (car.air && gas) rpm += 900;
+  return { gear: g + 1, rpm: Math.min(REDLINE + 600, rpm) };
 }

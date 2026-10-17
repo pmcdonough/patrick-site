@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.94 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.9 + Ring Kart 0.1. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.95 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.9 + Ring Kart 0.2. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.95
+- Ring Kart 0.2 (onboard telemetry and a better-looking Eifel). The home card says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.94
 - Ring Kart 0.1, a new project at /ring-kart/: a kart-style race round the Nordschleife in real cars, with its card on the home page. It uses Cathedral Lab's copy of Three.js, so `tools/bump.js` and `tools/smoke.js` know about imports across the two. No change to the sim, Play Review or Cathedral Lab.
@@ -561,6 +564,13 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.2
+- Onboard telemetry along the bottom of the screen, after the broadcast laps: the map in orange with you in red and the race in white, gear and speed in big type, an arc of revs from 0 to 8,000 with a shift light, brake and gas bars, the bridge-to-gantry clock in hundredths, the drift and turbo charge, and the height of the lap lit as far as you have come, with the race on it. Turbo, drift, tow, air and grass show under the speed.
+- The gaps: the car ahead and the car behind, in seconds at your speed, top right.
+- One gearbox for the dials and the engine note, so the revs you see are the revs you hear.
+- A bonnet camera (C cycles behind, high, bonnet), with a shudder from the road that grows with speed; on a tall phone screen it sits at the nose.
+- The world: a sky that fades from deep blue to a hazy horizon, with clouds; the car paint, glass and Armco reflect it. Spruces in tiers of branches, and the forest's colours fixed (every tree had been drawn nearly black). W-beam Armco, catch fences on the outside of the bends, a road with a rubbered-in line, seams and softer patches. Brake lights, on every car. A vignette, warmed by the turbo.
 
 ### 0.1
 - First playable version. Pick one of five cars (VW Golf GTI, Porsche 911 GT3 RS, Honda Civic Type R, Mazda MX-5, Volvo 240 Estate), queue at the Touristenfahrten gate behind four rivals with two fast cars behind you, tap your ticket, and race to the gantry against six rivals and two chasers through 22 slow cars on the lap.

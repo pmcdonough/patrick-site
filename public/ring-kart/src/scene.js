@@ -1,8 +1,8 @@
-// Everything you see: the Eifel hills and forest, the road with its kerbs, Armco and painted tarmac, the gate with its
-// barrier and the gantry at the end, corner boards, and the cars, each built from a few shaped blocks to its own
+// Everything you see: the sky and its clouds, the Eifel hills and spruce forest, the road with its kerbs, Armco, catch
+// fences and painted tarmac, the gate with its barrier and the gantry at the end, corner boards, and the cars, each built from a few shaped blocks to its own
 // proportions and colours. Three.js r128, the copy Cathedral Lab keeps on the site.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.9';
-import { pointAt } from './track.js?v=0.1';
+import { pointAt } from './track.js?v=0.2';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.
 const col = c => new THREE.Color(c).convertSRGBToLinear();
@@ -37,12 +37,37 @@ export function buildWorld(scene, track) {
       m.material = new THREE.MeshLambertMaterial({ map: kerbTex }); group.add(m);
     }
   }
-  // the Armco: two shiny rails on posts
-  const railMat = new THREE.MeshLambertMaterial({ color: col(0xc9cfd6) });
+  // the Armco: two W-beam rails on posts, galvanised steel that catches the sky
+  const railMat = new THREE.MeshStandardMaterial({ map: armco(), metalness: 0.55, roughness: 0.38, side: THREE.DoubleSide });
+  railMat.map.wrapS = THREE.RepeatWrapping;
   for (const side of [-1, 1]) {
     const off = k => side > 0 ? track.wallR[k] : -track.wallL[k];
-    group.add(wall(track, off, 0.45, 0.95, railMat));
+    group.add(wall(track, off, 0.3, 1.05, railMat));
   }
+  // catch fences on the outside of the corners, a few metres behind the Armco, with a post every dozen metres
+  const fenceMat = new THREE.MeshLambertMaterial({ map: fence(), transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  fenceMat.map.wrapS = THREE.RepeatWrapping;
+  const fencePosts = [];
+  for (const side of [-1, 1]) {
+    const wl = side > 0 ? track.wallR : track.wallL, base = W / 2 + track.verge;
+    let start = -1;
+    for (let k = 0; k <= n; k++) {
+      // outside of the bends, in long stretches, not all the way round
+      const on = k < n && wl[k] >= base - 0.01 && Math.sin(k * 0.0123 + side * 1.7) + Math.sin(k * 0.0051) > -0.3 && k > track.gateAt + 20;
+      if (on && start < 0) start = k;
+      if (!on && start >= 0) {
+        if (k - start > 30) {
+          const off = () => side * (base + 1.8);
+          group.add(wall(track, off, 0.1, 3.4, fenceMat, start, k - 1));
+          for (let j = start; j < k; j += 6) fencePosts.push(pointAt(track, j, off()));
+        }
+        start = -1;
+      }
+    }
+  }
+  const fp = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.05, 0.05, 3.5, 5).translate(0, 1.75, 0), new THREE.MeshLambertMaterial({ color: col(0x5b636b) }), fencePosts.length);
+  fencePosts.forEach((p, i) => fp.setMatrixAt(i, new THREE.Matrix4().makeTranslation(p.x, p.y, p.z)));
+  group.add(fp);
   const postGeo = new THREE.BoxGeometry(0.12, 0.8, 0.12), posts = new THREE.InstancedMesh(postGeo, new THREE.MeshLambertMaterial({ color: col(0x6d747c) }), Math.ceil(n / 2) * 2 + 4);
   { let i = 0; const m = new THREE.Matrix4(); for (let k = 0; k < n; k += 2) for (const side of [-1, 1]) { const p = pointAt(track, k, side > 0 ? track.wallR[k] + 0.08 : -track.wallL[k] - 0.08); m.makeTranslation(p.x, p.y + 0.4, p.z); posts.setMatrixAt(i++, m); } posts.count = i; }
   group.add(posts);
@@ -80,6 +105,36 @@ export function buildWorld(scene, track) {
   return { gate };
 }
 
+// The sky: a dome from a deep blue overhead to a pale haze at the horizon and a dark green below it (what the car paint
+// reflects), with fair-weather clouds. It follows the camera. The horizon colour is the fog's, so distance fades into it.
+export const HORIZON = 0xd5e3ec;
+export function buildSky(withClouds = true) {
+  const grp = new THREE.Group();
+  const geo = new THREE.SphereGeometry(1100, 32, 20), pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const zen = col(0x3f78c0), mid = col(0x8db7de), hor = col(HORIZON), below = col(0x3c4a34);
+  for (let i = 0; i < pos.count; i++) {
+    const t = pos.getY(i) / 1100;
+    if (t > 0.25) c.copy(mid).lerp(zen, Math.min(1, (t - 0.25) / 0.6));
+    else if (t > 0) c.copy(hor).lerp(mid, t / 0.25);
+    else c.copy(hor).lerp(below, Math.min(1, -t / 0.08));
+    cols.set([c.r, c.g, c.b], i * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  grp.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })));
+  if (withClouds) {
+    const tex = canvas(256, 128, (g, w, h) => {
+      for (let i = 0; i < 26; i++) { const x = w * (0.18 + rnd() * 0.64), y = h * (0.45 + rnd() * 0.25), r = 18 + rnd() * 30; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+    });
+    for (let i = 0; i < 28; i++) {
+      const a = rnd() * Math.PI * 2, d = 600 + rnd() * 350, sz = 120 + rnd() * 160;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, fog: false, depthWrite: false, opacity: 0.75 + rnd() * 0.25 }));
+      s.position.set(Math.cos(a) * d, 160 + rnd() * 260, Math.sin(a) * d); s.scale.set(sz, sz * 0.45, 1); grp.add(s);
+    }
+  }
+  grp.renderOrder = -1;
+  return grp;
+}
+
 // A strip along the road between two sideways offsets; uv(k, side) gives texture coordinates.
 function ribbon(track, offs, lift, uv, a = 0, b = track.n - 1) {
   const cnt = b - a + 1, pos = new Float32Array(cnt * 6), uvs = new Float32Array(cnt * 4), idx = [];
@@ -95,10 +150,14 @@ function ribbon(track, offs, lift, uv, a = 0, b = track.n - 1) {
   return new THREE.Mesh(g);
 }
 // An upright strip (the rail) at a sideways offset, from lo to hi above the road.
-function wall(track, off, lo, hi, mat) {
-  const n = track.n, pos = new Float32Array(n * 6), idx = [];
-  for (let k = 0; k < n; k++) { const p = pointAt(track, k, off(k)); pos.set([p.x, p.y + lo, p.z, p.x, p.y + hi, p.z], k * 6); if (k) { const q = (k - 1) * 2; idx.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); } }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+function wall(track, off, lo, hi, mat, a = 0, b = track.n - 1) {
+  const cnt = b - a + 1, pos = new Float32Array(cnt * 6), uv = new Float32Array(cnt * 4), idx = [], rep = (hi - lo) * 1.6;
+  for (let k = a, i = 0; k <= b; k++, i++) {
+    const p = pointAt(track, k, off(k)); pos.set([p.x, p.y + lo, p.z, p.x, p.y + hi, p.z], i * 6);
+    const u = k * track.ds / rep; uv.set([u, 0, u, 1], i * 4);
+    if (i) { const q = (i - 1) * 2; idx.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   const m = new THREE.Mesh(g, mat); m.material.side = THREE.DoubleSide; return m;
 }
 
@@ -154,12 +213,15 @@ function hills(track) {
 }
 
 function forest(spots) {
-  const pine = new THREE.ConeGeometry(2.6, 9, 7); pine.translate(0, 6.5, 0);
+  // a spruce: tiers of branches that hang down and out, narrowing to a point
+  const prof = [[0.3, 2], [2.9, 3.2], [1.1, 3.6], [2.5, 5.6], [0.9, 6], [2.0, 8], [0.7, 8.4], [1.4, 10.4], [0.45, 10.8], [0.8, 12.4], [0, 14]];
+  const pine = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 7); pine.translate(0, -1.2, 0);
   const leaf = new THREE.IcosahedronGeometry(3.4, 0); leaf.translate(0, 6, 0);
   const trunk = new THREE.CylinderGeometry(0.35, 0.45, 3, 5); trunk.translate(0, 1.5, 0);
   const nP = spots.filter(s => s[3] < 0.7).length, nL = spots.length - nP;
-  const P = new THREE.InstancedMesh(pine, new THREE.MeshLambertMaterial({ color: col(0x24452c) }), nP);
-  const Lf = new THREE.InstancedMesh(leaf, new THREE.MeshLambertMaterial({ color: col(0x3f6b2f), flatShading: true }), nL);
+  // white materials: each tree's own colour is set per instance, and the two multiply
+  const P = new THREE.InstancedMesh(pine, new THREE.MeshLambertMaterial({ flatShading: true }), nP);
+  const Lf = new THREE.InstancedMesh(leaf, new THREE.MeshLambertMaterial({ flatShading: true }), nL);
   const T = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: col(0x5a4430) }), spots.length);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), c = new THREE.Color();
   let ip = 0, il = 0;
@@ -167,7 +229,7 @@ function forest(spots) {
     const k = 0.7 + (s[3] * 7919 % 1) * 0.7;
     ps.set(s[0], s[1], s[2]); q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), s[3] * 6.28); sc.set(k, k * (0.9 + (s[3] * 104729 % 1) * 0.5), k);
     m.compose(ps, q, sc); T.setMatrixAt(i, m);
-    if (s[3] < 0.7) { P.setMatrixAt(ip, m); c.setHSL(0.36, 0.35, 0.16 + s[3] * 0.08).convertSRGBToLinear(); P.setColorAt(ip++, c); }
+    if (s[3] < 0.7) { P.setMatrixAt(ip, m); c.setHSL(0.36 + (s[3] * 53 % 1) * 0.05, 0.34, 0.17 + s[3] * 0.1).convertSRGBToLinear(); P.setColorAt(ip++, c); }
     else { Lf.setMatrixAt(il, m); c.setHSL(0.24 + s[3] * 0.06, 0.45, 0.25 + (s[3] * 31 % 1) * 0.08).convertSRGBToLinear(); Lf.setColorAt(il++, c); }
   });
   return [P, Lf, T];
@@ -176,12 +238,41 @@ function forest(spots) {
 // ---------- textures, drawn on canvases ----------
 function canvas(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.encoding = THREE.sRGBEncoding; return t; }
 function asphalt() {
-  return canvas(256, 256, (g, w, h) => {
+  return canvas(512, 512, (g, w, h) => {
     g.fillStyle = '#4a4e54'; g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 9000; i++) { const v = 60 + rnd() * 40 | 0; g.fillStyle = `rgb(${v},${v + 2},${v + 5})`; g.fillRect(rnd() * w, rnd() * h, 1.5, 1.5); }
-    // patches of newer tarmac and the white edge lines
-    g.fillStyle = 'rgba(30,32,36,0.25)'; g.fillRect(w * 0.22, h * 0.1, w * 0.3, h * 0.45);
-    g.fillStyle = '#e9e9e4'; g.fillRect(4, 0, 5, h); g.fillRect(w - 9, 0, 5, h);
+    for (let i = 0; i < 40000; i++) { const v = 58 + rnd() * 44 | 0; g.fillStyle = `rgb(${v},${v + 2},${v + 5})`; g.fillRect(rnd() * w, rnd() * h, 1.5, 1.5); }
+    // patches of newer, darker tarmac, as the Ring is mended a section at a time
+    for (const [x, y, pw, ph] of [[0.18, 0.05, 0.34, 0.4], [0.55, 0.52, 0.3, 0.3], [0.05, 0.7, 0.25, 0.22]]) {
+      g.fillStyle = 'rgba(28,30,34,0.12)'; g.beginPath(); g.moveTo(w * x, h * y);
+      for (const [fx, fy] of [[1, 0.05], [0.95, 1], [0.04, 0.93]]) g.lineTo(w * (x + pw * fx), h * (y + ph * fy));
+      g.closePath(); g.fill();
+    }
+    // the rubbered-in line, where the wheels go, and tar seams across it
+    const grad = g.createLinearGradient(0, 0, w, 0);
+    for (const [at, a] of [[0, 0], [0.22, 0.2], [0.32, 0], [0.62, 0], [0.72, 0.18], [0.8, 0], [1, 0]]) grad.addColorStop(at, `rgba(18,18,20,${a})`);
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(20,20,22,0.35)'; g.lineWidth = 1.5;
+    for (let i = 0; i < 2; i++) { g.beginPath(); let x = 0, y = rnd() * h; g.moveTo(x, y); while (x < w) { x += 20 + rnd() * 40; y += (rnd() - 0.5) * 12; g.lineTo(x, y); } g.stroke(); }
+    // the white edge lines, a little worn
+    g.fillStyle = '#e9e9e4'; g.fillRect(6, 0, 9, h); g.fillRect(w - 15, 0, 9, h);
+    g.fillStyle = 'rgba(74,78,84,0.5)'; for (let i = 0; i < 300; i++) g.fillRect(rnd() < 0.5 ? 6 + rnd() * 9 : w - 15 + rnd() * 9, rnd() * h, 2, 2);
+  });
+}
+// a W-beam rail, twice over: bright on the ridges, dark in the folds, a bolt at each post
+function armco() {
+  return canvas(64, 128, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    for (const [at, c] of [[0, '#6f777f'], [0.08, '#e4e9ee'], [0.2, '#8d959d'], [0.3, '#f0f3f6'], [0.42, '#727a82'], [0.47, '#2c3136'], [0.53, '#2c3136'], [0.58, '#727a82'], [0.7, '#f0f3f6'], [0.8, '#8d959d'], [0.92, '#e4e9ee'], [1, '#6f777f']]) grad.addColorStop(at, c);
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(40,40,40,0.6)'; for (const y of [0.25, 0.75]) g.fillRect(w - 6, h * y - 3, 4, 6);
+  });
+}
+// the catch fence: a diamond wire mesh you can see through
+function fence() {
+  return canvas(128, 128, (g, w, h) => {
+    g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(160,168,176,0.75)'; g.lineWidth = 1.6;
+    for (let i = -8; i <= 8; i++) { g.beginPath(); g.moveTo(i * 16, 0); g.lineTo(i * 16 + h, h); g.stroke(); g.beginPath(); g.moveTo(i * 16 + h, 0); g.lineTo(i * 16, h); g.stroke(); }
+    g.fillStyle = 'rgba(110,118,126,0.9)'; g.fillRect(0, 0, w, 3); g.fillRect(0, h - 3, w, 3);
   });
 }
 function grassTex() {
@@ -259,7 +350,7 @@ export function carMesh(body) {
   const grp = new THREE.Group();
   const paint = new THREE.MeshStandardMaterial({ color: col(body.color), roughness: 0.35, metalness: 0.3 });
   const trim = new THREE.MeshStandardMaterial({ color: col(body.trim), roughness: 0.6 });
-  const glass = new THREE.MeshStandardMaterial({ color: col(0x1b2430), roughness: 0.15, metalness: 0.6 });
+  const glass = new THREE.MeshStandardMaterial({ color: col(0x6f8398), roughness: 0.08, metalness: 0.9 });
   const lower = new THREE.Mesh(wedge(L, Wd, lowH, 0.06, 0.1, 0.96), paint); lower.position.y = clear; lower.castShadow = true; grp.add(lower);
   const c0 = st.cab[0] * L - L / 2, c1 = st.cab[1] * L - L / 2, cl = c1 - c0;
   const cab = new THREE.Mesh(wedge(cl, Wd * 0.9, cabH, st.inR, st.inF, 0.86), glass); cab.position.set((c0 + c1) / 2, clear + lowH, 0); cab.castShadow = true; grp.add(cab);
@@ -273,7 +364,8 @@ export function carMesh(body) {
     const w = new THREE.Group(); w.position.set(fx * L, wr, fz * (Wd / 2 - 0.08)); w.add(new THREE.Mesh(wheel, tyre), new THREE.Mesh(hub, rim)); grp.add(w); grp.wheels.push(w);
   }
   // lights
-  const head = new THREE.MeshBasicMaterial({ color: col(0xfff6d8) }), tail = new THREE.MeshBasicMaterial({ color: col(0xd0101e) });
+  const head = new THREE.MeshBasicMaterial({ color: col(0xfff6d8) }), tail = new THREE.MeshBasicMaterial({ color: col(0xa3101c) });
+  grp.tail = tail;   // the page lights it up under braking
   for (const z of [-1, 1]) {
     const hl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.34), head); hl.position.set(L / 2 + 0.01, clear + lowH * 0.68, z * Wd * 0.33); grp.add(hl);
     const tl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.38), tail); tl.position.set(-L / 2 - 0.01, clear + lowH * 0.72, z * Wd * 0.33); grp.add(tl);

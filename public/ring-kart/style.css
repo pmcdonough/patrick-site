@@ -1,5 +1,6 @@
 /* Ring Kart's styles. The page follows the site's other projects (Barlow type, soft panels, round corners); the game
-   itself is a full-bleed 3D stage with a race HUD on top: position, clock, corner name, speedometer and a map. */
+   itself is a full-bleed 3D stage with a race HUD on top: position, the gaps, the corner name, and along the bottom an
+   onboard telemetry strip like a broadcast lap's (map, gear and speed, revs, pedals, clock, height of the lap). */
 :root {
   --bg: #e9ecef;
   --panel: #f7f8fa;
@@ -54,21 +55,37 @@ button.primary { background: var(--link); border-color: var(--link); color: #fff
 .pos { left: 14px; top: 12px; background: var(--hud); border-radius: 12px; padding: 4px 14px 6px; display: flex; align-items: baseline; gap: 4px; }
 .pos b { font-size: 3.2rem; font-weight: 800; line-height: 1; }
 .pos span { font-size: 1.3rem; font-weight: 600; opacity: 0.8; }
-.clock { right: 14px; top: 12px; background: var(--hud); border-radius: 12px; padding: 6px 14px 8px; text-align: right; display: flex; flex-direction: column; }
-.clock .lbl { font: 600 0.75rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; }
-.clock b { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
-.clock .best { font: 500 0.8rem var(--body); opacity: 0.8; }
 .corner { left: 50%; top: 16px; transform: translateX(-50%); font-size: clamp(1.4rem, 3.6vw, 2.4rem); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); white-space: nowrap; opacity: 0; transition: opacity .35s; }
 .corner.on { opacity: 1; }
-.speedo { right: 14px; bottom: 14px; background: var(--hud); border-radius: 14px; padding: 6px 16px 10px; display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 8px; min-width: 150px; }
-.speedo b { font-size: 3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; text-align: right; }
-.speedo span { font: 600 0.85rem var(--body); opacity: 0.8; }
-.speedo i { grid-column: 1 / -1; font-style: normal; font: 700 0.9rem var(--body); opacity: 0.85; }
-.charge { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: rgb(255 255 255 / 0.15); overflow: hidden; margin-top: 4px; }
-.charge div { height: 100%; width: 0; background: var(--blue); border-radius: 3px; }
-.charge div.t2 { background: var(--orange); }
-.charge div.boost { background: linear-gradient(90deg, #ffd23f, #ff5a1f); }
-.map { left: 14px; bottom: 14px; width: 170px; height: 170px; background: var(--hud); border-radius: 14px; }
+.gaps { right: 14px; top: 12px; background: var(--hud); border-radius: 12px; padding: 6px 12px 7px; font: 600 0.85rem var(--body); display: flex; flex-direction: column; gap: 1px; min-width: 150px; font-variant-numeric: tabular-nums; }
+.gaps:empty { display: none; }
+.gaps div { display: flex; justify-content: space-between; gap: 12px; }
+.gaps .me { color: var(--blue); font-weight: 700; }
+.gaps span:last-child { opacity: 0.8; }
+.vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgb(0 0 0 / 0.28) 100%); transition: box-shadow .3s; }
+.vignette.boost { box-shadow: inset 0 0 120px 20px rgb(255 120 30 / 0.35); }
+
+/* the onboard telemetry, as on a broadcast lap: the map, gear and speed, the revs, the pedals, the clock */
+.tele { left: 0; right: 0; bottom: 0; height: 152px; background: linear-gradient(to top, rgb(5 7 10 / 0.92), rgb(5 7 10 / 0.8) 80%, rgb(5 7 10 / 0)); padding: 18px 16px 8px; display: grid; grid-template-columns: 150px auto 160px 74px minmax(0, 1fr); align-items: center; gap: 18px; box-sizing: border-box; }
+.tele .lbl { display: block; font: 700 0.8rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+.tele .map { width: 150px; height: 120px; }
+.gs { display: grid; grid-template-columns: auto auto; column-gap: 22px; align-items: end; }
+.gs > div { text-align: center; }
+.gs b { display: block; font-size: 3.4rem; font-weight: 800; line-height: 0.95; font-variant-numeric: tabular-nums; }
+.gs > div:last-of-type b { min-width: 3ch; }
+.gs .flags { grid-column: 1 / -1; font: 700 0.8rem var(--body); font-style: normal; letter-spacing: 0.04em; text-transform: uppercase; color: var(--blue); min-height: 1.1em; text-align: center; }
+.tach { width: 160px; height: 100px; }
+.pedals-hud { height: 100px; display: grid; grid-template-columns: 14px 10px 14px 10px; column-gap: 4px; align-items: end; }
+.pedals-hud .bar { display: block; height: 100%; background: rgb(255 255 255 / 0.1); position: relative; border-radius: 2px; overflow: hidden; }
+.pedals-hud .bar b { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
+.pedals-hud .brk b { background: #d9e34a; }
+.pedals-hud .gas b { background: #4fd14a; }
+.pedals-hud .lbl.v { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.7rem; letter-spacing: 0.1em; align-self: end; }
+.timing { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.timing b { font-size: 3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+.timing .best { font: 500 0.8rem var(--body); opacity: 0.8; min-height: 1.2em; }
+.timing .profile { width: 100%; max-width: 260px; height: 35px; margin-top: 2px; }
+.charge { width: 100%; max-width: 260px; height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.15); overflow: hidden; margin-top: 3px; }
 .prompt { left: 50%; top: 58%; transform: translateX(-50%); background: var(--hud); border-radius: 12px; padding: 10px 20px; font-size: clamp(1.2rem, 2.8vw, 1.8rem); font-weight: 800; letter-spacing: 0.03em; text-align: center; max-width: min(560px, 86%); }
 .prompt small { display: block; font: 500 0.95rem var(--body); letter-spacing: 0; opacity: 0.85; margin-top: 2px; }
 .prompt.big { top: 40%; font-size: clamp(2rem, 6vw, 3.6rem); }
@@ -97,21 +114,33 @@ button.primary { background: var(--link); border-color: var(--link); color: #fff
 .order li span { float: right; font-variant-numeric: tabular-nums; color: var(--fg-dim); }
 
 .corner-btn { position: absolute; top: 12px; font: 600 0.8rem var(--body); padding: 5px 10px; background: rgb(12 16 22 / 0.55); color: #fff; border-color: transparent; }
-#sound { right: 14px; top: auto; bottom: 120px; }
-.corner-btn.full { right: 14px; top: auto; bottom: 156px; }
+#sound { right: 14px; top: auto; bottom: 164px; }
+.corner-btn.full { right: 14px; top: auto; bottom: 200px; }
 .hud:not([hidden]) ~ .corner-btn { opacity: 0.8; }
 
 /* touch: steering on the left, pedals and drift on the right */
-.touch { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; padding: 0 12px 196px; pointer-events: none; }
+.touch { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; padding: 0 12px 166px; pointer-events: none; }
 .touch button { pointer-events: auto; width: 74px; height: 74px; border-radius: 50%; font: 800 1.2rem var(--display); background: rgb(12 16 22 / 0.45); color: #fff; border: 2px solid rgb(255 255 255 / 0.35); touch-action: none; }
 .touch button.on { background: rgb(255 255 255 / 0.35); }
 .touch .lr, .touch .pedals { display: flex; gap: 10px; align-items: flex-end; }
 .touch .gas { height: 110px; border-radius: 37px; background: rgb(31 122 77 / 0.6); }
 .touch .drift { background: rgb(79 183 255 / 0.4); }
 
+@media (max-width: 900px) {
+  .tele { grid-template-columns: 110px auto 120px 60px minmax(0, 1fr); gap: 12px; padding-inline: 10px; }
+  .tele .map { width: 110px; height: 88px; } .tach { width: 120px; height: 75px; }
+  .gs b { font-size: 2.6rem; } .timing b { font-size: 2.3rem; }
+}
 @media (max-width: 700px) {
   .stage { height: min(82vh, 760px); }
-  .pos b { font-size: 2.3rem; } .clock b { font-size: 1.5rem; } .speedo b { font-size: 2.2rem; } .speedo { min-width: 120px; }
-  .map { width: 110px; height: 110px; }
+  .pos b { font-size: 2.3rem; }
+  .tele { height: 96px; grid-template-columns: auto 90px minmax(0, 1fr); padding: 14px 10px 8px; gap: 10px; }
+  .tele .map, .pedals-hud, .timing .profile { display: none; }
+  .gs { column-gap: 12px; } .gs b { font-size: 2rem; } .tach { width: 90px; height: 56px; }
+  .timing b { font-size: 1.7rem; }
+  .gaps { display: none; }
+  .corner { top: 74px; font-size: 1.3rem; }
+  #sound { bottom: 106px; } .corner-btn.full { bottom: 142px; }
+  .touch { padding-bottom: 110px; }
   .pick { top: auto; bottom: 12px; max-height: 70%; }
 }

@@ -7,7 +7,7 @@
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.1">
+<link rel="stylesheet" href="style.css?v=0.2">
 </head>
 <body>
 
@@ -22,16 +22,30 @@
 <main class="wrap">
   <div class="stage" id="stage">
     <canvas id="gl" aria-label="The race, seen from behind your car"></canvas>
+    <div class="vignette" id="vignette"></div>
 
     <div class="hud" id="hud" hidden>
       <div class="pos" id="pos"><b id="posN">-</b><span id="posOf"></span></div>
-      <div class="clock"><span class="lbl">Bridge to gantry</span><b id="time">0:00.0</b><span class="best" id="best"></span></div>
+      <div class="gaps" id="gaps"></div>
       <div class="corner" id="corner"></div>
-      <div class="speedo"><b id="kmh">0</b><span>km/h</span><i id="gear">N</i>
-        <div class="charge"><div id="charge"></div></div>
-      </div>
-      <canvas class="map" id="map" width="200" height="200" aria-label="Map of the lap"></canvas>
       <div class="prompt" id="prompt" hidden></div>
+      <div class="tele" id="tele">
+        <canvas class="map" id="map" width="300" height="240" aria-label="Map of the lap"></canvas>
+        <div class="gs">
+          <div><span class="lbl">Gear</span><b id="gear">N</b></div>
+          <div><span class="lbl">Speed</span><b id="kmh">0</b></div>
+          <i class="flags" id="flags"></i>
+        </div>
+        <canvas class="tach" id="tach" width="320" height="200" aria-label="Revs"></canvas>
+        <div class="pedals-hud"><i class="bar brk"><b id="brk"></b></i><span class="lbl v">Brake</span><i class="bar gas"><b id="thr"></b></i><span class="lbl v">Gas</span></div>
+        <div class="timing">
+          <span class="lbl">Bridge to gantry</span>
+          <b id="time">0:00.00</b>
+          <span class="best" id="best"></span>
+          <div class="charge"><div id="charge"></div></div>
+          <canvas class="profile" id="profile" width="520" height="70" aria-label="Height of the lap and how far round you are"></canvas>
+        </div>
+      </div>
     </div>
 
     <div class="panel pick" id="pick">
@@ -62,7 +76,7 @@
     <button class="corner-btn full" id="full" title="Full screen (F)">Full screen</button>
     <div class="loading" id="loading">Building the Eifel</div>
   </div>
-  <p class="hint">Up or W: gas. Down or S: brake and reverse. Left and right or A and D: steer. Space or Shift: drift; hold it through a corner and let go for a mini-turbo, blue then orange. C changes the camera, R puts you back on the road, Esc pauses, M mutes.</p>
+  <p class="hint">Up or W: gas. Down or S: brake and reverse. Left and right or A and D: steer. Space or Shift: drift; hold it through a corner and let go for a mini-turbo, blue then orange. C changes the camera (behind, high, on the bonnet), R puts you back on the road, Esc pauses, M mutes.</p>
 
   <section class="notes">
     <div class="card"><h2>The lap</h2>
@@ -77,6 +91,6 @@
 </main>
 
 <footer class="version">Ring Kart <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.1"></script>
+<script type="module" src="src/main.js?v=0.2"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 // The sound, made in the browser: an engine from two oscillators through a filter that opens with the throttle, the
 // tyres squealing in a drift, wind that rises with speed, a whoosh for a mini-turbo, a thud for a bump, and the beep
 // of the barrier. Nothing plays until the first click or key, as browsers require.
+import { revs } from './drive.js?v=0.2';
 export class Sound {
   constructor() { this.on = true; this.ctx = null; this.rpm = 900; this.lastBoost = 0; this.lastBump = 0; }
   start() {
@@ -41,11 +42,9 @@ export class Sound {
     if (!this.ctx || !car) return;
     const t = this.ctx.currentTime;
     if (mode === 'pick') { this.quiet(); return; }
-    const v = Math.abs(car.v), top = car.spec.vmax, gas = car.input.gas || car.boost > 0 ? 1 : 0;
-    // six gears spread over the top speed; at a standstill the throttle just revs it
-    let want;
-    if (v < 1.5) want = gas ? 6400 : 900;
-    else { const band = top / 6.2, g = Math.min(5, Math.floor(v / band)), inGear = (v - g * band) / band; want = 2600 + inGear * 4200 + (g === 5 ? Math.max(0, v - 6 * band) / band * 1200 : 0); if (car.air && gas) want += 900; }
+    const v = Math.abs(car.v), gas = car.input.gas || car.boost > 0 ? 1 : 0;
+    // the revs come from the gearbox the dials read
+    const want = revs(car).rpm;
     this.rpm += (want - this.rpm) * Math.min(1, dt * (want > this.rpm ? 9 : 6));
     const f = this.rpm / 30 * (car.spec.mass > 1.8 ? 0.8 : 1);
     this.o1.frequency.setTargetAtTime(f, t, 0.02); this.o2.frequency.setTargetAtTime(f / 2, t, 0.02);

@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.94 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.95 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -57,9 +57,9 @@ The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, th
 5. The Florence dome: drum, ribs, herringbone courses, two shells, chains, lantern; hoop forces in the solver.
 6. Shareable Lab results by link.
 
-## Ring Kart (0.1)
+## Ring Kart (0.2)
 
-The first playable version is a kart game on a hand-traced lap. Next, in order:
+The first playable version is a kart game on a hand-traced lap; 0.2 added onboard telemetry and a better-looking world. Next, in order:
 
 1. Real cars against real lap times. Official Nordschleife times are public (Nürburgring's own list, 20.832 km): the 992.2 911 GT3 at 6:56.294 (2025) and 6:52.981 with the Manthey kit, the 718 Cayman GT4 RS at 7:09.3 (7:04.511 on the old 20.6 km measure), the hybrid 992.2 911 Turbo S at 7:03.92, the Mercedes-AMG ONE's 6:29.090 road-car record. A lap-time mode would model each car from its published power, weight, grip and aero and check the model's lap against the real one, the way the hockey sim is checked against the real teams (`docs/RING-KART.md` has the table and sources).
 2. The real line. Trace the lap from OpenStreetMap's Nordschleife ways and a public elevation model instead of by hand, so the corners have their real radii and the hills their real gradients. Run the fetch on a machine with open internet, keep the raw download out of the repo (`raw/`), and commit the script and the points it writes, as with the hockey data.

@@ -4,12 +4,12 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.9';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.1';
-import { makeCar, step, collide, driveAI } from './drive.js?v=0.1';
-import { buildWorld, carMesh, label } from './scene.js?v=0.1';
-import { Sound } from './audio.js?v=0.1';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.2';
+import { makeCar, step, collide, driveAI, revs, REDLINE } from './drive.js?v=0.2';
+import { buildWorld, buildSky, HORIZON, carMesh, label } from './scene.js?v=0.2';
+import { Sound } from './audio.js?v=0.2';
 
-const VERSION = '0.1';
+const VERSION = '0.2';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -34,9 +34,11 @@ renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
-const SKY = 0xbfd3e3;
-scene.background = new THREE.Color(SKY);
-scene.fog = new THREE.Fog(SKY, 140, 760);
+scene.background = new THREE.Color(HORIZON).convertSRGBToLinear();
+scene.fog = new THREE.Fog(scene.background.getHex(), 170, 820);
+const sky = buildSky(); scene.add(sky);
+// the car paint and the Armco reflect the sky: an environment map made once from a cloudless copy of it
+{ const pm = new THREE.PMREMGenerator(renderer), env = new THREE.Scene(); env.add(buildSky(false)); scene.environment = pm.fromScene(env, 0.02).texture; pm.dispose(); }
 const camera = new THREE.PerspectiveCamera(68, 1, 0.3, 1400);
 scene.add(new THREE.HemisphereLight(0xdfeeff, 0x41532f, 0.75));
 const sun = new THREE.DirectionalLight(0xfff1dc, 1.25);
@@ -264,6 +266,7 @@ function tick(dt) {
 
 // ---------- drawing ----------
 const up = new THREE.Vector3(0, 1, 0);
+const TAIL_OFF = new THREE.Color(0xa3101c).convertSRGBToLinear(), TAIL_ON = new THREE.Color(4, 0.25, 0.25);
 function draw(dt) {
   // cars to their meshes
   for (const [c, m] of meshes) {
@@ -271,6 +274,8 @@ function draw(dt) {
     if (c.hidden) continue;
     m.position.set(c.x, c.y, c.z);
     m.rotation.set(c.roll, -c.h - (c === player || c.drift ? c.slide : 0), c.pitch);
+    // brake lights
+    if (m.tail) { const on = c.input.brake > 0 && c.v > 0.5; if (m.tail.on !== on) { m.tail.on = on; m.tail.color.copy(on ? TAIL_ON : TAIL_OFF); } }
     if (m.label) { const d = Math.hypot(c.x - player.x, c.z - player.z); m.label.visible = S.mode !== 'pick' && d < 70 && d > 9; }
   }
   for (const [c, m] of meshes) if (!c.hidden) for (const w of m.wheels) w.rotation.z -= c.v * dt / 0.33;
@@ -307,9 +312,12 @@ function camera3(dt) {
     look = new THREE.Vector3(c.x, c.y + 0.8, c.z);
     camPos.copy(want); camLook.copy(look); camInit = true;
   } else {
-    const dist = [7.2, 13, 0.2][S.camMode], ht = [2.8, 5, 1.15][S.camMode];
+    // behind, high, and on the bonnet: just behind the windscreen, low enough to see the nose ahead of you
+    const b = c.spec.body, onboard = S.camMode === 2;
+    const dist = [7.2, 13, -b.len * (camera.aspect < 1 ? 0.3 : 0.06)][S.camMode], ht = [2.8, 5, b.hgt * 0.8][S.camMode];
     want = new THREE.Vector3(c.x, c.y + ht, c.z).addScaledVector(f, -dist);
-    look = new THREE.Vector3(c.x, c.y + (S.camMode === 2 ? 1.05 : 1.2), c.z).addScaledVector(f, S.camMode === 2 ? 20 : 7);
+    look = new THREE.Vector3(c.x, c.y + (onboard ? b.hgt * 0.62 : 1.2), c.z).addScaledVector(f, onboard ? 24 : 7);
+    const near = onboard ? 0.08 : 0.3; if (camera.near !== near) { camera.near = near; camera.updateProjectionMatrix(); }
     if (!camInit) { camPos.copy(want); camLook.copy(look); camInit = true; }
     const k = S.camMode === 2 ? 1 : 1 - Math.exp(-dt * 7);
     camPos.lerp(want, k); camLook.lerp(look, S.camMode === 2 ? 1 : 1 - Math.exp(-dt * 12));
@@ -318,29 +326,62 @@ function camera3(dt) {
     if (camPos.y < g && S.camMode !== 2) camPos.y = g;
   }
   camera.position.copy(camPos); camera.lookAt(camLook);
-  if (c.landed > 0.2) camera.position.y += (Math.random() - 0.5) * c.landed * 0.25;
-  if (c.bump > 0.2) camera.position.x += (Math.random() - 0.5) * c.bump * 0.3;
+  sky.position.copy(camPos);
+  const shake = S.camMode === 2 ? 0.35 : 1;
+  if (c.landed > 0.2) camera.position.y += (Math.random() - 0.5) * c.landed * 0.25 * shake;
+  if (c.bump > 0.2) camera.position.x += (Math.random() - 0.5) * c.bump * 0.3 * shake;
+  // on the bonnet you feel the road: a little shudder that grows with speed, more on the grass
+  if (S.camMode === 2 && !c.air) camera.position.y += (Math.random() - 0.5) * Math.min(0.03, Math.abs(c.v) * 0.0006) * (c.grass ? 4 : 1);
   const fov = 66 + Math.min(14, Math.max(0, c.v - 20) * 0.2) + (c.boost > 0 ? 6 : 0);
   camera.fov += (fov - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
   sun.position.set(c.x + 60, c.y + 120, c.z + 40); sun.target.position.set(c.x, c.y, c.z);
 }
 
-// ---------- HUD ----------
-const map = $('map'), mg = map.getContext('2d');
-let mapBase = null;
+// ---------- HUD: the onboard telemetry strip ----------
+// Drawn at twice the size it is shown, so the lines stay sharp on any screen.
+const map = $('map'), mg = map.getContext('2d'), tach = $('tach'), tg = tach.getContext('2d'), prof = $('profile'), pg = prof.getContext('2d');
+const ORANGE = '#f5a623';
+let mapBase = null, profBase = null;
 function drawMapBase() {
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   for (let k = 0; k < track.n; k++) { x0 = Math.min(x0, track.x[k]); x1 = Math.max(x1, track.x[k]); z0 = Math.min(z0, track.z[k]); z1 = Math.max(z1, track.z[k]); }
-  const W = map.width, pad = 16, s = Math.min((W - 2 * pad) / (x1 - x0), (W - 2 * pad) / (z1 - z0));
-  const ox = (W - (x1 - x0) * s) / 2 - x0 * s, oz = (W - (z1 - z0) * s) / 2 - z0 * s;
-  const c = document.createElement('canvas'); c.width = c.height = W; const g = c.getContext('2d');
+  const W = map.width, H = map.height, pad = 14, s = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (z1 - z0));
+  const ox = (W - (x1 - x0) * s) / 2 - x0 * s, oz = (H - (z1 - z0) * s) / 2 - z0 * s;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.lineJoin = 'round'; g.lineCap = 'round';
-  for (const [w, col] of [[7, 'rgba(0,0,0,0.5)'], [3.5, '#e8edf2']]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let k = 0; k < track.n; k += 4) g[k ? 'lineTo' : 'moveTo'](track.x[k] * s + ox, track.z[k] * s + oz); g.stroke(); }
-  const gk = track.gateAt; g.fillStyle = '#4fb24a'; g.fillRect(track.x[gk] * s + ox - 3, track.z[gk] * s + oz - 3, 6, 6);
-  g.fillStyle = '#ffd400'; g.fillRect(track.x[finishK] * s + ox - 3, track.z[finishK] * s + oz - 3, 6, 6);
+  for (const [w, col] of [[9, 'rgba(0,0,0,0.6)'], [4, ORANGE]]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let k = 0; k < track.n; k += 4) g[k ? 'lineTo' : 'moveTo'](track.x[k] * s + ox, track.z[k] * s + oz); g.stroke(); }
+  const dot = (k, col) => { g.fillStyle = col; g.beginPath(); g.arc(track.x[k] * s + ox, track.z[k] * s + oz, 6, 0, 7); g.fill(); };
+  dot(track.gateAt, '#4fd14a'); dot(finishK, '#ffd400');
   mapBase = { c, s, ox, oz };
 }
-drawMapBase();
+// the height of the lap from the gate to the gantry, as a silhouette
+function drawProfileBase() {
+  const W = prof.width, H = prof.height, a = track.gateAt, b = finishK;
+  let lo = Infinity, hi = -Infinity; for (let k = a; k <= b; k++) { lo = Math.min(lo, track.y[k]); hi = Math.max(hi, track.y[k]); }
+  const X = k => (k - a) / (b - a) * W, Y = k => H - 6 - (track.y[k] - lo) / (hi - lo || 1) * (H - 14);
+  const shape = (g, fill) => { g.beginPath(); g.moveTo(0, H); for (let k = a; k <= b; k += 3) g.lineTo(X(k), Y(k)); g.lineTo(W, H); g.closePath(); g.fillStyle = fill; g.fill(); };
+  const mk = fill => { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); shape(g, fill); g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 2; g.beginPath(); for (let k = a; k <= b; k += 3) g[k === a ? 'moveTo' : 'lineTo'](X(k), Y(k)); g.stroke(); return c; };
+  profBase = { dim: mk('rgba(255,255,255,0.12)'), lit: mk('rgba(245,166,35,0.55)'), X, Y };
+}
+// the revs: an arc of bars from 0 to 8,000, green, then amber, red past the redline
+function drawTach(rpm, gear) {
+  const W = tach.width, H = tach.height, cx = W / 2, cy = H * 0.66, R = H * 0.52, a0 = Math.PI * 0.86, a1 = Math.PI * 2.14, top = 8000, N = 44;
+  tg.clearRect(0, 0, W, H);
+  for (let i = 0; i < N; i++) {
+    const f = (i + 0.5) / N, r = f * top, a = a0 + (a1 - a0) * f, on = r <= rpm;
+    tg.strokeStyle = !on ? 'rgba(255,255,255,0.12)' : r > REDLINE ? '#ff3b3b' : r > 6000 ? '#ffc93b' : '#4fd14a';
+    tg.lineWidth = 5; tg.beginPath();
+    tg.moveTo(cx + Math.cos(a) * (R - 22), cy + Math.sin(a) * (R - 22)); tg.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); tg.stroke();
+  }
+  tg.font = '700 22px Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'middle';
+  for (let t = 0; t <= 8; t++) { const a = a0 + (a1 - a0) * t / 8; tg.fillStyle = t * 1000 > REDLINE ? '#ff6b6b' : 'rgba(255,255,255,0.8)'; tg.fillText(t, cx + Math.cos(a) * (R - 40), cy + Math.sin(a) * (R - 40)); }
+  // a shift light when it is time to change up
+  if (rpm > 6500 && gear > 0 && gear < 6) { tg.fillStyle = '#4fb7ff'; tg.beginPath(); tg.arc(cx, cy - 4, 9, 0, 7); tg.fill(); }
+  tg.fillStyle = 'rgba(255,255,255,0.7)'; tg.font = '600 18px Barlow, sans-serif'; tg.fillText('rpm × 1000', cx, H - 12);
+}
+drawMapBase(); drawProfileBase();
+const fmt2 = t => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s < 10 ? '0' : ''}${s.toFixed(2)}`; };
+const dial = { rpm: 900, gas: 0, brake: 0 };
 let lastHud = 0;
 function hud(dt) {
   if (S.mode === 'pick') return;
@@ -349,18 +390,32 @@ function hud(dt) {
   const order = group.slice().sort((a, b) => (a.done && b.done) ? a.time - b.time : a.done ? -1 : b.done ? 1 : b.s - a.s);
   const pos = order.indexOf(p) + 1;
   S.order = order;
+  // the dials ease toward the gearbox and the pedals, every frame
+  const gb = revs(p), e = Math.min(1, dt * 10);
+  dial.rpm += (gb.rpm - dial.rpm) * Math.min(1, dt * (gb.rpm > dial.rpm ? 9 : 6));
+  dial.gas += ((p.input.gas || p.boost > 0 ? 1 : 0) - dial.gas) * e; dial.brake += (p.input.brake - dial.brake) * e;
+  $('thr').style.height = (dial.gas * 100).toFixed(0) + '%'; $('brk').style.height = (dial.brake * 100).toFixed(0) + '%';
+  drawTach(dial.rpm, gb.gear);
+  $('time').textContent = fmt2(S.mode === 'queue' ? 0 : player.done ? player.time : S.raceT);
   if (performance.now() - lastHud > 90) {
     lastHud = performance.now();
     $('posN').textContent = ord(pos); $('posOf').textContent = '/' + group.length;
-    $('time').textContent = fmt(S.mode === 'queue' ? 0 : player.done ? player.time : S.raceT);
-    const best = store.get('best.' + choice, 0); $('best').textContent = best ? 'Best ' + fmt(best) : '';
+    const best = store.get('best.' + choice, 0); $('best').textContent = best ? 'Best ' + fmt(best) + ' in the ' + p.spec.name : '';
     $('kmh').textContent = Math.round(Math.abs(p.v) * 3.6);
-    $('gear').textContent = p.v < -0.5 ? 'R' : gearOf(p).toString() + (p.slipT > RV.slip.build ? '  ·  tow' : '') + (p.air ? '  ·  air' : '');
+    $('gear').textContent = gb.gear < 0 ? 'R' : gb.gear === 0 ? 'N' : gb.gear;
+    $('flags').textContent = [p.boost > 0 && 'Turbo', p.drift && 'Drift', p.slipT > RV.slip.build && 'Tow', p.air && 'Air', p.grass && 'Grass'].filter(Boolean).join('  ·  ');
+    // the gaps: the car ahead and the car behind, in seconds at your speed
+    if (S.mode === 'race') {
+      const row = (c, cls) => `<div class="${cls}"><span>${c === p ? `${ord(order.indexOf(c) + 1)}  You` : `${ord(order.indexOf(c) + 1)}  ${pretty(c.spec.name)}`}</span><span>${c === p ? '' : (c.s > p.s ? '+' : '-') + (Math.abs(c.s - p.s) / Math.max(12, Math.abs(p.v))).toFixed(1) + ' s'}</span></div>`;
+      const i = order.indexOf(p), ahead = order[i - 1], behind = order[i + 1];
+      $('gaps').innerHTML = (ahead && !ahead.done ? row(ahead, '') : '') + row(p, 'me') + (behind ? row(behind, '') : '');
+    } else $('gaps').innerHTML = '';
   }
   const ch = $('charge'), B = RV.boost;
   if (p.boost > 0) { ch.className = 'boost'; ch.style.width = Math.min(100, p.boost / B.b2 * 100) + '%'; }
   else if (p.drift) { ch.className = p.drift.t > B.t2 ? 't2' : ''; ch.style.width = Math.min(100, p.drift.t / B.t2 * 100) + '%'; }
   else ch.style.width = '0';
+  $('vignette').classList.toggle('boost', p.boost > 0);
   // corner names as you reach them
   const name = cornerAt(track, p.k + 14);
   if (name !== S.cornerName && S.mode === 'race') { S.cornerName = name; S.cornerT = 2.4; $('corner').textContent = corner(name); }
@@ -375,17 +430,18 @@ function hud(dt) {
     if (S.hint > 0) { S.hint -= dt; if (ahead > 0) msg = `Wait your turn<small>${ahead} ${ahead === 1 ? 'car' : 'cars'} still ahead of you at the barrier</small>`; }
   } else if (S.mode === 'race' && S.raceT < 2.5) msg = 'Go';
   pr.innerHTML = msg; pr.hidden = !msg; pr.classList.toggle('big', msg === 'Go');
-  // the map
+  // the map: you in red, the race in white, the traffic in grey
   mg.clearRect(0, 0, map.width, map.height); mg.drawImage(mapBase.c, 0, 0);
-  for (const c of cars) {
-    if (c.hidden || c === p) continue;
-    mg.fillStyle = c.role === 'traffic' ? 'rgba(200,205,210,0.7)' : '#ff5a6a';
-    mg.beginPath(); mg.arc(c.x * mapBase.s + mapBase.ox, c.z * mapBase.s + mapBase.oz, c.role === 'traffic' ? 2 : 3.2, 0, 7); mg.fill();
-  }
-  mg.fillStyle = '#4fb7ff'; mg.strokeStyle = '#fff'; mg.lineWidth = 2;
-  mg.beginPath(); mg.arc(p.x * mapBase.s + mapBase.ox, p.z * mapBase.s + mapBase.oz, 5, 0, 7); mg.fill(); mg.stroke();
+  const at = (c, r, fill, ring) => { mg.fillStyle = fill; mg.beginPath(); mg.arc(c.x * mapBase.s + mapBase.ox, c.z * mapBase.s + mapBase.oz, r, 0, 7); mg.fill(); if (ring) { mg.strokeStyle = ring; mg.lineWidth = 3; mg.stroke(); } };
+  for (const c of cars) if (!c.hidden && c !== p) at(c, c.role === 'traffic' ? 3 : 5, c.role === 'traffic' ? 'rgba(190,196,204,0.6)' : '#ffffff');
+  at(p, 8, '#ff2d2d', '#ffffff');
+  // the height of the lap, lit as far as you have come
+  const W = prof.width, H = prof.height, frac = Math.max(0, Math.min(1, (p.k - track.gateAt) / (finishK - track.gateAt)));
+  pg.clearRect(0, 0, W, H); pg.drawImage(profBase.dim, 0, 0);
+  if (frac > 0) pg.drawImage(profBase.lit, 0, 0, W * frac, H, 0, 0, W * frac, H);
+  for (const c of group) if (!c.hidden && c !== p && c.k > track.gateAt) { const x = profBase.X(Math.min(finishK, c.k)); pg.fillStyle = '#fff'; pg.fillRect(x - 1.5, profBase.Y(Math.min(finishK, c.k)) - 9, 3, 7); }
+  if (p.k >= track.gateAt) { const k = Math.min(finishK, p.k), x = profBase.X(k), y = profBase.Y(k); pg.fillStyle = '#ff2d2d'; pg.strokeStyle = '#fff'; pg.lineWidth = 2; pg.beginPath(); pg.arc(x, y, 6, 0, 7); pg.fill(); pg.stroke(); }
 }
-const gearOf = c => { const v = c.v * 3.6, top = c.spec.vmax * 3.6; const g = Math.min(6, 1 + Math.floor(v / (top / 6.2))); return v < 2 ? 'N' : g; };
 
 function result() {
   S.resultShown = true;
