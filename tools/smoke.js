@@ -86,7 +86,9 @@ const { open, openPage } = require('./harness');
     await hp.page.waitForTimeout(600);
     const up = await hp.page.evaluate(() => window.cathedralLab.inside.feet.y);
     await hp.page.evaluate(() => window.cathedralLab.go(window.cathedralLab.steps.findIndex(s => s.title.startsWith('Outside walls')) + 1, false));
-    await hp.page.waitForTimeout(3000);
+    // you sink at a fall's pace, frame by frame, so on a slow machine give it time to land
+    await hp.page.waitForFunction(() => window.cathedralLab.inside.feet.y < 0.7, null, { timeout: 30000 }).catch(() => {});
+    await hp.page.waitForTimeout(300);
     const down = await hp.page.evaluate(() => ({ y: window.cathedralLab.inside.feet.y, room: document.getElementById('room').textContent }));
     if (!(up > 3 && down.y > 0.3 && down.y < 0.7)) errors.push(`cathedral-lab/?b=house: inside, the floor did not hold or did not give way (${up.toFixed(2)} m, then ${down.y.toFixed(2)} m)`);
     else console.log(`cathedral-lab/?b=house: inside, upstairs at ${up.toFixed(1)} m, and back at the first floor walls you stand on the deck at ${down.y.toFixed(1)} m (${down.room}).`);
