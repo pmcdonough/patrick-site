@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.9';
+import { locate, pointAt } from './track.js?v=0.10';
 
 const G = 9.81;
 
@@ -259,6 +259,33 @@ export function nextCorner(track, k, ahead = 260) {
   return { dir: dir > 0 ? 'right' : 'left', grade, dist: (a - k) * track.ds, len: (j - a) * track.ds, tightens: peakAt > a + (j - a) * 0.6, at: a };
 }
 
+// ---------- Ring etiquette ----------
+// On the Nordschleife a slower car with a quicker one closing from behind puts its right blinker on, moves right and
+// lets it pass on the left. Not perfectly: each driver (car.manners, given by the page) notices after their own
+// reaction time, some never bother, and nobody moves over in a tight corner, where a coordinated pass is hard. The
+// blinker comes on a moment before the car moves. Returns whether the car is making room; car.blink is its right
+// indicator, 0 or 1.
+function straightAhead(track, k, metres, curv) {
+  const end = Math.min(track.n - 1, k + Math.round(metres / track.ds));
+  for (let j = k; j <= end; j++) if (Math.abs(track.curv[j]) > curv) return false;
+  return true;
+}
+export function etiquette(car, dt, track, cars, E) {
+  const m = car.manners || { courtesy: 1, react: 0.8 }, y = car.yld || (car.yld = { t: 0, on: false, by: null });
+  let chaser = null;
+  for (const o of cars) {
+    if (o === car || o.hidden || !o.released) continue;
+    const gap = car.s - o.s;
+    if (gap > 0 && gap < E.behind && o.v - car.v > E.closing && (!chaser || gap < car.s - chaser.s)) chaser = o;
+  }
+  if (chaser && !car.traffic && chaser.v - car.v < E.racer) chaser = null;
+  if (chaser && m.courtesy >= E.ignore) y.t += dt; else if (!y.on) y.t = 0;
+  if (!y.on && y.t > m.react && straightAhead(track, car.k, E.clear, 1 / E.radius)) { y.on = true; y.by = chaser; }
+  if (y.on && (!y.by || y.by.hidden || y.by.s > car.s + E.done || car.s - y.by.s > E.behind * 1.5)) { y.on = false; y.by = null; y.t = 0; }
+  car.blink = y.on || y.t > m.react * 0.5 ? 1 : 0;
+  return y.on;
+}
+
 // ---------- the AI driver ----------
 // Looks ahead along the road for the slowest corner it can still brake for, picks a line (the inside of what is
 // coming for racers, the right-hand side for traffic, as on the real Ring), steers at a point down that line, and
@@ -274,6 +301,7 @@ export function driveAI(car, dt, track, cars, opts = {}) {
   if (opts.cap) vt = Math.min(vt, opts.cap);
   // line
   let lane;
+  const making = opts.etiquette ? etiquette(car, dt, track, cars, opts.etiquette) : false;
   if (car.traffic) lane = half * (car.yieldT > 0 ? 0.72 : 0.42);   // a honk sends them over to the verge
   else {
     let cAhead = 0; for (let j = car.k + 8; j < Math.min(n, car.k + 40); j += 4) cAhead += track.curv[j];
@@ -292,7 +320,9 @@ export function driveAI(car, dt, track, cars, opts = {}) {
     if (Math.abs(lane - blocked.lat) < 3) vt = Math.min(vt, blocked.v);
   }
   if (car.yieldT > 0) { car.yieldT -= dt; vt = Math.min(vt, sp.vmax * 0.5); }
-  ai.lane += (lane - ai.lane) * Math.min(1, dt * 1.5);
+  // making room for a quicker car behind: over to the right, a little off the gas
+  if (making) { lane = Math.max(lane, half * opts.etiquette.keep); vt *= opts.etiquette.lift; }
+  ai.lane += (lane - ai.lane) * Math.min(1, dt * (making ? 3 : 1.5));   // moving over to let a car by is brisker
   // steer at a point down the line
   const look = Math.max(5, Math.round((6 + car.v * 0.55) / track.ds));
   const p = pointAt(track, Math.min(n - 1, car.k + look), ai.lane);

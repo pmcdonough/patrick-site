@@ -7,7 +7,7 @@
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Righteous&family=Shrikhand&display=swap">
-<link rel="stylesheet" href="style.css?v=0.9">
+<link rel="stylesheet" href="style.css?v=0.10">
 </head>
 <body>
 
@@ -32,6 +32,7 @@
       <div class="prompt" id="prompt" hidden></div>
       <div class="note" id="note"><canvas id="noteArrow" width="120" height="120" aria-hidden="true"></canvas><div><b id="noteTxt"></b><span id="noteDist"></span></div></div>
       <div class="brakecue" id="brakecue">Brake!</div>
+      <div class="behind" id="behind"><i class="blinker"></i><div><b>Faster car behind</b><span>Keep right, let it by on the left</span></div></div>
       <div class="coach" id="coach"><b id="coachTxt">Gas</b><span id="coachV"></span></div>
       <div class="protag" id="protag"></div>
       <canvas class="inset" id="inset" width="320" height="200" aria-label="The driver's hands on the wheel"></canvas>
@@ -111,6 +112,6 @@
 </main>
 
 <footer class="version">Ring Kart <span id="version"></span> · The lap is the real Nordschleife from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, with heights from the Copernicus EU-DEM, shrunk to a third.</footer>
-<script type="module" src="src/main.js?v=0.9"></script>
+<script type="module" src="src/main.js?v=0.10"></script>
 </body>
 </html>

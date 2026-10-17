@@ -1,7 +1,8 @@
 // Ring Kart's road and driving, in Node: the lap builds to its real length scaled, and every car drives it to the
 // gantry on the AI without getting stuck, in a sensible time, with the faster cars faster; the pro drives the best line
 // clean; the driving modes keep a clumsy driver off the Armco without slowing a good one; reverse stops when you
-// let go; the gearbox works through every gear; and DRS opens only where it should.
+// let go; the gearbox works through every gear; DRS opens only where it should; and slower cars keep the Ring's
+// etiquette for quicker ones behind.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -143,4 +144,30 @@ test('DRS: the GT3 RS opens its flap only on a straight, it shuts on the brakes 
   let best = 0, at = 0; for (let k = 1, run = 0; k < t.n; k++) { run = t.drsZone[k] ? run + 1 : 0; if (run > best) { best = run; at = k - run + 1; } }
   const top = open => { const c = makeCar(spec, t, at, 0); c.v = 50; for (let i = 0; i < best * t.ds / 60 / dt && c.k < at + best - 2; i++) { c.input = { steer: 0, gas: 1, brake: 0, drift: false }; if (open) drs(c, t, true); step(c, dt, t, C.race, []); } return c.v; };
   assert.ok(top(true) > top(false) + 0.3, `DRS ${top(true).toFixed(2)} m/s, shut ${top(false).toFixed(2)}`);
+});
+
+test('Ring etiquette: a slower car signals, moves right and is passed on the left, but not in a tight corner, and not by everyone', async () => {
+  const [{ buildTrack }, { makeCar, step, driveAI, collide, etiquette }] = await load();
+  const t = buildTrack(T), dt = 1 / 60, E = C.race.etiquette.value;
+  let best = 0, at = 0; for (let k = 1, run = 0; k < t.n; k++) { run = t.drsZone[k] ? run + 1 : 0; if (run > best) { best = run; at = k - run + 1; } }
+  const chase = courtesy => {
+    const slow = makeCar(C.traffic[2], t, at + 40, t.width * 0.22); slow.traffic = true; slow.released = true; slow.v = 20; slow.manners = { react: 0.8, courtesy };
+    const fast = makeCar({ ...C.player[1], pace: 0.8 }, t, at, 0); fast.released = true; fast.v = 40; fast.manners = { react: 0.5, courtesy: 1 };
+    const cars = [slow, fast]; let blinked = false, right = 0, passed = false, fastLat = 0;
+    for (let i = 0; i < 60 * 15 && !passed; i++) {
+      for (const c of cars) driveAI(c, dt, t, cars, { etiquette: E }); for (const c of cars) step(c, dt, t, C.race, cars); collide(cars);
+      blinked ||= !!slow.blink; right = Math.max(right, slow.lat);
+      if (fast.s > slow.s && !passed) { passed = true; fastLat = fast.lat - slow.lat; }
+    }
+    return { blinked, right, passed, fastLat };
+  };
+  const kind = chase(1), rude = chase(E.ignore - 0.2);
+  assert.ok(kind.blinked && kind.right > t.width * 0.22 + 0.2 && kind.passed && kind.fastLat < -2.5, JSON.stringify(kind));
+  assert.ok(!rude.blinked && rude.passed, `a driver who does not care never signals: ${JSON.stringify(rude)}`);
+  // in a tight corner nobody moves over, however quick the car behind
+  const tight = Array.from(t.curv).findIndex((c, k) => k > t.gateAt && Math.abs(c) > 1 / 20);
+  const slow = makeCar(C.traffic[2], t, tight, 2); slow.traffic = true; slow.released = true; slow.v = 10; slow.manners = { react: 0.1, courtesy: 1 };
+  const fast = makeCar(C.player[1], t, tight - 10, 0); fast.released = true; fast.v = 25;
+  for (let i = 0; i < 30; i++) etiquette(slow, dt, t, [slow, fast], E);
+  assert.ok(!slow.yld.on, 'nobody moves over in a tight corner');
 });

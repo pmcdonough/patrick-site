@@ -135,6 +135,14 @@ button.primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 va
 .drs { font: 400 0.85rem var(--num); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 10px 3px; border-radius: 999px; border: 2px solid var(--ink); background: rgb(255 241 207 / 0.12); color: rgb(255 241 207 / 0.5); }
 .drs.ready { background: var(--mustard); color: var(--ink); }
 .drs.open { background: var(--avocado); color: var(--cream); }
+/* a quicker car closing from behind: the Ring's etiquette, keep right and let it pass on the left */
+.behind { left: 14px; top: 104px; display: flex; align-items: center; gap: 10px; padding: 6px 14px 8px 10px; background: var(--cream); border: var(--sticker); border-radius: 16px; box-shadow: var(--drop); opacity: 0; transition: opacity .2s; }
+.behind.on { opacity: 1; }
+.behind b { display: block; font: 400 1.05rem var(--num); color: var(--ink); }
+.behind span { font: 500 0.8rem var(--body); color: var(--ink); }
+.behind .blinker { width: 0; height: 0; border-top: 14px solid transparent; border-bottom: 14px solid transparent; border-left: 22px solid var(--mustard); filter: drop-shadow(1px 1px 0 var(--ink)); animation: blink 0.66s steps(1) infinite; }
+@keyframes blink { 50% { border-left-color: rgb(242 182 49 / 0.25); } }
+.hud.pro .behind { display: none; }
 /* the driver's hands on the wheel, inset above the strip as on a broadcast */
 .inset { position: absolute; left: 12px; bottom: 166px; width: 192px; height: 120px; border: var(--sticker); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); background: #3b2414; display: none; }
 .inset.on { display: block; }
@@ -233,7 +241,9 @@ kbd.wide { min-width: 52px; }
   .tele { height: 100px; grid-template-columns: auto 90px minmax(0, 1fr); padding: 18px 10px 8px; gap: 10px; }
   .tele .map, .pedals-hud, .timing .profile { display: none; }
   .gs { column-gap: 12px; } .gs b { font-size: 2rem; } .tach { width: 96px; height: 40px; }
-  .tele.has-drs { grid-template-columns: auto 96px auto minmax(0, 1fr); } .drsbox .sil { display: none; } .drs { font-size: 0.7rem; padding: 1px 7px 2px; }
+  .tele.has-drs { grid-template-columns: auto 72px auto minmax(0, 1fr); } .drsbox .sil { display: none; } .drs { font-size: 0.7rem; padding: 1px 7px 2px; }
+  .tele.has-drs .gs b { font-size: 1.7rem; } .tele.has-drs .tach { width: 72px; height: 30px; } .tele.has-drs .timing b { font-size: 1.45rem; }
+  .behind { top: 186px; padding: 4px 10px 5px 8px; gap: 8px; } .behind span { display: none; } .behind b { font-size: 0.9rem; } .behind .blinker { border-top-width: 9px; border-bottom-width: 9px; border-left-width: 14px; }
   .inset.on { display: none !important; }
   .timing b { font-size: 1.7rem; }
   .gaps { display: none; }

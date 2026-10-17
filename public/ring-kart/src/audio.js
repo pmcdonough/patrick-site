@@ -103,6 +103,36 @@ export class Sound {
   }
   // a car going past a trackside camera
   whoosh() { this.burst('bandpass', 700, 0.9, 0.45); this.burst('highpass', 2400, 0.5, 0.16); }
+  // ---------- the Bronco's soundtrack ----------
+  // An original reggae groove, synthesized like everything else: a one-drop (kick and rimshot together on the third beat
+  // of each bar, a hi-hat on the off-beats), the guitar's skank chopping the chord on beats two and four, an organ
+  // bubble on the off-beats, and a round bass walking the chord. Four bars, I-IV-V-IV in G, at 76 beats a minute,
+  // under the engine and never through the listener's distance or Doppler. music(true) starts it, music(false) fades it.
+  music(on) {
+    if (!this.ctx || on === !!this.song) return;
+    const ctx = this.ctx;
+    if (!on) { const s = this.song; this.song = null; clearInterval(s.timer); s.out.gain.setTargetAtTime(0, ctx.currentTime, 0.4); setTimeout(() => s.out.disconnect(), 2500); return; }
+    const out = ctx.createGain(); out.gain.value = 0; out.gain.setTargetAtTime(0.38, ctx.currentTime, 0.6); out.connect(this.master);
+    const s = this.song = { out, next: ctx.currentTime + 0.1, step: 0, timer: 0 };
+    const beat = 60 / 76, eighth = beat / 2;
+    const BARS = [[43, [55, 59, 62]], [48, [55, 60, 64]], [50, [57, 62, 66]], [48, [55, 60, 64]]];   // bass root and chord, MIDI: G, C, D, C
+    const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+    const note = (type, f, t, dur, vol, cut, q = 0.8) => { const o = ctx.createOscillator(), g = ctx.createGain(), fl = ctx.createBiquadFilter(); o.type = type; o.frequency.value = f; fl.type = 'lowpass'; fl.frequency.value = cut; fl.Q.value = q; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(fl); fl.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.05); };
+    const hit = (type, f, t, dur, vol) => { const n = ctx.createBufferSource(); n.buffer = this.noise; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); n.connect(fl); fl.connect(g); g.connect(out); n.start(t, Math.random()); n.stop(t + dur + 0.02); };
+    const kick = t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.18); g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35); o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.4); };
+    // eight eighths a bar; schedule a little ahead of the clock
+    const play = (i, t) => {
+      const bar = BARS[Math.floor(i / 8) % 4], e = i % 8;
+      if (e % 2 === 1) hit('highpass', 7000, t, 0.05, 0.05);                                   // hi-hat on the "and"
+      if (e === 4) { kick(t); hit('bandpass', 1700, t, 0.08, 0.22); note('triangle', 330, t, 0.06, 0.08, 2000); }   // the one drop
+      if (e === 2 || e === 6) for (const m of bar[1]) note('square', hz(m + 12), t, 0.11, 0.035, 2600, 2);   // the skank, beats 2 and 4
+      if (e % 2 === 1) for (const m of bar[1]) note('sawtooth', hz(m), t, 0.09, 0.018, 1200);        // the organ bubble
+      const walk = [0, null, 0, 7, null, 12, 7, null][e];                                          // the bass line
+      if (walk != null) note('sine', hz(bar[0] + walk), t, eighth * 1.6, 0.32, 600);
+    };
+    const pump = () => { while (s.next < ctx.currentTime + 0.25) { play(s.step++, s.next); s.next += eighth; } };
+    pump(); s.timer = setInterval(pump, 60);
+  }
   // the DRS flap opening: a short pneumatic clack
   drs() { this.burst('bandpass', 2600, 0.06, 0.18, 0, 2); this.burst('lowpass', 500, 0.05, 0.2, 0.02); }
   beep() { this.tone(880, 0.18, 0.12); this.tone(1320, 0.3, 0.12, 0.2); }

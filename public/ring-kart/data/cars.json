@@ -1,5 +1,5 @@
 {
-  "about": "The cars. Speeds are game metres per second (top speed times 3.6 is the km/h on the dial), acceleration is m/s2 from a standstill, grip is the sideways g a car holds before it slides, brake is m/s2. These are arcade numbers in the right order, not test figures: a GT3 RS is quicker than a GTI everywhere, and a Volvo 240 is a Volvo 240. pace is how much of its grip an AI driver uses through a corner; style picks the body shape, and kit race gives a widebody racer its flares, splitter, vents, swan-neck wing, cage and door number.",
+  "about": "The cars. Speeds are game metres per second (top speed times 3.6 is the km/h on the dial), acceleration is m/s2 from a standstill, grip is the sideways g a car holds before it slides, brake is m/s2. These are arcade numbers in the right order, not test figures: a GT3 RS is quicker than a GTI everywhere, and a Volvo 240 is a Volvo 240. pace is how much of its grip an AI driver uses through a corner; style picks the body shape, kit race gives a widebody racer its flares, splitter, vents, swan-neck wing, cage and door number, and kit bronco an open, lifted Bronco with a roll cage, a surfboard and a family aboard.",
   "stats": {
     "vmax": "top speed, game m/s",
     "accel": "acceleration from rest, m/s2; it fades toward top speed",
@@ -19,6 +19,11 @@
       "engine": { "cyl": 6, "flat": true, "idle": 980, "redline": 9000, "shift": 8600, "box": "pdk", "gears": [74, 117, 162, 208, 251, 290, 306],
         "partials": [0.33, 0.38, 0.64, 0.42, 0.4, 1, 0.3, 0.24, 0.27, 0.08, 0.08, 0.33, 0.025, 0.02, 0.02, 0.015, 0.025, 0.02] },
       "body": { "style": "gt3", "len": 4.57, "wid": 1.9, "hgt": 1.3, "color": "#a3abb4", "trim": "#151515", "stripe": "#151515", "rims": "#3a3d42", "wing": "swan", "kit": "race", "number": "91" } },
+    { "id": "bronco", "name": "Ford Bronco Sasquatch", "note": "2025, two doors, top and doors off, the whole family aboard and a surfboard on the cage. Drives, sounds and shifts exactly like the GT3 RS, DRS and all. Reggae on.", "vmax": 80, "accel": 10.5, "grip": 1.6, "brake": 13.5, "drift": 0.9, "mass": 1.45,
+      "drs": { "vmax": 0.06, "drag": 0.3 },
+      "engine": { "cyl": 6, "flat": true, "idle": 980, "redline": 9000, "shift": 8600, "box": "pdk", "gears": [74, 117, 162, 208, 251, 290, 306],
+        "partials": [0.33, 0.38, 0.64, 0.42, 0.4, 1, 0.3, 0.24, 0.27, 0.08, 0.08, 0.33, 0.025, 0.02, 0.02, 0.015, 0.025, 0.02] },
+      "body": { "style": "bronco", "len": 4.41, "wid": 2.2, "hgt": 1.95, "color": "#2a2c31", "trim": "#111111", "rims": "#34373c", "kit": "bronco" } },
     { "id": "ctr", "name": "Honda Civic Type R", "note": "FL5. Front-wheel drive lap record hunter. Brakes late, turns in hard.", "vmax": 72, "accel": 8.6, "grip": 1.45, "brake": 12, "drift": 0.95, "mass": 1.43,
       "engine": { "cyl": 4, "turbo": true, "idle": 800, "redline": 7000, "box": "manual", "gears": [66, 106, 150, 194, 236, 274] },
       "body": { "style": "hatch", "len": 4.6, "wid": 1.89, "hgt": 1.4, "color": "#f2f2f2", "trim": "#c8102e", "wing": true } },
@@ -77,6 +82,8 @@
       "intermediate": { "wall": 0.82, "grass": { "drag": 1.3, "vmax": 0.55 }, "brake": 1.3, "guard": { "look": 0.5, "margin": 1.5, "gain": 1, "brake": 0.5 } },
       "expert": { "brake": 0 } },
       "desc": "The driving modes, for the player only. wall is the speed kept hitting the Armco square on, grass the grass for that mode. brake is the share of grip the brake aid lets you carry into a corner before it brakes for you: under 1 it keeps you inside the grip, over 1 it steps in only when you are well over it, 0 is off. guard steers you off the Armco: it looks look seconds ahead and starts within margin metres of the wall, gain is how firmly, brake how hard it brakes when the turn back needs more grip than there is. Expert is the race's own grass and Armco with no aids." },
+    "etiquette": { "value": { "behind": 45, "closing": 1.5, "racer": 5, "clear": 70, "radius": 70, "keep": 0.74, "lift": 0.94, "done": 8, "ignore": 0.5 },
+      "desc": "Ring etiquette: a car with a quicker one closing from behind (within behind metres, closing faster than closing m/s; a racer only for a car racer m/s quicker) puts its right blinker on, moves over to keep of the half-road on the right and lifts to lift of its speed, until the other is done metres past. Only where the road for the next clear metres has no bend tighter than radius metres: nobody moves over in a tight corner. Drivers differ: each has a reaction time and a courtesy, and one below ignore never moves over." },
     "gravity": { "value": 15, "desc": "Game gravity, m/s2. A bit above real so the cars land from the jumps before the next corner." }
   }
 }

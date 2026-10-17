@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.108 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.109 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.10. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.109
+- Ring Kart 0.10 (Ring etiquette, the family Bronco, a reggae soundtrack). The home card says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.108
 - Cathedral Lab 0.15 (the 1972 house's wing windows and west chimney, from photographs). The home card's badge says so. No change to the sim, Play Review or Ring Kart.
@@ -640,6 +643,12 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.10
+- Ring etiquette. A slower car with a quicker one closing from behind puts its right blinker on (it flashes amber), moves over to the right, eases off a little and lets it pass on the left, then pulls back. Not perfectly, as on the real Ring: each driver has their own reaction time and courtesy, some never bother, and nobody moves over in a tight corner, where a coordinated pass is hard. Traffic does it for anyone quicker; rivals only for a car much quicker. The numbers are in `cars.json` (`race.etiquette`). When a quicker car is closing on you, a sticker says so (keep right, let it by on the left), and your own right indicator flashes once you move over.
+- The Ford Bronco Sasquatch, a new car: the owner's 2025 two-door Bronco, black, lifted on huge mud-terrain tyres under black flares, the top and doors off, a roll cage with a surfboard strapped along it, a steel bumper with red tow hooks, the spare on the tailgate, and the family aboard: Dad at the wheel, Mum beside him and the three kids in the back, drawn as cartoons from a picture the owner chose. It drives, sounds and shifts exactly like the GT3 RS, DRS and all; its DRS lifts the surfboard's nose. The strip draws the board on the cage instead of the wing.
+- With the Bronco picked, an original reggae groove plays under the engine, synthesized in the browser: a one-drop beat, the skank on two and four, an organ bubble and a walking bass, I-IV-V-IV in G at 76 beats a minute. It stops on pause and with the sound off.
+- A new test: a courteous driver signals, moves right and is passed on the left; one who does not care never signals; and nobody moves over in a tight corner.
 
 ### 0.9
 - The whole Döttinger Höhe again. 0.8 ended the lap at the real Touristenfahrten gantry, before Antoniusbuche, which cut the long straight to 1.2 km. The lap now runs on through Antoniusbuche to the braking zone for Tiergarten: almost 2 km of straight in real life, 640 m flat out in the game, where a GT3 RS with DRS open reaches about 264 km/h in sixth. The game's gantry is about 900 m past the real one; the lap is 20.1 km on the map, still shrunk to a third.

@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.9';
-import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.9';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.9';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.9';
-import { Sound } from './audio.js?v=0.9';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.10';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.10';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.10';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.10';
+import { Sound } from './audio.js?v=0.10';
 
-const VERSION = '0.9';
+const VERSION = '0.10';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -103,6 +103,9 @@ document.querySelectorAll('.modes [data-mode]').forEach(b => b.onclick = () => {
 function addCar(spec, k, lat, role) {
   const c = makeCar(spec, track, k, lat);
   c.role = role; c.traffic = role === 'traffic';
+  // how this driver keeps to the Ring's etiquette: how long they take to notice a quicker car behind, and how much they
+  // care (below the race's ignore, not at all)
+  if (role !== 'player') c.manners = { react: 0.4 + rnd() * 1.6, courtesy: 0.3 + rnd() * 0.7 };
   const m = carMesh(spec.body); m.rotation.order = 'YZX'; scene.add(m);
   if (role !== 'player') { const l = label(pretty(spec.name)); l.position.y = spec.body.hgt + 1.3; l.visible = false; m.add(l); m.label = l; }
   if (role === 'player') {
@@ -154,7 +157,7 @@ function picker() {
     <span class="sw" style="background:${s.body.color}"></span><b>${s.name}</b><p>${s.note}</p>
     <span class="bars"><span>Top speed</span><i style="--w:${(s.vmax / maxOf('vmax') * 100).toFixed(0)}%"></i><span>Acceleration</span><i style="--w:${(s.accel / maxOf('accel') * 100).toFixed(0)}%"></i><span>Grip</span><i style="--w:${(s.grip / maxOf('grip') * 100).toFixed(0)}%"></i><span>Drift</span><i style="--w:${(s.drift / maxOf('drift') * 100).toFixed(0)}%"></i></span>
     ${store.get(bestKey(s.id), 0) ? `<p>Your best on ${MODE_NAME[mode]}: ${fmt(store.get(bestKey(s.id), 0))}</p>` : ''}</button>`).join('');
-  $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); picker(); setup(); });
+  $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); sound.start(); picker(); setup(); });
 }
 setMode(mode); picker(); setup();
 // on a phone the page scrolls; put the whole stage on screen when the driving starts
@@ -263,7 +266,7 @@ function honk() {
   for (const c of cars) if (c.traffic && !c.hidden && c.s > player.s && c.s - player.s < 90) c.yieldT = 3;
   S.honkT = 0.6;
 }
-function pause(v) { S.paused = v; $('paused').hidden = !v; if (v) sound.quiet(); }
+function pause(v) { S.paused = v; $('paused').hidden = !v; if (v) { sound.quiet(); sound.music(false); } }
 function rescue() {
   const p = pointAt(track, player.k, Math.max(-3, Math.min(3, player.lat)));
   Object.assign(player, { x: p.x, z: p.z, y: p.y + 0.5, vy: 0, h: p.h, v: Math.min(player.v, 12), air: true, drift: null });
@@ -343,7 +346,7 @@ function tick(dt) {
         const gap = c.s - player.s;
         const RB = RV.rubber; paceScale = gap > RB.ahead ? RB.slow : gap < -RB.behind ? RB.fast : 1;
       }
-      driveAI(c, dt, track, cars, { paceScale });
+      driveAI(c, dt, track, cars, { paceScale, etiquette: RV.etiquette });
     }
     for (const c of cars) {
       if (c.hidden) continue;
@@ -413,6 +416,7 @@ function resultButtons(list) {
 // ---------- drawing ----------
 const up = new THREE.Vector3(0, 1, 0);
 const TAIL_OFF = new THREE.Color(0xa3101c).convertSRGBToLinear(), TAIL_ON = new THREE.Color(4, 0.25, 0.25);
+const BLINK_OFF = new THREE.Color(0x8a4a10).convertSRGBToLinear(), BLINK_ON = new THREE.Color(4, 1.6, 0.2);
 function draw(dt) {
   // cars to their meshes
   for (const [c, m] of meshes) {
@@ -423,13 +427,15 @@ function draw(dt) {
     // squash and stretch, the cartoon way: squash on a hard landing, stretch out under a turbo
     const sq = Math.min(0.22, (c.landed || 0) * 0.3), st = c.boost > 0 ? 0.07 : 0;
     m.scale.set(1 + sq * 0.6 + st, 1 - sq - st * 0.5, 1 + sq * 0.6);
+    // the right indicator, flashing while a car makes room for a quicker one behind
+    if (m.blink) { const on = c.blink && Math.floor(S.t * 3) % 2 === 0; if (m.blink.on !== on) { m.blink.on = on; m.blink.color.copy(on ? BLINK_ON : BLINK_OFF); } }
     // brake lights
     if (m.tail) { const on = c.input.brake > 0 && c.v > 0.5; if (m.tail.on !== on) { m.tail.on = on; m.tail.color.copy(on ? TAIL_ON : TAIL_OFF); } }
     if (m.label) { const d = Math.hypot(c.x - player.x, c.z - player.z); m.label.visible = S.mode !== 'pick' && d < 70 && d > 9; }
   }
   for (const [c, m] of meshes) if (!c.hidden) for (const w of m.wheels) w.rotation.z -= c.v * dt / 0.33;
   // the DRS flap swings flat when it opens
-  for (const [c, m] of meshes) if (m.flap && !c.hidden) { const want = c.drs ? 0.45 : 0; m.flap.rotation.z += (want - m.flap.rotation.z) * Math.min(1, dt * 12); }
+  for (const [c, m] of meshes) if (m.flap && !c.hidden) { const want = c.drs ? m.flapOpen ?? 0.45 : 0; m.flap.rotation.z += (want - m.flap.rotation.z) * Math.min(1, dt * 12); }
   const pm = meshes.get(player);
   // the camera sits inside your car's ink outline on the bonnet, so hide it there (the director sets its own)
   if (pm.ink) pm.ink.visible = S.mode === 'pick' || ((S.mode === 'pro' || S.mode === 'proDone') ? S.proCam !== 2 : S.camMode !== 2);
@@ -456,6 +462,8 @@ function draw(dt) {
   const ed = camera.position.distanceTo(new THREE.Vector3(player.x, player.y + 0.6, player.z));
   sound.hear(ed, dt > 0 && S.earD != null && Math.abs(S.earD - ed) < 4 ? (S.earD - ed) / dt : 0); S.earD = ed;   // a cut is a jump, not a closing speed
   sound.update(player, S.mode, dt);
+  // the Bronco brings its own soundtrack, from the moment you pick it
+  sound.music(!S.paused && player && player.spec.body.kit === 'bronco');
   renderer.render(scene, camera);
 }
 
@@ -609,9 +617,17 @@ function drawTach(rpm, gear, E) {
 }
 // the rear wing in profile: the main plane, and the flap above it that tilts flat when DRS is open
 const sil = $('sil'), sg = sil.getContext('2d');
-function drawSil(open) {
+function drawSil(open, kit) {
   const W = sil.width, H = sil.height; sg.clearRect(0, 0, W, H);
   sg.lineJoin = 'round'; sg.lineCap = 'round'; sg.strokeStyle = '#2a1a0e'; sg.lineWidth = 4;
+  if (kit === 'bronco') {
+    // the Bronco's DRS is the surfboard on the cage: its nose lifts as it opens
+    sg.fillStyle = '#2a2c31'; sg.beginPath(); sg.moveTo(10, H - 6); sg.lineTo(10, H - 34); sg.lineTo(230, H - 34); sg.lineTo(230, H - 6); sg.closePath(); sg.fill(); sg.stroke();
+    sg.strokeStyle = '#1a1a1a'; sg.lineWidth = 6; sg.beginPath(); sg.moveTo(60, H - 34); sg.lineTo(60, 40); sg.lineTo(190, 40); sg.lineTo(190, H - 34); sg.stroke();
+    sg.save(); sg.translate(40, 34); sg.rotate(-0.25 * open); sg.fillStyle = open > 0.5 ? '#8a9a2b' : '#f6ecd2'; sg.strokeStyle = '#2a1a0e'; sg.lineWidth = 4;
+    sg.beginPath(); sg.ellipse(90, 0, 92, 9, 0, 0, 7); sg.fill(); sg.stroke(); sg.fillStyle = '#2f9c9a'; sg.fillRect(4, -2, 172, 4); sg.restore();
+    return;
+  }
   // the tail of the car and the swan necks
   sg.fillStyle = '#c7cdd3'; sg.beginPath(); sg.moveTo(8, H - 6); sg.quadraticCurveTo(40, H - 40, 120, H - 34); sg.lineTo(232, H - 30); sg.lineTo(232, H - 6); sg.closePath(); sg.fill(); sg.stroke();
   sg.fillStyle = '#1a1a1a'; for (const x of [84, 118]) { sg.beginPath(); sg.moveTo(x, H - 36); sg.quadraticCurveTo(x + 18, H - 52, x + 8, 34); sg.lineTo(x + 18, 34); sg.quadraticCurveTo(x + 26, H - 52, x + 12, H - 36); sg.closePath(); sg.fill(); sg.stroke(); }
@@ -678,9 +694,14 @@ function hud(dt) {
   if (hasDrs) {
     const st = p.drs ? 'open' : track.drsZone[p.k] && !p.air && S.mode !== 'queue' ? 'ready' : '';
     if (st !== S.drsShown) { S.drsShown = st; const el = $('drs'); el.className = 'drs ' + st; el.textContent = touch ? 'DRS' : st === 'open' ? 'DRS open' : st === 'ready' ? 'DRS · X' : 'DRS'; if (st === 'open') sound.drs(); }
-    dial.flap += ((p.drs ? 1 : 0) - dial.flap) * Math.min(1, dt * 12); drawSil(dial.flap);
+    dial.flap += ((p.drs ? 1 : 0) - dial.flap) * Math.min(1, dt * 12); drawSil(dial.flap, p.spec.body.kit);
   }
   drawInset(p, gb, dt);
+  // a quicker car closing from behind you: the etiquette sticker, and your own right indicator once you move over
+  let chaser = false;
+  if (S.mode === 'race') for (const c of cars) { const gap = p.s - c.s; if (c !== p && !c.hidden && c.released && gap > 0 && gap < RV.etiquette.behind && c.v - p.v > RV.etiquette.closing) { chaser = true; break; } }
+  if (chaser !== S.chaser) { S.chaser = chaser; $('behind').classList.toggle('on', chaser); }
+  p.blink = chaser && p.lat > 1.5 ? 1 : 0;
   $('time').textContent = fmt2(S.mode === 'queue' ? 0 : player.done ? player.time : S.raceT);
   if (performance.now() - lastHud > 90) {
     lastHud = performance.now();
