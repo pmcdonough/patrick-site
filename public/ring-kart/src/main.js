@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.12';
-import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.12';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.12';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.12';
-import { Sound } from './audio.js?v=0.12';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.13';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.13';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.13';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.13';
+import { Sound } from './audio.js?v=0.13';
 
-const VERSION = '0.12';
+const VERSION = '0.13';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -481,7 +481,9 @@ function draw(dt) {
     if (m.blink) { const on = c.blink && Math.floor(S.t * 3) % 2 === 0; if (m.blink.on !== on) { m.blink.on = on; m.blink.color.copy(on ? BLINK_ON : BLINK_OFF); } }
     // brake lights
     if (m.tail) { const on = c.input.brake > 0 && c.v > 0.5; if (m.tail.on !== on) { m.tail.on = on; m.tail.color.copy(on ? TAIL_ON : TAIL_OFF); } }
-    if (m.label) { const d = Math.hypot(c.x - player.x, c.z - player.z); m.label.visible = S.mode !== 'pick' && d < 70 && d > 9; }
+    // the name over a car: only for cars well up the road ahead, fading in from 22 m, so a car you are passing (or one
+    // alongside or behind) never has its name in front of you
+    if (m.label) { const ahead = c.s - player.s; m.label.visible = S.mode !== 'pick' && ahead > 22 && ahead < 90; if (m.label.visible) m.label.material.opacity = Math.min(1, (ahead - 22) / 13); }
   }
   for (const [c, m] of meshes) if (!c.hidden) for (const w of m.wheels) w.rotation.z -= c.v * dt / 0.33;
   // the DRS flap swings flat when it opens

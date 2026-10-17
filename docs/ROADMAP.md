@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.111 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.112 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -57,7 +57,7 @@ The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, th
 5. The Florence dome: drum, ribs, herringbone courses, two shells, chains, lantern; hoop forces in the solver.
 6. More of the lab shared by link (designs already are).
 
-## Ring Kart (0.12)
+## Ring Kart (0.13)
 
 The first playable version is a kart game on a hand-traced lap; 0.2 added onboard telemetry and a better-looking world, 0.3 cars drawn from side views and eased keyboard steering, 0.4 a 70s cartoon look, arrows-and-Space controls and pace notes, 0.5 a pro lap to watch and the best line to follow, 0.6 Beginner, Intermediate and Expert, 0.7 round cartoon cars and a real engine note and gearbox per car, 0.8 the real lap from OpenStreetMap, DRS, the GT3 RS's engine matched to a recording, a broadcast strip and a widebody GT3 RS, 0.9 the whole Döttinger Höhe again, 0.10 Ring etiquette and the family Bronco, 0.11 the barriers fixed where the lap passes close to itself, 0.12 Laguna Seca, the Coast Road and a track picker. Next, in order:
 

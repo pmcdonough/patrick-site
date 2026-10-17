@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.111 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.12. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.112 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.13. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.112
+- Ring Kart 0.13 (car names no longer block your view when passing). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.111
 - Ring Kart 0.12 (Laguna Seca, the Coast Road, a track picker). The home card says so. `tools/circuit_track.py` is new: it builds a circuit from OpenStreetMap and an elevation model; `docs/RAW-INPUTS.md` lists Laguna's inputs. `tools/smoke.js` also starts a race on each new track. No change to the sim, Play Review or Cathedral Lab.
@@ -649,6 +652,9 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.13
+- Fixed: the name bubble over a car you were passing filled your view (the owner found it). Names showed for any car 9 to 70 m away, alongside and behind included; now only for cars 22 to 90 m up the road ahead, fading in, so nothing you are passing or racing side by side carries one.
 
 ### 0.12
 - Two new tracks and a track picker above the cars (on a phone the picker is now the whole screen). Each track keeps its own best times; switching track reloads the page with it (`?t=` in the address).
