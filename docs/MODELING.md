@@ -74,3 +74,17 @@ The NHL's puck and player tracking records the position of every skater, both go
 
 The architecture allows each swap without a new engine: kinematic parameters, systems and thresholds are data files, the outcome models are single functions (`xgModel`, the save roll), and the decision policy is one function per role (`carrierThink`, `assignTargets`, `formationSpot`) that a fitted model can replace behind the same interface. The lab's paired-seed method and the determinism carry over unchanged.
 
+## Cathedral Lab
+
+The same three kinds of number apply. Measured: each building's dimensions, from the sources listed per building in `CATHEDRAL-LAB.md`, and the unit weights of limestone, oak and lead. Calibrated: nothing is tuned to reproduce an outcome; the one check against a known result is the solver's (a semicircular arch's minimum depth, 0.1075 of its radius). Assumed: everything a design does not choose, the storm, and the animations, each said on the page.
+
+| Model | What it answers | Built on | How it was set | Lives in |
+| --- | --- | --- | --- | --- |
+| Arch statics | Does a vault stand; how hard does it push out | Rigid-block limit analysis (Heyman): stone pushes but never pulls, an arch stands if a line of thrust fits inside it | The minimum-thrust state found exactly by intervals of the thrust; checked against Milankovitch's 0.1075 for a semicircle | `cathedral-lab/src/solver.js` `build`, `solve`, `minThickness` |
+| Walls and buttresses | Does a wall or a buttress pier stand under the vault's push | The same theory: the resultant of the push and the pier's weight must land in the base; in the middle third the whole base presses down | Rectangular piers, a flyer as a strut carrying the push, a pinnacle's weight on the buttress | `solver.js` `pierCheck`, `supports` |
+| The storm | What height costs; what an upper tier of flyers is for | Wind pressure q = ½ρv² at gusts of about 40 m/s, about 1 kN/m² | Assumed: a steady pressure with a net coefficient of 1 on everything above the aisle roofs, passed by the roof to the lee side; the lower flyers carry it, or the upper tier | `solver.js` `supports` (`wind`, `upper`, `btop`), `gothic.js` `section` |
+| Load model | How much weight each piece carries, and the pressure where it rests | Each piece's volume times its unit weight | Weight only, passed down to the pieces it rests on in fixed shares; the sideways pushes are the force lines, not this | `cathedral-lab/src/kit.js` `computeLoads` |
+| Designed proportions | Every level a design does not choose: arcade, triforium, aisles, flyer landings, bay length | Amiens' section divided by its 30 m springing | Assumed: the same ratios at every height, with the arcade lowered in a low or narrow church so its arches fit | `cathedral-lab/src/design.js` `sectionOf` |
+| Collapse | How a design that fails comes down | Nothing: the solver says that it falls, not how | Mocked: pieces drop outward with a turn, the top of a tipping wall first; said on the page | `yours.js` `KIT.falls`, `src/main.js` the collapse |
+| Building | Where each piece goes | Published plans, sections and dimensions per building | Measured where sourced; simplifications listed per building in `CATHEDRAL-LAB.md` and on each page | `notre-dame.js`, `amiens.js` |
+
