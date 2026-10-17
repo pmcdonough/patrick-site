@@ -67,7 +67,7 @@ test('the pro drives the best line in every player car: clean, on the line, and 
   }
 });
 
-test('the driving modes: a clumsy driver stays off the Armco on Beginner, mostly on Intermediate, and a good one is not slowed', async () => {
+test('the driving modes: a clumsy driver hits the Armco far less on Intermediate than on Expert, and a good one is not slowed', async () => {
   const [{ buildTrack, pointAt }, { makeCar, step, assist, driveAI }] = await load();
   const t = buildTrack(T), dt = 1 / 120, finish = t.n - 12, M = C.race.modes.value;
   // flat out and never braking, aiming late at the middle of the road with all-or-nothing keys on an eased wheel
@@ -89,13 +89,12 @@ test('the driving modes: a clumsy driver stays off the Armco on Beginner, mostly
     return { time, walls };
   };
   for (const spec of C.player) {
-    const [e, i, b] = ['expert', 'intermediate', 'beginner'].map(m => lap(spec, m, clumsy));
+    const [e, i] = ['expert', 'intermediate'].map(m => lap(spec, m, clumsy));
     assert.ok(e.walls >= 15, `${spec.name}: the clumsy driver should struggle on Expert, ${e.walls} hits`);
     assert.ok(i.walls * 3 <= e.walls, `${spec.name}: Intermediate ${i.walls} hits, Expert ${e.walls}`);
-    assert.ok(b.walls === 0, `${spec.name}: Beginner ${b.walls} hits`);
     const good = { ...spec, pace: 0.8 }, ai = car => driveAI(car, dt, t, [car]);
-    const ge = lap(good, 'expert', ai), gb = lap(good, 'beginner', ai);
-    assert.ok(gb.time < ge.time * 1.02, `${spec.name}: the AI ${ge.time.toFixed(1)} s bare, ${gb.time.toFixed(1)} s with Beginner's help`);
+    const ge = lap(good, 'expert', ai), gi = lap(good, 'intermediate', ai);
+    assert.ok(gi.time < ge.time * 1.02, `${spec.name}: the AI ${ge.time.toFixed(1)} s bare, ${gi.time.toFixed(1)} s with Intermediate's help`);
   }
 });
 
@@ -222,5 +221,15 @@ test('the other tracks: Laguna Seca laid out for three laps, the Coast Road end 
         assert.ok(Math.abs(car.lat) <= wall + 0.5, `${id}: through the barrier at sample ${car.k}`);
       }
     }
+  }
+});
+
+test('the best line is smooth on every track: no sawtooth from one sample to the next', async () => {
+  const [{ buildTrack }, , { racingPath }] = await load();
+  for (const id of ['track', 'laguna', 'coast']) {
+    const t = buildTrack(JSON.parse(fs.readFileSync(path.join(root, 'data', id + '.json')))), lat = racingPath(t);
+    const d2 = k => lat[k - 1] - 2 * lat[k] + lat[k + 1];
+    let saw = 0; for (let k = 2; k < t.n - 2; k++) if (d2(k) * d2(k + 1) < 0 && Math.min(Math.abs(d2(k)), Math.abs(d2(k + 1))) > 0.02) saw++;
+    assert.strictEqual(saw, 0, `${id}: ${saw} samples where the line zig-zags`);
   }
 });

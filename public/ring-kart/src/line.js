@@ -9,8 +9,8 @@
 // and a backward pass for where it must start braking. Every point on the line then has a phase, what your feet
 // should be doing there: gas, coast, brake or hard brake. The pro drives exactly that line at exactly those speeds,
 // so the line you are shown is the line the pro takes.
-import { pointAt } from './track.js?v=0.14';
-import { drs } from './drive.js?v=0.14';
+import { pointAt } from './track.js?v=0.15';
+import { drs } from './drive.js?v=0.15';
 
 const G = 9.81;
 export const PHASE = { GAS: 0, COAST: 1, BRAKE: 2, HARD: 3 };
@@ -34,18 +34,28 @@ export function racingPath(track, margin = 1.2) {
     }
   }
   // Pulling toward the neighbours' midpoint is curve shortening: round a hairpin it hugs the inside all the way, the
-  // shortest path and a slow one. So finish with passes that lower the line's bending itself (its fourth difference,
-  // the gradient of the summed squared curvature): through a hairpin that swings the line wide, clips the apex and
-  // runs wide again, the way a driver uses the whole road.
-  const P = (k, o) => [cx[k] + rx[k] * lat[k], cz[k] + rz[k] * lat[k]][o];
-  for (const [reach, rounds] of [[10, 160], [5, 120]]) {
+  // shortest path and a slow one. So finish with passes that lower the line's bending itself (the biharmonic flow, the
+  // gradient of the summed squared curvature): through a hairpin that swings the line wide, clips the apex and runs
+  // wide again, the way a driver uses the whole road. The Laplacians are averages over a whole window either side, so
+  // every point is tied to its neighbours (taken only from points `reach` apart, as in 0.12, neighbouring points
+  // drifted apart into a sawtooth of chevrons across the road).
+  const px = new Float64Array(n), pz = new Float64Array(n), lx = new Float64Array(n), lz = new Float64Array(n), cs = new Float64Array(n + 1);
+  const lap = (vx, vz, ox, oz, r) => {
+    for (const [v, o] of [[vx, ox], [vz, oz]]) {
+      cs[0] = 0; for (let k = 0; k < n; k++) cs[k + 1] = cs[k] + v[k];
+      for (let k = 0; k < n; k++) { const a = Math.max(0, k - r), b = Math.min(n - 1, k + r); o[k] = (cs[b + 1] - cs[a]) / (b - a + 1) - v[k]; }
+    }
+  };
+  const dx = new Float64Array(n), dz = new Float64Array(n);
+  for (const [reach, rounds] of [[8, 260], [4, 160]]) {
     for (let r = 0; r < rounds; r++) {
-      for (let k = 2 * reach; k < n - 2 * reach; k++) {
-        const d = o => P(k - 2 * reach, o) - 4 * P(k - reach, o) + 6 * P(k, o) - 4 * P(k + reach, o) + P(k + 2 * reach, o);
-        lat[k] = Math.max(-half, Math.min(half, lat[k] - 0.05 * (d(0) * rx[k] + d(1) * rz[k]))) * free(k);
-      }
+      for (let k = 0; k < n; k++) { px[k] = cx[k] + rx[k] * lat[k]; pz[k] = cz[k] + rz[k] * lat[k]; }
+      lap(px, pz, lx, lz, reach); lap(lx, lz, dx, dz, reach);
+      for (let k = reach; k < n - reach; k++) lat[k] = Math.max(-half, Math.min(half, lat[k] - 0.6 * (dx[k] * rx[k] + dz[k] * rz[k]))) * free(k);
     }
   }
+  // and last, a light smoothing between immediate neighbours for what is left where the line meets the road's edge
+  for (let r = 0; r < 12; r++) for (let k = 1; k < n - 1; k++) lat[k] = Math.max(-half, Math.min(half, lat[k] * 0.5 + (lat[k - 1] + lat[k + 1]) * 0.25)) * free(k);
   return lat;
 }
 

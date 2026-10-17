@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.14';
-import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.14';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.14';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.14';
-import { Sound } from './audio.js?v=0.14';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.15';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.15';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.15';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.15';
+import { Sound } from './audio.js?v=0.15';
 
-const VERSION = '0.14';
+const VERSION = '0.15';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -91,17 +91,17 @@ let choice = store.get('car', 'gti');
 if (!SPECS.find(s => s.id === choice)) choice = 'gti';
 let cars = [], player = null, group = [];
 const meshes = new Map();
-// how much help: Beginner brakes for you and steers you off the Armco, Intermediate steps in only when you are far
-// too fast or nearly on the rail, Expert is the bare car. The numbers are in cars.json (race.modes). Each mode keeps
+// how much help: Intermediate, where everyone starts, brakes for you when you are far too fast and nudges you off the
+// rail, Expert is the bare car (a Beginner mode that did more was dropped in 0.15: the owner found Intermediate the
+// right way in). The numbers are in cars.json (race.modes). Each mode keeps
 // its own best laps; Expert keeps the ones from before there were modes. The pro always drives Expert.
-const MODES = RV.modes, MODE_NAME = { beginner: 'Beginner', intermediate: 'Intermediate', expert: 'Expert' };
+const MODES = RV.modes, MODE_NAME = { intermediate: 'Intermediate', expert: 'Expert' };
 const MODE_NOTE = {
-  beginner: 'Brakes for you when you come in too fast and steers you off the Armco. The walls and the grass hardly slow you.',
   intermediate: 'Brakes for you only when you are far too fast, and nudges you off the Armco. Hitting it costs a little.',
   expert: 'No help. The Armco and the grass cost what they cost, the way the pro drives it.'
 };
-let mode = store.get('mode', 'beginner');
-if (!MODES[mode]) mode = 'beginner';
+let mode = store.get('mode', 'intermediate');
+if (!MODES[mode]) mode = 'intermediate';   // anyone who had Beginner picked starts on Intermediate
 // times on the real lap (from 0.8) are kept apart from those on the hand-traced one before it, which was a different
 // length: `lap2.` in front of the old keys, which stay in the browser untouched
 // every other track keeps its own, under its id

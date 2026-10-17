@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.113 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.14. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.114 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.15. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.114
+- Ring Kart 0.15 (a smooth best line again, and Intermediate the way in). The home card says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.113
 - Ring Kart 0.14 (new fonts, new controls). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
@@ -655,6 +658,10 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.15
+- Fixed: the best line showed as zig-zag chevrons all over the Ring (the owner found it), and over Laguna and the Coast Road too. The passes added in 0.12 to swing the line wide through hairpins compared each point only with points 10 and 20 m away, so neighbouring points drifted apart into a sawtooth (841 of them on the Ring, up to 1.4 m). They now average over a window either side, and a last light smoothing ties neighbours together: no sawtooth on any track, the line still wide through hairpins, the pro still clean. A test checks it on every track.
+- Beginner is gone: the owner found Intermediate the right way in. Intermediate is where everyone starts (anyone who had Beginner picked is moved to it), and Expert is the bare car.
 
 ### 0.14
 - New type: Racing Sans One for the big words and Bungee for the numbers and labels, chosen by the owner from five pairings set in the game's own words, in place of Shrikhand and Righteous, which made it look generic. Names painted on signs and over cars shrink to fit, since Bungee is wide; the phone's pedal buttons and strip label are sized for it.
