@@ -7,7 +7,7 @@
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Righteous&family=Shrikhand&display=swap">
-<link rel="stylesheet" href="style.css?v=0.4">
+<link rel="stylesheet" href="style.css?v=0.5">
 </head>
 <body>
 
@@ -32,6 +32,8 @@
       <div class="prompt" id="prompt" hidden></div>
       <div class="note" id="note"><canvas id="noteArrow" width="120" height="120" aria-hidden="true"></canvas><div><b id="noteTxt"></b><span id="noteDist"></span></div></div>
       <div class="brakecue" id="brakecue">Brake!</div>
+      <div class="coach" id="coach"><b id="coachTxt">Gas</b><span id="coachV"></span></div>
+      <div class="protag" id="protag"></div>
       <div class="tele" id="tele">
         <canvas class="map" id="map" width="300" height="240" aria-label="Map of the lap"></canvas>
         <div class="gs">
@@ -54,12 +56,13 @@
     <div class="panel pick" id="pick">
       <h2>Pick your car</h2>
       <div class="cars" id="cars"></div>
-      <button class="primary" id="go">Join the queue</button>
+      <div class="row"><button class="primary" id="go">Join the queue</button><button id="watch">Watch a pro lap</button></div>
       <div class="keymap" aria-label="Controls">
         <span><kbd>↑</kbd>Gas</span><span><kbd>←</kbd><kbd>→</kbd>Steer</span><span><kbd class="wide">Space</kbd>Brake</span><span><kbd class="wide">Shift</kbd>Drift</span>
         <span><kbd>↓</kbd>Reverse</span><span><kbd>E</kbd>Horn</span><span><kbd>Q</kbd>Look back</span><span><kbd>C</kbd>Camera</span>
+        <span><kbd>L</kbd>Best line</span><span><kbd>R</kbd>Back on road</span>
       </div>
-      <button id="gasMode" aria-pressed="false" title="G switches it during the race">Gas: hold Up</button>
+      <div class="row switches"><button id="gasMode" aria-pressed="false" title="G switches it during the race">Gas: hold Up</button><button id="lineMode" aria-pressed="false" title="L switches it during the race">Best line: off</button></div>
       <p class="keys-line">Right hand on the arrows, left thumb on Space, little finger on Shift. WASD works too, and a gamepad. With the gas always on you only steer, brake and drift.</p>
     </div>
 
@@ -67,7 +70,7 @@
       <h2 id="resTitle">At the gantry</h2>
       <p class="restime" id="resTime"></p>
       <ol class="order" id="resOrder"></ol>
-      <div class="row"><button class="primary" id="again">Go again</button><button id="change">Change car</button></div>
+      <div class="row" id="resRow"></div>
     </div>
 
     <div class="panel paused" id="paused" hidden>
@@ -77,9 +80,12 @@
 
     <div class="touch" id="touch" hidden>
       <div class="lr"><button data-k="left" aria-label="Steer left">◀</button><button data-k="right" aria-label="Steer right">▶</button></div>
-      <div class="pedals"><button data-k="drift" class="drift">Drift</button><button data-k="brake">Brake</button><button data-k="gas" class="gas">Gas</button></div>
+      <div class="pedals"><button data-k="drift" class="drift">Drift</button><button data-k="brake" class="brake">Brake</button><button data-k="gas" class="gas">Gas</button></div>
+      <div class="extras"><button data-act="cam">Camera</button><button data-act="line" id="touchLine">Line</button><button data-act="horn">Horn</button><button data-act="reset">Reset</button></div>
     </div>
 
+    <button class="corner-btn stop" id="proStop">Stop</button>
+    <div class="toast" id="toast" hidden></div>
     <button class="corner-btn" id="sound" aria-pressed="true" title="Sound (M)">Sound on</button>
     <button class="corner-btn full" id="full" title="Full screen (F)">Full screen</button>
     <div class="loading" id="loading">Building the Eifel</div>
@@ -99,6 +105,6 @@
 </main>
 
 <footer class="version">Ring Kart <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.4"></script>
+<script type="module" src="src/main.js?v=0.5"></script>
 </body>
 </html>

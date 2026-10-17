@@ -96,6 +96,20 @@ const { open, openPage } = require('./harness');
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);
     if (p.page) await p.page.close();
   }
+  // Ring Kart's pro lap last, on a page of its own: the pro drives the best line from the barrier to the gantry,
+  // clean. It is the heaviest thing the check does, so nothing else loads after it in this browser.
+  const pp = await openPage(browser, srv, 'ring-kart/', () => !!window.ringKart).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+  errors.push(...pp.errors.map(e => `ring-kart/ (pro lap): ${e}`));
+  if (pp.page) {
+    const pro = await pp.page.evaluate(() => {
+      const k = window.ringKart; k.watch(); let n = 0, grass = 0;
+      while (k.S.mode === 'pro' && n++ < 100) { k.run(4); if (k.player.grass) grass++; }
+      return { mode: k.S.mode, time: k.player.time, grass, car: k.player.spec.name };
+    });
+    if (pro.mode !== 'proDone' || pro.grass) errors.push(`ring-kart/: the pro lap did not finish clean (${pro.mode}, ${pro.grass} checks on the grass)`);
+    else console.log(`ring-kart/ the pro laps the ${pro.car} in ${pro.time.toFixed(1)} s on the best line.`);
+    await pp.page.close();
+  }
   console.log('ERRORS:', errors);
   await close();
   process.exit(errors.length ? 1 : 0);

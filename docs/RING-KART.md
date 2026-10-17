@@ -1,6 +1,6 @@
 # Ring Kart
 
-A kart-style race round the Nürburgring Nordschleife in real cars, drawn like a 1970s Saturday-morning cartoon. Version 0.4 (site 0.99), live at `/ring-kart/`. You start outside the Ring in the Touristenfahrten queue behind Porsches, GTIs and a few fun old cars, tap your ticket at the barrier, and race the cars that went in ahead of you to the gantry.
+A kart-style race round the Nürburgring Nordschleife in real cars, drawn like a 1970s Saturday-morning cartoon. Version 0.5 (site 0.100), live at `/ring-kart/`. You start outside the Ring in the Touristenfahrten queue behind Porsches, GTIs and a few fun old cars, tap your ticket at the barrier, and race the cars that went in ahead of you to the gantry.
 
 This file is the whole reference for the project: what it is, how it is put together, the API of each module, the design system, how it was built and why it is the way it is, and recipes for building on it. The site-wide rules (static files, version stamps, plain copy, one commit per version, the checks) are in `CLAUDE.md` and `docs/ARCHITECTURE.md`; Ring Kart follows all of them.
 
@@ -28,7 +28,11 @@ This file is the whole reference for the project: what it is, how it is put toge
 2. **The queue**: four rivals ahead of you, two fast cars (a GT3 RS and an AMG GT R) behind. The barrier lifts for one car every 2 s and the queue creeps up. At the front, Space, Enter, a tap or the A button lifts it for you.
 3. **The race**: six rivals (two already through the gate) and the two chasers, through 22 slow cars doing the lap at their own pace and keeping right. Position counts who is furthest round; the clock runs from your barrier to the gantry, the real "bridge to gantry" time.
 4. **On the way**: position top left; the gaps to the car ahead and behind top right; the pace note top centre (the next corner, Left or Right 1 to 6, and how far) with BRAKE when you are too quick for it; corner names as you reach them; and along the bottom the onboard telemetry strip, after the broadcast laps: the map, gear and speed, the revs on an arc with a shift light, brake and gas bars, the clock in hundredths, the drift and turbo charge, and the height of the lap lit as far as you have come.
-5. **The gantry**: your time, your place, the order with each car's time, and a new best per car if you set one.
+5. **The gantry**: your time, your place, the order with each car's time, a new best per car if you set one, and how far off the pro you were once you have watched the pro in that car.
+
+**Watch a pro lap** (on the car picker, and after every race): your car alone on the lap, driven by the pro on the best line at the best speeds from the barrier to the gantry, filmed by a director who cuts between cameras like a TV broadcast: a fixed camera on the outside of each tight corner that turns and zooms to hold the car as it passes (with a whoosh), the helicopter on the long straights, low tracking shots beside the car, in front of it, behind it and on the bonnet, slow motion off every jump, and a camera past the gantry for the finish, in slow motion. The telemetry, the pace notes, the corner names and the best line run throughout. C switches between the director, behind and the bonnet; L hides the line; Esc or Stop ends it. At the end: the pro's time, then Drive it yourself (with the line on), Watch again, or Change car.
+
+**The best line** (a switch on the picker, L, or Line on a phone): the pro's line painted on the road as inked chevrons, each stretch coloured for what your feet should be doing there: green gas, yellow coast, orange brake, red brake hard. A coach sticker on the left says the same a moment ahead, with the speed the line carries there. The colours are worked out for the car you pick, so they always match the pro in that car.
 
 Controls, chosen so a lap that is all gas and brake sits under two hands:
 
@@ -42,11 +46,12 @@ Controls, chosen so a lap that is all gas and brake sits under two hands:
 | E | Horn; slow traffic just ahead pulls over |
 | Q | Look back, while held |
 | G | Gas always on (also a switch on the picker) |
-| C | Camera: behind, high, on the bonnet |
+| C | Camera: behind, high, on the bonnet (on the pro lap: the director, behind, the bonnet) |
+| L | The best line and the coach, on or off |
 | R | Back on the road |
 | Esc or P, M, F | Pause, mute, full screen |
 
-A gamepad works (stick, triggers, A for the ticket, bumpers or B to drift, Start to pause), and on a touch screen there are on-screen buttons. The mouse and touchpad are deliberately not used to steer: a kart game wants steering, gas and drift held at once, which a touchpad cannot do, and dragging a mouse to steer is tiring over three minutes.
+A gamepad works (stick, triggers, A for the ticket, bumpers or B to drift, Start to pause). On a touch screen: Left and Right under the left thumb; under the right thumb a pedal block, Drift over Brake with a tall Gas beside them; small buttons down the right for the camera, the line, the horn and a reset; tap the picture to tap your ticket. The buttons show only while you drive (on the pro lap only Camera and Line), and the stage fills the screen and scrolls into view when you start. The mouse and touchpad are deliberately not used to steer: a kart game wants steering, gas and drift held at once, which a touchpad cannot do, and dragging a mouse to steer is tiring over three minutes.
 
 ## 2. Architecture
 
@@ -58,7 +63,7 @@ Ring Kart is a static page with no build step: plain JavaScript modules, two JSO
   browser       src/scene.js         the 3D world and cars (Three.js)      src/audio.js   the synthesized sound
                      │                                                           │
   pure          src/track.js         the road from the points               src/drive.js   physics, AI, gearbox
-  (Node too)         │                                                           │
+  (Node too)         │                src/line.js  the best line, its speeds and phases, the pro    │
   data          data/track.json      the traced lap, build settings          data/cars.json the cars, the race rules
 ```
 
@@ -95,6 +100,16 @@ Units and coordinates: metres and seconds throughout; speeds in game m/s (times 
 | `driveAI(car, dt, track, cars, opts)` | Sets `car.input` for an AI car: speed from `cornerSpeed`, a line (the inside of what is coming for racers, the right for traffic), passing on the left. `opts.paceScale` is the rubber band |
 | `revs(car)`, `REDLINE` | The gearbox the dials and the engine note share: six gears over the top speed, `{ gear, rpm }` |
 
+### `src/line.js` (pure)
+
+| Export | What it does |
+|---|---|
+| `racingPath(track, margin)` | The best line, the same for every car: a sideways offset per sample. Starts on the centre line and repeatedly pulls each point toward the middle of its neighbours (at reaches of 60, 32, 16 and 8 m), kept `margin` (1.2 m) inside the road edge, so it settles into out, apex, out. Stays central through the queue and the gate |
+| `lineFor(track, lat, spec, pace)` | For one car: the line's curvature (over 24 m, and over 8 m where a corner is genuinely tight, so hairpins are not averaged away), the speed it can carry at each point (`pace` of its grip, 1.0 for the pro), a forward pass for accelerating out of each corner and a backward pass for braking into it, both from the car's own figures and `step`'s drag and hill terms, from a standstill. Each point gets a phase (`PHASE`: gas, coast, brake, hard), braking zones graded by how much speed they shed. Returns `{ lat, v, vc, phase, kap, ks, hd, x, z }` |
+| `drivePro(car, dt, track, line)` | The pro: steers for the line's own curvature (feed-forward) and corrects for its distance and heading off the line; holds the line's speed a moment ahead; never brakes at a standstill (that would be reverse) |
+
+The pro laps every player car without touching the grass or the Armco, within a few metres of the line, quicker than the AI (the GTI in 3:32, the GT3 RS in about 3:08).
+
 ### `src/scene.js` (browser, Three.js)
 
 | Export | What it does |
@@ -103,6 +118,7 @@ Units and coordinates: metres and seconds throughout; speeds in game m/s (times 
 | `buildSky()`, `HORIZON` | The sky dome, the striped sun, the painted hills, the clouds; follows the camera. `HORIZON` is the fog colour |
 | `carMesh(body)` | A car from its `body` (section 7). The group carries `wheels` (to spin), `tail` (the brake-light material) and `ink` (the outline, hidden on the bonnet camera) |
 | `label(text)` | The name sprite over a car |
+| `buildLine(track, lat)`, `PHASE_COLOURS` | The best line painted on the road, a ribbon of inked chevrons; `paint(phase)` recolours it for a car |
 | `PAL`, `setInkFog(fog)` | The palette, and the fog the ink outline fades into |
 
 ### `src/audio.js` (browser, Web Audio)
@@ -111,7 +127,7 @@ Units and coordinates: metres and seconds throughout; speeds in game m/s (times 
 
 ### `src/main.js` (the page)
 
-Marked sections: data, 3D, particles, cars, the session, the car picker, input, the gate, the loop, drawing (and the camera), HUD, pace notes, sound, size. For the checks, `window.ringKart` exposes `VERSION`, `track`, `S`, `cars`, `player`, `keys`, `start()`, `ticket()`, `autopilot(on)` and `run(seconds)`, which steps the game without drawing so a whole lap takes a few seconds.
+Marked sections: data, 3D, particles, cars, the session, the car picker, input, the gate, the loop, the pro lap, drawing (and the camera), the director, HUD, pace notes and the coach, sound, size. For the checks, `window.ringKart` exposes `VERSION`, `track`, `S`, `cars`, `player`, `line`, `shot` (the director's current shot), `keys`, `start()`, `watch()`, `ticket()`, `autopilot(on)` and `run(seconds)`, which steps the game without drawing so a whole lap takes a few seconds.
 
 ## 4. The data model
 
@@ -121,9 +137,9 @@ Marked sections: data, 3D, particles, cars, the session, the car picker, input, 
 
 **A car at run time** (`makeCar`): position `x, y, z`, heading `h`, speed `v`, vertical speed `vy`, place on the road `k`, `s` (metres along) and `lat`; state `air`, `drift` (`{ dir, t }` or null), `boost`, `slipT`, `grass`, `scrape`, `landed`, `bump`, `slide`, `pitch`, `roll`; `input` `{ steer, gas, brake, drift }`. The page adds `role` (player, rival, chaser, traffic), `released`, `releasedAt`, `done`, `time`, `hidden`; the AI adds `ai` and, after a honk, `yieldT`.
 
-**The session** (`S` in `main.js`): `mode` (pick, queue, race, done), the clock `t`, the `queue`, the barrier, `raceStart` and `raceT`, the finishers, the corner banner, the camera mode, pause.
+**The session** (`S` in `main.js`): `mode` (pick, queue, race, done, pro, proDone), `timeScale` (slow motion on the pro lap), the clock `t`, the `queue`, the barrier, `raceStart` and `raceT`, the finishers, the corner banner, the camera mode, pause.
 
-**Kept in the browser** (`localStorage`, prefix `ringkart.`, every read and write in try/catch): `car` (the last pick), `best.<car id>`, `sound`, `autoGas`.
+**Kept in the browser** (`localStorage`, prefix `ringkart.`, every read and write in try/catch): `car` (the last pick), `best.<car id>`, `pro.<car id>` (the pro's time, once watched), `sound`, `autoGas`, `line`.
 
 ## 5. The lap
 
@@ -186,7 +202,8 @@ The theme is a 1970s Saturday-morning cartoon (the Hanna-Barbera and Tom and Jer
 
 ## 9. The page: session, input, camera, HUD, sound
 
-- **Session** (`setup`, `release`, `queueStep`, `tick`, `result`): `pick` (the camera circles your car), `queue` (the barrier releases one car every `race.release` seconds once the arm is down; you creep up and tap your ticket at the front), `race`, `done` (your car coasts, the result comes up after 1.6 s).
+- **Session** (`setup`, `release`, `queueStep`, `tick`, `result`): `pick` (the camera circles your car), `queue` (the barrier releases one car every `race.release` seconds once the arm is down; you creep up and tap your ticket at the front), `race`, `done` (your car coasts, the result comes up after 1.6 s). The pro lap (`startPro`, `proTick`, `proResult`) is `pro` then `proDone`: your car alone, the barrier up, `drivePro` at the wheel; the loop slows time to 0.3 while the car is in the air and to 0.45 for two seconds after the gantry.
+- **The director** (`director`): picks a shot when the last one ends (in game time, so slow motion stretches a shot): `trackside` before the next corner of grade 3 or tighter (it also cuts early to one once a shot has run 2 s), `jump` the moment the car leaves the ground, `finish` 140 m from the gantry, and otherwise `heli`, `front` or `low` on straights and `chase`, `low`, `bonnet`, `front` or `heli` elsewhere, never the same twice running. Fixed cameras zoom to hold the car's size in frame. About 60 cuts a lap.
 - **Input** (`readInput`): keys, touch buttons and the gamepad are read every physics step. Digital steering is eased (`wheel.v`), the brake comes on over a tenth of a second, Space never reverses, and with the gas always on the car drives forward unless you brake.
 - **Camera** (`camera3`): behind (7.2 m back, 2.8 m up), high (13 m, 5 m) and bonnet (just behind the windscreen; on a tall phone screen at the nose). Q turns it round. The field of view widens with speed and a turbo; landings and bumps shake it, and on the bonnet the road shudders through it.
 - **HUD** (`hud`, `paceNotes`, `drawTach`): the map and the height profile are drawn once to an offscreen canvas and the cars dotted on every frame; the dials ease toward the gearbox and the pedals; text updates about ten times a second.
@@ -205,7 +222,8 @@ The theme is a 1970s Saturday-morning cartoon (the Hanna-Barbera and Tom and Jer
 | Run | Proves |
 |---|---|
 | `node --test tools/test/ring-kart.test.js` | the lap is the real length at the game scale with its corners in order; every player car drives the whole lap on the AI in Node, and the GT3 RS beats the Volvo |
-| `node tools/smoke.js` | the page loads with no errors, the stamps agree, and a car queues, goes through the gate and is 300 m or more down the road 20 s later on autopilot |
+| `node --test tools/test/ring-kart.test.js` (third test) | the best line stays on the road; in every player car every phase appears and the pro laps without grass or Armco, within 6 m of the line, quicker than the AI |
+| `node tools/smoke.js` | the page loads with no errors, the stamps agree, and a car queues, goes through the gate and is 300 m or more down the road 20 s later on autopilot; then, last and on a page of its own (it is the heaviest thing the check does), the pro laps the GTI clean |
 
 For a change to the look, take screenshots: a short Playwright script that opens the page, calls `ringKart.start()`, drives with `ringKart.run()` and `autopilot(true)`, and screenshots `#stage` in each camera at desktop and phone widths (swiftshader works headless). Every look change in 0.2 to 0.4 was checked this way, and it caught real bugs: trees drawn black, headlights hidden inside the bodywork, and the bonnet camera inside the ink outline.
 
@@ -218,6 +236,8 @@ Each version was one session's work and one commit; the changelog has the detail
 - **0.3 (site 0.97)**: cars drawn from side views per style instead of boxes, merged into a few draw calls; eased keyboard steering.
 - **0.4 (site 0.99)**: the controls rethought around a lap that is all gas and brake (Up for gas, Space to brake, Shift to drift), pace notes and a BRAKE cue from the AI's own corner speeds (split out of `driveAI` unchanged, so the AI drives exactly as before), gas always on, a horn, look back; and the 70s cartoon look, replacing the realistic one.
 
+- **0.5 (site 0.100)**: the pro lap and the best line, from one new pure module (`line.js`), so what you are shown and what the pro drives cannot disagree; the director's cut; and the phone fixed after a screenshot from a real phone (buttons overlapping each other and the prompt, the corner buttons under the thumbs). Found on the way: the pro reversed off the start (a brake pedal at a standstill is reverse), a speed profile that braked for wiggles in the tracing (curvature measured over too short a span), and the gas switch, which did nothing until you picked a car.
+
 Decisions worth keeping:
 
 - **Arcade, not simulation.** The lap is a third of real length and the handling is a kart game's, because the point is three fun minutes, not a lap-time model. A real-car mode against real lap times is the next big step (section 14) and will sit beside the arcade game, not replace it.
@@ -225,6 +245,7 @@ Decisions worth keeping:
 - **One Three.js.** Ring Kart imports Cathedral Lab's vendored copy rather than adding its own, so the site has one copy, one licence and one version to upgrade.
 - **Keyboard and gamepad, not mouse.** See the controls above.
 - **Pure physics.** It costs nothing and buys tests that drive every car round the lap in Node in a fraction of a second.
+- **One line, two uses.** The pro drives the same line and speeds the player is shown, so the line is honest: if you follow the colours you are doing what the pro does. The line is computed in the browser at load (about 15 ms) rather than stored, so it follows any change to the lap or the cars.
 - **Not seeded.** Races vary on purpose. If replays or ghosts need exact repeats, seed the queue and replace `Math.random` in the physics path first (the particles can keep it).
 
 ## 13. How to build on it
@@ -232,6 +253,10 @@ Decisions worth keeping:
 **Add a car.** Add it to `player`, `rivals`, `chasers` or `traffic` in `data/cars.json` with its real length, width and height and a style. A player car needs an `id` and a `note`; the picker and the best times pick it up. Run the Ring Kart test (it drives every player car round the lap), then look at it in the picker.
 
 **Add a body style.** Add an entry to `STYLE` in `scene.js`: the `top` line, the `cab` (four points, or `null`), the `wheels`, and optionally `b` and `panel`. Keep the wings clear of the arches (the builder raises them, but a very low bonnet line over a big wheel will look odd). Check it in a lineup: render every car side by side from a scratch page that imports `carMesh`.
+
+**Tune the best line or the pro.** The road margin and the reaches are in `racingPath`, the pace, the braking share and the phase thresholds in `lineFor`, the steering gains in `drivePro`. Run the third Ring Kart test after any change: it fails if the pro leaves the road, drifts off its line or stops beating the AI.
+
+**Add a director shot.** Add a branch in `director` that sets `want`, `look`, `fov` and `ease` for the shot, and a rule for when to `cut` to it. A fixed camera sets `D.pos` once at the cut; a moving one is placed relative to the car every frame.
 
 **Tune the handling.** Change the numbers in `cars.json` (a car's figures or the `race` block), never constants in `drive.js`. Run the test: if a car can no longer finish a lap on the AI, the change went too far.
 
@@ -249,7 +274,7 @@ Decisions worth keeping:
 
 ## 14. Limits and what comes next
 
-The roadmap (`docs/ROADMAP.md`) has the order. In short: real cars against real lap times (a model of each car from its power, weight, grip and aero, checked against the official times below); the real line from OpenStreetMap and an elevation model; a ghost of your best lap and a time trial; and fewer trees and a coarser ground on small phones. Known limits today: the lap's corner radii are approximate; the race is not replayable; a rescue (R) puts you back within 3 m of the centre line without checking for traffic.
+The roadmap (`docs/ROADMAP.md`) has the order. In short: real cars against real lap times (a model of each car from its power, weight, grip and aero, checked against the official times below); the real line from OpenStreetMap and an elevation model; a ghost of your best lap and a time trial; and fewer trees and a coarser ground on small phones (in the software renderer the 70s world draws at about 2.5 frames a second, so a real GPU is doing a lot of work). Known limits today: the lap's corner radii are approximate; the race is not replayable; a rescue (R) puts you back within 3 m of the centre line without checking for traffic.
 
 ## 15. Real lap times
 

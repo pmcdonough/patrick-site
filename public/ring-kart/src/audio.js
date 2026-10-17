@@ -1,7 +1,7 @@
 // The sound, made in the browser: an engine from two oscillators through a filter that opens with the throttle, the
 // tyres squealing in a drift, wind that rises with speed, a whoosh for a mini-turbo, a thud for a bump, and the beep
 // of the barrier. Nothing plays until the first click or key, as browsers require.
-import { revs } from './drive.js?v=0.4';
+import { revs } from './drive.js?v=0.5';
 export class Sound {
   constructor() { this.on = true; this.ctx = null; this.rpm = 900; this.lastBoost = 0; this.lastBump = 0; }
   start() {
@@ -46,6 +46,8 @@ export class Sound {
       o.connect(lp); lp.connect(g); g.connect(this.master); o.start(t + d); o.stop(t + d + 0.35);
     }
   }
+  // a car going past a trackside camera
+  whoosh() { this.burst('bandpass', 700, 0.9, 0.55); this.burst('highpass', 2400, 0.5, 0.2); }
   beep() { this.tone(880, 0.18, 0.12); this.tone(1320, 0.3, 0.12, 0.2); }
   finish() { [660, 880, 1100, 1320].forEach((f, i) => this.tone(f, 0.25, 0.1, i * 0.12)); }
   update(car, mode, dt) {

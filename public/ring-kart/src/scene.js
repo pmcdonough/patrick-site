@@ -4,7 +4,7 @@
 // view to its own proportions, with racing stripes. Everything is cel-shaded (three flat bands of light, no gradients)
 // and the cars and trees carry a brown ink outline. Three.js r128, the copy Cathedral Lab keeps on the site.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.11';
-import { pointAt } from './track.js?v=0.4';
+import { pointAt } from './track.js?v=0.5';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.
 const col = c => new THREE.Color(c).convertSRGBToLinear();
@@ -194,6 +194,37 @@ export function buildSky() {
   return grp;
 }
 
+// The best line, painted on the road: a ribbon of inked chevrons along the line, each stretch in the colour of what
+// your feet should be doing there. The page repaints it for each car (`paint(phase)`), since a slower car brakes
+// later and less; the line itself is the same for every car.
+export const PHASE_COLOURS = ['#8ccf3f', '#f6d23c', '#ec6f2b', '#d8402b'];   // gas, coast, brake, hard brake
+export function buildLine(track, lat) {
+  const n = track.n, pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), colours = new Float32Array(n * 6), idx = [];
+  for (let k = 0; k < n; k++) {
+    const l = pointAt(track, k, lat[k] - 0.55), r = pointAt(track, k, lat[k] + 0.55);
+    pos.set([l.x, l.y + 0.05, l.z, r.x, r.y + 0.05, r.z], k * 6);
+    const v = k * track.ds / 3.2; uv.set([0, v, 1, v], k * 4);
+    if (k) { const q = (k - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.BufferAttribute(colours, 3)); g.setIndex(idx);
+  // a chevron pointing up the road, white so the vertex colour shows through, with an ink edge, on a faint band
+  const tex = canvas(64, 64, (c, w, h) => {
+    c.clearRect(0, 0, w, h); c.fillStyle = 'rgba(255,255,255,0.4)'; c.fillRect(0, 0, w, h);
+    c.beginPath(); c.moveTo(6, 10); c.lineTo(w / 2, 40); c.lineTo(w - 6, 10); c.lineTo(w - 6, 26); c.lineTo(w / 2, 56); c.lineTo(6, 26); c.closePath();
+    c.fillStyle = '#ffffff'; c.fill(); c.strokeStyle = PAL.ink; c.lineWidth = 4; c.lineJoin = 'round'; c.stroke();
+  });
+  tex.wrapT = THREE.RepeatWrapping;
+  const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, vertexColors: true, transparent: true, depthWrite: false, fog: true }));
+  mesh.renderOrder = 2; mesh.visible = false;
+  const c = new THREE.Color();
+  const paint = phase => {
+    for (let k = 0; k < n; k++) { c.set(PHASE_COLOURS[phase[k]]).convertSRGBToLinear(); colours.set([c.r, c.g, c.b, c.r, c.g, c.b], k * 6); }
+    g.attributes.color.needsUpdate = true;
+  };
+  return { mesh, paint };
+}
+
 // A strip along the road between two sideways offsets; uv(k, side) gives texture coordinates.
 function ribbon(track, offs, lift, uv, a = 0, b = track.n - 1) {
   const cnt = b - a + 1, pos = new Float32Array(cnt * 6), uvs = new Float32Array(cnt * 4), idx = [];
@@ -276,9 +307,9 @@ function hills(track) {
 function forest(spots) {
   // a spruce: tiers of branches that hang down and out, narrowing to a point
   const prof = [[0.3, 2], [2.9, 3.2], [1.1, 3.6], [2.5, 5.6], [0.9, 6], [2.0, 8], [0.7, 8.4], [1.4, 10.4], [0.45, 10.8], [0.8, 12.4], [0, 14]];
-  const pine = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 9); pine.translate(0, -1.2, 0);
+  const pine = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 7); pine.translate(0, -1.2, 0);
   // a lollipop tree, the cartoon broadleaf: a ball of leaves on a stick
-  const leaf = new THREE.SphereGeometry(3.3, 12, 9); leaf.scale(1, 1.12, 1); leaf.translate(0, 6.2, 0);
+  const leaf = new THREE.SphereGeometry(3.3, 9, 7); leaf.scale(1, 1.12, 1); leaf.translate(0, 6.2, 0);
   const trunk = new THREE.CylinderGeometry(0.32, 0.45, 3.4, 6); trunk.translate(0, 1.7, 0);
   inkNormals(pine); inkNormals(leaf);
   const nP = spots.filter(s => s[3] < 0.62).length, nL = spots.length - nP;
@@ -356,7 +387,9 @@ function board(name) {
     g.fillStyle = PAL.brown; g.font = `${name.length > 14 ? 44 : 56}px Shrikhand, "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, w / 2, h / 2 - 14);
   });
   const grp = new THREE.Group();
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2), new THREE.MeshToonMaterial({ gradientMap: RAMP, map: t, side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 })); face.position.y = 3.2; grp.add(face);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2), new THREE.MeshToonMaterial({ gradientMap: RAMP, map: t, transparent: true, alphaTest: 0.5 })); face.position.y = 3.2; grp.add(face);
+  // the back of the board: plain brown, so the name does not read backwards from the other side
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(6.3, 1.9), toon({ color: PAL.brown })); back.position.set(0, 3.2, -0.02); back.rotation.y = Math.PI; grp.add(back);
   for (const x of [-2.6, 2.6]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 6), new THREE.MeshToonMaterial({ gradientMap: RAMP, color: col(0x6b3e1e) })); p.position.set(x, 1.6, -0.05); grp.add(p); }
   return grp;
 }

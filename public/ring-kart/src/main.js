@@ -4,12 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.11';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.4';
-import { makeCar, step, collide, driveAI, revs, REDLINE, cornerSpeed, nextCorner } from './drive.js?v=0.4';
-import { buildWorld, buildSky, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.4';
-import { Sound } from './audio.js?v=0.4';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.5';
+import { makeCar, step, collide, driveAI, revs, REDLINE, cornerSpeed, nextCorner } from './drive.js?v=0.5';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.5';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.5';
+import { Sound } from './audio.js?v=0.5';
 
-const VERSION = '0.4';
+const VERSION = '0.5';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -48,6 +49,9 @@ scene.add(sun, sun.target);
 // the signs and the names over the cars are painted with the page's 70s fonts, so wait for them (but not for long)
 await Promise.race([Promise.all(['56px Shrikhand', '44px Righteous'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
 const world = buildWorld(scene, track);
+// the best line: one path for every car, its speeds and phases for the car you pick
+const PATH = racingPath(track), lineMesh = buildLine(track, PATH); scene.add(lineMesh.mesh);
+let LINE = null;
 const gate = world.gate;
 $('loading').hidden = true;
 
@@ -113,6 +117,8 @@ function setup() {
     const c = addCar(T[i % T.length], Math.round(s / track.ds), track.width * 0.22, 'traffic'); c.v = T[i % T.length].vmax * 0.6; c.released = true;
   }
   group = cars.filter(c => c.role !== 'traffic');
+  LINE = lineFor(track, PATH, spec); lineMesh.paint(LINE.phase);
+  S.timeScale = 1;
   S.t = 0; S.lastRelease = -1.2; S.barrier = 0; S.barrierTarget = 0; S.raceStart = 0; S.raceT = 0; S.finished = []; S.resultShown = false; S.cornerName = ''; S.cornerT = 0; S.hint = 0;
   camInit = false;
 }
@@ -127,15 +133,20 @@ function picker() {
     <span class="sw" style="background:${s.body.color}"></span><b>${s.name}</b><p>${s.note}</p>
     <span class="bars"><span>Top speed</span><i style="--w:${(s.vmax / maxOf('vmax') * 100).toFixed(0)}%"></i><span>Acceleration</span><i style="--w:${(s.accel / maxOf('accel') * 100).toFixed(0)}%"></i><span>Grip</span><i style="--w:${(s.grip / maxOf('grip') * 100).toFixed(0)}%"></i><span>Drift</span><i style="--w:${(s.drift / maxOf('drift') * 100).toFixed(0)}%"></i></span>
     ${store.get('best.' + s.id, 0) ? `<p>Your best: ${fmt(store.get('best.' + s.id, 0))}</p>` : ''}</button>`).join('');
-  $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); picker(); setup(); setGasMode(autoGas);
-$('gasMode').onclick = () => setGasMode(!autoGas); });
+  $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); picker(); setup(); });
 }
 picker(); setup();
-$('go').onclick = () => { S.mode = 'queue'; S.t = 0; S.lastRelease = -1.2; $('pick').hidden = true; $('hud').hidden = false; sound.start(); cv.focus?.(); };
-$('again').onclick = () => { $('result').hidden = true; setup(); S.mode = 'queue'; $('hud').hidden = false; };
-$('change').onclick = () => { $('result').hidden = true; setup(); S.mode = 'pick'; $('pick').hidden = false; $('hud').hidden = true; picker(); };
+// on a phone the page scrolls; put the whole stage on screen when the driving starts
+const onStage = () => { if (innerWidth < 900 || touch) $('stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+const toRace = () => { $('result').hidden = true; $('pick').hidden = true; setup(); S.mode = 'queue'; S.t = 0; S.lastRelease = -1.2; hudFor('race'); sound.start(); cv.focus?.(); onStage(); };
+const toPick = () => { $('result').hidden = true; setup(); S.mode = 'pick'; $('pick').hidden = false; hudFor('pick'); picker(); };
+$('go').onclick = toRace;
+$('watch').onclick = () => { $('result').hidden = true; startPro(); onStage(); };
 $('resume').onclick = () => pause(false);
-$('restart').onclick = () => { pause(false); setup(); S.mode = 'queue'; };
+$('restart').onclick = () => { pause(false); if (S.mode === 'pro' || S.mode === 'proDone') toPick(); else toRace(); };
+$('proStop').onclick = () => { pause(false); toPick(); };
+// which HUD shows: none on the picker; the race HUD; the pro lap's (no position or gaps, a title bar instead)
+function hudFor(m) { $('hud').hidden = m === 'pick'; $('touch').hidden = !touch || m === 'pick'; $('hud').classList.toggle('pro', m === 'pro'); $('stage').classList.toggle('pro', m === 'pro'); }
 
 // ---------- input: keyboard, gamepad, touch ----------
 const keys = new Set();
@@ -146,9 +157,11 @@ addEventListener('keydown', e => {
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift'].includes(k) && S.mode !== 'pick') e.preventDefault();
   if (e.repeat) return;
   keys.add(k);
-  if (k === 'escape' || k === 'p') { if (S.mode === 'queue' || S.mode === 'race') pause(!S.paused); }
+  if (k === 'escape' && (S.mode === 'pro' || S.mode === 'proDone')) { pause(false); toPick(); return; }
+  if (k === 'escape' || k === 'p') { if (S.mode === 'queue' || S.mode === 'race' || S.mode === 'pro') pause(!S.paused); }
+  if (k === 'l') setLine(!lineOn());
   if (k === 'm') toggleSound();
-  if (k === 'c') S.camMode = (S.camMode + 1) % 3;
+  if (k === 'c') nextCamera();
   if (k === 'e' && player && S.mode === 'race') honk();
   if (k === 'g') setGasMode(!autoGas);
   if (k === 'f') full();
@@ -160,13 +173,26 @@ addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => keys.clear());
 document.addEventListener('visibilitychange', () => { if (document.hidden && (S.mode === 'race' || S.mode === 'queue')) pause(true); });
 const touch = matchMedia('(pointer: coarse)').matches;
-if (touch) $('touch').hidden = false;
-$('touch').querySelectorAll('button').forEach(b => {
+// the touch buttons show while you drive (or watch the pro, which keeps only the camera and line buttons)
+$('touch').querySelectorAll('[data-k]').forEach(b => {
   const on = v => { ctl[b.dataset.k] = v; b.classList.toggle('on', !!v); if (v && b.dataset.k !== 'drift' && S.mode === 'queue' && b.dataset.k === 'gas') ticket(); };
   b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); on(1); });
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => on(0));
 });
 cv.addEventListener('pointerdown', () => { if (S.mode === 'queue') ticket(); });
+// the small buttons on a touch screen for what the keyboard does with C, L, E and R
+$('touch').querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
+  const a = b.dataset.act;
+  if (a === 'cam') nextCamera(); if (a === 'line') setLine(!lineOn()); if (a === 'horn' && S.mode === 'race') honk(); if (a === 'reset' && S.mode === 'race') rescue();
+}));
+// C: behind, high, on the bonnet; on the pro lap, the director's cut, behind, on the bonnet
+const PRO_CAMS = ['The director', 'Behind', 'On the bonnet'];
+function nextCamera() {
+  if (S.mode === 'pro' || S.mode === 'proDone') { S.proCam = ((S.proCam || 0) + 1) % 3; toast(PRO_CAMS[S.proCam]); D.shot = null; }
+  else { S.camMode = (S.camMode + 1) % 3; toast(['Behind', 'High', 'On the bonnet'][S.camMode]); }
+}
+let toastT = 0;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 1300); }
 // The layout: right hand on the arrows (up for gas, left and right to steer, down to brake and reverse), left thumb on
 // Space for the brake, left little finger on Shift for the drift. WASD works too, for the other way round.
 // Keys and touch buttons are all or nothing; the wheel and the brake pedal are not. Steering eases toward the key you
@@ -198,6 +224,15 @@ function readInput(dt) {
   }
   return { steer: Math.max(-1, Math.min(1, steer)), gas, brake, drift };
 }
+// the best line on the road, and the coach saying what your feet should do; one switch for racing, kept in the
+// browser. The pro lap shows it unless you turn it off there.
+let showLine = store.get('line', false);
+function setLine(v) {
+  if (S.mode === 'pro' || S.mode === 'proDone') S.proLine = v; else { showLine = v; store.set('line', v); }
+  const b = $('lineMode'); b.setAttribute('aria-pressed', String(showLine)); b.textContent = showLine ? 'Best line: on' : 'Best line: off';
+  const t = $('touchLine'); if (t) t.classList.toggle('on', lineOn());
+}
+const lineOn = () => (S.mode === 'pro' || S.mode === 'proDone') ? S.proLine !== false : showLine && S.mode !== 'pick';
 function setGasMode(v) { autoGas = v; store.set('autoGas', v); const b = $('gasMode'); if (b) { b.setAttribute('aria-pressed', String(v)); b.textContent = v ? 'Gas: always on' : 'Gas: hold Up'; } }
 // the horn: slow traffic within a stone's throw ahead pulls over to the right and lets you by
 function honk() {
@@ -210,6 +245,11 @@ function rescue() {
   const p = pointAt(track, player.k, Math.max(-3, Math.min(3, player.lat)));
   Object.assign(player, { x: p.x, z: p.z, y: p.y + 0.5, vy: 0, h: p.h, v: Math.min(player.v, 12), air: true, drift: null });
 }
+
+// the switches on the picker, once their settings exist
+setGasMode(autoGas); setLine(showLine);
+$('gasMode').onclick = () => setGasMode(!autoGas);
+$('lineMode').onclick = () => setLine(!showLine);
 
 // ---------- the gate ----------
 function ticket() {
@@ -248,12 +288,17 @@ function frame(now) {
   requestAnimationFrame(frame);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (S.paused) { renderer.render(scene, camera); return; }
+  // slow motion on the pro lap: the car in the air off a crest, and the run under the gantry
+  const slow = S.mode === 'pro' && player.air && player.airT > 0.12 ? 0.3 : S.mode === 'proDone' && S.t - S.doneAt < 2 ? 0.45 : 1;
+  S.timeScale += (slow - S.timeScale) * Math.min(1, dt * (slow < S.timeScale ? 10 : 3));
+  dt *= S.timeScale;
   const steps = Math.ceil(dt / (1 / 120)); const h = dt / steps;
   for (let i = 0; i < steps; i++) tick(h);
   draw(dt);
 }
 function tick(dt) {
   S.t += dt;
+  if (S.mode === 'pro' || S.mode === 'proDone') { proTick(dt); return; }
   if (S.mode === 'queue' || S.mode === 'race' || S.mode === 'done') {
     queueStep(dt);
     // you
@@ -293,6 +338,50 @@ function tick(dt) {
   }
 }
 
+// ---------- the pro lap ----------
+// Your car alone on the lap, driven by the pro on the best line at the best speeds, from the barrier to the gantry,
+// filmed by a director cutting between cameras (see `director` below), in slow motion off the jumps.
+function startPro() {
+  clearCars();
+  const spec = SPECS.find(s => s.id === choice);
+  player = addCar(spec, track.gateAt - Math.round((3 + spec.body.len / 2) / track.ds), 0, 'player');
+  player.released = true; group = [player];
+  LINE = lineFor(track, PATH, spec); lineMesh.paint(LINE.phase);
+  Object.assign(S, { mode: 'pro', t: 0, raceT: 0, resultShown: false, cornerName: '', cornerT: 0, barrier: 0, barrierTarget: 1, lastRelease: 0, proStart: 1.2, proLine: true, proCam: 0, timeScale: 1, doneAt: 0 });
+  D.shot = null; camInit = false;
+  $('pick').hidden = true; $('result').hidden = true; hudFor('pro'); setLine(true);
+  $('protag').innerHTML = `<b>The pro</b> in the ${pretty(spec.name)}`;
+  sound.start(); sound.beep();
+}
+function proTick(dt) {
+  S.barrier += (S.barrierTarget - S.barrier) * Math.min(1, dt * 5);
+  gate.pivot.rotation.x = S.barrier * 1.35; gate.lamp.material.color.setHex(S.barrier > 0.5 ? 0x22ff66 : 0xff2a2a);
+  if (S.mode === 'pro' && S.t > S.proStart) drivePro(player, dt, track, LINE);
+  else if (S.mode === 'pro') player.input = { steer: 0, gas: 0, brake: 0, drift: false };   // waiting for the barrier; no brake, which at a standstill is reverse
+  else player.input = { steer: Math.max(-1, Math.min(1, -player.lat * 0.1)), gas: 0, brake: player.v > 1 ? 0.8 : 0, drift: false };
+  step(player, dt, track, R, []);
+  if (player.k >= track.n - 6) player.v = Math.min(player.v, 2);   // pull up before the end of the road
+  if (S.mode === 'pro') S.raceT = Math.max(0, S.t - S.proStart);
+  if (S.mode === 'pro' && player.s >= finishS) {
+    player.done = true; player.time = S.raceT; S.mode = 'proDone'; S.doneAt = S.t; sound.finish();
+    store.set('pro.' + choice, player.time);
+  }
+  if (S.mode === 'proDone' && !S.resultShown && S.t - S.doneAt > 2.4) proResult();
+}
+function proResult() {
+  S.resultShown = true;
+  const p = player, mine = store.get('best.' + choice, 0);
+  $('resTitle').textContent = 'The pro, bridge to gantry';
+  $('resTime').innerHTML = `${fmt(p.time)}<small>in the ${p.spec.name}, on the best line all the way.${mine ? ` Your best in it is ${fmt(mine)}, ${(mine - p.time).toFixed(1)} s off.` : ''} Turn on the best line to follow it: green is gas, yellow coast, orange brake, red brake hard.</small>`;
+  $('resOrder').innerHTML = '';
+  resultButtons([['Drive it yourself', () => { toRace(); setLine(true); }, true], ['Watch again', () => startPro()], ['Change car', toPick]]);
+  $('result').hidden = false; $('touch').hidden = true;
+}
+function resultButtons(list) {
+  const row = $('resRow'); row.innerHTML = '';
+  for (const [label, fn, primary] of list) { const b = document.createElement('button'); b.textContent = label; if (primary) b.className = 'primary'; b.onclick = fn; row.append(b); }
+}
+
 // ---------- drawing ----------
 const up = new THREE.Vector3(0, 1, 0);
 const TAIL_OFF = new THREE.Color(0xa3101c).convertSRGBToLinear(), TAIL_ON = new THREE.Color(4, 0.25, 0.25);
@@ -312,7 +401,8 @@ function draw(dt) {
   }
   for (const [c, m] of meshes) if (!c.hidden) for (const w of m.wheels) w.rotation.z -= c.v * dt / 0.33;
   const pm = meshes.get(player);
-  if (pm.ink) pm.ink.visible = S.camMode !== 2 || S.mode === 'pick';
+  // the camera sits inside your car's ink outline on the bonnet, so hide it there (the director sets its own)
+  if (pm.ink) pm.ink.visible = S.mode === 'pick' || ((S.mode === 'pro' || S.mode === 'proDone') ? S.proCam !== 2 : S.camMode !== 2);
   if (pm.flame) { pm.flame.visible = player.boost > 0; pm.flame.scale.set(1, 0.8 + Math.random() * 0.5, 1); }
   // effects behind your car
   if (S.mode !== 'pick') {
@@ -339,6 +429,9 @@ function draw(dt) {
 function camera3(dt) {
   const c = player, f = new THREE.Vector3(Math.cos(c.h), 0, Math.sin(c.h));
   let want, look;
+  const pro = S.mode === 'pro' || S.mode === 'proDone';
+  if (pro && !S.proCam) { director(dt); return; }
+  const camMode = pro ? [0, 0, 2][S.proCam] : S.camMode;
   if (S.mode === 'pick') {
     const a = S.t * 0.25;
     want = new THREE.Vector3(c.x + Math.cos(a) * 7.5, c.y + 3.4, c.z + Math.sin(a) * 7.5);
@@ -346,29 +439,98 @@ function camera3(dt) {
     camPos.copy(want); camLook.copy(look); camInit = true;
   } else {
     // behind, high, and on the bonnet: just behind the windscreen, low enough to see the nose ahead of you
-    const b = c.spec.body, onboard = S.camMode === 2;
-    const dist = [7.2, 13, -b.len * (camera.aspect < 1 ? 0.3 : 0.06)][S.camMode], ht = [2.8, 5, b.hgt * 0.8][S.camMode];
+    const b = c.spec.body, onboard = camMode === 2;
+    const dist = [7.2, 13, -b.len * (camera.aspect < 1 ? 0.3 : 0.14)][camMode], ht = [2.8, 5, b.hgt * 0.95][camMode];
     // Q looks back over your shoulder: the camera turns round, in front of the car
     const back = keys.has('q') && S.mode === 'race' ? -1 : 1;
     want = new THREE.Vector3(c.x, c.y + ht, c.z).addScaledVector(f, -dist * back + (back < 0 ? b.len * 0.2 : 0));
     look = new THREE.Vector3(c.x, c.y + (onboard ? b.hgt * 0.62 : 1.2), c.z).addScaledVector(f, (onboard ? 24 : 7) * back);
     const near = onboard ? 0.08 : 0.3; if (camera.near !== near) { camera.near = near; camera.updateProjectionMatrix(); }
     if (!camInit) { camPos.copy(want); camLook.copy(look); camInit = true; }
-    const k = S.camMode === 2 || back < 0 || S.wasBack ? 1 : 1 - Math.exp(-dt * 7); S.wasBack = back < 0;
-    camPos.lerp(want, k); camLook.lerp(look, S.camMode === 2 ? 1 : 1 - Math.exp(-dt * 12));
+    const k = camMode === 2 || back < 0 || S.wasBack ? 1 : 1 - Math.exp(-dt * 7); S.wasBack = back < 0;
+    camPos.lerp(want, k); camLook.lerp(look, camMode === 2 ? 1 : 1 - Math.exp(-dt * 12));
     // keep the camera above the ground it is over
     const g = track.y[Math.max(0, c.k - 4)] + 1.0;
-    if (camPos.y < g && S.camMode !== 2) camPos.y = g;
+    if (camPos.y < g && camMode !== 2) camPos.y = g;
   }
   camera.position.copy(camPos); camera.lookAt(camLook);
   sky.position.copy(camPos);
-  const shake = S.camMode === 2 ? 0.35 : 1;
+  const shake = camMode === 2 ? 0.35 : 1;
   if (c.landed > 0.2) camera.position.y += (Math.random() - 0.5) * c.landed * 0.25 * shake;
   if (c.bump > 0.2) camera.position.x += (Math.random() - 0.5) * c.bump * 0.3 * shake;
   // on the bonnet you feel the road: a little shudder that grows with speed, more on the grass
-  if (S.camMode === 2 && !c.air) camera.position.y += (Math.random() - 0.5) * Math.min(0.03, Math.abs(c.v) * 0.0006) * (c.grass ? 4 : 1);
+  if (camMode === 2 && !c.air) camera.position.y += (Math.random() - 0.5) * Math.min(0.03, Math.abs(c.v) * 0.0006) * (c.grass ? 4 : 1);
   const fov = 66 + Math.min(14, Math.max(0, c.v - 20) * 0.2) + (c.boost > 0 ? 6 : 0);
   camera.fov += (fov - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
+  sun.position.set(c.x + 60, c.y + 120, c.z + 40); sun.target.position.set(c.x, c.y, c.z);
+}
+
+// ---------- the director: how the pro lap is filmed ----------
+// Cuts between shots the way a TV director covers a race. Before a tight corner: a camera on the outside of the
+// apex, fixed, turning to follow the car and zooming to keep it the same size, with a whoosh as it passes. On a long
+// straight: the helicopter, or a camera tracking in front of the car. Off a jump: a low camera to the side, the car
+// flying past in slow motion. Otherwise: behind the car, low beside it, or on the bonnet. A shot lasts a few seconds.
+const D = { shot: null, t: 0, len: 0, last: '', pos: new THREE.Vector3(), side: 1, sAt: 0, whoosh: false };
+const V = () => new THREE.Vector3();
+function cut(shot, len) { D.shot = shot; D.t0 = S.t; D.t = 0; D.len = len; D.last = shot; D.whoosh = false; camInit = false; }
+// the next tight corner (a 3 or tighter) within reach, skipping the gentle ones on the way
+function tightAhead(k, reach) {
+  let at = k;
+  for (let i = 0; i < 6; i++) { const nc = nextCorner(track, at, reach - (at - k) * track.ds); if (!nc) return null; if (nc.grade <= 3) return { ...nc, dist: (nc.at - k) * track.ds }; at = nc.at + Math.max(3, Math.round(nc.len / track.ds)); }
+  return null;
+}
+function director(dt) {
+  const c = player, f = new THREE.Vector3(Math.cos(c.h), 0, Math.sin(c.h)), r = new THREE.Vector3(-f.z, 0, f.x), car = new THREE.Vector3(c.x, c.y, c.z);
+  D.t = S.t - D.t0;   // game time, so a shot in slow motion lasts longer on screen
+  const tight = S.mode === 'pro' ? tightAhead(c.k, 200) : null;
+  // a tight corner coming up is worth cutting to early, once a shot has had a couple of seconds
+  const early = tight && tight.dist > 60 && tight.dist < 150 && D.t > 2 && !['trackside', 'jump', 'finish'].includes(D.shot) && D.last !== 'trackside';
+  const done = !D.shot || early || (D.t > D.len && D.shot !== 'finish') || (D.shot === 'trackside' && c.s > D.sAt + 22) || (D.shot === 'jump' && !c.air && D.t > 1.6);
+  if (S.mode === 'pro' && finishS - c.s < 140 && D.shot !== 'finish') {
+    // the finish: a camera past the gantry, up high, that the car runs toward and under
+    const at = Math.min(track.n - 1, finishK + 9), p = pointAt(track, at, 3.5);
+    D.pos.set(p.x, p.y + 2.4, p.z); D.sAt = 1e9; cut('finish', 30);
+  } else if (c.air && c.airT > 0.05 && D.shot !== 'jump' && S.mode === 'pro') {
+    // off a crest: a camera low to the side, a little ahead, which the car flies past
+    D.side = Math.random() < 0.5 ? -1 : 1; D.pos.copy(car).addScaledVector(r, D.side * 9).addScaledVector(f, Math.max(8, c.v * 0.5)); D.pos.y = c.ground + 0.9; cut('jump', 4);
+  } else if (done) {
+    const nc = tight, near = nextCorner(track, c.k, 190), straight = !near || (near.dist > 170 && near.grade >= 4);
+    if (S.mode === 'proDone' && D.shot !== 'finish') cut('front', 9);
+    else if (nc && nc.dist > 45 && D.last !== 'trackside') {
+      // on the outside of the apex, a couple of metres behind the Armco, head height
+      const at = Math.min(track.n - 1, nc.at + Math.round(nc.len / 2 / track.ds)), out = nc.dir === 'right' ? -1 : 1;
+      const p = pointAt(track, at, out > 0 ? track.wallR[at] + 2.5 : -track.wallL[at] - 2.5);
+      D.pos.set(p.x, p.y + 1.7, p.z); D.sAt = at * track.ds; cut('trackside', 11);
+    } else {
+      const pool = straight ? ['heli', 'front', 'low'] : ['chase', 'low', 'bonnet', 'front', 'heli'];
+      const pick = pool.filter(x => x !== D.last)[Math.floor(Math.random() * (pool.length - 1))];
+      D.side = Math.random() < 0.5 ? -1 : 1; cut(pick, 3.5 + Math.random() * 2.5);
+    }
+  }
+  let want = V(), look = car.clone().add(V().set(0, 0.7, 0)), fov = 60, ease = 8;
+  const sh = D.shot;
+  if (sh === 'chase') { want.copy(car).addScaledVector(f, -6.2).addScaledVector(r, Math.sin(D.t * 0.5) * 1.6); want.y += 2; look.addScaledVector(f, 6); fov = 62 + Math.min(14, c.v * 0.18); }
+  else if (sh === 'low') { want.copy(car).addScaledVector(r, D.side * 3.4).addScaledVector(f, 1.5 - D.t * 0.5); want.y = c.y + 0.55; look.addScaledVector(f, 3); fov = 56; ease = 14; }
+  else if (sh === 'front') { want.copy(car).addScaledVector(f, 8.5).addScaledVector(r, D.side * 1.2); want.y += 1.3; fov = 50; ease = 10; }
+  else if (sh === 'heli') { want.copy(car).addScaledVector(r, D.side * 24).addScaledVector(f, -8 + D.t * 2); want.y += 15; fov = 38; ease = 2.5; }
+  else if (sh === 'bonnet') { want.copy(car).addScaledVector(f, c.spec.body.len * 0.14); want.y += c.spec.body.hgt * 0.95; look = car.clone().addScaledVector(f, 24); look.y += c.spec.body.hgt * 0.7; fov = 70 + Math.min(10, c.v * 0.12); ease = 60; }
+  else {
+    // fixed cameras: trackside and the jump; they turn to follow and zoom to hold the car's size in frame
+    want.copy(D.pos); const d = Math.max(3, D.pos.distanceTo(car));
+    fov = Math.max(10, Math.min(60, 2 * Math.atan((sh === 'jump' ? 4.5 : sh === 'finish' ? 11 : 3.6) / d) * 180 / Math.PI)); ease = 60;
+    if (sh === 'trackside' && !D.whoosh && d < 16) { D.whoosh = true; sound.whoosh(); }
+  }
+  // the near plane: close on the bonnet, otherwise normal
+  const near = sh === 'bonnet' ? 0.08 : 0.3; if (camera.near !== near) { camera.near = near; camera.updateProjectionMatrix(); }
+  const pm = meshes.get(c); if (pm && pm.ink) pm.ink.visible = sh !== 'bonnet';
+  if (!camInit) { camPos.copy(want); camLook.copy(look); camera.fov = fov; camInit = true; }
+  const k = 1 - Math.exp(-dt * ease);
+  camPos.lerp(want, k); camLook.lerp(look, Math.min(1, k * 1.5));
+  // never under the ground
+  const g = track.y[Math.max(0, c.k - 2)] + 0.35; if (camPos.y < g && sh !== 'jump') camPos.y = g;
+  camera.position.copy(camPos); camera.lookAt(camLook); sky.position.copy(camPos);
+  if (c.landed > 0.2) camera.position.y += (Math.random() - 0.5) * c.landed * 0.3;
+  camera.fov += (fov - camera.fov) * Math.min(1, dt * (sh === 'trackside' || sh === 'jump' || sh === 'finish' ? 20 : 4)); camera.updateProjectionMatrix();
   sun.position.set(c.x + 60, c.y + 120, c.z + 40); sun.target.position.set(c.x, c.y, c.z);
 }
 
@@ -454,10 +616,11 @@ function hud(dt) {
   $('zoom').classList.toggle('on', p.boost > 0 && S.mode === 'race');
   // corner names as you reach them
   const name = cornerAt(track, p.k + 14);
-  if (name !== S.cornerName && S.mode === 'race') { S.cornerName = name; S.cornerT = 2.4; $('corner').textContent = corner(name); }
+  if (name !== S.cornerName && (S.mode === 'race' || S.mode === 'pro')) { S.cornerName = name; S.cornerT = 2.4; $('corner').textContent = corner(name); }
   S.cornerT -= dt; $('corner').classList.toggle('on', S.cornerT > 0);
   // pace notes: the next corner, how tight, how far, and BRAKE when you are too quick to make it
   paceNotes(p);
+  coach(p);
   // prompts
   const pr = $('prompt');
   let msg = '';
@@ -484,7 +647,7 @@ function hud(dt) {
 const nc = $('noteArrow').getContext('2d');
 let lastNote = '';
 function paceNotes(p) {
-  const note = S.mode === 'race' ? nextCorner(track, p.k, Math.max(140, p.v * 4.5)) : null;
+  const note = S.mode === 'race' || S.mode === 'pro' ? nextCorner(track, p.k, Math.max(140, p.v * 4.5)) : null;
   $('note').classList.toggle('on', !!note);
   const vt = cornerSpeed(p, track, 1.0), late = S.mode === 'race' && !p.air && p.v > vt + 2.5;
   $('brakecue').classList.toggle('on', late);
@@ -507,6 +670,19 @@ function paceNotes(p) {
   nc.restore();
 }
 
+// the coach: with the best line on, what your feet should be doing a moment from now, and the speed the line carries
+const COACH = ['Gas', 'Coast', 'Brake', 'Brake hard'], COACH_CLS = ['gas', 'coast', 'brake', 'hard'];
+let lastCoach = -1;
+function coach(p) {
+  const on = lineOn() && LINE && (S.mode === 'race' || S.mode === 'pro') && p.k > track.gateAt;
+  lineMesh.mesh.visible = lineOn() && S.mode !== 'pick';
+  $('coach').classList.toggle('on', !!on);
+  if (!on) return;
+  const k = Math.min(track.n - 1, p.k + Math.round(Math.max(4, p.v * 0.35) / track.ds)), ph = LINE.phase[k];
+  if (ph !== lastCoach) { lastCoach = ph; $('coachTxt').textContent = COACH[ph]; $('coach').className = 'coach on ' + COACH_CLS[ph]; }
+  $('coachV').textContent = Math.round(LINE.v[k] * 3.6) + ' km/h';
+}
+
 function result() {
   S.resultShown = true;
   const p = player, order = S.order;
@@ -515,6 +691,10 @@ function result() {
   if (best) store.set('best.' + choice, p.time);
   $('resTitle').textContent = place === 1 ? 'First to the gantry' : `${ord(place)} to the gantry`;
   $('resTime').innerHTML = `${fmt(p.time)}<small>Bridge to gantry in the ${p.spec.name}${best ? (prev ? `, a new best by ${(prev - p.time).toFixed(1)} s` : ', your first time in it') : `, best ${fmt(prev)}`}</small>`;
+  const proT = store.get('pro.' + choice, 0);
+  if (proT) $('resTime').innerHTML += `<small>The pro does it in ${fmt(proT)}: you were ${(p.time - proT).toFixed(1)} s off.</small>`;
+  resultButtons([['Go again', toRace, true], ['Watch the pro', () => { $('result').hidden = true; startPro(); }], ['Change car', toPick]]);
+  $('touch').hidden = true;
   $('resOrder').innerHTML = order.map(c => `<li class="${c === p ? 'me' : ''}">${c === p ? 'You' : pretty(c.spec.name)}<span>${c.done ? fmt(c.time) : 'still on the lap'}</span></li>`).join('');
   $('result').hidden = false;
 }
@@ -534,6 +714,6 @@ new ResizeObserver(resize).observe(cv); resize();
 requestAnimationFrame(t => { last = t; frame(t); });
 
 // for the checks: the track, the cars and a way to drive without a keyboard
-window.ringKart = { VERSION, track, S, get cars() { return cars; }, get player() { return player; }, keys, start: () => $('go').click(), ticket, autopilot: v => { S.autopilot = v; },
+window.ringKart = { VERSION, track, S, get cars() { return cars; }, get player() { return player; }, get line() { return LINE; }, get shot() { return D.shot; }, keys, start: () => $('go').click(), watch: () => $('watch').click(), ticket, autopilot: v => { S.autopilot = v; },
   // play on without drawing, a step at a time, the way the checks drive a whole lap in a few seconds
   run: secs => { for (let t = 0; t < secs; t += 1 / 120) tick(1 / 120); for (let i = 0; i < 40; i++) camera3(1 / 30); draw(1 / 60); } };

@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.99 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.4. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.100 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.5. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.100
+- Ring Kart 0.5 (watch a pro lap, the best line, and the phone controls fixed). The home card says so; `tools/smoke.js` also watches a whole pro lap, last and on a page of its own. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.99
 - Ring Kart 0.4 (a 70s cartoon look, new controls and pace notes). The home card says so. No change to the sim, Play Review or Cathedral Lab.
@@ -592,6 +595,14 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.5
+- Watch a pro lap: your car alone on the lap, driven by the pro on the best line at the best speeds from the barrier to the gantry, filmed by a director cutting between cameras like a TV broadcast: trackside at every tight corner (turning and zooming to hold the car, with a whoosh as it passes), the helicopter on the straights, low tracking shots, in front, behind, on the bonnet, slow motion off every jump, and a slow-motion finish under the gantry. C picks the director, behind or the bonnet; L hides the line; Esc or Stop ends it. The pro's time is kept per car, and your result says how far off it you were.
+- The best line: a switch on the picker, L, or Line on a phone. The pro's line painted on the road in inked chevrons, coloured for your feet: green gas, yellow coast, orange brake, red brake hard, worked out for the car you picked; a coach sticker says the same a moment ahead, with the speed the line carries.
+- Both come from one new pure module, `src/line.js`: the least-curvature line inside the road, its speeds from the car's own figures (a forward pass out of the corners, a backward pass into them) and the phases, and the pro who drives it. A new test laps the pro in every player car: clean, on the line, quicker than the AI.
+- On a phone: the buttons no longer overlap (Left and Right under the left thumb; Drift over Brake beside a tall Gas under the right), small Camera, Line, Horn and Reset buttons down the right, the corner buttons moved to the top right, the queue prompt smaller and higher, the touch buttons hidden on the picker and the results, and the stage scrolls into view and fills the screen when you start. A toast names the camera when you change it.
+- Fixed: the gas switch did nothing until you picked a car; corner boards read backwards from behind (they have a plain back now).
+- Lighter trees (fewer faces on the lollipops and spruces) for phones.
 
 ### 0.4
 - New controls, for a lap that is all gas and brake: right hand on the arrows (Up for gas, Left and Right to steer, Down to brake and reverse), left thumb on Space for the brake, little finger on Shift for the drift. A tap of Space is a dab of brake and a hold is everything; Space never backs you up. WASD and the gamepad still work. A key map on the car picker.
