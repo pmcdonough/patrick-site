@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.106 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.14 + Ring Kart 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.107 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.14 + Ring Kart 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.107
+- Ring Kart 0.9 (the whole Döttinger Höhe back). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.106
 - Cathedral Lab 0.14 (step inside any building at any step). The home card says so. No change to the sim, Play Review or Ring Kart.
@@ -630,6 +633,10 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.9
+- The whole Döttinger Höhe again. 0.8 ended the lap at the real Touristenfahrten gantry, before Antoniusbuche, which cut the long straight to 1.2 km. The lap now runs on through Antoniusbuche to the braking zone for Tiergarten: almost 2 km of straight in real life, 640 m flat out in the game, where a GT3 RS with DRS open reaches about 264 km/h in sixth. The game's gantry is about 900 m past the real one; the lap is 20.1 km on the map, still shrunk to a third.
+- The gearbox test expects every car to reach its top gear or the one below again.
 
 ### 0.8
 - The real Nordschleife. The lap is now built from OpenStreetMap's Nordschleife segments and the EU-DEM 25 m elevation model by a new script, `tools/ring_track.py`, from the T13 entry to the gantry before Antoniusbuche: 19.2 km on the map, shrunk to a third (6.3 km), 40 real corner names, real radii and real climbs and drops (342 m at Breidscheid to 625 m at Hohe Acht). The jumps (Quiddelbacher Höhe, Flugplatz, Pflanzgarten, Sprunghügel) and the Karussell's banking are carried over by name. A lap in the GT3 RS takes the pro about 3:22.

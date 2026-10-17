@@ -2,7 +2,7 @@
 
 The Nordschleife is in OpenStreetMap as about fifty one-way raceway segments, each named for its corner (Hatzenbach,
 Flugplatz, Fuchsroehre, ...). This chains them into the loop, cuts out the Touristenfahrten lap (from the T13 entry,
-where the queue waits, round to the gantry before Antoniusbuche), resamples it every SPACING metres, looks up each
+where the queue waits, round the whole Doettinger Hoehe and Antoniusbuche to the gantry before Tiergarten), resamples it every SPACING metres, looks up each
 point's height in the EU-DEM 25 m model, names each point where a named segment starts, and carries over what a map
 cannot give: the jumps (crests) and the Karussell's banking, by corner name.
 
@@ -27,7 +27,10 @@ SPACING = 50            # metres between points along the lap
 SMOOTH = 120            # sigma of the blur on the heights, metres (see smooth)
 LAT0 = 50.35            # the lap's middle latitude, for metres per degree of longitude
 START_AT = 'T13'        # the lap starts where this segment starts (the Touristenfahrten entry, where the queue waits)
-END_AT = 'Antoniusbuche'    # and ends where this one starts (the gantry)
+# and ends where this one starts. The real Touristenfahrten gantry is before Antoniusbuche, where the speed limits step
+# down for the exit; the game runs on through Antoniusbuche to the braking zone for Tiergarten, because the whole of the
+# Doettinger Hoehe flat out is the best part of the lap
+END_AT = 'Tiergarten'
 
 # What a map does not say, by corner: jumps as extra game height h over a bump len game metres long, at the highest
 # point within `near` metres of where the corner's segment starts; banking in degrees over the whole segment (negative
@@ -35,7 +38,7 @@ END_AT = 'Antoniusbuche'    # and ends where this one starts (the gantry)
 CRESTS = {'Quiddelbacher Höhe': {'h': 2.2, 'len': 34}, 'Flugplatz': {'h': 3.2, 'len': 30},
           'Pflanzgarten': {'h': 4.6, 'len': 28}, 'Sprunghügel': {'h': 3.2, 'len': 26}}
 BANK = {'Karussell': -24, 'Mini-Karussell': -14}
-SKIP_NAMES = {'Nürburgring Nordschleife', 'T13', 'Antoniusbuche'}
+SKIP_NAMES = {'Nürburgring Nordschleife', 'T13', END_AT}
 
 
 def get(url, data=None):
@@ -185,7 +188,8 @@ def build():
 def main():
     P, total = build()
     T = json.load(open(OUT))
-    T['about'] = ('The Nordschleife from the Touristenfahrten entry at T13 to the gantry before Antoniusbuche, clockwise. '
+    T['about'] = ('The Nordschleife from the Touristenfahrten entry at T13, clockwise, to a gantry before Tiergarten: the real one '
+                  'stands before Antoniusbuche, but the game keeps the whole straight. '
                   'Each point is [east, north] in kilometres from the entry, with its height in metres: the road from '
                   'OpenStreetMap\'s Nordschleife segments, resampled every %d m, and heights from the EU-DEM 25 m model, '
                   'written by tools/ring_track.py (do not edit the points by hand; change the script and rerun it). '
@@ -194,11 +198,11 @@ def main():
                   'and the length of the bump) and bank is degrees, negative for a left-hander\'s banking: those two are '
                   'the game\'s, not the map\'s.' % SPACING)
     T['build']['realLength']['value'] = round(total)
-    T['build']['realLength']['desc'] = ('Bridge to gantry along the OpenStreetMap line, metres (the official '
+    T['build']['realLength']['desc'] = ('Bridge to the game\'s gantry along the OpenStreetMap line, metres (the official '
                                         'Nordschleife lap, with the T13 straight, is 20.832 km).')
     T['points'] = P
     T['build']['lengthScale']['value'] = 0.33
-    T['build']['lengthScale']['desc'] = ("Game length per real metre. The lap is about 19.2 km bridge to gantry; the game's is about a "
+    T['build']['lengthScale']['desc'] = ("Game length per real metre. The lap is about 20.1 km, the T13 entry to the game's gantry; the game's is about a "
                                          "third of that, so a lap is about three minutes.")
     # one point per line, so the file stays readable and a rerun's diff stays small
     pts = T.pop('points')

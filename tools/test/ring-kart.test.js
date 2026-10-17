@@ -121,8 +121,7 @@ test('the gearbox: every player car changes up through all its gears and back do
       if (g.gear > 1 && g.shiftT <= 0 && car.input.gas && g.rpm < car.engine.redline * 0.35) low++;
     }
     const n = car.engine.gears.length;
-    // the lap ends at the gantry partway down the Doettinger Hoehe, before anything reaches its top gear
-    assert.ok(top >= n - 2, `${spec.name}: top gear reached ${top} of ${n}`);
+    assert.ok(top >= n - 1, `${spec.name}: top gear reached ${top} of ${n}`);
     if (car.engine.shift) assert.ok(car.gb.maxUp > car.engine.shift - 150 && car.gb.maxUp < car.engine.shift + 250, `${spec.name}: changes up at ${car.gb.maxUp.toFixed(0)} rpm, wants ${car.engine.shift}`);
     assert.ok(car.gb.ups > 15 && car.gb.downs > 15, `${spec.name}: ${car.gb.ups} up, ${car.gb.downs} down`);
     assert.ok(over === 0, `${spec.name}: over the redline for ${over} steps`);
