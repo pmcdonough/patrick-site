@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.96 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.10 + Ring Kart 0.2. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.97 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.10 + Ring Kart 0.3. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.97
+- Ring Kart 0.3 (cars that look like cars, and smoother keyboard steering). No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.96
 - Cathedral Lab 0.10 (design your own cathedral). The home card says so; the smoke check loads the design page and builds a design that falls. No change to the sim, Play Review or Ring Kart (its stamps on Cathedral Lab's Three.js move with Cathedral Lab's version).
@@ -575,6 +578,11 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.3
+- New cars. Each is drawn from a side view for its style: the lower body's outline cut round the wheel arches with the wings bulging over them, extruded across the car with rounded edges; a glasshouse that narrows toward the roof, with painted roof, A-, B- and C-pillars (a van's load bay is solid); door mirrors, bumpers, side skirts, a grille, headlights and tail lights, German number plates, an exhaust, five-spoke rims, and a soft shadow underneath. The MX-5 has its windscreen, seats and driver; wings stand on uprights with end plates. A few draw calls per car.
+- The bonnet camera looks down a real bonnet now, with the mirrors at its corners.
+- Keyboard and touch steering eases toward the key you hold, in about a sixth of a second, and back to straight a little quicker, so a tap is a small correction and a hold is full lock. A gamepad's stick is used as it is.
 
 ### 0.2
 - Onboard telemetry along the bottom of the screen, after the broadcast laps: the map in orange with you in red and the race in white, gear and speed in big type, an arc of revs from 0 to 8,000 with a shift light, brake and gas bars, the bridge-to-gantry clock in hundredths, the drift and turbo charge, and the height of the lap lit as far as you have come, with the race on it. Turbo, drift, tow, air and grass show under the speed.

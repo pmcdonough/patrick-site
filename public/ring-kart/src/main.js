@@ -4,12 +4,12 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.10';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.2';
-import { makeCar, step, collide, driveAI, revs, REDLINE } from './drive.js?v=0.2';
-import { buildWorld, buildSky, HORIZON, carMesh, label } from './scene.js?v=0.2';
-import { Sound } from './audio.js?v=0.2';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.3';
+import { makeCar, step, collide, driveAI, revs, REDLINE } from './drive.js?v=0.3';
+import { buildWorld, buildSky, HORIZON, carMesh, label } from './scene.js?v=0.3';
+import { Sound } from './audio.js?v=0.3';
 
-const VERSION = '0.2';
+const VERSION = '0.3';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -161,9 +161,15 @@ $('touch').querySelectorAll('button').forEach(b => {
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => on(0));
 });
 cv.addEventListener('pointerdown', () => { if (S.mode === 'queue') ticket(); });
-function readInput() {
+// Keys and touch buttons are all or nothing; the wheel is not. Steering eases toward the key you hold, in about a
+// sixth of a second, and back to straight a little quicker, so a tap is a small correction and a hold is full lock.
+const wheel = { v: 0 };
+function readInput(dt) {
   const k = n => keys.has(n);
-  let steer = (k('arrowright') || k('d') ? 1 : 0) - (k('arrowleft') || k('a') ? 1 : 0) + ctl.right - ctl.left;
+  const want = (k('arrowright') || k('d') ? 1 : 0) - (k('arrowleft') || k('a') ? 1 : 0) + ctl.right - ctl.left;
+  const rate = want === 0 ? 8 : Math.sign(want) !== Math.sign(wheel.v) && wheel.v ? 10 : 6;
+  wheel.v += Math.max(-rate * dt, Math.min(rate * dt, want - wheel.v));
+  let steer = wheel.v;
   let gas = k('arrowup') || k('w') || ctl.gas ? 1 : 0, brake = k('arrowdown') || k('s') || ctl.brake ? 1 : 0;
   let drift = k(' ') || k('shift') || !!ctl.drift;
   for (const gp of navigator.getGamepads ? navigator.getGamepads() : []) {
@@ -228,7 +234,7 @@ function tick(dt) {
   if (S.mode === 'queue' || S.mode === 'race' || S.mode === 'done') {
     queueStep(dt);
     // you
-    const inp = readInput();
+    const inp = readInput(dt);
     if (S.mode === 'done') { inp.gas = 0; inp.brake = 0.4; inp.drift = false; inp.steer = Math.max(-1, Math.min(1, -player.lat * 0.1)); }
     player.input = inp;
     if (S.autopilot && player.released && S.mode === 'race') driveAI(player, dt, track, cars, { paceScale: 1.05 });

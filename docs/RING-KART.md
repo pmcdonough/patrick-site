@@ -1,6 +1,6 @@
 # Ring Kart
 
-A kart-style race round the Nürburgring Nordschleife in real cars. Version 0.2 (site 0.95; 0.1 shipped in site 0.94), live at `/ring-kart/`. Built in a chat session from the idea: start outside the Ring in the Touristenfahrten queue behind Porsches, GTIs and a few fun old cars, tap your ticket, and race.
+A kart-style race round the Nürburgring Nordschleife in real cars. Version 0.3 (site 0.97; 0.1 shipped in site 0.94, 0.2 in 0.95), live at `/ring-kart/`. Built in a chat session from the idea: start outside the Ring in the Touristenfahrten queue behind Porsches, GTIs and a few fun old cars, tap your ticket, and race.
 
 ## The session
 
@@ -34,7 +34,9 @@ All of these numbers are in `data/cars.json` with a description, as in the other
 
 ## The cars (`data/cars.json`)
 
-Real models, arcade numbers in the right order: top speed, acceleration, grip, braking, drift, mass. The bodies are built in `src/scene.js` from each car's real length, width and height and a style (coupe, hatch, sedan, wagon, van, roadster, tiny), with wings and a roof box where they belong. No badges or logos.
+Real models, arcade numbers in the right order: top speed, acceleration, grip, braking, drift, mass. The bodies are built in `src/scene.js` from each car's real length, width and height and a style (coupe, hatch, sedan, wagon, van, roadster, tiny), with wings and a roof box where they belong. Each style is a side view (`STYLE`): the lower body's upper line, the glasshouse, the axles, where the B-pillar stands. The lower body is that outline cut round the wheel arches, with the wings raised to clear them, extruded across the width with a bevel; the glasshouse is narrower (tumblehome), with roof and pillars clipped from it in paint; then mirrors, bumpers, skirts, grille, lights, plates, exhaust, five-spoke rims and a soft shadow. Paint, trim and black parts are each merged into one geometry, so a car is a few draw calls. No badges or logos.
+
+Controls: arrows or WASD, Space or Shift to drift, C camera, R back on the road, Esc pause, M mute, F full screen; a gamepad and on-screen buttons work too. Keys and touch buttons are all or nothing, so the page eases the steering toward them (about a sixth of a second in, a little quicker back); a stick is used as it is. The mouse and touchpad are not used to steer: a kart game wants steering and pedals held at once, which a touchpad cannot do.
 
 ## The world (`src/scene.js`)
 
