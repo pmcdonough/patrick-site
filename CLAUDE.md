@@ -1,10 +1,11 @@
 # CLAUDE.md
 
-Project memory for anyone (or any Claude session) working on this repo. Read this first, then `docs/ENGINE.md` before touching the hockey engine.
+Project memory for anyone (or any Claude session) working on this repo. Read this first, then `docs/ENGINE.md` before touching the hockey engine. `docs/README.md` is the index of every doc.
 
 ## What this repo is
 
 A static personal site in `public/`, served by Cloudflare at pmcdonough.com. The main project is the Hockey Strategy Lab at `public/bruins-vs-canadiens/`, a hockey engine in plain JavaScript modules on a 2D canvas, no libraries, no build step, driven by the JSON files in its `data/`. It has three views that share nothing but the engine: Watch a game (scoreboard, rink, each team's game plan as a sentence with its drawer, the Watch settings drawer with the sliders, box score, play by play and rosters, a strip that explains the lab and links to it, and once a game ends a link to its review), Review a game (every shot of a finished game judged by the shooter's own read, with a replay and What if he passed; the game is a finished Watch game or any lab game opened with Review it, and recent games are listed, the lab's kept in the browser as their seed and plans and played again exactly when reopened; Print or save as PDF puts the shot on screen on one page for the browser's print dialog) and the Game plan lab, read top to bottom (the baseline of 100 games at the NHL settings with the comparison with the real 2025-26 teams folded under it; both teams' plans, its own, side by side; Rerun the baseline and Test against the baseline, each enabled only after an edit; the tests of the edited plans on the same games, each named for what it changed and each foldable and removable; Find the best option, which ranks every option of one choice; all kept in the browser; a button that sends both plans to Watch; and Print or save as PDF, a report of the baseline and every test for the browser's print dialog). The second project is Play Review at `public/play-review/`, which scores the shots of a real game with the sim's own expected-goal model. The third is Cathedral Lab at `public/cathedral-lab/`: build the whole of Notre-Dame or Amiens in 3D piece by piece, every stone carrying real load from a rigid-block masonry solver, or design your own and see whether it stands, with a 2D arch lab beside it (`docs/CATHEDRAL-LAB.md`). The fourth is Ring Kart at `public/ring-kart/`: a kart-style race round the Nürburgring Nordschleife in real cars, from the Touristenfahrten gate to the gantry (`docs/RING-KART.md`).
+docs/CATHEDRAL-LAB-CODE.md         Cathedral Lab's code: layers, the piece data model, the building contract, the APIs, recipes
 
 Names: the project is the Hockey Strategy Lab (page title, home card, footer); Bruins vs Canadiens is the matchup it plays, the line under the title. It was called Bruins vs Canadiens until sim 0.66; the folder and its address keep that name so links keep working, and older changelog entries keep the name they had. Inside the repo "the sim" is still the short name. Cathedral Lab was called Keystone until 0.6 (site 0.90); `/keystone/` and `/keystone/arch-lab/` are small pages that forward to the new address, so old links keep working, and older changelog entries keep the name they had. Its arch page is called How an arch stands on screen and lives at `arch-lab/`. The Game plan lab is one of its two views.
 
@@ -71,6 +72,13 @@ tools/
   bump.js                          sets a project's VERSION and every ?v= stamp that carries it
   xg_fit.py, mp_extract.py,        the data scripts: fit xg-model.json, extract moneypuck-2025.json, build a game file
   game_load.py
+docs/README.md                     the index of every doc, with where to start
+docs/ARCHITECTURE.md               the whole site: the stack, the pure-core pattern, shared code, versions, storage, checks, deploys
+docs/DESIGN.md                     the look, the voice, tokens, light and dark, components, print, a checklist for new pages
+docs/EXTENDING.md                  recipes: change a number, add a system, a check, a building, a car, a project; ship
+docs/DECISIONS.md                  the decisions that shape the repo, with when, why and what they cost
+docs/PROCESS.md                    how it was built: phases, the working loop, how things are measured
+docs/HOCKEY-LAB.md                 the Hockey Strategy Lab's overview: its views, what the engine models, its data files
 docs/ENGINE.md                     how the engine is organized, where each function lives, invariants, baselines, lessons
 docs/MODELING.md                   every model (measured, calibrated or inferred, and where it lives), a technical summary, what tracking would change
 docs/XG-MODEL.md                   the expected-goal model: data, method, fit, how the engine uses it

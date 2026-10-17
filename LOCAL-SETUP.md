@@ -42,17 +42,18 @@ node --test tools/test               # the unit tests: "fail 0" (about 25 s)
 node tools/smoke.js                   # ends with "ERRORS: []"
 ```
 
-The unit tests run the engine in Node. `smoke.js` serves `public/` itself, plays a full game in headless Chromium, loads the home page, Play Review and both Cathedral Lab pages (the 3D build has to start its 3D graphics), and fails on any script error, any data file that does not load, or any `?v=` version stamp that disagrees with its project's version.
+The unit tests run the engine in Node. `smoke.js` serves `public/` itself, plays a full game in headless Chromium, loads the home page, Play Review, the three Cathedral Lab pages (the 3D build has to start its 3D graphics) and Ring Kart (it queues, goes through the gate and drives 20 s), and fails on any script error, any data file that does not load, or any `?v=` version stamp that disagrees with its project's version.
 
 The version numbers should agree with the top of `CHANGELOG.md`:
 
 ```
-head -3 CHANGELOG.md                                                              # Site 0.xx = sim 0.yy + Play Review 0.z + Cathedral Lab 0.w
+head -3 CHANGELOG.md                                                              # Site 0.xx = sim 0.yy + Play Review 0.z + Cathedral Lab 0.w + Ring Kart 0.v
 grep -o "Site v0\.[0-9]*" public/index.html                                       # the site version
 grep -o "const VERSION = '[0-9.]*'" public/bruins-vs-canadiens/src/main.js        # the sim version
 grep -o "const VERSION = '[0-9.]*'" public/play-review/src/main.js                # the Play Review version
-grep -o "const VERSION = '[0-9.]*'" public/cathedral-lab/src/main.js public/cathedral-lab/arch-lab/src/main.js   # Cathedral Lab, both pages
-grep -o 'class="ver">v[0-9.]*' public/index.html                                  # the card badges: sim, then Cathedral Lab
+grep -o "const VERSION = '[0-9.]*'" public/cathedral-lab/src/main.js public/cathedral-lab/arch-lab/src/main.js public/cathedral-lab/design/src/main.js   # Cathedral Lab, its three pages
+grep -o "const VERSION = '[0-9.]*'" public/ring-kart/src/main.js                  # the Ring Kart version
+grep -o 'class="ver">v[0-9.]*' public/index.html                                  # the card badges: sim, Cathedral Lab, Ring Kart
 ```
 
 ## 5. Does the data reproduce?
@@ -73,12 +74,13 @@ Served (the pages fetch their data over HTTP):
 ```
 node tools/serve.js                   # or: python3 -m http.server --directory public 8000
 # open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#lab  http://localhost:8000/play-review/
-#      http://localhost:8000/cathedral-lab/  http://localhost:8000/cathedral-lab/arch-lab/
+#      http://localhost:8000/cathedral-lab/  http://localhost:8000/cathedral-lab/arch-lab/  http://localhost:8000/cathedral-lab/design/
+#      http://localhost:8000/ring-kart/
 ```
 
 The pages need a server: opened straight from disk they cannot load their data or modules.
 
-Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, change a choice and Test against the baseline, rank every option for one choice, go to Watch and back (the results stay), Watch these plans in a game; Play Review, pick a shot, play the replay. Cathedral Lab: Start building, Next step a few times, a bag, Color by load, Cutaway, tap a stone; the arch lab: Build to keystone, Strike centering, each Try this. The browser console should stay clean.
+Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, change a choice and Test against the baseline, rank every option for one choice, go to Watch and back (the results stay), Watch these plans in a game; let a Watch game finish (8x) and Review this game, open a shot, Play, Pause, Play from the start, What if he passed; from the lab, Review a lab game; Play Review, pick a shot, play the replay. Cathedral Lab: Start building, Next step a few times, a bag, Color by load, Cutaway, tap a stone; the arch lab: Build to keystone, Strike centering, each Try this; the design page: change the vault and the flyers, a challenge, Build it in 3D. Ring Kart: pick a car, tap the ticket at the gate, drive a few corners, C for the camera. The browser console should stay clean.
 
 The live site at pmcdonough.com serves `public/` through Cloudflare.
 
@@ -107,4 +109,4 @@ Start Claude Code from the repo root so `CLAUDE.md` loads automatically. It has 
 
 The routine for any change: edit (the engine in `public/bruins-vs-canadiens/src/engine/`, the sim's page in its `src/main.js`, `style.css` and `index.html`, the data in `data/*.json`), run the checks from the table in `CLAUDE.md`, then follow "Shipping a version": bump the versions and stamps, add a changelog section, one commit with the version numbers in the subject, push.
 
-What to work on next is in `docs/ROADMAP.md`.
+What to work on next is in `docs/ROADMAP.md`; how to make the common kinds of change is in `docs/EXTENDING.md`.
