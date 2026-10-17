@@ -25,12 +25,14 @@ const { open, openPage } = require('./harness');
       const refs = f.endsWith('.html') ? [...text.matchAll(/(?:href|src)="([^"]+\.(?:js|css)[^"]*)"/g)].map(m => m[1]) : [...text.matchAll(/^\s*import\s[^'"]*['"]([^'"]+)['"]/gm), ...text.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g)].map(m => m[1]);
       for (const ref of refs) {
         if (/^https?:/.test(ref)) continue;
-        const want = ref.includes('bruins-vs-canadiens/') && project !== 'bruins-vs-canadiens' ? simVersion : version, got = (ref.match(/\?v=([0-9.]+)$/) || [])[1];
+        // imports from another project carry that project's version: Play Review's from the sim, Ring Kart's Three.js from Cathedral Lab
+        const want = ref.includes('bruins-vs-canadiens/') && project !== 'bruins-vs-canadiens' ? simVersion : ref.includes('cathedral-lab/') && project !== 'cathedral-lab' ? cathVersion : version, got = (ref.match(/\?v=([0-9.]+)$/) || [])[1];
         if (got !== want) bad.push(`${project}/${f}: ${ref} (want ?v=${want})`);
       }
     }
     if (bad.length) errors.push('version stamps: ' + bad.join(', ')); else console.log(`Version stamps in ${project} match (${version}${project === 'play-review' ? `, sim ${simVersion}` : ''}).`);
   }
+  const cathVersion = (fs.readFileSync(path.join(pub, 'cathedral-lab', 'src', 'main.js'), 'utf8').match(/const VERSION = '([0-9.]+)';/) || [])[1];
   checkStamps('bruins-vs-canadiens', simVersion);
   const pr = await openPage(browser, srv, 'play-review/', () => !!window.playReview).catch(e => ({ errors: [e.message.split('\n')[0]] }));
   if (pr.page) checkStamps('play-review', (await pr.page.textContent('#version')).replace(/^Play review v/, ''));
@@ -48,7 +50,25 @@ const { open, openPage } = require('./harness');
     await ks.page.close(); if (al.page) await al.page.close();
   }
   // the old Keystone addresses forward to Cathedral Lab, so they too have to end up on a working page
-  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/?b=amiens', () => !!window.cathedralLab && window.cathedralLab.building === 'amiens'], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab]]) {
+  // Ring Kart: the 3D has to start, the queue has to move, and a car through the gate has to get down the road
+  const rk = await openPage(browser, srv, 'ring-kart/', () => !!window.ringKart).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+  errors.push(...rk.errors.map(e => `ring-kart/: ${e}`));
+  if (rk.page) {
+    const v = await rk.page.evaluate(() => window.ringKart.VERSION);
+    checkStamps('ring-kart', v);
+    const r = await rk.page.evaluate(() => {
+      const k = window.ringKart; if (document.querySelector('.nogl')) return { nogl: true };
+      k.start(); k.keys.add('arrowup'); let n = 0;
+      while (k.S.queue[0] !== k.player && n++ < 60) k.run(1);
+      k.run(2); k.keys.delete('arrowup'); k.ticket(); k.autopilot(true); k.run(20);
+      return { mode: k.S.mode, metres: Math.round(k.player.s - k.track.gateAt * k.track.ds), km: (k.track.L / 1000).toFixed(1), cars: k.cars.length };
+    });
+    if (r.nogl) errors.push('ring-kart/: the 3D graphics did not start');
+    else if (r.mode !== 'race' || r.metres < 300) errors.push(`ring-kart/: 20 s after the gate the car is ${r.metres} m down the road (${r.mode})`);
+    else console.log(`ring-kart/ builds a ${r.km} km lap with ${r.cars} cars; 20 s after the gate you are ${r.metres} m down the road (Ring Kart ${v}).`);
+    await rk.page.close();
+  }
+  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/?b=amiens', () => !!window.cathedralLab && window.cathedralLab.building === 'amiens'], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab], ['ring-kart/', () => !!window.ringKart]]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);

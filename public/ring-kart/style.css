@@ -1,0 +1,117 @@
+/* Ring Kart's styles. The page follows the site's other projects (Barlow type, soft panels, round corners); the game
+   itself is a full-bleed 3D stage with a race HUD on top: position, clock, corner name, speedometer and a map. */
+:root {
+  --bg: #e9ecef;
+  --panel: #f7f8fa;
+  --fg: #16202c;
+  --fg-dim: #5c6978;
+  --line: #d2d8e0;
+  --link: #0b4ea2;
+  --go: #1f7a4d;
+  --hud: rgb(12 16 22 / 0.72);
+  --hud-fg: #f4f6f8;
+  --blue: #4fb7ff;
+  --orange: #ff8a1f;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', 'Segoe UI', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --link: #7fb0ee; --go: #6fd19b; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0f1419; --panel: #171d25; --fg: #e8edf2; --fg-dim: #8d9aa8; --line: #2a3340; --link: #7fb0ee; --go: #6fd19b; color-scheme: dark; }
+
+/* ---------- page ---------- */
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.45; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap, header.top { max-width: 1240px; margin: 0 auto; }
+.wrap { display: flex; flex-direction: column; gap: 14px; padding-block: 4px 16px; }
+footer.version { text-align: center; color: var(--fg-dim); font-size: 0.75rem; padding: 4px 16px 18px; }
+a { color: var(--link); }
+[hidden] { display: none !important; }
+header.top { padding-block: 16px 6px; }
+.brand h1 { font-family: var(--display); font-weight: 800; font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.02; margin: 0; }
+.brand p { margin: 4px 0 0; color: var(--fg-dim); max-width: 70ch; }
+.brand p.matchup { margin: 6px 0 0; font-family: var(--display); font-weight: 800; font-size: clamp(1.15rem, 2.2vw, 1.45rem); line-height: 1.1; color: var(--fg); }
+.hint { margin: -6px 0 0; font-size: 0.85rem; color: var(--fg-dim); }
+
+button { font: 600 0.9rem var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 13px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--fg-dim); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+button.primary { background: var(--link); border-color: var(--link); color: #fff; font: 700 1.1rem var(--display); letter-spacing: 0.03em; padding: 8px 20px; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card h2 { font: 800 1.15rem var(--display); letter-spacing: 0.02em; margin: 0; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.notes .card p { margin: 0; color: var(--fg-dim); font-size: 0.92rem; }
+
+/* ---------- the stage ---------- */
+.stage { position: relative; border-radius: 14px; overflow: hidden; background: #bfd3e3; height: min(78vh, 820px); min-height: 440px; user-select: none; -webkit-user-select: none; }
+.stage:fullscreen { border-radius: 0; height: 100vh; }
+#gl { display: block; width: 100%; height: 100%; touch-action: none; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1.6rem var(--display); color: #16202c; background: #bfd3e3; letter-spacing: 0.04em; }
+.nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #16202c; }
+
+.hud { position: absolute; inset: 0; pointer-events: none; color: var(--hud-fg); font-family: var(--display); }
+.hud > * { position: absolute; }
+.pos { left: 14px; top: 12px; background: var(--hud); border-radius: 12px; padding: 4px 14px 6px; display: flex; align-items: baseline; gap: 4px; }
+.pos b { font-size: 3.2rem; font-weight: 800; line-height: 1; }
+.pos span { font-size: 1.3rem; font-weight: 600; opacity: 0.8; }
+.clock { right: 14px; top: 12px; background: var(--hud); border-radius: 12px; padding: 6px 14px 8px; text-align: right; display: flex; flex-direction: column; }
+.clock .lbl { font: 600 0.75rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; }
+.clock b { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
+.clock .best { font: 500 0.8rem var(--body); opacity: 0.8; }
+.corner { left: 50%; top: 16px; transform: translateX(-50%); font-size: clamp(1.4rem, 3.6vw, 2.4rem); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); white-space: nowrap; opacity: 0; transition: opacity .35s; }
+.corner.on { opacity: 1; }
+.speedo { right: 14px; bottom: 14px; background: var(--hud); border-radius: 14px; padding: 6px 16px 10px; display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 8px; min-width: 150px; }
+.speedo b { font-size: 3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; text-align: right; }
+.speedo span { font: 600 0.85rem var(--body); opacity: 0.8; }
+.speedo i { grid-column: 1 / -1; font-style: normal; font: 700 0.9rem var(--body); opacity: 0.85; }
+.charge { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: rgb(255 255 255 / 0.15); overflow: hidden; margin-top: 4px; }
+.charge div { height: 100%; width: 0; background: var(--blue); border-radius: 3px; }
+.charge div.t2 { background: var(--orange); }
+.charge div.boost { background: linear-gradient(90deg, #ffd23f, #ff5a1f); }
+.map { left: 14px; bottom: 14px; width: 170px; height: 170px; background: var(--hud); border-radius: 14px; }
+.prompt { left: 50%; top: 58%; transform: translateX(-50%); background: var(--hud); border-radius: 12px; padding: 10px 20px; font-size: clamp(1.2rem, 2.8vw, 1.8rem); font-weight: 800; letter-spacing: 0.03em; text-align: center; max-width: min(560px, 86%); }
+.prompt small { display: block; font: 500 0.95rem var(--body); letter-spacing: 0; opacity: 0.85; margin-top: 2px; }
+.prompt.big { top: 40%; font-size: clamp(2rem, 6vw, 3.6rem); }
+
+/* panels on the stage: pick a car, the result, pause */
+.panel { position: absolute; background: color-mix(in srgb, var(--panel) 95%, transparent); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 24px rgb(0 0 0 / 0.14); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; color: var(--fg); }
+.panel h2 { margin: 0; font: 800 1.6rem/1.05 var(--display); }
+.panel .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pick { left: 12px; top: 12px; bottom: 12px; width: min(400px, calc(100% - 24px)); overflow-y: auto; }
+.pick .primary { align-self: flex-start; }
+.keys-line { margin: 0; font-size: 0.82rem; color: var(--fg-dim); }
+.cars { display: flex; flex-direction: column; gap: 8px; }
+.carpick { text-align: left; display: grid; grid-template-columns: 14px 1fr; gap: 2px 10px; padding: 9px 12px; border-radius: 10px; font-weight: 500; }
+.carpick[aria-pressed="true"] { border-color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+.carpick .sw { width: 14px; height: 14px; border-radius: 4px; margin-top: 4px; grid-row: span 3; border: 1px solid rgb(0 0 0 / 0.2); }
+.carpick b { font: 800 1.15rem var(--display); letter-spacing: 0.02em; }
+.carpick p { margin: 0; font-size: 0.82rem; color: var(--fg-dim); }
+.bars { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 0.72rem; color: var(--fg-dim); align-items: center; margin-top: 4px; }
+.bars i { display: block; height: 5px; border-radius: 3px; background: var(--line); position: relative; overflow: hidden; }
+.bars i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--link); border-radius: 3px; }
+.result, .paused { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow-y: auto; }
+.restime { margin: 0; font: 800 2.4rem var(--display); font-variant-numeric: tabular-nums; }
+.restime small { font: 500 0.95rem var(--body); color: var(--fg-dim); display: block; }
+.order { margin: 0; padding-left: 1.6em; font-size: 0.92rem; display: flex; flex-direction: column; gap: 2px; }
+.order li.me { font-weight: 700; color: var(--link); }
+.order li span { float: right; font-variant-numeric: tabular-nums; color: var(--fg-dim); }
+
+.corner-btn { position: absolute; top: 12px; font: 600 0.8rem var(--body); padding: 5px 10px; background: rgb(12 16 22 / 0.55); color: #fff; border-color: transparent; }
+#sound { right: 14px; top: auto; bottom: 120px; }
+.corner-btn.full { right: 14px; top: auto; bottom: 156px; }
+.hud:not([hidden]) ~ .corner-btn { opacity: 0.8; }
+
+/* touch: steering on the left, pedals and drift on the right */
+.touch { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; padding: 0 12px 196px; pointer-events: none; }
+.touch button { pointer-events: auto; width: 74px; height: 74px; border-radius: 50%; font: 800 1.2rem var(--display); background: rgb(12 16 22 / 0.45); color: #fff; border: 2px solid rgb(255 255 255 / 0.35); touch-action: none; }
+.touch button.on { background: rgb(255 255 255 / 0.35); }
+.touch .lr, .touch .pedals { display: flex; gap: 10px; align-items: flex-end; }
+.touch .gas { height: 110px; border-radius: 37px; background: rgb(31 122 77 / 0.6); }
+.touch .drift { background: rgb(79 183 255 / 0.4); }
+
+@media (max-width: 700px) {
+  .stage { height: min(82vh, 760px); }
+  .pos b { font-size: 2.3rem; } .clock b { font-size: 1.5rem; } .speedo b { font-size: 2.2rem; } .speedo { min-width: 120px; }
+  .map { width: 110px; height: 110px; }
+  .pick { top: auto; bottom: 12px; max-height: 70%; }
+}

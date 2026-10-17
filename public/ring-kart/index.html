@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Ring Kart: the Nordschleife, bridge to gantry</title>
+<meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css?v=0.1">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Ring Kart</h1>
+    <p class="matchup">The Nordschleife, bridge to gantry</p>
+    <p>Pick a car and join the queue at the Touristenfahrten gate behind the Porsches and the hot hatches. Tap your ticket, and race the cars that went in ahead of you round 73 corners of the Green Hell to the gantry, past every Trabant and Transit doing the lap at their own pace.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="The race, seen from behind your car"></canvas>
+
+    <div class="hud" id="hud" hidden>
+      <div class="pos" id="pos"><b id="posN">-</b><span id="posOf"></span></div>
+      <div class="clock"><span class="lbl">Bridge to gantry</span><b id="time">0:00.0</b><span class="best" id="best"></span></div>
+      <div class="corner" id="corner"></div>
+      <div class="speedo"><b id="kmh">0</b><span>km/h</span><i id="gear">N</i>
+        <div class="charge"><div id="charge"></div></div>
+      </div>
+      <canvas class="map" id="map" width="200" height="200" aria-label="Map of the lap"></canvas>
+      <div class="prompt" id="prompt" hidden></div>
+    </div>
+
+    <div class="panel pick" id="pick">
+      <h2>Pick your car</h2>
+      <div class="cars" id="cars"></div>
+      <button class="primary" id="go">Join the queue</button>
+      <p class="keys-line">Arrows or WASD to drive. Space or Shift to drift. A gamepad works too.</p>
+    </div>
+
+    <div class="panel result" id="result" hidden>
+      <h2 id="resTitle">At the gantry</h2>
+      <p class="restime" id="resTime"></p>
+      <ol class="order" id="resOrder"></ol>
+      <div class="row"><button class="primary" id="again">Go again</button><button id="change">Change car</button></div>
+    </div>
+
+    <div class="panel paused" id="paused" hidden>
+      <h2>Paused</h2>
+      <div class="row"><button class="primary" id="resume">Resume</button><button id="restart">Back to the gate</button></div>
+    </div>
+
+    <div class="touch" id="touch" hidden>
+      <div class="lr"><button data-k="left" aria-label="Steer left">◀</button><button data-k="right" aria-label="Steer right">▶</button></div>
+      <div class="pedals"><button data-k="drift" class="drift">Drift</button><button data-k="brake">Brake</button><button data-k="gas" class="gas">Gas</button></div>
+    </div>
+
+    <button class="corner-btn" id="sound" aria-pressed="true" title="Sound (M)">Sound on</button>
+    <button class="corner-btn full" id="full" title="Full screen (F)">Full screen</button>
+    <div class="loading" id="loading">Building the Eifel</div>
+  </div>
+  <p class="hint">Up or W: gas. Down or S: brake and reverse. Left and right or A and D: steer. Space or Shift: drift; hold it through a corner and let go for a mini-turbo, blue then orange. C changes the camera, R puts you back on the road, Esc pauses, M mutes.</p>
+
+  <section class="notes">
+    <div class="card"><h2>The lap</h2>
+      <p>The Touristenfahrten lap, clockwise from the gate to the gantry on the Döttinger Höhe: Hatzenbach, the Flugplatz, down the Fuchsröhre to Adenauer Forst, the drop to Breidscheid, the 300 m climb up Kesselchen, the banked Karussell, Hohe Acht, Brünnchen and the jumps at Pflanzgarten, then the long straight home.</p>
+      <p>Traced by hand from public maps and elevation profiles, so the order of the corners, their direction and the big climbs and drops are right, and the exact lines are approximate. The whole lap is shrunk to a bit over a third of its real 20.8 km so it takes about three minutes, and the hills a little less, so they stay steep.</p></div>
+    <div class="card"><h2>How it drives</h2>
+      <p>Arcade, like a kart game. The car goes where you point it, and grip limits how fast it can turn: ask for more and the front washes wide. Drift to turn tighter than grip allows and charge a mini-turbo. Tuck in behind a car to catch its tow. Crests fast enough send you flying. The grass is slow and the Armco is unforgiving.</p>
+      <p>Every car has its own top speed, acceleration, grip and braking, in the right order but not test figures: the GT3 RS is the fastest thing in the lot, and the Volvo 240 is a Volvo 240.</p></div>
+    <div class="card"><h2>The rules of the road</h2>
+      <p>As on the real Touristenfahrten: slower cars keep right and you pass on the left. The cars that went through the gate before you are your race; the ones behind you will come past if you dawdle. Position counts who is furthest round the lap, and the clock runs from your barrier to the gantry.</p></div>
+  </section>
+</main>
+
+<footer class="version">Ring Kart <span id="version"></span></footer>
+<script type="module" src="src/main.js?v=0.1"></script>
+</body>
+</html>

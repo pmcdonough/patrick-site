@@ -6,14 +6,17 @@
 //   node tools/bump.js cathedral 0.8  Cathedral Lab's VERSION on both its pages (the 3D build and the arch lesson), their
 //                                     stamps and every import in their src/, the vendored Three.js included
 //
+//   node tools/bump.js kart 0.2       Ring Kart's VERSION, its page's two stamps and its own imports (its Three.js import
+//                                     keeps Cathedral Lab's stamp; bump.js cathedral moves that one)
+//
 // The changelog, the home page badges and the docs' version lines stay by hand (CLAUDE.md, Shipping a version).
 // node tools/smoke.js checks the result.
 const fs = require('fs');
 const path = require('path');
 const PUB = path.join(__dirname, '..', 'public');
 const [which, v] = process.argv.slice(2);
-if (!['sim', 'review', 'cathedral'].includes(which) || !/^\d+\.\d+$/.test(v || '')) { console.error('usage: node tools/bump.js sim|review|cathedral 0.xx'); process.exit(2); }
-const dir = { sim: 'bruins-vs-canadiens', review: 'play-review', cathedral: 'cathedral-lab' }[which];
+if (!['sim', 'review', 'cathedral', 'kart'].includes(which) || !/^\d+\.\d+$/.test(v || '')) { console.error('usage: node tools/bump.js sim|review|cathedral|kart 0.xx'); process.exit(2); }
+const dir = { sim: 'bruins-vs-canadiens', review: 'play-review', cathedral: 'cathedral-lab', kart: 'ring-kart' }[which];
 const own = path.join(PUB, dir);
 const read = f => fs.readFileSync(f, 'utf8');
 const old = read(path.join(own, 'src', 'main.js')).match(/const VERSION = '([0-9.]+)';/)[1];
@@ -24,9 +27,11 @@ let n = 0;
 const sub = (file, re, to) => { const s = read(file), t = s.replace(re, (...m) => { n++; return to(...m); }); if (t !== s) fs.writeFileSync(file, t); };
 for (const f of files) {
   // the project's own stamps; in Play Review, imports from the sim keep the sim's version
-  sub(f, /(["'])([^"']*?)\?v=([0-9.]+)\1/g, (m, q, url, ver) => which === 'review' && url.includes('bruins-vs-canadiens/') ? m : `${q}${url}?v=${v}${q}`);
+  sub(f, /(["'])([^"']*?)\?v=([0-9.]+)\1/g, (m, q, url, ver) => (which === 'review' && url.includes('bruins-vs-canadiens/')) || (which === 'kart' && url.includes('cathedral-lab/')) ? m : `${q}${url}?v=${v}${q}`);
 }
 if (which === 'sim') for (const f of fs.readdirSync(path.join(PUB, 'play-review', 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join(PUB, 'play-review', 'src', f)))
   sub(f, /(["'])([^"']*bruins-vs-canadiens\/[^"']*?)\?v=([0-9.]+)\1/g, (m, q, url) => `${q}${url}?v=${v}${q}`);
+if (which === 'cathedral') for (const f of fs.readdirSync(path.join(PUB, 'ring-kart', 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join(PUB, 'ring-kart', 'src', f)))
+  sub(f, /(["'])([^"']*cathedral-lab\/[^"']*?)\?v=([0-9.]+)\1/g, (m, q, url) => `${q}${url}?v=${v}${q}`);
 for (const pg of pages) sub(path.join(own, pg, 'src', 'main.js'), /const VERSION = '[0-9.]+';/, () => `const VERSION = '${v}';`);
 console.log(`${which} ${old} -> ${v}: ${n} replacements. Now: the changelog, the home page badge and footer, CLAUDE.md, the roadmap's first line; then node tools/smoke.js.`);

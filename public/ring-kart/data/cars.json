@@ -1,0 +1,68 @@
+{
+  "about": "The cars. Speeds are game metres per second (top speed times 3.6 is the km/h on the dial), acceleration is m/s2 from a standstill, grip is the sideways g a car holds before it slides, brake is m/s2. These are arcade numbers in the right order, not test figures: a GT3 RS is quicker than a GTI everywhere, and a Volvo 240 is a Volvo 240. pace is how much of its grip an AI driver uses through a corner; style picks the body shape.",
+  "stats": {
+    "vmax": "top speed, game m/s",
+    "accel": "acceleration from rest, m/s2; it fades toward top speed",
+    "grip": "sideways grip, g",
+    "brake": "braking, m/s2",
+    "drift": "how hard the car rotates in a drift, 1 is normal",
+    "mass": "tonnes, for who wins a bump"
+  },
+  "player": [
+    { "id": "gti", "name": "VW Golf GTI", "note": "Mk7. The car half the queue came in. Balanced, easy, quick enough.", "vmax": 66, "accel": 7.6, "grip": 1.32, "brake": 11, "drift": 1.0, "mass": 1.35,
+      "body": { "style": "hatch", "len": 4.25, "wid": 1.8, "hgt": 1.45, "color": "#c8102e", "trim": "#111111" } },
+    { "id": "gt3rs", "name": "Porsche 911 GT3 RS", "note": "992. Fastest car in the lot, and it knows it. Grip for days, a little nervous on the jumps.", "vmax": 80, "accel": 10.5, "grip": 1.6, "brake": 13.5, "drift": 0.9, "mass": 1.45,
+      "body": { "style": "coupe", "len": 4.57, "wid": 1.9, "hgt": 1.3, "color": "#4fb24a", "trim": "#111111", "wing": true } },
+    { "id": "ctr", "name": "Honda Civic Type R", "note": "FL5. Front-wheel drive lap record hunter. Brakes late, turns in hard.", "vmax": 72, "accel": 8.6, "grip": 1.45, "brake": 12, "drift": 0.95, "mass": 1.43,
+      "body": { "style": "hatch", "len": 4.6, "wid": 1.89, "hgt": 1.4, "color": "#f2f2f2", "trim": "#c8102e", "wing": true } },
+    { "id": "mx5", "name": "Mazda MX-5", "note": "NA, pop-up lights. Slow on the straights, a joy everywhere else. Drifts on a thought.", "vmax": 56, "accel": 6.2, "grip": 1.5, "brake": 11.5, "drift": 1.3, "mass": 0.95,
+      "body": { "style": "roadster", "len": 3.95, "wid": 1.68, "hgt": 1.22, "color": "#1f4fa8", "trim": "#111111" } },
+    { "id": "v240", "name": "Volvo 240 Estate", "note": "1989, 300,000 km, a roof box. Slow, soft and heavy. Nothing it hits is safe.", "vmax": 50, "accel": 4.6, "grip": 1.08, "brake": 9, "drift": 1.15, "mass": 1.6,
+      "body": { "style": "wagon", "len": 4.79, "wid": 1.71, "hgt": 1.46, "color": "#7a8b6a", "trim": "#1a1a1a", "roofbox": true } }
+  ],
+  "rivals": [
+    { "name": "Porsche 718 Cayman GT4", "vmax": 74, "accel": 9.2, "grip": 1.5, "brake": 13, "drift": 1, "mass": 1.42, "pace": 0.8,
+      "body": { "style": "coupe", "len": 4.46, "wid": 1.8, "hgt": 1.27, "color": "#f4c430", "trim": "#111111", "wing": true } },
+    { "name": "BMW M3 (E46)", "vmax": 68, "accel": 8, "grip": 1.38, "brake": 11.5, "drift": 1, "mass": 1.57, "pace": 0.77,
+      "body": { "style": "sedan", "len": 4.49, "wid": 1.78, "hgt": 1.37, "color": "#2a5caa", "trim": "#1a1a1a" } },
+    { "name": "Renault Megane RS Trophy-R", "vmax": 71, "accel": 8.4, "grip": 1.44, "brake": 12, "drift": 1, "mass": 1.31, "pace": 0.78,
+      "body": { "style": "hatch", "len": 4.36, "wid": 1.87, "hgt": 1.43, "color": "#f2f2f2", "trim": "#e8a015" } },
+    { "name": "Toyota GR Yaris", "vmax": 66, "accel": 8.2, "grip": 1.4, "brake": 12, "drift": 1, "mass": 1.28, "pace": 0.78,
+      "body": { "style": "hatch", "len": 3.99, "wid": 1.81, "hgt": 1.46, "color": "#dddddd", "trim": "#c8102e" } },
+    { "name": "BMW M5 Ring Taxi", "vmax": 76, "accel": 9, "grip": 1.4, "brake": 12.5, "drift": 1, "mass": 1.9, "pace": 0.8,
+      "body": { "style": "sedan", "len": 4.98, "wid": 1.9, "hgt": 1.47, "color": "#e9e9e9", "trim": "#0b4ea2" } },
+    { "name": "VW Golf R", "vmax": 68, "accel": 8.6, "grip": 1.38, "brake": 11.5, "drift": 1, "mass": 1.5, "pace": 0.76,
+      "body": { "style": "hatch", "len": 4.29, "wid": 1.79, "hgt": 1.46, "color": "#1e3a8a", "trim": "#111111" } }
+  ],
+  "chasers": [
+    { "name": "Porsche 911 GT3 RS", "vmax": 80, "accel": 10.5, "grip": 1.6, "brake": 13.5, "drift": 1, "mass": 1.45, "pace": 0.8,
+      "body": { "style": "coupe", "len": 4.57, "wid": 1.9, "hgt": 1.3, "color": "#9aa3ad", "trim": "#e05a14", "wing": true } },
+    { "name": "Mercedes-AMG GT R", "vmax": 78, "accel": 10, "grip": 1.55, "brake": 13, "drift": 1, "mass": 1.63, "pace": 0.79,
+      "body": { "style": "coupe", "len": 4.55, "wid": 2.0, "hgt": 1.28, "color": "#3d7a3a", "trim": "#111111", "wing": true } }
+  ],
+  "traffic": [
+    { "name": "Volvo 240 Estate", "vmax": 36, "accel": 3.5, "grip": 1, "brake": 8, "mass": 1.6, "pace": 0.62, "body": { "style": "wagon", "len": 4.79, "wid": 1.71, "hgt": 1.46, "color": "#8a2a2a", "trim": "#1a1a1a" } },
+    { "name": "Lada 2107", "vmax": 32, "accel": 3, "grip": 0.95, "brake": 7, "mass": 1.05, "pace": 0.6, "body": { "style": "sedan", "len": 4.13, "wid": 1.62, "hgt": 1.44, "color": "#e3d9b0", "trim": "#9aa0a6" } },
+    { "name": "Trabant 601", "vmax": 26, "accel": 2.4, "grip": 0.9, "brake": 6, "mass": 0.62, "pace": 0.58, "body": { "style": "tiny", "len": 3.56, "wid": 1.5, "hgt": 1.44, "color": "#8fb3c9", "trim": "#f2f2f2" } },
+    { "name": "Ford Transit", "vmax": 34, "accel": 3, "grip": 0.95, "brake": 7, "mass": 2.4, "pace": 0.6, "body": { "style": "van", "len": 5.5, "wid": 2.0, "hgt": 2.4, "color": "#f2f2f2", "trim": "#1a1a1a" } },
+    { "name": "Opel Corsa B", "vmax": 33, "accel": 3.2, "grip": 1, "brake": 8, "mass": 0.95, "pace": 0.64, "body": { "style": "hatch", "len": 3.73, "wid": 1.61, "hgt": 1.39, "color": "#e6c21a", "trim": "#1a1a1a" } },
+    { "name": "VW Golf Mk2 diesel", "vmax": 32, "accel": 2.8, "grip": 1, "brake": 7.5, "mass": 0.95, "pace": 0.62, "body": { "style": "hatch", "len": 3.99, "wid": 1.67, "hgt": 1.41, "color": "#3a6b46", "trim": "#1a1a1a" } },
+    { "name": "Citroen 2CV", "vmax": 24, "accel": 2, "grip": 0.85, "brake": 6, "mass": 0.6, "pace": 0.55, "body": { "style": "tiny", "len": 3.83, "wid": 1.48, "hgt": 1.6, "color": "#b3262b", "trim": "#f0e6d0" } },
+    { "name": "Fiat Panda 4x4", "vmax": 30, "accel": 2.8, "grip": 0.95, "brake": 7, "mass": 0.8, "pace": 0.62, "body": { "style": "tiny", "len": 3.38, "wid": 1.49, "hgt": 1.46, "color": "#f2f2f2", "trim": "#5a5a5a" } },
+    { "name": "Mercedes 190E", "vmax": 38, "accel": 3.6, "grip": 1.05, "brake": 8.5, "mass": 1.2, "pace": 0.64, "body": { "style": "sedan", "len": 4.42, "wid": 1.68, "hgt": 1.39, "color": "#2b2b2b", "trim": "#9aa0a6" } },
+    { "name": "BMW E36 drift car", "vmax": 42, "accel": 5, "grip": 1.05, "brake": 9, "mass": 1.25, "pace": 0.7, "body": { "style": "sedan", "len": 4.43, "wid": 1.7, "hgt": 1.39, "color": "#5b2a86", "trim": "#e6c21a" } },
+    { "name": "Dacia Logan", "vmax": 34, "accel": 3.2, "grip": 1, "brake": 8, "mass": 1.1, "pace": 0.62, "body": { "style": "sedan", "len": 4.29, "wid": 1.74, "hgt": 1.53, "color": "#9aa3ad", "trim": "#1a1a1a" } },
+    { "name": "Smart ForTwo", "vmax": 30, "accel": 3, "grip": 1, "brake": 8, "mass": 0.8, "pace": 0.62, "body": { "style": "tiny", "len": 2.7, "wid": 1.56, "hgt": 1.55, "color": "#f07a1a", "trim": "#1a1a1a" } }
+  ],
+  "race": {
+    "queueGap": { "value": 7.5, "desc": "Space between cars waiting in the queue, game metres." },
+    "release": { "value": 2.0, "desc": "Seconds between one car's barrier going up and the next car's." },
+    "trafficCount": { "value": 22, "desc": "Slow cars already out on the lap when you go through the gate." },
+    "slip": { "value": { "dist": 26, "lat": 3, "build": 1.0, "gain": 0.12 }, "desc": "Slipstream: within dist metres behind a car and lat metres of its line, after build seconds you get gain more top speed." },
+    "boost": { "value": { "t1": 0.9, "t2": 1.9, "b1": 0.8, "b2": 1.5, "gain": 0.28 }, "desc": "Drift mini-turbo: hold a drift t1 seconds for the blue spark (b1 seconds of boost), t2 for orange (b2 seconds). gain is the extra push and top speed while it lasts." },
+    "grass": { "value": { "drag": 1.6, "vmax": 0.45 }, "desc": "On the grass: extra slowing per second and the share of top speed you can hold." },
+    "wall": { "value": 0.72, "desc": "Speed kept after hitting the Armco square on is less; glancing off it costs little." },
+    "rubber": { "value": { "ahead": 150, "slow": 0.9, "behind": 150, "fast": 1.08 }, "desc": "The kart-game rubber band: a rival more than ahead metres up the road drives at slow of its pace, one more than behind metres back at fast, so the race stays close." },
+    "gravity": { "value": 15, "desc": "Game gravity, m/s2. A bit above real so the cars land from the jumps before the next corner." }
+  }
+}

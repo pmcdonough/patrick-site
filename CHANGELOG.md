@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.93 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.9. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.94 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.9 + Ring Kart 0.1. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.94
+- Ring Kart 0.1, a new project at /ring-kart/: a kart-style race round the Nordschleife in real cars, with its card on the home page. It uses Cathedral Lab's copy of Three.js, so `tools/bump.js` and `tools/smoke.js` know about imports across the two. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.93
 - Cathedral Lab 0.9 (zooming in no longer sticks). No change to the sim or Play Review.
@@ -556,3 +559,11 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - Rules: tag-up offside, hybrid icing, penalties and power plays, goalie freezes by crease pressure, three officials with lead and trail mechanics.
 - Reality check against real team and league rates with a ten-game batch and win record.
 - All driving data externalized to JSON with sources.
+
+## Ring Kart
+
+### 0.1
+- First playable version. Pick one of five cars (VW Golf GTI, Porsche 911 GT3 RS, Honda Civic Type R, Mazda MX-5, Volvo 240 Estate), queue at the Touristenfahrten gate behind four rivals with two fast cars behind you, tap your ticket, and race to the gantry against six rivals and two chasers through 22 slow cars on the lap.
+- The lap traced by hand from public maps and elevation profiles: 68 points with heights, a smooth curve through them, scaled to the real 20.8 km and then to a third of it. Crests at Quiddelbacher Hoehe, the Flugplatz and Pflanzgarten are jumps; the Karussell and the Kleines Karussell are banked.
+- Arcade driving: grip-limited steering with understeer, drifts that charge a two-stage mini-turbo, slipstream, grass, the Armco, hills and flight. AI drivers brake for the slowest corner in reach, pass on the left, and traffic keeps right. A light rubber band keeps the race close.
+- HUD: position, the bridge-to-gantry clock and your best per car, corner names as you reach them, speed and gear, the drift charge, and a map. Synthesized engine, tyres, wind and boost. Keyboard, gamepad and touch.
