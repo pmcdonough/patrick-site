@@ -9,9 +9,9 @@
 // loads that are on it at that step, and colored by the share of its allowable strength it uses.
 // Units: the drawings' feet inside this file; the kit and the page get metres and kN. u runs east along the house from
 // its west wall, v back from its front wall, y up from the ground; the street side is -x, the garage end +z.
-import * as THREE from './vendor/three.module.js?v=0.12';
-import { createKit, V3, boxG, cylG, extr } from './kit.js?v=0.12';
-import * as Wood from './wood.js?v=0.12';
+import * as THREE from './vendor/three.module.js?v=0.13';
+import { createKit, V3, boxG, cylG, extr } from './kit.js?v=0.13';
+import * as Wood from './wood.js?v=0.13';
 
 const F = 0.3048, KN = 0.004448;                    // a foot in metres, a pound in kN
 const X = v => (v - 14) * F, Z = u => (u - 36) * F, Y = y => y * F;
@@ -106,19 +106,20 @@ const MATS = {
   steel: std(0x5e6670, { metalness: 0.5, roughness: 0.5 }), tar: std(0x232325, { roughness: 0.6 }), earth: std(0x7d6549, { roughness: 1 }),
   trim: std(0xf1efe8, { roughness: 0.6 }), shutter: std(0x262a30, { roughness: 0.55 }), door: std(0xa2272b, { roughness: 0.45 }),
   glass: std(0x41566a, { roughness: 0.12, metalness: 0.35 }), snow: std(0xf5f8fc, { roughness: 0.9 }), oak: std(0xb98a55, { roughness: 0.6 }),
-  leaf: std(0x51703a, { roughness: 0.95 }), pine: std(0x2e4a33, { roughness: 0.95 }), bark: std(0x5a4636), hydrangea: std(0x6a7fd0, { roughness: 0.9 }),
+  leaf: std(0x51703a, { roughness: 0.95 }), pine: std(0x2e4a33, { roughness: 0.95 }), bark: std(0x5a4636), hydrangea: std(0x8f86c8, { roughness: 0.9 }),
   asphalt: std(0x2e3034, { roughness: 0.95 }), rubber: std(0x1a1a1a, { roughness: 0.8 }), chrome: std(0xd2d6d9, { metalness: 0.8, roughness: 0.3 }),
   gold: std(0xc9a24a, { roughness: 0.4 }), panel: std(0x7b4a24, { roughness: 0.6 }), red: std(0xb5372d, { roughness: 0.5 }), drum: std(0xddd8cc, { roughness: 0.6 }),
-  tank: std(0x6c7058, { roughness: 0.7 }), boiler: std(0x9c8a72, { roughness: 0.7 }), string: std(0xfafafa), screen: () => new THREE.MeshStandardMaterial({ color: lin(0x1d2126), transparent: true, opacity: 0.45, roughness: 0.9, side: THREE.DoubleSide }),
+  tank: std(0x6c7058, { roughness: 0.7 }), hleaf: std(0x3b6531, { roughness: 0.95 }), boiler: std(0x9c8a72, { roughness: 0.7 }), string: std(0xfafafa), screen: () => new THREE.MeshStandardMaterial({ color: lin(0x1d2126), transparent: true, opacity: 0.45, roughness: 0.9, side: THREE.DoubleSide }),
   cedar: () => new THREE.MeshStandardMaterial({ roughness: 0.9, map: texture((x, S) => courses(x, S, 8, '#9b7652', { minW: 0.06, maxW: 0.16, line: 0.55 }), 1.0) }),
   clap: () => new THREE.MeshStandardMaterial({ roughness: 0.75, map: texture((x, S) => { const rows = 10, h = S / rows; for (let r = 0; r < rows; r++) { const g = x.createLinearGradient(0, r * h, 0, r * h + h); g.addColorStop(0, '#b9bec2'); g.addColorStop(1, '#d4d8db'); x.fillStyle = g; x.fillRect(0, r * h, S, h); x.fillStyle = '#9ba1a6'; x.fillRect(0, r * h + h - 3, S, 3); } }, 1.0) }),
   bnb72: () => new THREE.MeshStandardMaterial({ roughness: 0.9, map: texture((x, S) => { x.fillStyle = '#8f6c4a'; x.fillRect(0, 0, S, S); for (let i = 0; i < 4; i++) { x.fillStyle = '#7a5a3c'; x.fillRect(i * S / 4, 0, 12, S); x.fillStyle = '#a07d58'; x.fillRect(i * S / 4 + 12, 0, 4, S); } }, 1.2) }),
   bnb: () => new THREE.MeshStandardMaterial({ roughness: 0.75, map: texture((x, S) => { x.fillStyle = '#ccd0d3'; x.fillRect(0, 0, S, S); for (let i = 0; i < 4; i++) { x.fillStyle = '#b4b9bd'; x.fillRect(i * S / 4, 0, 14, S); x.fillStyle = '#e1e4e6'; x.fillRect(i * S / 4 + 14, 0, 4, S); } }, 1.2) }),
   roofing: () => new THREE.MeshStandardMaterial({ roughness: 0.95, side: THREE.DoubleSide, map: texture((x, S) => { courses(x, S, 8, '#5d6166', { minW: 0.25, maxW: 0.25, line: 0.6, jitter: 0.1, offset: 0.5 }); for (let i = 0; i < 9000; i++) { x.fillStyle = rnd() < 0.5 ? '#4b4f54' : '#70747a'; x.fillRect(rnd() * S, rnd() * S, 2, 2); } }, 1.0) }),
   brick: () => new THREE.MeshStandardMaterial({ roughness: 0.9, map: texture((x, S) => { x.fillStyle = '#cfc6b8'; x.fillRect(0, 0, S, S); const rows = 12, h = S / rows, w = S / 4; for (let r = 0; r < rows; r++) for (let i = -1; i < 5; i++) { x.fillStyle = shade('#9a4632', 0.8 + rnd() * 0.4); x.fillRect(i * w + (r % 2) * w / 2 + 3, r * h + 3, w - 6, h - 6); } }, 0.8) }),
+  fieldstone: () => new THREE.MeshStandardMaterial({ roughness: 1, map: texture((x, S) => { x.fillStyle = '#6f6a62'; x.fillRect(0, 0, S, S); for (let i = 0; i < 70; i++) { const cx = rnd() * S, cy = rnd() * S, r = 22 + rnd() * 30; x.fillStyle = shade(['#9d978c', '#8a8070', '#a9a49a', '#7f7a72'][i % 4], 0.85 + rnd() * 0.3); for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) { x.beginPath(); x.ellipse(cx + dx, cy + dy, r, r * (0.6 + rnd() * 0.3), rnd() * 3, 0, Math.PI * 2); x.fill(); } } }, 1.2) }),
   pavers: () => new THREE.MeshStandardMaterial({ roughness: 0.95, map: texture((x, S) => { x.fillStyle = '#b9a593'; x.fillRect(0, 0, S, S); const n = 8, c = S / n; for (let r = 0; r < n; r++) for (let i = 0; i < n; i++) { x.fillStyle = shade('#b0604a', 0.8 + rnd() * 0.35); if ((r + i) % 2) x.fillRect(i * c + 3, r * c + 3, c - 6, c / 2 - 5), x.fillRect(i * c + 3, r * c + c / 2 + 2, c - 6, c / 2 - 5); else x.fillRect(i * c + 3, r * c + 3, c / 2 - 5, c - 6), x.fillRect(i * c + c / 2 + 2, r * c + 3, c / 2 - 5, c - 6); } }, 1.6) }),
 };
-const TEXTURED = new Set(['cedar', 'clap', 'bnb72', 'bnb', 'roofing', 'brick', 'pavers']);
+const TEXTURED = new Set(['cedar', 'clap', 'bnb72', 'bnb', 'roofing', 'brick', 'pavers', 'fieldstone']);
 
 // ---------- The kit ----------
 const K = createKit();
@@ -390,8 +391,10 @@ const FACES = {
   front1: { axis: 'u', at: 0, inward: 1, items: [WIN(6.25, F1), WIN(12.25, F1), WIN(18.25, F1), { a: 27.25, w: 4.7, y0: F1, y1: F1 + 6.83, kind: 'front door', name: 'Front door' }] },
   front2: { axis: 'u', at: 0, inward: 1, items: [WIN(6.25, F2), WIN(12.25, F2), WIN(18.25, F2), WIN(27.25, F2)] },
   wingfront: { axis: 'u', at: 2, inward: 1, items: [WIN(38, F1, { w: 2, sill: 3.5, lights: [2, 2], name: 'Lavatory window' }), WIN(45.8, F1, { name: 'Den window' }), WIN(48.7, F1, { name: 'Den window' })] },
-  back1: { axis: 'u', at: 28, inward: -1, items: [{ a: 7.6, w: 5, y0: F1, y1: F1 + 6.83, kind: 'french doors', name: 'French doors to the porch' }, WIN(20.1, F1, { w: 3, sill: 3.5, name: 'Window over the sink' }), { a: 27.5, w: 3, y0: F1, y1: F1 + 6.83, kind: 'door', name: 'Back door' }, WIN(31.8, F1, { w: 4.5, name: 'Dinette window', lights: [4, 2] }), WIN(38.2, F1, { name: 'Family room window' }), WIN(48.4, F1, { name: 'Family room window' })] },
-  back2: { axis: 'u', at: 28, inward: -1, items: [WIN(4.2, F2), WIN(12.6, F2), WIN(23.7, F2, { w: 2, sill: 3.5, lights: [2, 2], name: 'Bathroom window' }), WIN(30.6, F2, { w: 2, sill: 3.5, lights: [2, 2], name: 'Bathroom window' }), WIN(37.6, F2), WIN(49.4, F2)] },
+  // the back, from the plans and from photographs of the back: a wide two-pane window over the sink and another in the
+  // dinette, a back door with a full-glass storm door, double-hung windows either side of the family room chimney
+  back1: { axis: 'u', at: 28, inward: -1, items: [{ a: 7.6, w: 5, y0: F1, y1: F1 + 6.83, kind: 'french doors', name: 'French doors to the porch' }, WIN(20.1, F1, { w: 5, sill: 3.4, kind: 'slider', name: 'Window over the sink' }), { a: 27.5, w: 3, y0: F1, y1: F1 + 6.83, kind: 'storm door', name: 'Back door' }, WIN(31.8, F1, { w: 4, sill: 2.4, kind: 'slider', name: 'Dinette window' }), WIN(38.2, F1, { name: 'Family room window' }), WIN(48.4, F1, { name: 'Family room window' })] },
+  back2: { axis: 'u', at: 28, inward: -1, items: [WIN(4.2, F2), WIN(13.1, F2), WIN(23.7, F2, { w: 2.4, sill: 3.2, name: 'Bathroom window' }), WIN(30.3, F2, { w: 2.4, sill: 3.2, name: 'Bathroom window' }), WIN(38.2, F2), WIN(48.4, F2)] },
   west1: { axis: 'v', at: 0, inward: 1, items: [WIN(7.3, F1), WIN(22.8, F1)] },
   west2: { axis: 'v', at: 0, inward: 1, items: [WIN(8.3, F2), WIN(21.2, F2)] },
   east1: { axis: 'v', at: 54, inward: -1, items: [WIN(6.5, F1, { name: 'Den window' }), { a: 21.5, w: 2.67, y0: F1, y1: F1 + 6.67, kind: 'door', name: 'Door to the breezeway' }] },
@@ -534,8 +537,8 @@ bag('Garage');
 step('Garage slab and walls', 'A 4 inch slab inside the frost walls, then 2x4 walls: two 9 by 7 foot openings for overhead doors in front, a window at the far end, and the breezeway between the garage and the house, with a door to the front and one to the back.');
 add('slab', 'Garage floor, 4 inch slab', bx(GAR.u0 + GW, GAR.u1 - GW, GAR.v0 + GW, GAR.v1 - GW, 0, GSLAB), 'concrete', { lb: 22.7 * 22.7 * 0.33 * 150 });
 add('slab', 'Breezeway floor', bx(54, GAR.u0, GAR.v0 + GW, 28 - GW, 0, GSLAB), 'concrete', { lb: 4 * 11 * 0.33 * 150 });
-FACES.garfront = { axis: 'u', at: GAR.v0, inward: 1, items: [{ a: 54 + 1.75, w: 2.67, y0: GSLAB, y1: GSLAB + 6.67, kind: 'door', name: 'Breezeway door' }, { a: GAR.u0 + 2 + 4.5, w: 9, y0: GSLAB, y1: GSLAB + 7, kind: 'garage door', name: 'Overhead door', open: true }, { a: GAR.u0 + 13 + 4.5, w: 9, y0: GSLAB, y1: GSLAB + 7, kind: 'garage door', name: 'Overhead door' }] };
-FACES.garback = { axis: 'u', at: 28, inward: -1, items: [{ a: 54 + 1.9, w: 2.67, y0: GSLAB, y1: GSLAB + 6.67, kind: 'door', name: 'Breezeway back door' }] };
+FACES.garfront = { axis: 'u', at: GAR.v0, inward: 1, items: [{ a: 54 + 1.75, w: 2.67, y0: GSLAB, y1: GSLAB + 6.67, kind: 'door', name: 'Breezeway door' }, { a: GAR.u0 + 2 + 4.5, w: 9, y0: GSLAB, y1: GSLAB + 7, kind: 'garage door', name: 'Overhead door' }, { a: GAR.u0 + 13 + 4.5, w: 9, y0: GSLAB, y1: GSLAB + 7, kind: 'garage door', name: 'Overhead door' }] };
+FACES.garback = { axis: 'u', at: 28, inward: -1, items: [{ a: 54 + 1.9, w: 2.67, y0: GSLAB, y1: GSLAB + 6.67, kind: 'door', name: 'Breezeway back door', red: true }] };
 FACES.gareast = { axis: 'v', at: GAR.u1, inward: -1, items: [WIN(27.5, GSLAB + 0.6, { name: 'Garage window' })] };
 const garRoof = on => wallLine(on, { roof: 13, roofKey: 'roofG' });
 wall({ axis: 'u', at: GAR.v0, inward: 1, a0: 54.1, a1: GAR.u1, y0: GSLAB, top: GP, openings: open('garfront'), name: 'Garage front wall', lv: 'wallsG' });
@@ -587,8 +590,16 @@ add('chimney', 'Chimney cap', bx(CHIM.u0 - 0.25, CHIM.u1 + 0.25, CHIM.v0 - 0.25,
 add('fireplace', 'Living room fireplace', merge([bx(CHIM.u0 + 0.9, CHIM.u1 - 0.9, CHIM.v0 - 0.04, CHIM.v0, F1 + 0.1, F1 + 2.6)]), 'tar');
 add('hearth', 'Living room hearth', bx(CHIM.u0 + 0.2, CHIM.u1 - 0.2, CHIM.v0 - 1.6, CHIM.v0, F1, F1 + 0.12), 'brick', { lb: 300 });
 const FTOP = WRIDGE + 1.2;
-for (let y = -0.2, k = 0; y < FTOP - 0.01; y += 3.2, k++) add('chimney', `Family room chimney, lift ${k + 1}`, bx(FRCH.u0, FRCH.u1, y < F1 + 5 ? FRCH.v0 : 28.15, FRCH.v1, y, Math.min(FTOP, y + 3.2)), 'brick', { lb: 3.2 * 10 * 120 * 0.8 });
-add('chimney', 'Chimney cap', bx(FRCH.u0 - 0.2, FRCH.u1 + 0.2, 28.0, FRCH.v1 + 0.2, FTOP, FTOP + 0.35), 'concrete', { lb: 160 });
+// the firebox's part is wide; above the first floor's window heads it steps in to a narrower flue, as in the photographs
+const SHOULDER = F1 + 7.2, NU0 = FRCH.u0 + 0.75, NU1 = FRCH.u1 - 0.65;
+for (let y = -0.2, k = 0; y < FTOP - 0.01; y += 3.2, k++) {
+  const y1 = Math.min(FTOP, y + 3.2, y < SHOULDER ? SHOULDER : Infinity), wide = y < SHOULDER;
+  add('chimney', `Family room chimney, lift ${k + 1}`, bx(wide ? FRCH.u0 : NU0, wide ? FRCH.u1 : NU1, y < F1 + 5 ? FRCH.v0 : 28.15, wide ? FRCH.v1 : FRCH.v1 - 0.4, y, y1), 'brick', { lb: 3.2 * 10 * 120 * 0.8 });
+  if (wide && y1 === SHOULDER) { y = SHOULDER - 3.2; }
+}
+// the sloped brick where it steps in
+add('chimney', 'Family room chimney, shoulder', merge([uy([[FRCH.u0, SHOULDER], [NU0, SHOULDER + 1.2], [NU0, SHOULDER]], 28.15, FRCH.v1), uy([[FRCH.u1, SHOULDER], [NU1, SHOULDER], [NU1, SHOULDER + 1.2]], 28.15, FRCH.v1), vy([[FRCH.v1, SHOULDER], [FRCH.v1 - 0.4, SHOULDER + 0.8], [FRCH.v1 - 0.4, SHOULDER]], FRCH.u0, FRCH.u1)]), 'brick', { lb: 300 });
+add('chimney', 'Chimney cap', bx(NU0 - 0.15, NU1 + 0.15, 28.0, FRCH.v1 - 0.25, FTOP, FTOP + 0.3), 'concrete', { lb: 120 });
 add('fireplace', 'Family room fireplace', bx(FRCH.u0 + 0.9, FRCH.u1 - 0.9, FRCH.v0 - 0.04, FRCH.v0, F1 + 0.1, F1 + 2.6), 'tar');
 
 // windows: glass in white sash with muntins, a casing round it, louvered shutters beside it
@@ -599,12 +610,27 @@ function windows(face, off, stepShutters) {
     const a0 = it.a - it.w / 2, a1 = it.a + it.w / 2, B = (s0, s1, y0, y1, d0, d1) => F_.axis === 'u' ? bx(s0, s1, at(d0), at(d1), y0, y1) : bx(at(d0), at(d1), s0, s1, y0, y1);
     const trim = [], glass = [], cw = 0.33;
     if (it.kind === 'garage door') {
-      // the left one stands open, rolled up under the ceiling, as in the photographs
-      const g = it.open ? [F_.axis === 'u' ? bx(a0, a1, F_.at + 0.4, F_.at + 7.4, it.y1 + 0.1, it.y1 + 0.25) : null] : [B(a0, a1, it.y0, it.y1, off - 0.15, off - 0.05)];
-      if (!it.open) for (let k = 1; k < 4; k++) g.push(B(a0, a1, it.y0 + k * (it.y1 - it.y0) / 4 - 0.03, it.y0 + k * (it.y1 - it.y0) / 4 + 0.03, off - 0.05, off - 0.02));
+      const g = [B(a0, a1, it.y0, it.y1, off - 0.15, off - 0.05)];
+      for (let k = 1; k < 4; k++) g.push(B(a0, a1, it.y0 + k * (it.y1 - it.y0) / 4 - 0.03, it.y0 + k * (it.y1 - it.y0) / 4 + 0.03, off - 0.05, off - 0.02));
       out.win.push(add('overhead door', it.name, merge(g), 'trim', { lb: 150 }));
       trim.push(B(a0 - cw, a0, it.y0, it.y1 + cw, off, off + 0.08), B(a1, a1 + cw, it.y0, it.y1 + cw, off, off + 0.08), B(a0 - cw, a1 + cw, it.y1, it.y1 + cw, off, off + 0.08));
       out.win.push(add('trim', `${it.name}, casing`, merge(trim), 'trim', { lb: 20 }));
+      continue;
+    }
+    if (it.kind === 'slider') {
+      // two big panes side by side in a white frame, no muntins
+      glass.push(B(a0, a1, it.y0, it.y1, off - 0.12, off - 0.1));
+      trim.push(B(a0, a0 + 0.15, it.y0, it.y1, off - 0.1, off - 0.02), B(a1 - 0.15, a1, it.y0, it.y1, off - 0.1, off - 0.02), B(a0, a1, it.y0, it.y0 + 0.15, off - 0.1, off - 0.02), B(a0, a1, it.y1 - 0.15, it.y1, off - 0.1, off - 0.02), B(it.a - 0.08, it.a + 0.08, it.y0, it.y1, off - 0.1, off - 0.02));
+      trim.push(B(a0 - cw, a0, it.y0 - 0.12, it.y1 + cw, off, off + 0.08), B(a1, a1 + cw, it.y0 - 0.12, it.y1 + cw, off, off + 0.08), B(a0 - cw, a1 + cw, it.y1, it.y1 + cw, off, off + 0.08), B(a0 - cw, a1 + cw, it.y0 - 0.12, it.y0, off, off + 0.16));
+      out.win.push(add('window', it.name, merge(trim), 'trim', { lb: 60 }), add('glass', `${it.name}, glass`, merge(glass), 'glass', { lb: 30 }));
+      continue;
+    }
+    if (it.kind === 'storm door') {
+      // a white storm door, glass nearly to the floor, over the back door
+      trim.push(B(a0, a0 + 0.3, it.y0, it.y1, off - 0.06, off + 0.04), B(a1 - 0.3, a1, it.y0, it.y1, off - 0.06, off + 0.04), B(a0, a1, it.y1 - 0.3, it.y1, off - 0.06, off + 0.04), B(a0, a1, it.y0, it.y0 + 0.6, off - 0.06, off + 0.04));
+      trim.push(B(a0 - cw, a0, it.y0, it.y1 + cw, off, off + 0.08), B(a1, a1 + cw, it.y0, it.y1 + cw, off, off + 0.08), B(a0 - cw, a1 + cw, it.y1, it.y1 + cw + 0.05, off, off + 0.1));
+      glass.push(B(a0 + 0.3, a1 - 0.3, it.y0 + 0.6, it.y1 - 0.3, off - 0.05, off - 0.03));
+      out.win.push(add('door', it.name, merge(trim), 'trim', { lb: 90 }), add('glass', `${it.name}, glass`, merge(glass), 'glass', { lb: 30 }));
       continue;
     }
     if (it.kind === 'front door' || it.kind === 'door' || it.kind === 'french doors') {
@@ -614,7 +640,7 @@ function windows(face, off, stepShutters) {
         d.push(B(s0, s1, it.y0, it.y1, off - 0.15, off - 0.05));
         if (it.kind !== 'front door') glass.push(B(s0 + 0.35, s1 - 0.35, it.y0 + (it.kind === 'french doors' ? 0.8 : 3.4), it.y1 - 0.35, off - 0.04, off - 0.02));
         else for (const [p0, p1, q0, q1] of [[0.3, 0.45, 0.3, 0.47], [0.55, 0.7, 0.3, 0.47], [0.3, 0.45, 0.55, 0.92], [0.55, 0.7, 0.55, 0.92]]) d.push(B(s0 + lw * p0 / 1, s0 + lw * (p1 + 0.25) / 1, it.y0 + (it.y1 - it.y0) * q0, it.y0 + (it.y1 - it.y0) * q1, off - 0.05, off - 0.02));
-        out.win.push(add('door', it.name, merge(d), it.kind === 'front door' ? 'door' : 'trim', { lb: 70 }));
+        out.win.push(add('door', it.name, merge(d), it.kind === 'front door' || it.red ? 'door' : 'trim', { lb: 70 }));
       }
       if (glass.length) out.win.push(add('glass', `${it.name}, glass`, merge(glass), 'glass', { lb: 30 }));
       if (it.kind !== 'front door') { trim.push(B(a0 - cw, a0, it.y0, it.y1 + cw, off, off + 0.08), B(a1, a1 + cw, it.y0, it.y1 + cw, off, off + 0.08), B(a0 - cw, a1 + cw, it.y1, it.y1 + cw + 0.05, off, off + 0.1)); out.win.push(add('trim', `${it.name}, casing`, merge(trim), 'trim', { lb: 15 })); }
@@ -644,7 +670,8 @@ function windows(face, off, stepShutters) {
 step('Windows and doors', 'Double-hung windows, six lights over six, go into the rough openings, plumbed and nailed through their casings; the doors are hung; the front door gets its sidelights and pilasters.');
 const SID = inch(0.5) + 0.06;               // where the siding's face is
 const SHUTTERS = [];
-for (const f of ['front1', 'front2', 'wingfront', 'back1', 'back2', 'west1', 'west2', 'east1', 'east2', 'garfront', 'garback', 'gareast']) { const r = windows(f, SID, true); SHUTTERS.push(...r.shut); }
+// shutters on the front and the ends; the back has none, in the photographs
+for (const f of ['front1', 'front2', 'wingfront', 'back1', 'back2', 'west1', 'west2', 'east1', 'east2', 'garfront', 'garback', 'gareast']) { const r = windows(f, SID, !f.startsWith('back')); SHUTTERS.push(...r.shut); }
 // the front entrance: sidelights and pilasters, a frieze and a pediment (the entrance detail sheet)
 {
   const a = 27.25, g = [], gl = [], d = SID, B = (s0, s1, y0, y1, d0, d1) => bx(s0, s1, -d1, -d0, y0, y1);
@@ -728,6 +755,18 @@ step('The porch', 'A porch off the dining room, 14 feet square, on a brick floor
 step('Steps, drive and lawn', 'Brick steps to the front door, an asphalt drive up to the garage, loam and grass seed, and a row of shrubs along the front.');
 {
   add('steps', 'Front steps, brick', merge([bx(24.6, 29.9, -3.4, 0, 0, F1 / 2), bx(24.6, 29.9, -1.8, 0, F1 / 2, F1 - 0.05)]), 'brick', { lb: 2400 });
+  // the back: a brick stoop and steps down to the yard with black iron railings, and a steel bulkhead over the
+  // outside stair to the cellar, beside it under the dinette window
+  const st = [bx(25.2, 29.8, 28, 31.2, 0, F1 - 0.05)], n = 3, rh = (F1 - 0.05) / (n + 1);
+  for (let i = 0; i < n; i++) st.push(bx(25.2, 29.8, 31.2 + i * 0.95, 31.2 + (i + 1) * 0.95, 0, (n - i) * rh));
+  add('steps', 'Back steps, brick', merge(st), 'brick', { lb: 3000 });
+  const rl = [];
+  for (const u of [25.3, 29.7]) {
+    rl.push(vy(slopeBoard(28.2, F1 + 2.9, 31.2, F1 + 2.9, 1.2), u - 0.04, u + 0.04), vy(slopeBoard(31.2, F1 + 2.9, 31.2 + n * 0.95, rh + 2.9, 1.2), u - 0.04, u + 0.04));
+    for (let k = 0; k <= 7; k++) { const v = 28.4 + k * (n * 0.95 + 2.8) / 7, yb = v < 31.2 ? F1 - 0.05 : Math.max(rh, (n - Math.floor((v - 31.2) / 0.95)) * rh), yt = v < 31.2 ? F1 + 2.9 : F1 + 2.9 - (v - 31.2) * (F1 - rh) / (n * 0.95); rl.push(bx(u - 0.04, u + 0.04, v - 0.04, v + 0.04, yb, yt)); }
+  }
+  add('railing', 'Back step railings, iron', merge(rl), 'shutter', { lb: 80 });
+  add('bulkhead', 'Bulkhead over the cellar stair', vy([[28, 0], [33.4, 0], [33.4, 0.5], [28, 1.9]], 30.2, 34.4), 'trim', { lb: 200 });
   add('driveway', 'Driveway, asphalt', flat([[56, 15.3], [GAR.u1 + 1, 15.3], [GAR.u1 + 3, -6], [78, -40], [74, -70], [50, -70], [54, -40], [52, -6]], 0, 0.12), 'asphalt', { site: true, lb: 0 });
   const sh = [];
   for (const [u, v, r] of [[3, -2.2, 1.6], [8.8, -2.4, 1.4], [15.5, -2.4, 1.6], [21.3, -2.2, 1.4], [32, -2.3, 1.5], [36, 0.0, 1.5], [42, -0.2, 1.8], [51, 0, 1.6]]) { const c = new THREE.IcosahedronGeometry(Y(r), 1); c.scale(1, 0.75, 1); c.translate(X(v), Y(r * 0.65), Z(u)); sh.push(c); }
@@ -793,7 +832,7 @@ const S_SCREEN = step('The porch screened in', 'The open porch becomes a screene
   add('trim', 'Screened porch frames and railings', merge(g), 'trim', { lb: 500 });
   add('screen', 'Porch screens', merge(sc), 'screen', { lb: 60 });
 }
-const S_NOW = step('Today', 'Arched trim over the garage doors, a second chimney at the west end (it is not on the 1972 drawings), a brick patio out back with hydrangeas along the wall. The station wagon is long gone. This is the house in the photographs.');
+const S_NOW = step('Today', 'Arched trim over the garage doors, a second chimney at the west end (it is not on the 1972 drawings), and out back a brick patio with a fieldstone wall, hydrangeas round the chimney and hostas along the wall. The station wagon is long gone. This is the house in the photographs.');
 until(WAGON, S_NOW);
 {
   const g = [];
@@ -808,9 +847,23 @@ until(WAGON, S_NOW);
   const wc = RIDGE + 3.0;
   add('chimney', 'West chimney', bx(2.0, 4.6, 16.2, 18.4, RIDGE - 3.0, wc), 'brick', { lb: 3000 });
   add('chimney', 'West chimney, cap', bx(1.8, 4.8, 16.0, 18.6, wc, wc + 0.3), 'concrete', { lb: 150 });
-  add('patio', 'Brick patio', flat([[15.5, 28.6], [54, 28.6], [54, 40], [44, 46], [15.5, 46]], 0.0, 0.15), 'pavers', { site: true });
-  const hy = []; for (const [u, v, r] of [[22, 29.6, 1.6], [26, 29.8, 1.5], [36, 29.7, 1.7], [40, 30.2, 1.5], [47.5, 29.7, 1.7], [52, 29.6, 1.4]]) { const c = new THREE.IcosahedronGeometry(Y(r), 1); c.scale(1, 0.8, 1); c.translate(X(v), Y(r * 0.75), Z(u)); hy.push(c); }
-  add('shrub', 'Hydrangeas', merge(hy), 'hydrangea', { site: true });
+  // the back yard as in the photographs: a brick patio from the porch past the back steps, a bed of hydrangeas round
+  // the family room chimney and hostas along the wall, a fieldstone wall and pillars at its far edge, a grill, and a
+  // table under a red umbrella
+  add('patio', 'Brick patio', flat([[15.4, 28.6], [24.8, 28.6], [24.8, 34.4], [30.2, 34.4], [30.2, 33.6], [35, 33.6], [46, 34.5], [49, 44], [44, 54], [15.4, 54]], 0.0, 0.15), 'pavers', { site: true });
+  const bush = (list, sy = 0.8) => merge(list.map(([u, v, r]) => { const c = new THREE.IcosahedronGeometry(Y(r), 1); c.scale(1, sy, 1); c.translate(X(v), Y(r * sy * 0.9), Z(u)); return c; }));
+  add('shrub', 'Hydrangeas', bush([[35.8, 30.6, 1.9], [37.4, 30.9, 2.2], [40.2, 31.8, 2.1], [46.6, 31.6, 2.2], [49.4, 30.6, 2.0], [52.2, 30.2, 1.7]], 0.85), 'hleaf', { site: true });
+  add('shrub', 'Hydrangea flowers', bush([[36.2, 29.8, 0.45], [37.8, 32.8, 0.5], [40.6, 33.4, 0.45], [47.4, 33.3, 0.5], [49.2, 32.4, 0.45], [38.6, 29.6, 0.4]].map(([u, v, r]) => [u, v, r]), 1).translate(0, Y(2.4), 0), 'hydrangea', { site: true });
+  add('shrub', 'Hostas', bush([[15.8 + 1.2, 29.8, 1.4], [19.5, 29.6, 1.5], [23.2, 29.7, 1.3]], 0.45), 'hleaf', { site: true });
+  add('wall', 'Fieldstone wall and pillars', merge([bx(15.4, 41.2, 54.2, 55.6, 0, 2.0), bx(41.2, 43.6, 53.6, 56, 0, 3.4), bx(47.2, 49.6, 42.4, 44.8, 0, 3.4)]), 'fieldstone', { site: true });
+  add('wall', 'Pillar caps', merge([bx(41, 43.8, 53.4, 56.2, 3.4, 3.65), bx(47, 49.8, 42.2, 45, 3.4, 3.65)]), 'concrete', { site: true });
+  add('grill', 'Gas grill', merge([bx(30.8, 33.6, 35.6, 37.4, 1.0, 3.6), bx(30.6, 33.8, 35.5, 37.5, 3.6, 4.1), bx(29.4, 35, 35.6, 37.4, 3.0, 3.1), cylG(Y(0.25), Y(0.25), 0, Y(0.5), X(36.5), Z(31.1), 10), cylG(Y(0.25), Y(0.25), 0, Y(0.5), X(36.5), Z(33.3), 10)]), 'shutter', { site: true });
+  const T0 = { u: 22, v: 44 }, tb = [cylG(Y(2.4), Y(2.4), Y(2.3), Y(2.4), X(T0.v), Z(T0.u), 24), cylG(Y(0.12), Y(0.12), 0, Y(2.3), X(T0.v), Z(T0.u), 8)], ch = [];
+  for (let k = 0; k < 4; k++) { const a = Math.PI / 4 + k * Math.PI / 2, cu = T0.u + Math.cos(a) * 3.2, cv = T0.v + Math.sin(a) * 3.2; tb.push(bx(cu - 0.8, cu + 0.8, cv - 0.8, cv + 0.8, 1.45, 1.55), bx(cu - 0.8, cu + 0.8, cv - 0.8, cv + 0.8, 0.05, 0.1)); ch.push(bx(cu - 0.75, cu + 0.75, cv - 0.75, cv + 0.75, 1.55, 1.75)); }
+  add('furniture', 'Patio table and chairs', merge(tb), 'shutter', { site: true });
+  add('furniture', 'Chair cushions', merge(ch), 'red', { site: true });
+  const um = new THREE.ConeGeometry(Y(1.1), Y(5.2), 8); um.translate(X(T0.v), Y(7.0), Z(T0.u));
+  add('furniture', 'Umbrella, red, furled', merge([um, cylG(Y(0.07), Y(0.07), Y(2.4), Y(9.8), X(T0.v), Z(T0.u), 6)]), 'red', { site: true });
 }
 K.finish();
 
@@ -889,7 +942,7 @@ export const KIT = {
     return rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
   },
   cut: { min: Z(-1), max: Z(GAR.u1 + 1), value: Z(10) }, cutView: { y: 4, from: [-2, 6, 24] },
-  camera: [-34, 12, 26], near: 8, whole: true, person: [X(-5), Z(22)], ground: 0x6f8f4e,
+  camera: [-34, 12, 26], near: 8, whole: true, person: false, ground: 0x6f8f4e,
   shadow: { left: -60, right: 60, top: 60, bottom: -60, near: 10, far: 400 },
   pit: { x0: X(PIT.v0), x1: X(PIT.v1), z0: Z(PIT.u0), z1: Z(PIT.u1), depth: Y(-FTG + 0.6), step: S_DIG },
   mats: MATS,

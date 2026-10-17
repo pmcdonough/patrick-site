@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.103 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.12 + Ring Kart 0.7. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.104 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.13 + Ring Kart 0.7. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.104
+- Cathedral Lab 0.13 (the back of the 1972 house, from photographs). The home card's badge says so. No change to the sim, Play Review or Ring Kart.
 
 ### 0.103
 - Cathedral Lab 0.12 (a 1972 house, built from its drawings). The home card says so. No change to the sim, Play Review or Ring Kart.
@@ -236,6 +239,10 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.13
+- The back of the 1972 house, from photographs of it (the drawings have no rear elevation): a wide two-pane window over the sink and another in the dinette, a full-glass storm door on the back door, upstairs windows over the family room's, no shutters on the back, brick steps with iron railings, a steel bulkhead over the cellar stair, the family room chimney stepping in to a narrower flue above the first floor, and the breezeway's red back door. Today's back yard: the patio from the porch past the steps, a fieldstone wall and pillars, hydrangeas round the chimney and hostas along the wall, a grill and a table under a red umbrella.
+- Both overhead doors are closed, and the house has no figure for scale (a building can leave it out with `KIT.person: false`).
 
 ### 0.12
 - A fourth building, and the first that is not stone: a house built by N. L. Mitton, Inc. in 1972, from its nine sheets of drawings (foundation plan, both floor plans, front and side elevations, a typical framing section, the entrance detail). 45 steps in 10 bags: the wooded lot, the batter boards, the cellar hole, footings, forms, the pour (with its ready-mix truck), the girder on six lally columns, sills, 2x10 joists, plywood decks, 2x4 walls with their headers, the bearing wall and every room, the stair, ceiling joists, 2x8 rafters and the wing's lopsided roof, the garage, sheathing and shingles, the chimneys, windows, trim, cedar shingles and shutters, the porch, the drive, the oil burner, and the move-in with a station wagon. Then on: the Blizzard of '78 on the roofs, the thaw, new clapboards, the porch screened in, and the house as it is today, from photographs. No address.

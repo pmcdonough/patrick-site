@@ -3,29 +3,29 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.12';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.12';
+import * as THREE from './vendor/three.module.js?v=0.13';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.13';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first. Your own is made from a design: make(design) gives the same exports, and the
 // design comes from the address (?b=yours&d=...), or else the last one saved on the design page.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.12') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.12') },
-  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.12'), design: true },
-  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.12') },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.13') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.13') },
+  { id: 'yours', name: 'Design your own', load: () => import('./yours.js?v=0.13'), design: true },
+  { id: 'house', name: 'A 1972 house', load: () => import('./house.js?v=0.13') },
 ];
 const Q = new URLSearchParams(location.search);
 const CHOSEN = BUILDINGS.find(b => b.id === Q.get('b')) || BUILDINGS[0];
 const MOD = await CHOSEN.load();
 let DESIGN = null;
 if (MOD.make) {
-  const D = await import('./design.js?v=0.12');
+  const D = await import('./design.js?v=0.13');
   let saved = null; try { saved = JSON.parse(localStorage.getItem('cathedral-lab.design')); } catch (e) { /* none saved */ }
   DESIGN = Q.get('d') ? D.decode(Q.get('d'), Q.get('name')) : D.clamp(saved || D.DEFAULT);
 }
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = MOD.make ? MOD.make(DESIGN) : MOD;
 
-const VERSION = '0.12';
+const VERSION = '0.13';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
@@ -83,7 +83,7 @@ const PIT = KIT.pit ? (() => {
 const person = new THREE.Group(), pm = new THREE.MeshStandardMaterial({ color: lin(0x4a5a6c), roughness: 0.8 });
 const pb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.45, 16), pm); pb.position.y = 0.73;
 const ph = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), pm); ph.position.y = 1.65;
-person.add(pb, ph); person.position.set(...(KIT.person ? [KIT.person[0], KIT.person[2] ?? 0.08, KIT.person[1]] : [-2.2, 0.08, 8.2])); person.traverse(o => o.castShadow = true); scene.add(person);
+person.add(pb, ph); person.position.set(...(KIT.person ? [KIT.person[0], KIT.person[2] ?? 0.08, KIT.person[1]] : [-2.2, 0.08, 8.2])); person.traverse(o => o.castShadow = true); if (KIT.person !== false) scene.add(person);
 
 const cutPlane = new THREE.Plane(V3(0, 0, -1), 99);
 const MATS = {

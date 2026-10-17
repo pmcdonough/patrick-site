@@ -6,9 +6,9 @@
 //
 // This is the engine for building your own cathedral: a design is a description, and the solver checks it as it goes up.
 // Units: metres, kN. Nothing here touches the page.
-import * as THREE from './vendor/three.module.js?v=0.12';
-import * as Solver from './solver.js?v=0.12';
-import { V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, ruled, archShapes } from './kit.js?v=0.12';
+import * as THREE from './vendor/three.module.js?v=0.13';
+import * as Solver from './solver.js?v=0.13';
+import { V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, ruled, archShapes } from './kit.js?v=0.13';
 
 export const SIDES = [-1, 1];
 export const X = (s, x) => s < 0 ? x : -x;                   // a position drawn on the negative side, mirrored to side s

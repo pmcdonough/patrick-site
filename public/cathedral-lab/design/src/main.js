@@ -4,10 +4,10 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and its imports carry the same stamp.
 // node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as Solver from '../../src/solver.js?v=0.12';
-import { DEFAULT, LIMITS, PRESETS, CHALLENGES, REFS, clamp, decode, query, assess, summary, minCrown, lands, layoutOf, apseSides } from '../../src/design.js?v=0.12';
+import * as Solver from '../../src/solver.js?v=0.13';
+import { DEFAULT, LIMITS, PRESETS, CHALLENGES, REFS, clamp, decode, query, assess, summary, minCrown, lands, layoutOf, apseSides } from '../../src/design.js?v=0.13';
 
-const VERSION = '0.12';
+const VERSION = '0.13';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private window */ } } };

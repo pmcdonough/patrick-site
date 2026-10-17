@@ -3,7 +3,7 @@
 // Armco, catch fences and painted tarmac, the gate and the gantry, corner boards, and the cars, each drawn from a side
 // view to its own proportions, with racing stripes. Everything is cel-shaded (three flat bands of light, no gradients)
 // and the cars and trees carry a brown ink outline. Three.js r128, the copy Cathedral Lab keeps on the site.
-import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.12';
+import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.13';
 import { pointAt } from './track.js?v=0.7';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.

@@ -2,8 +2,8 @@
 // section and checks it as you change it; yours.js builds it in 3D from the same section. Pure functions: no page, no
 // drawing, no geometry (gothic.js's section() only solves), so the unit tests run it in Node.
 // Units: metres, kN.
-import * as Solver from './solver.js?v=0.12';
-import { section } from './gothic.js?v=0.12';
+import * as Solver from './solver.js?v=0.13';
+import { section } from './gothic.js?v=0.13';
 
 // ---------- The choices ----------
 // towers: 0 none, 1 two towers, 2 two towers with spires. tiers: flying buttresses, 0 none, 1 one tier, 2 two tiers (one
