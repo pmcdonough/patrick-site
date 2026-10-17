@@ -51,7 +51,7 @@ Every doc in the repo, what it is for, and where to start depending on why you a
 
 | Doc | What it covers |
 |---|---|
-| `RING-KART.md` | the session, the lap, the driving model, the cars, the world, checks, real lap times |
+| `RING-KART.md` | the full reference: what the player sees and the controls, architecture and layers, module APIs, the data model, the lap, driving and AI, the cars, the design system, the page, invariants, checks, how it was built, recipes, limits and next, real lap times |
 
 ## Keeping the docs true
 
