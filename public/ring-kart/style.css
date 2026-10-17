@@ -135,6 +135,16 @@ button.primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 va
 .drs { font: 400 0.85rem var(--num); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 10px 3px; border-radius: 999px; border: 2px solid var(--ink); background: rgb(255 241 207 / 0.12); color: rgb(255 241 207 / 0.5); }
 .drs.ready { background: var(--mustard); color: var(--ink); }
 .drs.open { background: var(--avocado); color: var(--cream); }
+/* the start lights: five red lamps in a black housing, lit one by one, out for the go */
+.lights { left: 50%; top: 18%; transform: translateX(-50%); display: none; gap: 10px; padding: 10px 14px; background: #1a120c; border: var(--sticker); border-radius: 14px; box-shadow: var(--drop); }
+.lights.on { display: flex; }
+.lights i { width: 30px; height: 30px; border-radius: 50%; background: #3a2018; border: 3px solid var(--ink); }
+.lights i.on { background: #ff3b2b; box-shadow: 0 0 14px 3px rgb(255 59 43 / 0.7); }
+/* the track picker: one button per track, the one you are on pressed */
+.trackpick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+.trackpick button { text-align: left; padding: 8px 10px; border: var(--sticker); border-radius: 12px; background: var(--cream); color: var(--ink); cursor: pointer; font: 500 0.78rem/1.25 var(--body); }
+.trackpick button b { display: block; font: 400 1rem var(--num); margin-bottom: 2px; }
+.trackpick button[aria-pressed="true"] { background: var(--mustard); box-shadow: 3px 3px 0 var(--ink); }
 /* a quicker car closing from behind: the Ring's etiquette, keep right and let it pass on the left */
 .behind { left: 14px; top: 104px; display: flex; align-items: center; gap: 10px; padding: 6px 14px 8px 10px; background: var(--cream); border: var(--sticker); border-radius: 16px; box-shadow: var(--drop); opacity: 0; transition: opacity .2s; }
 .behind.on { opacity: 1; }
@@ -252,5 +262,7 @@ kbd.wide { min-width: 52px; }
   #sound { bottom: 112px; } .corner-btn.full { bottom: 150px; }
   .touch .lr, .touch .pedals { bottom: 112px; }
   .tele .lbl { white-space: nowrap; font-size: 0.68rem; }
-  .pick { top: auto; bottom: 12px; max-height: 70%; }
+  /* on a phone the picker is the whole screen, not a box over the race */
+  .pick { position: fixed; inset: 0; width: auto; max-height: none; border-radius: 0; border: 0; box-shadow: none; z-index: 60; padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); }
+  .trackpick { grid-template-columns: 1fr; } .trackpick button { display: flex; gap: 10px; align-items: baseline; } .trackpick button b { flex: none; }
 }

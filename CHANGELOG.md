@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.110 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.11. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.111 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.15 + Ring Kart 0.12. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.111
+- Ring Kart 0.12 (Laguna Seca, the Coast Road, a track picker). The home card says so. `tools/circuit_track.py` is new: it builds a circuit from OpenStreetMap and an elevation model; `docs/RAW-INPUTS.md` lists Laguna's inputs. `tools/smoke.js` also starts a race on each new track. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.110
 - Ring Kart 0.11 (no way through the barriers at the Karussell). The home card's badge says so. No change to the sim, Play Review or Cathedral Lab.
@@ -646,6 +649,14 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.12
+- Two new tracks and a track picker above the cars (on a phone the picker is now the whole screen). Each track keeps its own best times; switching track reloads the page with it (`?t=` in the address).
+- Laguna Seca, from OpenStreetMap's raceway segments and the USGS 10 m elevation model by a new script, `tools/circuit_track.py`: a 3,605 m lap at 60%, the Andretti Hairpin, the Rahal Straight, the Corkscrew and Rainey Curve, golden California hills and oaks. Three laps from a grid of eight, you sixth, with five red start lights; the strip counts the laps (Lap 2, Final lap). The pro drives one lap from a standing start: about 1:08 in a GT3 RS.
+- The Coast Road, made up for the game: a 7.6 km sprint from Surf Town to the lighthouse with the sea on your left, a beach, palm trees, switchbacks up the cliff at Seal Rock, three dune jumps, Palm Alley and the S of Smugglers' Bend. About 2:16 for the pro in a GT3 RS.
+- How laps work: a circuit is laid out lap after lap as one long road (the end of the lap before the line for the grid, three laps, then run-off), so the best line, the pro, the AI, the pace notes and the director all work on it unchanged; the world is drawn for one lap only. The same place a lap later is never mistaken for another stretch of road.
+- The best line is better everywhere: it used to hug the inside of a hairpin all the way round (pulling each point toward its neighbours shortens a curve); it now finishes with passes that lower its bending, so it swings wide, clips the apex and runs wide again. On the Ring the pro's GT3 RS lap fell from 3:26 to 3:18, and on Laguna the pro went from slower than the AI to well ahead. A ceiling now matches the floor on the line's curvature, from the road's own radius.
+- Tests: Laguna laid out for three laps that lie on top of each other, every car round both new tracks, the pro clean and quicker than the AI on both, and nobody through a barrier.
 
 ### 0.11
 - Fixed: a car could end up behind the barrier on the climb to the Karussell, stuck on the grass (found by the owner in a GT3 RS). At a third of real size, the road up to the Karussell and the road out of it, about 30 m apart in life, came within 9.9 m of each other with a 13 m road, so they overlapped; the search that tells a car which bit of road it is on could jump to the other one, and that road's barrier then pushed the car out through the wrong side.

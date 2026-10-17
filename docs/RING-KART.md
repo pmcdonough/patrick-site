@@ -10,7 +10,7 @@ This file is the whole reference for the project: what it is, how it is put toge
 2. Architecture
 3. The modules and their APIs
 4. The data model
-5. The lap
+5. The tracks (and the Nordschleife)
 6. Driving and the AI
 7. The cars
 8. The look: design system
@@ -148,7 +148,19 @@ Marked sections: data, 3D, particles, cars, the session, the car picker, input, 
 
 **Kept in the browser** (`localStorage`, prefix `ringkart.`, every read and write in try/catch): `car` (the last pick), `mode`, `lap2.best.<car id>` (Expert), `lap2.best.<mode>.<car id>` (Beginner and Intermediate), `lap2.pro.<car id>` (the pro's time, once watched), `sound`, `autoGas`, `line`. The `lap2.` times are on the real lap (0.8 on); the keys without it are from the hand-traced lap, a different length, and stay in the browser untouched.
 
-## 5. The lap
+## 5. The tracks
+
+Three, listed in `data/tracks.json` and picked above the cars (switching reloads the page with `?t=`): the Nordschleife (`track.json`, format `ring`: the queue, the gate, traffic, the gantry), Laguna Seca (`laguna.json`, format `circuit`: three laps from a grid) and the Coast Road (`coast.json`, format `sprint`: from a grid to a finish). Each track file carries its `look` for `buildWorld`: `theme` (`forest` the Eifel's spruces and lollipop trees; `dry` golden grass and oaks; `coast` the sea to the left of the road a few metres below its lowest point, a beach, palms, no catch fences), the `words` painted on the road, the `start` and `finish` signs, and a `lighthouse`. Best times are kept per track (the Ring's under `lap2.`, the others under their id).
+
+**Circuits.** `buildTrack` lays a closed loop out as one long road: `preN` points of the lap's end before the start line (the grid stands there), the loop `laps` times end to end, and `postN` points of run-off. It returns the start line `startK`, each lap's line `lineK`, the finish `finishK`, the samples in a lap `lapN`, and `drawA` to `drawB`, the one lap the world, the map and the height strip are drawn for. Because the laps are one road, the best line, the pro, the AI, the pace notes, the director and DRS work on a circuit unchanged; the barrier between close stretches skips the same place a lap later. The line's ribbon is drawn for the second lap, a flying one. The pro drives one lap (`proFinishK`).
+
+**The grid** (`gridSetup`, `gridStep`): seven rivals (from `rivals` and `chasers`) and you sixth, two by two behind the start line; the cars are held where they stand (the gas only revs) while five red lights come on a second apart, and all go when they go out, between 5 and 6 s in. The strip's label counts the laps on a circuit (a toast at each line, Final lap on the last) and names the run elsewhere.
+
+**Laguna Seca** comes from `tools/circuit_track.py laguna`: the circuit's eight one-way segments in OpenStreetMap chained into the loop (the pit lane left out), started at the start/finish line 520 m before the Andretti Hairpin's segment, resampled every 25 m (144 points), heights from the USGS 10 m model blurred over 40 m, at 60% (a 2.2 km lap) with heights at 0.75. A circuit is a config entry there: its box, its elevation dataset, where the line is, its look.
+
+**The Coast Road** is made up in `coast.json`: 47 points laid out by hand and scaled to 7.6 km, one to one, with three crests for the dune jumps. Its tightest corner is 21 m and it has no close stretches.
+
+## 5b. The Nordschleife
 
 Since 0.8 the real road. `tools/ring_track.py` chains the Nordschleife's 52 one-way segments in OpenStreetMap (each named for its corner) into the loop, cuts out the lap from the T13 entry round to a gantry before Tiergarten (20,075 m on the map; the official lap with the T13 straight is 20.832 km). The real Touristenfahrten gantry stands before Antoniusbuche, where the speed limits step down for the exit, and 0.8 ended there; 0.9 runs on through Antoniusbuche, because the whole Döttinger Höhe flat out is the best part of the lap. The script resamples it every 50 m (402 points), looks up each point's height in the EU-DEM 25 m model (342 m at Breidscheid to 625 m at Hohe Acht) and blurs the heights over about 120 m, names each point where a segment starts (41 names, from the Sabine-Schmitz-Kurve to Antoniusbuche), and carries over what a map cannot give by name: the four jumps and the Karussell's and Mini-Karussell's banking. Where two stretches of the lap pass closer than 58 m (in real metres; only the climb to the Karussell and the way out of it), it eases them apart, by up to 13 m, so both roads and a barrier fit at the game's scale. Its raw downloads stay in `raw/ring/` (git-ignored), and `--check` proves the committed file is what they give. Until 0.7 the lap was 68 points traced by hand.
 
@@ -269,6 +281,7 @@ Each version was one session's work and one commit; the changelog has the detail
 - **0.4 (site 0.99)**: the controls rethought around a lap that is all gas and brake (Up for gas, Space to brake, Shift to drift), pace notes and a BRAKE cue from the AI's own corner speeds (split out of `driveAI` unchanged, so the AI drives exactly as before), gas always on, a horn, look back; and the 70s cartoon look, replacing the realistic one.
 
 - **0.5 (site 0.100)**: the pro lap and the best line, from one new pure module (`line.js`), so what you are shown and what the pro drives cannot disagree; the director's cut; and the phone fixed after a screenshot from a real phone (buttons overlapping each other and the prompt, the corner buttons under the thumbs). Found on the way: the pro reversed off the start (a brake pedal at a standstill is reverse), a speed profile that braked for wiggles in the tracing (curvature measured over too short a span), and the gas switch, which did nothing until you picked a car.
+- **0.12 (site 0.111)**: two tracks after the owner asked how hard another would be, a real one popular in games and a made-up one: Laguna Seca with laps, and the Coast Road. Laps came almost free by laying a circuit out lap after lap as one long road. Laguna showed the pro slower than the AI; the cause was the best line hugging the inside of hairpins (curve shortening), fixed with passes that lower the line's bending, which also took 8 s off the pro on the Ring. On phones the picker became the whole screen.
 - **0.11 (site 0.110)**: the owner found a GT3 RS stuck behind the barrier on the climb to the Karussell. Shrunk to a third, the road up and the road out had come to overlap, and the car's road search jumped from one to the other. Fixed in the map builder (close stretches eased apart), the barriers (one between close stretches) and the search (a few metres only); a new test drives cars every which way and fails on any escape.
 - **0.10 (site 0.109)**: Ring etiquette, after the owner described it (signal right, move over, let the quicker car by on the left, but not reliably and not in tight corners), with a reaction time and courtesy per driver; and the owner's own car, a family Bronco with a surfboard and a reggae groove, a GT3 RS underneath. The etiquette test first expected the slower car to be well over to the right by the time it was passed; at 70 km/h of closing speed a real driver has about a second and a half, so the test now asks for a signal, a move and a pass on the left.
 - **0.9 (site 0.107)**: the whole Döttinger Höhe back. 0.8 ended the lap at the real gantry, before Antoniusbuche, which cut the straight to 1.2 km; the owner missed it, so the lap now runs on to Tiergarten (one line in `tools/ring_track.py`).

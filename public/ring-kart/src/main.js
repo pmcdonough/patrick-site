@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.11';
-import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.11';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.11';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.11';
-import { Sound } from './audio.js?v=0.11';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.12';
+import { makeCar, step, collide, driveAI, assist, gearbox, drs, cornerSpeed, nextCorner } from './drive.js?v=0.12';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.12';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.12';
+import { Sound } from './audio.js?v=0.12';
 
-const VERSION = '0.11';
+const VERSION = '0.12';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -21,10 +21,22 @@ const corner = n => n.replace('Ex-Muehle', 'Ex-Mühle').replace('Bruennchen', 'B
 
 // ---------- data ----------
 const load = n => fetch(`data/${n}.json?v=${VERSION}`, { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error(n + ' ' + r.status); return r.json(); });
-const [TRACK, CARS] = await Promise.all([load('track'), load('cars')]);
+// the tracks (data/tracks.json): the Nordschleife on a tourist day, circuits raced for laps from a grid, and sprints
+// from a grid to a finish. The one to drive comes from ?t= in the address, or the last one picked; picking another
+// reloads the page with it.
+const TRACKS = (await load('tracks')).tracks;
+const params = new URLSearchParams(location.search);
+let trackId = params.get('t') || store.get('track', 'ring');
+if (!TRACKS.find(t => t.id === trackId)) trackId = 'ring';
+store.set('track', trackId);
+const TINFO = TRACKS.find(t => t.id === trackId);
+const [TRACK, CARS] = await Promise.all([load(TINFO.file), load('cars')]);
 const R = CARS.race, RV = Object.fromEntries(Object.entries(R).map(([k, v]) => [k, v.value]));
 const track = buildTrack(TRACK);
-const gateS = track.gateAt * track.ds, finishK = track.n - 12, finishS = finishK * track.ds;
+const RING = track.format === 'ring', CIRCUIT = track.format === 'circuit';
+const gateS = track.gateAt * track.ds, finishK = track.finishK, finishS = finishK * track.ds;
+// the pro drives the whole road, or one lap of a circuit
+const proFinishK = CIRCUIT ? track.lineK[1] : finishK, proFinishS = proFinishK * track.ds;
 
 // ---------- 3D ----------
 const cv = $('gl');
@@ -48,9 +60,9 @@ sun.shadow.bias = -0.0008;
 scene.add(sun, sun.target);
 // the signs and the names over the cars are painted with the page's 70s fonts, so wait for them (but not for long)
 await Promise.race([Promise.all(['56px Shrikhand', '44px Righteous'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
-const world = buildWorld(scene, track);
+const world = buildWorld(scene, track, TRACK.look || {});
 // the best line: one path for every car, its speeds and phases for the car you pick
-const PATH = racingPath(track), lineMesh = buildLine(track, PATH); scene.add(lineMesh.mesh);
+const PATH = racingPath(track), lineMesh = buildLine(track, PATH, ...(CIRCUIT && track.laps > 1 ? [track.lineK[1], track.lineK[2]] : [track.drawA, track.drawB])); scene.add(lineMesh.mesh);
 let LINE = null;
 const gate = world.gate;
 $('loading').hidden = true;
@@ -92,7 +104,9 @@ let mode = store.get('mode', 'beginner');
 if (!MODES[mode]) mode = 'beginner';
 // times on the real lap (from 0.8) are kept apart from those on the hand-traced one before it, which was a different
 // length: `lap2.` in front of the old keys, which stay in the browser untouched
-const bestKey = id => 'lap2.' + (mode === 'expert' ? 'best.' + id : `best.${mode}.${id}`);
+// every other track keeps its own, under its id
+const PREFIX = trackId === 'ring' ? 'lap2.' : trackId + '.';
+const bestKey = id => PREFIX + (mode === 'expert' ? 'best.' + id : `best.${mode}.${id}`);
 function setMode(m) {
   mode = m; store.set('mode', m);
   document.querySelectorAll('.modes [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
@@ -122,6 +136,7 @@ const S = { mode: 'pick', t: 0, queue: [], lastRelease: -99, barrier: 0, barrier
 function setup() {
   clearCars();
   const spec = SPECS.find(s => s.id === choice);
+  if (!RING) { gridSetup(spec); return; }
   const gap = RV.queueGap, gk = track.gateAt;
   const behind = (i, len) => gk - Math.round((2.6 + i * gap + len / 2) / track.ds);
   // the queue, front first: four rivals, you, two fast cars behind you
@@ -159,10 +174,13 @@ function picker() {
     ${store.get(bestKey(s.id), 0) ? `<p>Your best on ${MODE_NAME[mode]}: ${fmt(store.get(bestKey(s.id), 0))}</p>` : ''}</button>`).join('');
   $('cars').querySelectorAll('.carpick').forEach(b => b.onclick = () => { choice = b.dataset.id; store.set('car', choice); sound.start(); picker(); setup(); });
 }
+// the track picker: another track reloads the page with it
+$('tracks').innerHTML = TRACKS.map(t => `<button data-t="${t.id}" aria-pressed="${t.id === trackId}"><b>${t.name}</b>${t.note}</button>`).join('');
+$('tracks').querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.t === trackId) return; store.set('track', b.dataset.t); location.search = '?t=' + b.dataset.t; });
 setMode(mode); picker(); setup();
 // on a phone the page scrolls; put the whole stage on screen when the driving starts
 const onStage = () => { if (innerWidth < 900 || touch) $('stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-const toRace = () => { $('result').hidden = true; $('pick').hidden = true; setup(); S.mode = 'queue'; S.t = 0; S.lastRelease = -1.2; hudFor('race'); sound.start(); cv.focus?.(); onStage(); };
+const toRace = () => { $('result').hidden = true; $('pick').hidden = true; setup(); S.mode = RING ? 'queue' : 'grid'; S.t = 0; S.lastRelease = -1.2; S.gridAt = 0; hudFor('race'); sound.start(); cv.focus?.(); onStage(); };
 const toPick = () => { $('result').hidden = true; setup(); S.mode = 'pick'; $('pick').hidden = false; hudFor('pick'); picker(); };
 $('go').onclick = toRace;
 $('watch').onclick = () => { $('result').hidden = true; startPro(); onStage(); };
@@ -307,6 +325,36 @@ function queueStep(dt) {
   });
 }
 
+// ---------- the grid: circuits and sprints ----------
+// Seven rivals and you, two by two behind the start line, you sixth. Five red lights come on one a second, then after
+// a moment they all go out and everyone goes. Until then the cars stay where they are (the gas only revs).
+function gridSetup(spec) {
+  const pool = shuffle([...CARS.rivals, ...CARS.chasers]).slice(0, 7), order = [...pool]; order.splice(5, 0, spec);
+  order.forEach((sp, i) => {
+    const row = Math.floor(i / 2), col = i % 2, k = track.startK - Math.round((5 + row * 9 + col * 4.5) / track.ds);
+    const me = sp === spec, c = addCar(me ? spec : { ...sp, drift: 1 }, k, col ? 3.2 : -3.2, me ? 'player' : 'rival');
+    c.gx = c.x; c.gz = c.z;
+    if (me) { player = c; c.mode = MODES[mode]; }
+  });
+  group = cars.slice(); S.queue = [];
+  LINE = lineFor(track, PATH, spec); lineMesh.paint(LINE.phase);
+  Object.assign(S, { timeScale: 1, t: 0, raceStart: 0, raceT: 0, finished: [], resultShown: false, cornerName: '', cornerT: 0, hint: 0, gridAt: 0, goAt: 5 + rnd(), lights: 0, lap: 1 });
+  camInit = false;
+}
+function gridStep() {
+  if (S.mode !== 'grid') return;
+  const t = S.t - S.gridAt;
+  S.lights = t < 1 ? 0 : Math.min(5, Math.floor((t - 1) / 0.8) + 1);
+  if (S.lights !== S.lightsShown) { S.lightsShown = S.lights; $('lights').querySelectorAll('i').forEach((l, i) => l.classList.toggle('on', i < S.lights)); if (S.lights) sound.tone(440, 0.12, 0.08); }
+  if (t >= S.goAt) {
+    S.lights = 0; S.lightsShown = 0; $('lights').querySelectorAll('i').forEach(l => l.classList.remove('on'));
+    for (const c of cars) { c.released = true; c.releasedAt = S.t; }
+    S.mode = 'race'; S.raceStart = S.t; sound.tone(880, 0.4, 0.12);
+  }
+}
+// which lap you are on, on a circuit
+const lapOf = c => { let l = 1; for (let i = 1; i < track.laps; i++) if (c.k >= track.lineK[i]) l = i + 1; return l; };
+
 // ---------- the loop ----------
 let last = performance.now();
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
@@ -325,8 +373,8 @@ function frame(now) {
 function tick(dt) {
   S.t += dt;
   if (S.mode === 'pro' || S.mode === 'proDone') { proTick(dt); return; }
-  if (S.mode === 'queue' || S.mode === 'race' || S.mode === 'done') {
-    queueStep(dt);
+  if (S.mode === 'queue' || S.mode === 'grid' || S.mode === 'race' || S.mode === 'done') {
+    if (RING) queueStep(dt); else gridStep();
     // you
     const inp = readInput(dt);
     if (S.mode === 'done') { inp.gas = 0; inp.brake = 0.4; inp.drift = false; inp.steer = Math.max(-1, Math.min(1, -player.lat * 0.1)); }
@@ -353,6 +401,8 @@ function tick(dt) {
       if (S.mode === 'pick' && c === player) continue;
       step(c, dt, track, R, cars);
       if (c === player) gearbox(c, dt);
+      // on a grid, nobody moves before the lights go out
+      if (!c.released && !RING) { c.x = c.gx; c.z = c.gz; c.v = 0; continue; }
       // the arm, and the start of the road behind the queue
       if (!c.released) {
         const lim = gateS - 2.4 - c.spec.body.len / 2;
@@ -375,7 +425,7 @@ function tick(dt) {
 function startPro() {
   clearCars();
   const spec = SPECS.find(s => s.id === choice);
-  player = addCar(spec, track.gateAt - Math.round((3 + spec.body.len / 2) / track.ds), 0, 'player');
+  player = addCar(spec, (RING ? track.gateAt : track.startK) - Math.round((3 + spec.body.len / 2) / track.ds), 0, 'player');
   player.released = true; group = [player];
   LINE = lineFor(track, PATH, spec); lineMesh.paint(LINE.phase);
   Object.assign(S, { mode: 'pro', t: 0, raceT: 0, resultShown: false, cornerName: '', cornerT: 0, barrier: 0, barrierTarget: 1, lastRelease: 0, proStart: 1.2, proLine: true, proCam: 0, timeScale: 1, doneAt: 0 });
@@ -386,23 +436,23 @@ function startPro() {
 }
 function proTick(dt) {
   S.barrier += (S.barrierTarget - S.barrier) * Math.min(1, dt * 5);
-  gate.pivot.rotation.x = S.barrier * 1.35; gate.lamp.material.color.setHex(S.barrier > 0.5 ? 0x22ff66 : 0xff2a2a);
+  if (gate) { gate.pivot.rotation.x = S.barrier * 1.35; gate.lamp.material.color.setHex(S.barrier > 0.5 ? 0x22ff66 : 0xff2a2a); }
   if (S.mode === 'pro' && S.t > S.proStart) drivePro(player, dt, track, LINE);
   else if (S.mode === 'pro') player.input = { steer: 0, gas: 0, brake: 0, drift: false };   // waiting for the barrier; no brake, which at a standstill is reverse
   else player.input = { steer: Math.max(-1, Math.min(1, -player.lat * 0.1)), gas: 0, brake: player.v > 1 ? 0.8 : 0, drift: false };
   step(player, dt, track, R, []); gearbox(player, dt);
   if (player.k >= track.n - 6) player.v = Math.min(player.v, 2);   // pull up before the end of the road
   if (S.mode === 'pro') S.raceT = Math.max(0, S.t - S.proStart);
-  if (S.mode === 'pro' && player.s >= finishS) {
+  if (S.mode === 'pro' && player.s >= proFinishS) {
     player.done = true; player.time = S.raceT; S.mode = 'proDone'; S.doneAt = S.t; sound.finish();
-    store.set('lap2.pro.' + choice, player.time);
+    store.set(PREFIX + 'pro.' + choice, player.time);
   }
   if (S.mode === 'proDone' && !S.resultShown && S.t - S.doneAt > 2.4) proResult();
 }
 function proResult() {
   S.resultShown = true;
   const p = player, mine = store.get(bestKey(choice), 0);
-  $('resTitle').textContent = 'The pro, bridge to gantry';
+  $('resTitle').textContent = RING ? 'The pro, bridge to gantry' : CIRCUIT ? `The pro, a lap of ${TRACK.name}` : `The pro, ${TINFO.label.toLowerCase()}`;
   $('resTime').innerHTML = `${fmt(p.time)}<small>in the ${p.spec.name}, on the best line all the way.${mine ? ` Your best in it on ${MODE_NAME[mode]} is ${fmt(mine)}, ${(mine - p.time).toFixed(1)} s off.` : ''} Turn on the best line to follow it: green is gas, yellow coast, orange brake, red brake hard.</small>`;
   $('resOrder').innerHTML = '';
   resultButtons([['Drive it yourself', () => { toRace(); setLine(true); }, true], ['Watch again', () => startPro()], ['Change car', toPick]]);
@@ -527,9 +577,9 @@ function director(dt) {
   // a tight corner coming up is worth cutting to early, once a shot has had a couple of seconds
   const early = tight && tight.dist > 60 && tight.dist < 150 && D.t > 2 && !['trackside', 'jump', 'finish'].includes(D.shot) && D.last !== 'trackside';
   const done = !D.shot || early || (D.t > D.len && D.shot !== 'finish') || (D.shot === 'trackside' && c.s > D.sAt + 22) || (D.shot === 'jump' && !c.air && D.t > 1.6);
-  if (S.mode === 'pro' && finishS - c.s < 140 && D.shot !== 'finish') {
+  if (S.mode === 'pro' && proFinishS - c.s < 140 && D.shot !== 'finish') {
     // the finish: a camera past the gantry, up high, that the car runs toward and under
-    const at = Math.min(track.n - 1, finishK + 9), p = pointAt(track, at, 3.5);
+    const at = Math.min(track.n - 1, proFinishK + 9), p = pointAt(track, at, 3.5);
     D.pos.set(p.x, p.y + 2.4, p.z); D.sAt = 1e9; cut('finish', 30);
   } else if (c.air && c.airT > 0.05 && D.shot !== 'jump' && S.mode === 'pro') {
     // off a crest: a camera low to the side, a little ahead, which the car flies past
@@ -582,19 +632,19 @@ const ORANGE = '#f5a623';
 let mapBase = null, profBase = null;
 function drawMapBase() {
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-  for (let k = 0; k < track.n; k++) { x0 = Math.min(x0, track.x[k]); x1 = Math.max(x1, track.x[k]); z0 = Math.min(z0, track.z[k]); z1 = Math.max(z1, track.z[k]); }
+  for (let k = track.drawA; k <= track.drawB; k++) { x0 = Math.min(x0, track.x[k]); x1 = Math.max(x1, track.x[k]); z0 = Math.min(z0, track.z[k]); z1 = Math.max(z1, track.z[k]); }
   const W = map.width, H = map.height, pad = 14, s = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (z1 - z0));
   const ox = (W - (x1 - x0) * s) / 2 - x0 * s, oz = (H - (z1 - z0) * s) / 2 - z0 * s;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.lineJoin = 'round'; g.lineCap = 'round';
-  for (const [w, col] of [[10, '#1a0f07'], [5, ORANGE]]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let k = 0; k < track.n; k += 4) g[k ? 'lineTo' : 'moveTo'](track.x[k] * s + ox, track.z[k] * s + oz); g.stroke(); }
+  for (const [w, col] of [[10, '#1a0f07'], [5, ORANGE]]) { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let k = track.drawA; k <= track.drawB; k += 4) g[k === track.drawA ? 'lineTo' : 'lineTo'](track.x[k] * s + ox, track.z[k] * s + oz); g.stroke(); }
   const dot = (k, col) => { g.fillStyle = col; g.beginPath(); g.arc(track.x[k] * s + ox, track.z[k] * s + oz, 6, 0, 7); g.fill(); };
-  dot(track.gateAt, '#a8c043'); dot(finishK, '#f2b631');
+  dot(track.startK, '#a8c043'); if (!CIRCUIT) dot(finishK, '#f2b631');
   mapBase = { c, s, ox, oz };
 }
 // the height of the lap from the gate to the gantry, as a silhouette
 function drawProfileBase() {
-  const W = prof.width, H = prof.height, a = track.gateAt, b = finishK;
+  const W = prof.width, H = prof.height, a = track.startK, b = CIRCUIT ? track.lineK[1] : finishK;
   let lo = Infinity, hi = -Infinity; for (let k = a; k <= b; k++) { lo = Math.min(lo, track.y[k]); hi = Math.max(hi, track.y[k]); }
   const X = k => (k - a) / (b - a) * W, Y = k => H - 6 - (track.y[k] - lo) / (hi - lo || 1) * (H - 14);
   const shape = (g, fill) => { g.beginPath(); g.moveTo(0, H); for (let k = a; k <= b; k += 3) g.lineTo(X(k), Y(k)); g.lineTo(W, H); g.closePath(); g.fillStyle = fill; g.fill(); };
@@ -739,6 +789,7 @@ function hud(dt) {
     else msg = player.s > gateS - 6 - player.spec.body.len / 2 ? `Tap your ticket<small>Space, Enter, a tap or the A button lifts the barrier</small>` : 'Pull up to the barrier';
     if (S.hint > 0) { S.hint -= dt; if (ahead > 0) msg = `Wait your turn<small>${ahead} ${ahead === 1 ? 'car' : 'cars'} still ahead of you at the barrier</small>`; }
   } else if (S.mode === 'race' && S.raceT < 2.5) msg = 'Go';
+  else if (S.mode === 'grid' && S.lights === 0) msg = `${TRACK.name || 'Get ready'}<small>Five red lights, then go when they go out</small>`;
   pr.innerHTML = msg; pr.hidden = !msg; pr.classList.toggle('big', msg === 'Go');
   // the map: you in red, the race in white, the traffic in grey
   mg.clearRect(0, 0, map.width, map.height); mg.drawImage(mapBase.c, 0, 0);
@@ -746,11 +797,17 @@ function hud(dt) {
   for (const c of cars) if (!c.hidden && c !== p) at(c, c.role === 'traffic' ? 3 : 5, c.role === 'traffic' ? 'rgba(255,241,207,0.45)' : '#fff1cf');
   at(p, 8, '#d8402b', '#fff1cf');
   // the height of the lap, lit as far as you have come
-  const W = prof.width, H = prof.height, frac = Math.max(0, Math.min(1, (p.k - track.gateAt) / (finishK - track.gateAt)));
+  // on a circuit the strip is one lap, and everyone is placed on their own lap of it
+  const pa = track.startK, pb = CIRCUIT ? track.lineK[1] : finishK, onLap = k => CIRCUIT ? pa + ((k - pa) % track.lapN + track.lapN) % track.lapN : Math.min(finishK, k);
+  const W = prof.width, H = prof.height, frac = Math.max(0, Math.min(1, (onLap(p.k) - pa) / (pb - pa)));
   pg.clearRect(0, 0, W, H); pg.drawImage(profBase.dim, 0, 0);
-  if (frac > 0) pg.drawImage(profBase.lit, 0, 0, W * frac, H, 0, 0, W * frac, H);
-  for (const c of group) if (!c.hidden && c !== p && c.k > track.gateAt) { const x = profBase.X(Math.min(finishK, c.k)); pg.fillStyle = '#fff'; pg.fillRect(x - 1.5, profBase.Y(Math.min(finishK, c.k)) - 9, 3, 7); }
-  if (p.k >= track.gateAt) { const k = Math.min(finishK, p.k), x = profBase.X(k), y = profBase.Y(k); pg.fillStyle = '#ff2d2d'; pg.strokeStyle = '#fff'; pg.lineWidth = 2; pg.beginPath(); pg.arc(x, y, 6, 0, 7); pg.fill(); pg.stroke(); }
+  if (frac > 0 && p.k >= pa) pg.drawImage(profBase.lit, 0, 0, W * frac, H, 0, 0, W * frac, H);
+  for (const c of group) if (!c.hidden && c !== p && c.k > pa) { const x = profBase.X(onLap(c.k)); pg.fillStyle = '#fff'; pg.fillRect(x - 1.5, profBase.Y(onLap(c.k)) - 9, 3, 7); }
+  if (p.k >= pa) { const k = onLap(p.k), x = profBase.X(k), y = profBase.Y(k); pg.fillStyle = '#ff2d2d'; pg.strokeStyle = '#fff'; pg.lineWidth = 2; pg.beginPath(); pg.arc(x, y, 6, 0, 7); pg.fill(); pg.stroke(); }
+  // the label over the clock: the Ring's bridge to gantry, a sprint's name, a circuit's lap
+  const lbl = CIRCUIT ? `Lap ${Math.min(track.laps, lapOf(p))} of ${track.laps}` : RING ? 'Bridge to gantry' : TINFO.label;
+  if (lbl !== S.lbl) { if (CIRCUIT && S.lbl && S.mode === 'race') toast(lapOf(p) === track.laps ? 'Final lap' : `Lap ${lapOf(p)}`); S.lbl = lbl; $('timeLbl').textContent = lbl; }
+  $('lights').classList.toggle('on', S.mode === 'grid');
 }
 
 const nc = $('noteArrow').getContext('2d');
@@ -798,13 +855,14 @@ function result() {
   const place = order.indexOf(p) + 1;
   const prev = store.get(bestKey(choice), 0), best = !prev || p.time < prev;
   if (best) store.set(bestKey(choice), p.time);
-  $('resTitle').textContent = place === 1 ? 'First to the gantry' : `${ord(place)} to the gantry`;
-  $('resTime').innerHTML = `${fmt(p.time)}<small>Bridge to gantry in the ${p.spec.name} on ${MODE_NAME[mode]}${best ? (prev ? `, a new best by ${(prev - p.time).toFixed(1)} s` : ', your first time in it') : `, best ${fmt(prev)}`}</small>`;
-  const proT = store.get('lap2.pro.' + choice, 0);
-  if (proT) $('resTime').innerHTML += `<small>The pro does it in ${fmt(proT)}: you were ${(p.time - proT).toFixed(1)} s off.</small>`;
+  $('resTitle').textContent = RING ? (place === 1 ? 'First to the gantry' : `${ord(place)} to the gantry`) : place === 1 ? 'First across the line' : `${ord(place)} across the line`;
+  $('resTime').innerHTML = `${fmt(p.time)}<small>${RING ? 'Bridge to gantry' : CIRCUIT ? `${track.laps} laps of ${TRACK.name}` : TINFO.label} in the ${p.spec.name} on ${MODE_NAME[mode]}${best ? (prev ? `, a new best by ${(prev - p.time).toFixed(1)} s` : ', your first time in it') : `, best ${fmt(prev)}`}</small>`;
+  const proT = store.get(PREFIX + 'pro.' + choice, 0);
+  if (proT && !CIRCUIT) $('resTime').innerHTML += `<small>The pro does it in ${fmt(proT)}: you were ${(p.time - proT).toFixed(1)} s off.</small>`;
+  if (proT && CIRCUIT) $('resTime').innerHTML += `<small>The pro laps it in ${fmt(proT)} from a standing start.</small>`;
   resultButtons([['Go again', toRace, true], ['Watch the pro', () => { $('result').hidden = true; startPro(); }], ['Change car', toPick]]);
   $('touch').hidden = true;
-  $('resOrder').innerHTML = order.map(c => `<li class="${c === p ? 'me' : ''}">${c === p ? 'You' : pretty(c.spec.name)}<span>${c.done ? fmt(c.time) : 'still on the lap'}</span></li>`).join('');
+  $('resOrder').innerHTML = order.map(c => `<li class="${c === p ? 'me' : ''}">${c === p ? 'You' : pretty(c.spec.name)}<span>${c.done ? fmt(c.time) : RING ? 'still on the lap' : 'still racing'}</span></li>`).join('');
   $('result').hidden = false;
 }
 
@@ -823,6 +881,6 @@ new ResizeObserver(resize).observe(cv); resize();
 requestAnimationFrame(t => { last = t; frame(t); });
 
 // for the checks: the track, the cars and a way to drive without a keyboard
-window.ringKart = { VERSION, track, S, get cars() { return cars; }, get player() { return player; }, get line() { return LINE; }, get shot() { return D.shot; }, keys, start: () => $('go').click(), watch: () => $('watch').click(), ticket, autopilot: v => { S.autopilot = v; }, get mode() { return mode; }, setMode,
+window.ringKart = { VERSION, track, trackId, TRACKS, S, get cars() { return cars; }, get player() { return player; }, get line() { return LINE; }, get shot() { return D.shot; }, keys, start: () => $('go').click(), watch: () => $('watch').click(), ticket, autopilot: v => { S.autopilot = v; }, get mode() { return mode; }, setMode,
   // play on without drawing, a step at a time, the way the checks drive a whole lap in a few seconds
   run: secs => { for (let t = 0; t < secs; t += 1 / 120) tick(1 / 120); for (let i = 0; i < 40; i++) camera3(1 / 30); draw(1 / 60); } };

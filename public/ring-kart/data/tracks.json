@@ -1,0 +1,8 @@
+{
+ "about": "The tracks, in the order the picker shows them. file is the track's data file in this folder; label names the run over the clock on a track that is not a circuit; note is shown under its name on the picker.",
+ "tracks": [
+  { "id": "ring", "file": "track", "name": "Nordschleife", "label": "Bridge to gantry", "note": "The real Green Hell on a tourist day: queue, traffic, 41 corners, shrunk to a third." },
+  { "id": "laguna", "file": "laguna", "name": "Laguna Seca", "label": "Three laps", "note": "Three laps of the Californian classic from a grid: the Andretti Hairpin, the Corkscrew." },
+  { "id": "coast", "file": "coast", "name": "Coast Road", "label": "Surf Town to the lighthouse", "note": "Made up for Ring Kart: a sunny sprint up the coast, switchbacks and dune jumps." }
+ ]
+}

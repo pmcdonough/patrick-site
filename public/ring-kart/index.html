@@ -7,15 +7,15 @@
 <title>Ring Kart: the Nordschleife, bridge to gantry</title>
 <meta name="description" content="A kart-style race round the Nürburgring Nordschleife in real cars. Queue at the Touristenfahrten gate, tap your ticket, and race the cars ahead of you to the gantry.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=Righteous&family=Shrikhand&display=swap">
-<link rel="stylesheet" href="style.css?v=0.11">
+<link rel="stylesheet" href="style.css?v=0.12">
 </head>
 <body>
 
 <header class="top">
   <div class="brand">
     <h1>Ring Kart</h1>
-    <p class="matchup">The Nordschleife, bridge to gantry</p>
-    <p>Pick a car and join the queue at the Touristenfahrten gate behind the Porsches and the hot hatches. Tap your ticket, and race the cars that went in ahead of you round 73 corners of the Green Hell to the gantry, past every Trabant and Transit doing the lap at their own pace.</p>
+    <p class="matchup">The Nordschleife, Laguna Seca and the Coast Road</p>
+    <p>Pick a track and a car. On the Nordschleife, join the queue at the Touristenfahrten gate, tap your ticket, and race the cars that went in ahead of you round the Green Hell to the gantry, past every Trabant and Transit doing the lap at their own pace. At Laguna Seca, three laps from a grid with the Corkscrew in every one. On the Coast Road, a sprint from Surf Town to the lighthouse with the sea on your left.</p>
   </div>
 </header>
 
@@ -32,6 +32,7 @@
       <div class="prompt" id="prompt" hidden></div>
       <div class="note" id="note"><canvas id="noteArrow" width="120" height="120" aria-hidden="true"></canvas><div><b id="noteTxt"></b><span id="noteDist"></span></div></div>
       <div class="brakecue" id="brakecue">Brake!</div>
+      <div class="lights" id="lights" aria-label="Start lights"><i></i><i></i><i></i><i></i><i></i></div>
       <div class="behind" id="behind"><i class="blinker"></i><div><b>Faster car behind</b><span>Keep right, let it by on the left</span></div></div>
       <div class="coach" id="coach"><b id="coachTxt">Gas</b><span id="coachV"></span></div>
       <div class="protag" id="protag"></div>
@@ -47,7 +48,7 @@
         <div class="drsbox" id="drsbox" hidden><canvas class="sil" id="sil" width="240" height="96" aria-label="The rear wing, its DRS flap shut or open"></canvas><i class="drs" id="drs">DRS</i></div>
         <div class="pedals-hud"><i class="bar brk"><b id="brk"></b></i><span class="lbl v">Brake</span><i class="bar gas"><b id="thr"></b></i><span class="lbl v">Gas</span></div>
         <div class="timing">
-          <span class="lbl">Bridge to gantry</span>
+          <span class="lbl" id="timeLbl">Bridge to gantry</span>
           <b id="time">0:00.00</b>
           <span class="best" id="best"></span>
           <div class="charge"><div id="charge"></div></div>
@@ -57,7 +58,8 @@
     </div>
 
     <div class="panel pick" id="pick">
-      <h2>Pick your car</h2>
+      <h2>Pick a track and a car</h2>
+      <div class="trackpick" id="tracks" role="group" aria-label="Track"></div>
       <div class="modes" role="group" aria-label="How much help">
         <button data-mode="beginner" aria-pressed="false">Beginner</button><button data-mode="intermediate" aria-pressed="false">Intermediate</button><button data-mode="expert" aria-pressed="false">Expert</button>
       </div>
@@ -95,23 +97,23 @@
     <div class="toast" id="toast" hidden></div>
     <button class="corner-btn" id="sound" aria-pressed="true" title="Sound (M)">Sound on</button>
     <button class="corner-btn full" id="full" title="Full screen (F)">Full screen</button>
-    <div class="loading" id="loading">Building the Eifel</div>
+    <div class="loading" id="loading">Building the track</div>
   </div>
   <p class="hint">Up: gas. Left and right: steer. Space: brake (Down brakes too, and reverses). Shift: drift; hold it through a corner and let go for a mini-turbo, blue then orange. The card at the top calls the next corner, Left 1 a hairpin to Right 6 nearly flat, and shouts Brake when you are too quick for it. E honks the slow cars out of the way, Q looks back, G puts the gas on for you, C changes the camera (behind, high, on the bonnet), R puts you back on the road, Esc pauses, M mutes.</p>
 
   <section class="notes">
     <div class="card"><h2>The lap</h2>
-      <p>The Touristenfahrten lap, clockwise from the gate to the gantry on the Döttinger Höhe: Hatzenbach, the Flugplatz, down the Fuchsröhre to Adenauer Forst, the drop to Breidscheid, the 300 m climb up Kesselchen, the banked Karussell, Hohe Acht, Brünnchen and the jumps at Pflanzgarten, then the long straight home.</p>
-      <p>Traced by hand from public maps and elevation profiles, so the order of the corners, their direction and the big climbs and drops are right, and the exact lines are approximate. The whole lap is shrunk to a bit over a third of its real 20.8 km so it takes about three minutes, and the hills a little less, so they stay steep.</p></div>
+      <p>The Nordschleife's Touristenfahrten lap, clockwise from the gate past Hatzenbach, the Flugplatz, down the Fuchsröhre to Adenauer Forst, the drop to Breidscheid, the climb up Kesselchen, the banked Karussell, Hohe Acht, Brünnchen and the jumps at Pflanzgarten, then the whole Döttinger Höhe home. Laguna Seca: the Andretti Hairpin, the Rahal Straight, the plunge down the Corkscrew, Rainey Curve. Both are the real roads from the map with real heights, shrunk (the Ring to a third, Laguna to 60%) so a race takes minutes.</p>
+      <p>The Coast Road is made up: switchbacks up the cliff at Seal Rock, three dune jumps, Palm Alley and Smugglers' Bend, and up Lighthouse Hill to the finish.</p></div>
     <div class="card"><h2>How it drives</h2>
       <p>Arcade, like a kart game. The car goes where you point it, and grip limits how fast it can turn: ask for more and the front washes wide. Drift to turn tighter than grip allows and charge a mini-turbo. Tuck in behind a car to catch its tow. Crests fast enough send you flying. The grass is slow and the Armco is unforgiving.</p>
       <p>Every car has its own top speed, acceleration, grip and braking, in the right order but not test figures: the GT3 RS is the fastest thing in the lot, and the Volvo 240 is a Volvo 240.</p></div>
     <div class="card"><h2>The rules of the road</h2>
-      <p>As on the real Touristenfahrten: slower cars keep right and you pass on the left. The cars that went through the gate before you are your race; the ones behind you will come past if you dawdle. Position counts who is furthest round the lap, and the clock runs from your barrier to the gantry.</p></div>
+      <p>As on the real Touristenfahrten: slower cars signal right, move over and let you pass on the left, mostly, and not in tight corners. On the Ring, the cars that went through the gate before you are your race and the clock runs from your barrier to the gantry. Elsewhere you start sixth on a grid of eight and go when the five red lights go out. Position counts who is furthest round.</p></div>
   </section>
 </main>
 
-<footer class="version">Ring Kart <span id="version"></span> · The lap is the real Nordschleife from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, with heights from the Copernicus EU-DEM, shrunk to a third.</footer>
-<script type="module" src="src/main.js?v=0.11"></script>
+<footer class="version">Ring Kart <span id="version"></span> · The lap is the real Nordschleife from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, with heights from the Copernicus EU-DEM, shrunk to a third; Laguna Seca from the same map with heights from the USGS.</footer>
+<script type="module" src="src/main.js?v=0.12"></script>
 </body>
 </html>

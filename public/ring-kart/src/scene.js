@@ -4,7 +4,7 @@
 // view to its own proportions, with racing stripes. Everything is cel-shaded (three flat bands of light, no gradients)
 // and the cars and trees carry a brown ink outline. Three.js r128, the copy Cathedral Lab keeps on the site.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.15';
-import { pointAt } from './track.js?v=0.11';
+import { pointAt } from './track.js?v=0.12';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.
 const col = c => new THREE.Color(c).convertSRGBToLinear();
@@ -42,18 +42,22 @@ function inkNormals(g) {
   g.setAttribute('onormal', new THREE.BufferAttribute(o, 3)); return g;
 }
 
-export function buildWorld(scene, track) {
-  const W = track.width, half = W / 2, n = track.n;
+// `look` is the track's own look from its data file: `theme` ("forest", the Eifel; "dry", golden California hills and
+// oaks; "coast", sea on the left, beach, palms), `words` painted on the road, the `start` and `finish` signs, and a
+// `lighthouse` at the finish. Only one lap of a circuit is drawn (track.drawA to drawB): the laps after it are the same
+// road.
+export function buildWorld(scene, track, look = {}) {
+  const W = track.width, half = W / 2, n = track.n, A = track.drawA ?? 0, Bk = track.drawB ?? n - 1;
   const group = new THREE.Group(); scene.add(group);
 
   // ---------- road ----------
-  const road = ribbon(track, k => [-half, half], 0.02, (k, side) => [side, k * track.ds / 10]);
+  const road = ribbon(track, k => [-half, half], 0.02, (k, side) => [side, k * track.ds / 10], A, Bk);
   road.material = new THREE.MeshToonMaterial({ gradientMap: RAMP, map: asphalt() });
   road.material.map.wrapS = road.material.map.wrapT = THREE.RepeatWrapping;
   road.receiveShadow = true; group.add(road);
   // grass verge out to the Armco and a little past it
   for (const side of [-1, 1]) {
-    const verge = ribbon(track, k => side > 0 ? [half, (side > 0 ? track.wallR[k] : track.wallL[k]) + 3] : [-(track.wallL[k] + 3), -half], -0.02, (k, s) => [s, k * track.ds / 6]);
+    const verge = ribbon(track, k => side > 0 ? [half, (side > 0 ? track.wallR[k] : track.wallL[k]) + 3] : [-(track.wallL[k] + 3), -half], -0.02, (k, s) => [s, k * track.ds / 6], A, Bk);
     verge.material = new THREE.MeshToonMaterial({ gradientMap: RAMP, map: grassTex() });
     verge.material.map.wrapS = verge.material.map.wrapT = THREE.RepeatWrapping;
     group.add(verge);
@@ -62,7 +66,7 @@ export function buildWorld(scene, track) {
   const kerbTex = kerb();
   for (const side of [-1, 1]) {
     const runs = []; let start = -1;
-    for (let k = 0; k < n; k++) {
+    for (let k = A; k <= Bk; k++) {
       const on = track.curv[k] * side > 0.018;
       if (on && start < 0) start = k; if (!on && start >= 0) { if (k - start > 4) runs.push([start, k]); start = -1; }
     }
@@ -76,7 +80,7 @@ export function buildWorld(scene, track) {
   railMat.map.wrapS = THREE.RepeatWrapping;
   for (const side of [-1, 1]) {
     const off = k => side > 0 ? track.wallR[k] : -track.wallL[k];
-    group.add(wall(track, off, 0.3, 1.05, railMat));
+    group.add(wall(track, off, 0.3, 1.05, railMat, A, Bk));
   }
   // catch fences on the outside of the corners, a few metres behind the Armco, with a post every dozen metres
   const fenceMat = new THREE.MeshToonMaterial({ gradientMap: RAMP, map: fence(), transparent: true, depthWrite: false, side: THREE.DoubleSide });
@@ -85,9 +89,9 @@ export function buildWorld(scene, track) {
   for (const side of [-1, 1]) {
     const wl = side > 0 ? track.wallR : track.wallL, base = W / 2 + track.verge;
     let start = -1;
-    for (let k = 0; k <= n; k++) {
+    for (let k = A; k <= Bk + 1; k++) {
       // outside of the bends, in long stretches, not all the way round
-      const on = k < n && wl[k] >= base - 0.01 && Math.sin(k * 0.0123 + side * 1.7) + Math.sin(k * 0.0051) > -0.3 && k > track.gateAt + 20;
+      const on = k <= Bk && look.theme !== 'coast' && wl[k] >= base - 0.01 && Math.sin(k * 0.0123 + side * 1.7) + Math.sin(k * 0.0051) > -0.3 && k > track.gateAt + 20;
       if (on && start < 0) start = k;
       if (!on && start >= 0) {
         if (k - start > 30) {
@@ -103,18 +107,19 @@ export function buildWorld(scene, track) {
   fencePosts.forEach((p, i) => fp.setMatrixAt(i, new THREE.Matrix4().makeTranslation(p.x, p.y, p.z)));
   group.add(fp);
   const postGeo = new THREE.BoxGeometry(0.12, 0.8, 0.12), posts = new THREE.InstancedMesh(postGeo, new THREE.MeshToonMaterial({ gradientMap: RAMP, color: col(0x7d6a55) }), Math.ceil(n / 2) * 2 + 4);
-  { let i = 0; const m = new THREE.Matrix4(); for (let k = 0; k < n; k += 2) for (const side of [-1, 1]) { const p = pointAt(track, k, side > 0 ? track.wallR[k] + 0.08 : -track.wallL[k] - 0.08); m.makeTranslation(p.x, p.y + 0.4, p.z); posts.setMatrixAt(i++, m); } posts.count = i; }
+  { let i = 0; const m = new THREE.Matrix4(); for (let k = A; k <= Bk; k += 2) for (const side of [-1, 1]) { const p = pointAt(track, k, side > 0 ? track.wallR[k] + 0.08 : -track.wallL[k] - 0.08); m.makeTranslation(p.x, p.y + 0.4, p.z); posts.setMatrixAt(i++, m); } posts.count = i; }
   group.add(posts);
 
   // ---------- the hills and the forest ----------
-  const { terrain, treeSpots } = hills(track);
+  const { terrain, treeSpots, seaY } = hills(track, look);
   group.add(terrain);
-  group.add(...forest(treeSpots));
+  group.add(...(look.theme === 'coast' ? palms(treeSpots) : forest(treeSpots, look.theme)));
+  if (seaY != null) group.add(sea(track, seaY));
 
   // ---------- painted tarmac: names and doodles fans leave on the road ----------
-  const words = ['GRUNE HOLLE', 'VOLLGAS', 'BTG', 'NOS', 'LIFT?', 'BRAKE', 'DO NOT LIFT', 'EIFEL', 'NO TRUCKS', 'SEND IT', '20.8 KM', 'RING'];
-  for (let i = 0; i < 40; i++) {
-    const k = Math.floor(80 + rnd() * (n - 200));
+  const words = look.words || ['GRUNE HOLLE', 'VOLLGAS', 'BTG', 'NOS', 'LIFT?', 'BRAKE', 'DO NOT LIFT', 'EIFEL', 'NO TRUCKS', 'SEND IT', '20.8 KM', 'RING'];
+  for (let i = 0; i < Math.round(40 * (Bk - A) / 3300); i++) {
+    const k = Math.floor(A + 80 + rnd() * (Bk - A - 200));
     if (Math.abs(track.curv[k]) > 0.01) continue;
     const decal = paint(words[i % words.length], i);
     const p = pointAt(track, k, (rnd() - 0.5) * W * 0.5);
@@ -125,8 +130,10 @@ export function buildWorld(scene, track) {
   }
 
   // ---------- corner boards ----------
+  const boarded = new Set();
   for (const m of track.marks) {
-    if (m.name === 'Gantry' || m.name === 'Touristenfahrten') continue;
+    if (m.name === 'Gantry' || m.name === 'Touristenfahrten' || m.name === 'Start' || m.at < A || m.at > Bk || boarded.has(m.name)) continue;
+    boarded.add(m.name);
     const k = Math.max(0, m.at - 12), side = track.curv[Math.min(n - 1, m.at + 10)] > 0 ? -1 : 1;
     const p = pointAt(track, k, side > 0 ? track.wallR[k] + 2.2 : -track.wallL[k] - 2.2);
     const b = board(m.name.replace('oe', 'ö').replace('ue', 'ü').replace('Ex-Muehle', 'Ex-Mühle').replace('Bruennchen', 'Brünnchen').replace('Doettinger Hoehe', 'Döttinger Höhe').replace('Quiddelbacher Hoehe', 'Quiddelbacher Höhe').replace('Fuchsroehre', 'Fuchsröhre'));
@@ -134,8 +141,11 @@ export function buildWorld(scene, track) {
   }
 
   // ---------- the gate and the gantry ----------
-  const gate = gateHouse(track); group.add(gate.group);
-  group.add(gantry(track));
+  // the Ring has its Touristenfahrten gate; elsewhere a start gantry (on a circuit the finish is the same one)
+  const gate = track.format === 'ring' ? gateHouse(track) : null; if (gate) group.add(gate.group);
+  group.add(gantry(track, track.finishK, look.finish || 'The Gantry'));
+  if (track.format === 'sprint') group.add(gantry(track, track.startK, look.start || 'Start'));
+  if (look.lighthouse) group.add(lighthouse(track));
   return { gate };
 }
 
@@ -198,13 +208,15 @@ export function buildSky() {
 // your feet should be doing there. The page repaints it for each car (`paint(phase)`), since a slower car brakes
 // later and less; the line itself is the same for every car.
 export const PHASE_COLOURS = ['#8ccf3f', '#f6d23c', '#ec6f2b', '#d8402b'];   // gas, coast, brake, hard brake
-export function buildLine(track, lat) {
-  const n = track.n, pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), colours = new Float32Array(n * 6), idx = [];
-  for (let k = 0; k < n; k++) {
-    const l = pointAt(track, k, lat[k] - 0.55), r = pointAt(track, k, lat[k] + 0.55);
-    pos.set([l.x, l.y + 0.05, l.z, r.x, r.y + 0.05, r.z], k * 6);
-    const v = k * track.ds / 3.2; uv.set([0, v, 1, v], k * 4);
-    if (k) { const q = (k - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
+// drawn for samples a to b: on a circuit, one lap (the second, a flying lap, so its colours are the ones you will see
+// lap after lap)
+export function buildLine(track, lat, a = 0, b = track.n - 1) {
+  const n = b - a + 1, pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), colours = new Float32Array(n * 6), idx = [];
+  for (let i = 0; i < n; i++) {
+    const k = a + i, l = pointAt(track, k, lat[k] - 0.55), r = pointAt(track, k, lat[k] + 0.55);
+    pos.set([l.x, l.y + 0.05, l.z, r.x, r.y + 0.05, r.z], i * 6);
+    const v = k * track.ds / 3.2; uv.set([0, v, 1, v], i * 4);
+    if (i) { const q = (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.BufferAttribute(colours, 3)); g.setIndex(idx);
@@ -219,7 +231,7 @@ export function buildLine(track, lat) {
   mesh.renderOrder = 2; mesh.visible = false;
   const c = new THREE.Color();
   const paint = phase => {
-    for (let k = 0; k < n; k++) { c.set(PHASE_COLOURS[phase[k]]).convertSRGBToLinear(); colours.set([c.r, c.g, c.b, c.r, c.g, c.b], k * 6); }
+    for (let i = 0; i < n; i++) { c.set(PHASE_COLOURS[phase[a + i]]).convertSRGBToLinear(); colours.set([c.r, c.g, c.b, c.r, c.g, c.b], i * 6); }
     g.attributes.color.needsUpdate = true;
   };
   return { mesh, paint };
@@ -253,16 +265,19 @@ function wall(track, off, lo, hi, mat, a = 0, b = track.n - 1) {
 
 // The ground: a height field over the whole circuit. Near the road it sits just under the tarmac; away from it, it
 // follows the road's general height and rolls into hills. Trees go where it is far enough from the road.
-function hills(track) {
-  const { n, x, z, y } = track;
+function hills(track, look = {}) {
+  const { x, z, y } = track, A = track.drawA ?? 0, Bk = track.drawB ?? track.n - 1, coast = look.theme === 'coast', dry = look.theme === 'dry';
+  // on the coast the sea lies to the left of the road, a few metres below the lowest of it
+  let ymin = Infinity; for (let k = A; k <= Bk; k++) ymin = Math.min(ymin, y[k]);
+  const seaY = coast ? ymin - 3 : null;
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-  for (let k = 0; k < n; k++) { x0 = Math.min(x0, x[k]); x1 = Math.max(x1, x[k]); z0 = Math.min(z0, z[k]); z1 = Math.max(z1, z[k]); }
+  for (let k = A; k <= Bk; k++) { x0 = Math.min(x0, x[k]); x1 = Math.max(x1, x[k]); z0 = Math.min(z0, z[k]); z1 = Math.max(z1, z[k]); }
   const pad = 420; x0 -= pad; x1 += pad; z0 -= pad; z1 += pad;
   const cell = 8, nx = Math.ceil((x1 - x0) / cell) + 1, nz = Math.ceil((z1 - z0) / cell) + 1;
   // nearest road sample, through a coarse bucket grid
   const B = 24, bx = Math.ceil((x1 - x0) / B) + 1, bucket = new Map();
-  for (let k = 0; k < n; k++) { const key = Math.floor((x[k] - x0) / B) + Math.floor((z[k] - z0) / B) * bx; (bucket.get(key) || bucket.set(key, []).get(key)).push(k); }
-  const coarse = []; for (let k = 0; k < n; k += 25) coarse.push(k);
+  for (let k = A; k <= Bk; k++) { const key = Math.floor((x[k] - x0) / B) + Math.floor((z[k] - z0) / B) * bx; (bucket.get(key) || bucket.set(key, []).get(key)).push(k); }
+  const coarse = []; for (let k = A; k <= Bk; k += 25) coarse.push(k);
   const H = new Float32Array(nx * nz), D = new Float32Array(nx * nz);
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const px = x0 + i * cell, pz = z0 + j * cell;
@@ -276,8 +291,11 @@ function hills(track) {
     const near = best >= 0 ? y[best] - Math.abs(Math.tan(track.bank[best])) * track.width : far;
     const roll = (Math.sin(px * 0.011) * Math.cos(pz * 0.009) * 9 + Math.sin(px * 0.031 + pz * 0.027) * 3);
     const t = Math.min(1, Math.max(0, (d - 14) / 70));
-    const hgt = (near - 0.9) * (1 - t) + (far + roll + Math.min(30, (d - 14) * 0.08)) * t;
-    H[i + j * nx] = hgt; D[i + j * nx] = d;
+    let hgt = (near - 0.9) * (1 - t) + (far + roll + Math.min(30, (d - 14) * 0.08)) * t;
+    // the coast: on the sea side the land falls away past the verge, through a beach, under the water
+    let left = false;
+    if (coast && best >= 0) { left = -(px - x[best]) * Math.sin(track.h[best]) + (pz - z[best]) * Math.cos(track.h[best]) < 0; if (left) hgt = Math.min(hgt, near - 0.9 - Math.max(0, d - 16) * 0.45); }
+    H[i + j * nx] = hgt; D[i + j * nx] = left ? -d : d;
   }
   const g = new THREE.PlaneGeometry((nx - 1) * cell, (nz - 1) * cell, nx - 1, nz - 1);
   g.rotateX(-Math.PI / 2);
@@ -287,8 +305,10 @@ function hills(track) {
     pos.setXYZ(v, x0 + i * cell, H[i + j * nx], z0 + j * cell);
     // bright grass by the road, a patchwork of fields away from it: greens, olive and a mustard field or two
     const px = x0 + i * cell, pz = z0 + j * cell, fld = Math.sin(px * 0.0071 + Math.sin(pz * 0.004) * 2) * Math.cos(pz * 0.0063 - px * 0.002);
-    const pick = D[i + j * nx] < 40 ? 0 : fld > 0.55 ? 3 : fld > 0.2 ? 1 : fld < -0.5 ? 2 : 0;
-    c.set(['#8cc63f', '#a6c94b', '#6fb04a', '#e0b23e'][pick]).convertSRGBToLinear(); cols.set([c.r, c.g, c.b], v * 3);
+    const dd = D[i + j * nx], pick = Math.abs(dd) < 40 ? 0 : fld > 0.55 ? 3 : fld > 0.2 ? 1 : fld < -0.5 ? 2 : 0;
+    // the Eifel's greens and a mustard field; California's golden grass; on the coast, sand on the sea side
+    const pal = dry ? ['#c9b45a', '#d8c070', '#b9a24c', '#e2c97a'] : ['#8cc63f', '#a6c94b', '#6fb04a', '#e0b23e'];
+    c.set(coast && dd < 0 ? '#f2d59a' : pal[pick]).convertSRGBToLinear(); cols.set([c.r, c.g, c.b], v * 3);
   }
   g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); g.computeVertexNormals();
   const terrain = new THREE.Mesh(g, toon({ vertexColors: true }));
@@ -296,15 +316,47 @@ function hills(track) {
   // trees: dense forest from just past the Armco outwards, with a few clearings
   const treeSpots = [];
   for (let j = 0; j < nz; j += 2) for (let i = 0; i < nx; i += 2) {
-    const d = D[i + j * nx]; if (d < 22 || d > 230) continue;
+    const dd = D[i + j * nx], d = Math.abs(dd); if (d < 22 || d > 230) continue;
+    if (coast && (dd < 0 ? d > 30 || H[i + j * nx] < seaY + 0.5 : rnd() > 0.35)) continue;   // palms on the beach and here and there inland
+    if (dry && rnd() > 0.3) continue;                                                       // scattered oaks on open hills
     const clearing = Math.sin((x0 + i * cell) * 0.004) * Math.cos((z0 + j * cell) * 0.005) > 0.55;
     if (clearing || rnd() > (d < 60 ? 0.8 : 0.42)) continue;
     treeSpots.push([x0 + i * cell + (rnd() - 0.5) * cell * 2, H[i + j * nx] - 0.3, z0 + j * cell + (rnd() - 0.5) * cell * 2, rnd()]);
   }
-  return { terrain, treeSpots };
+  return { terrain, treeSpots, seaY };
 }
 
-function forest(spots) {
+// the sea: a wide flat of turquoise with painted wave lines, to the horizon
+function sea(track, seaY) {
+  const tex = canvas(256, 256, (g, w, h) => { g.fillStyle = '#2fb3c4'; g.fillRect(0, 0, w, h); g.strokeStyle = '#8fe0e0'; g.lineWidth = 5; g.lineCap = 'round'; for (let i = 0; i < 9; i++) { const y = (i * 53) % h, x = (i * 97) % w; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 18, y - 10, x + 36, y); g.quadraticCurveTo(x + 54, y + 10, x + 72, y); g.stroke(); } });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(60, 60);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000).rotateX(-Math.PI / 2), toon({ map: tex }));
+  let cx = 0, cz = 0; for (let k = track.drawA; k <= track.drawB; k++) { cx += track.x[k]; cz += track.z[k]; } const nn = track.drawB - track.drawA + 1;
+  m.position.set(cx / nn, seaY, cz / nn); return m;
+}
+// a palm: a leaning, tapering trunk in rings, and a crown of drooping fronds
+function palms(spots) {
+  const trunk = new THREE.CylinderGeometry(0.22, 0.42, 9, 7, 6, true).translate(0, 4.5, 0);
+  { const p = trunk.attributes.position; for (let i = 0; i < p.count; i++) { const yy = p.getY(i); p.setX(i, p.getX(i) + (yy / 9) ** 2 * 1.6); } trunk.computeVertexNormals(); }
+  const fronds = merge(Array.from({ length: 7 }, (_, i) => new THREE.SphereGeometry(0.5, 8, 5).scale(4.2, 0.35, 1.1).translate(2.0, -0.5, 0).rotateZ(-0.35).rotateY(i * Math.PI * 2 / 7).translate(1.6, 9, 0)));
+  inkNormals(fronds); inkNormals(trunk);
+  const T = new THREE.InstancedMesh(trunk, toon({ color: 0x9a6b3c }), spots.length), Ti = new THREE.InstancedMesh(trunk, inkMat(0.08), spots.length);
+  const F = new THREE.InstancedMesh(fronds, toon(), spots.length), Fi = new THREE.InstancedMesh(fronds, inkMat(0.12), spots.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), c = new THREE.Color(), greens = ['#3f9a3a', '#5aa83c', '#2f8a4a'];
+  spots.forEach((s, i) => { const k = 0.8 + (s[3] * 7919 % 1) * 0.5; ps.set(s[0], s[1], s[2]); q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), s[3] * 6.28); sc.set(k, k, k); m.compose(ps, q, sc); T.setMatrixAt(i, m); Ti.setMatrixAt(i, m); F.setMatrixAt(i, m); Fi.setMatrixAt(i, m); c.set(greens[Math.floor(s[3] * 997) % 3]).convertSRGBToLinear(); F.setColorAt(i, c); });
+  return [T, Ti, F, Fi];
+}
+// a lighthouse on the sea side of the finish: red and white bands, a gallery and a lamp
+function lighthouse(track) {
+  const k = Math.min(track.n - 1, track.finishK + 20), p = pointAt(track, k, -(track.wallL[k] + 14)), grp = new THREE.Group();
+  const bands = canvas(32, 256, (g, w, h) => { for (let i = 0; i < 6; i++) { g.fillStyle = i % 2 ? '#fff1cf' : '#d8402b'; g.fillRect(0, i * h / 6, w, h / 6); } });
+  const tower = new THREE.CylinderGeometry(1.6, 2.6, 16, 16).translate(0, 8, 0), cap = new THREE.CylinderGeometry(2.2, 2.2, 0.5, 16).translate(0, 16.2, 0), lamp = new THREE.CylinderGeometry(1.2, 1.2, 1.8, 12).translate(0, 17.4, 0), roof = new THREE.ConeGeometry(1.6, 1.8, 12).translate(0, 19.2, 0);
+  grp.add(new THREE.Mesh(tower, toon({ map: bands })), new THREE.Mesh(cap, toon({ color: 0x2a1a0e })), new THREE.Mesh(lamp, new THREE.MeshBasicMaterial({ color: new THREE.Color(2, 1.8, 1.1) })), new THREE.Mesh(roof, toon({ color: 0xd8402b })));
+  const ink = merge([tower.clone(), cap.clone(), roof.clone()]); grp.add(new THREE.Mesh(inkNormals(ink), inkMat(0.12)));
+  grp.position.set(p.x, track.y[k] - 1, p.z); return grp;
+}
+
+function forest(spots, theme) {
   // a spruce: tiers of branches that hang down and out, narrowing to a point
   const prof = [[0.3, 2], [2.9, 3.2], [1.1, 3.6], [2.5, 5.6], [0.9, 6], [2.0, 8], [0.7, 8.4], [1.4, 10.4], [0.45, 10.8], [0.8, 12.4], [0, 14]];
   const pine = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 7); pine.translate(0, -1.2, 0);
@@ -312,13 +364,15 @@ function forest(spots) {
   const leaf = new THREE.SphereGeometry(3.3, 9, 7); leaf.scale(1, 1.12, 1); leaf.translate(0, 6.2, 0);
   const trunk = new THREE.CylinderGeometry(0.32, 0.45, 3.4, 6); trunk.translate(0, 1.7, 0);
   inkNormals(pine); inkNormals(leaf);
+  // on dry hills only the round ones, as oaks
+  if (theme === 'dry') spots.forEach(s => { if (s[3] < 0.62) s[3] = 0.62 + s[3] * 0.38 / 0.62; });
   const nP = spots.filter(s => s[3] < 0.62).length, nL = spots.length - nP;
   // white materials: each tree's own colour is set per instance, and the two multiply
   const P = new THREE.InstancedMesh(pine, toon(), nP), Pi = new THREE.InstancedMesh(pine, inkMat(0.16), nP);
   const Lf = new THREE.InstancedMesh(leaf, toon(), nL), Li = new THREE.InstancedMesh(leaf, inkMat(0.16), nL);
   const T = new THREE.InstancedMesh(trunk, toon({ color: 0x8a5a2b }), spots.length);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), c = new THREE.Color();
-  const pines = ['#2f7a4f', '#3c8a55', '#2b6b4c'], balls = ['#5aa83c', '#3f8f3a', '#7cbc3a', '#4c9e46', '#5aa83c', '#e0a630', '#d9752b'];
+  const pines = ['#2f7a4f', '#3c8a55', '#2b6b4c'], balls = theme === 'dry' ? ['#4f7a35', '#5e8a3a', '#46703a', '#6b8a3f'] : ['#5aa83c', '#3f8f3a', '#7cbc3a', '#4c9e46', '#5aa83c', '#e0a630', '#d9752b'];
   let ip = 0, il = 0;
   spots.forEach((s, i) => {
     const k = 0.7 + (s[3] * 7919 % 1) * 0.7;
@@ -412,13 +466,13 @@ function gateHouse(track) {
   const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), new THREE.MeshBasicMaterial({ color: col(0xff2a2a) })); lamp.position.set(-0.3, 2.4, W / 2 + 0.5); grp.add(lamp);
   return { group: grp, pivot, lamp };
 }
-function gantry(track) {
-  const k = track.n - 12, p = pointAt(track, k, 0), W = track.width;
+function gantry(track, k, text) {
+  const p = pointAt(track, k, 0), W = track.width;
   const grp = new THREE.Group(); grp.position.set(p.x, p.y, p.z); grp.rotation.y = -track.h[k];
   const steel = toon({ color: PAL.orange });
   for (const z of [-W / 2 - 1.2, W / 2 + 1.2]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.5, 7, 0.5), steel); c.position.set(0, 3.5, z); grp.add(c); }
   const beam = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, W + 3), steel); beam.position.y = 7; grp.add(beam);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(W - 1, 1.4), new THREE.MeshBasicMaterial({ map: canvas(1024, 144, (g, w, h) => { g.fillStyle = PAL.brown; g.fillRect(0, 0, w, h); g.fillStyle = PAL.mustard; g.font = '84px Shrikhand, "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('The Gantry', w / 2, h / 2 - 2); }), side: THREE.DoubleSide }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(W - 1, 1.4), new THREE.MeshBasicMaterial({ map: canvas(1024, 144, (g, w, h) => { g.fillStyle = PAL.brown; g.fillRect(0, 0, w, h); g.fillStyle = PAL.mustard; g.font = '84px Shrikhand, "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, h / 2 - 2); }), side: THREE.DoubleSide }));
   sign.position.set(-0.75, 7, 0); sign.rotation.y = -Math.PI / 2; grp.add(sign);
   return grp;
 }

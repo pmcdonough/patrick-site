@@ -2,7 +2,8 @@
 // gantry on the AI without getting stuck, in a sensible time, with the faster cars faster; the pro drives the best line
 // clean; the driving modes keep a clumsy driver off the Armco without slowing a good one; reverse stops when you
 // let go; the gearbox works through every gear; DRS opens only where it should; and slower cars keep the Ring's
-// etiquette for quicker ones behind; and nobody gets through a barrier.
+// etiquette for quicker ones behind; nobody gets through a barrier; and the same holds on Laguna Seca and the Coast
+// Road.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -187,4 +188,39 @@ test('no way through the barriers: cars driven every which way stay on their own
     }
   }
   assert.deepStrictEqual(escapes, []);
+});
+
+test('the other tracks: Laguna Seca laid out for three laps, the Coast Road end to end, every car round both, the pro clean and quicker, nobody through a barrier', async () => {
+  const [{ buildTrack, pointAt, locateGlobal }, { makeCar, step, driveAI }, { racingPath, lineFor, drivePro }] = await load();
+  const dt = 1 / 120;
+  for (const id of ['laguna', 'coast']) {
+    const TT = JSON.parse(fs.readFileSync(path.join(root, 'data', id + '.json'))), t = buildTrack(TT), P = racingPath(t);
+    if (id === 'laguna') {
+      assert.strictEqual(t.laps, 3); assert.strictEqual(t.lineK.length, 4);
+      const lap = (t.lineK[1] - t.lineK[0]) * t.ds, want = TT.build.realLength.value * TT.build.lengthScale.value;
+      assert.ok(Math.abs(lap - want) < 6, `a lap is ${lap.toFixed(0)} m, want ${want.toFixed(0)}`);
+      // the laps lie on top of each other
+      for (const k of [t.lineK[0] + 300, t.lineK[0] + 700]) { const j = k + (t.lineK[1] - t.lineK[0]); let d = Infinity; for (let i = j - 3; i <= j + 3; i++) d = Math.min(d, Math.hypot(t.x[k] - t.x[i], t.z[k] - t.z[i])); assert.ok(d < 1, `lap two runs over lap one (${d.toFixed(2)} m apart)`); }
+    }
+    for (const spec of C.player) {
+      const L = lineFor(t, P, spec), car = makeCar(spec, t, t.startK - 3, 0); let time = 0, grass = 0, walls = 0, sc = false, off = 0;
+      while (car.k < t.finishK && time < 600) { drivePro(car, dt, t, L); step(car, dt, t, C.race, []); time += dt; if (car.grass) grass++; if (car.scrape > 0.2 && !sc) walls++; sc = car.scrape > 0.2; off = Math.max(off, Math.abs(car.lat - L.lat[car.k])); }
+      assert.ok(car.k >= t.finishK && !grass && !walls && off < 6, `${id}, the pro in the ${spec.name}: ${time.toFixed(1)} s, ${grass} steps on the grass, ${walls} hits, ${off.toFixed(1)} m off the line`);
+      const ai = makeCar({ ...spec, pace: 0.8 }, t, t.startK - 3, 0); let at = 0;
+      while (ai.k < t.finishK && at < 900) { driveAI(ai, dt, t, [ai]); step(ai, dt, t, C.race, []); at += dt; }
+      assert.ok(ai.k >= t.finishK, `${id}: the AI in the ${spec.name} stuck at ${ai.k}`);
+      assert.ok(time < at, `${id}, the ${spec.name}: the pro ${time.toFixed(1)} s, the AI ${at.toFixed(1)} s`);
+    }
+    for (const aimLat of [-6, 6]) {
+      const car = makeCar(C.player[1], t, t.startK, 0); let time = 0, wheel = 0;
+      while (car.k < t.finishK && time < 600) {
+        const p = pointAt(t, Math.min(t.n - 1, car.k + 7), aimLat);
+        let ang = Math.atan2(p.z - car.z, p.x - car.x) - car.h; ang = Math.atan2(Math.sin(ang), Math.cos(ang));
+        wheel += Math.max(-6 * dt, Math.min(6 * dt, (Math.abs(ang) > 0.04 ? Math.sign(ang) : 0) - wheel));
+        car.input = { steer: wheel, gas: 1, brake: 0, drift: false }; step(car, dt, t, C.race, []); time += dt;
+        const wall = car.lat > 0 ? t.wallR[car.k] : t.wallL[car.k];
+        assert.ok(Math.abs(car.lat) <= wall + 0.5, `${id}: through the barrier at sample ${car.k}`);
+      }
+    }
+  }
 });

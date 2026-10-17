@@ -114,6 +114,17 @@ const { open, openPage } = require('./harness');
     else console.log(`ring-kart/ builds a ${r.km} km lap with ${r.cars} cars; 20 s after the gate you are ${r.metres} m down the road (Ring Kart ${v}).`);
     await rk.page.close();
   }
+  // the other tracks: each loads, its five lights go out, and a car is well down the road 20 s later
+  for (const id of ['laguna', 'coast']) {
+    const tp = await openPage(browser, srv, 'ring-kart/?t=' + id, () => !!window.ringKart).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+    errors.push(...tp.errors.map(e => `ring-kart/?t=${id}: ${e}`));
+    if (!tp.page) continue;
+    const r = await tp.page.evaluate(() => { const k = window.ringKart; k.start(); k.run(7); const lit = k.S.mode; k.autopilot(true); k.run(20); return { id: k.trackId, lit, mode: k.S.mode, metres: Math.round(k.player.s - k.track.startK * k.track.ds), laps: k.track.laps }; });
+    if (r.id !== id || r.mode !== 'race' || r.metres < 300) errors.push(`ring-kart/?t=${id}: 20 s after the lights the car is ${r.metres} m down the road (${r.id}, ${r.mode})`);
+    else console.log(`ring-kart/?t=${id} starts from the grid; 20 s after the lights you are ${r.metres} m down the road${r.laps > 1 ? `, lap 1 of ${r.laps}` : ''}.`);
+    errors.push(...tp.errors.map(e => `ring-kart/?t=${id}: ${e}`));
+    await tp.page.close();
+  }
   for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/?b=amiens', () => !!window.cathedralLab && window.cathedralLab.building === 'amiens'], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['cathedral-lab/design/', () => !!window.designLab], ['cathedral-lab/?b=yours', () => !!window.cathedralLab && window.cathedralLab.building === 'yours'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab], ['ring-kart/', () => !!window.ringKart]]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));

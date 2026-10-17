@@ -13,9 +13,11 @@ The source files the repo's data was built from. They live in `raw/` at the repo
 | `play-by-play-2025020812.json` | NHL play-by-play for game 2025020812, Montreal at Boston, January 24, 2026 | https://api-web.nhle.com/v1/gamecenter/2025020812/play-by-play | 2026-10-13 | `tools/game_load.py` |
 | `shiftcharts-2025020812.json` | NHL shift chart for the same game | https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2025020812 | 2026-10-13 | `tools/game_load.py` |
 | `ring/raceway.json` | Every `highway=raceway` way round the Nürburgring from OpenStreetMap, with geometry: the Nordschleife's 52 named segments among them | Overpass API, https://overpass-api.de/api/interpreter, query `way["highway"="raceway"](50.31,6.92,50.39,7.02);out tags geom;` (send a User-Agent, or it answers 406) | 2026-10-17 | `tools/ring_track.py` (fetches it if missing) |
+| `ring/laguna-raceway.json` | Every `highway=raceway` way round Laguna Seca from OpenStreetMap (the lap is eight one-way segments; the pit lane is left out) | Overpass API, query `way["highway"="raceway"](36.576,-121.764,36.594,-121.742);out tags geom;` | 2026-10-17 | `tools/circuit_track.py laguna` (fetches it if missing) |
+| `ring/laguna-elev.json` | Heights of Laguna's 144 points from the USGS 10 m elevation model | https://api.opentopodata.org/v1/ned10m | 2026-10-17 | `tools/circuit_track.py laguna` |
 | `ring/elev.json` | Heights of the lap's 384 points from the EU-DEM 25 m model, keyed by latitude and longitude | https://api.opentopodata.org/v1/eudem25m, 100 points a request | 2026-10-17 | `tools/ring_track.py` (fetches what is missing) |
 
-MoneyPuck data is free for non-commercial use with credit to MoneyPuck.com. The NHL API is public and needs no key. OpenStreetMap data is © OpenStreetMap contributors under the ODbL; EU-DEM is from the Copernicus programme, served by Open Topo Data. Ring Kart's lap is drawn from both, scaled to a third and smoothed.
+MoneyPuck data is free for non-commercial use with credit to MoneyPuck.com. The NHL API is public and needs no key. OpenStreetMap data is © OpenStreetMap contributors under the ODbL; EU-DEM is from the Copernicus programme, served by Open Topo Data. Ring Kart's Nordschleife is drawn from both, scaled to a third and smoothed; Laguna Seca from OpenStreetMap and the USGS's 10 m model, served by Open Topo Data.
 
 ## Commands (from the repo root)
 
@@ -25,6 +27,7 @@ python3 -m venv .venv && .venv/bin/pip install -r tools/requirements.txt
 # Ring Kart's lap -> public/ring-kart/data/track.json (standard library only; fetches into raw/ring/ what is missing)
 python3 tools/ring_track.py --check         # 'track.json matches its inputs' means it reproduces
 python3 tools/ring_track.py                 # writes the file
+python3 tools/circuit_track.py laguna --check   # Laguna Seca -> public/ring-kart/data/laguna.json, the same way
 
 # ratings and benchmarks -> public/bruins-vs-canadiens/data/moneypuck-2025.json
 python3 tools/mp_extract.py raw --check      # prints every field that would change; 0 means it reproduces

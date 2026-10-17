@@ -9,8 +9,8 @@
 // and a backward pass for where it must start braking. Every point on the line then has a phase, what your feet
 // should be doing there: gas, coast, brake or hard brake. The pro drives exactly that line at exactly those speeds,
 // so the line you are shown is the line the pro takes.
-import { pointAt } from './track.js?v=0.11';
-import { drs } from './drive.js?v=0.11';
+import { pointAt } from './track.js?v=0.12';
+import { drs } from './drive.js?v=0.12';
 
 const G = 9.81;
 export const PHASE = { GAS: 0, COAST: 1, BRAKE: 2, HARD: 3 };
@@ -30,6 +30,19 @@ export function racingPath(track, margin = 1.2) {
         const mx = (cx[a] + rx[a] * lat[a] + cx[b] + rx[b] * lat[b]) / 2, mz = (cz[a] + rz[a] * lat[a] + cz[b] + rz[b] * lat[b]) / 2;
         const want = (mx - cx[k]) * rx[k] + (mz - cz[k]) * rz[k];
         lat[k] = Math.max(-half, Math.min(half, lat[k] + 0.6 * (want - lat[k]))) * free(k);
+      }
+    }
+  }
+  // Pulling toward the neighbours' midpoint is curve shortening: round a hairpin it hugs the inside all the way, the
+  // shortest path and a slow one. So finish with passes that lower the line's bending itself (its fourth difference,
+  // the gradient of the summed squared curvature): through a hairpin that swings the line wide, clips the apex and
+  // runs wide again, the way a driver uses the whole road.
+  const P = (k, o) => [cx[k] + rx[k] * lat[k], cz[k] + rz[k] * lat[k]][o];
+  for (const [reach, rounds] of [[10, 160], [5, 120]]) {
+    for (let r = 0; r < rounds; r++) {
+      for (let k = 2 * reach; k < n - 2 * reach; k++) {
+        const d = o => P(k - 2 * reach, o) - 4 * P(k - reach, o) + 6 * P(k, o) - 4 * P(k + reach, o) + P(k + 2 * reach, o);
+        lat[k] = Math.max(-half, Math.min(half, lat[k] - 0.05 * (d(0) * rx[k] + d(1) * rz[k]))) * free(k);
       }
     }
   }
@@ -58,7 +71,7 @@ export function lineFor(track, lat, spec, pace = 1.0) {
     short[k] = 2 * Math.abs(ax * bz - az * bx) / Math.max(1e-6, Math.hypot(ax, az) * Math.hypot(bx, bz) * Math.hypot(cx, cz));
   }
   for (let k = 3; k < n - 3; k++) { let m = Infinity; for (let j = k - 3; j <= k + 3; j++) m = Math.min(m, short[j]); tight[k] = (short[k] > 1 / 22 && raw[k] > 1 / 40) || m > 1 / 16 ? short[k] : 0; }
-  // and a floor from the road itself: through a tight corner no line can be wider than the centre's radius plus the
+  // a floor from the road itself: through a tight corner no line can be wider than the centre's radius plus the
   // half-road it may use, however the offset points measure (hugging the inside of a hairpin they bunch up and read
   // nearly straight)
   const room = track.width / 2;
@@ -66,6 +79,9 @@ export function lineFor(track, lat, spec, pace = 1.0) {
     let m = 0, c = 0;
     for (let j = Math.max(0, k - 4); j <= Math.min(n - 1, k + 4); j++) { m = Math.max(m, raw[j], tight[j]); c = Math.max(c, Math.abs(track.curv[j])); }
     kap[k] = c > 1 / 25 ? Math.max(m, 1 / (1 / c + room)) : m;
+    // and a ceiling the other way: hugging the inside, no line is tighter than the centre's radius less the half-road
+    // (a kink in the offset points can read as a 6 m radius on a 28 m corner)
+    if (c > 0) kap[k] = Math.min(kap[k], 1 / Math.max(3, 1 / c - room));
   }
   // the most the car can carry through each point, then the passes for accelerating out and braking in
   const vc = new Float32Array(n), v = new Float32Array(n);

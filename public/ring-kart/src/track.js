@@ -11,7 +11,12 @@ const D2R = Math.PI / 180;
 
 export function buildTrack(T) {
   const B = Object.fromEntries(Object.entries(T.build).map(([k, v]) => [k, v.value]));
-  const P = T.points;
+  // A circuit (format "circuit") is a closed loop of points raced for `laps` laps. It is laid out as an open road like
+  // any other: preN points of the lap's end before the start line (where the grid stands), the lap `laps` times end
+  // to end, and postN points of run-off past the finish. Everything that follows (the line, the pro, the AI, the pace
+  // notes, the director) then works on it unchanged; the world is drawn for one lap only (drawA to drawB).
+  const closed = B.format === 'circuit', laps = closed ? B.laps : 1, L0 = T.points.length;
+  const P = closed ? [...T.points.slice(L0 - B.preN), ...Array.from({ length: laps }, () => T.points).flat(), ...T.points.slice(0, B.postN + 1)] : T.points;
   // a centripetal Catmull-Rom curve through the points (x east, z south, in metres), with a phantom point at each end
   const C = P.map(p => [p.p[0] * 1000, -p.p[1] * 1000]);
   const ext = [[2 * C[0][0] - C[1][0], 2 * C[0][1] - C[1][1]], ...C, [2 * C.at(-1)[0] - C.at(-2)[0], 2 * C.at(-1)[1] - C.at(-2)[1]]];
@@ -33,7 +38,9 @@ export function buildTrack(T) {
   // arc length, scaled so the line is the real lap's length, then to game metres
   const cum = [0];
   for (let i = 1; i < dense.length; i++) cum.push(cum[i - 1] + Math.hypot(dense[i][0] - dense[i - 1][0], dense[i][1] - dense[i - 1][1]));
-  const scale = B.realLength / cum.at(-1) * B.lengthScale;
+  // scaled so one lap (a circuit) or the whole road is its real length, then to game metres
+  const cumAt = u => { let j = 0; while (j < du.length - 1 && du[j + 1] <= u) j++; return cum[j]; };
+  const scale = B.realLength / (closed ? cumAt(B.preN + L0) - cumAt(B.preN) : cum.at(-1)) * B.lengthScale;
   const L = cum.at(-1) * scale;
   const n = Math.round(L / B.sample) + 1, ds = L / (n - 1);
   const x = new Float64Array(n), z = new Float64Array(n), u = new Float64Array(n);
@@ -78,12 +85,13 @@ export function buildTrack(T) {
   // between them, halfway: each road's wall on that side stops there, so neither road's barrier stands on the other
   // road, and a car cannot cross from one to the other
   {
-    const cell = 24, grid = new Map(), key = (a, b) => a * 100003 + b;
+    const cell = 24, grid = new Map(), key = (a, b) => a * 100003 + b, lapK = closed ? sOf(B.preN + L0) - sOf(B.preN) : 0;
     for (let j = 0; j < n; j++) { const q = key(Math.floor(x[j] / cell), Math.floor(z[j] / cell)); (grid.get(q) || grid.set(q, []).get(q)).push(j); }
     for (let k = 0; k < n; k++) {
       const gx = Math.floor(x[k] / cell), gz = Math.floor(z[k] / cell), fx = Math.cos(h[k]), fz = Math.sin(h[k]);
       for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const j of grid.get(key(gx + a, gz + b)) || []) {
-        if (Math.abs(j - k) < 20) continue;   // 40 m along the road: the two legs of a hairpin count, its own curve does not
+        let apart = Math.abs(j - k); if (closed) { apart %= lapK; apart = Math.min(apart, lapK - apart); }   // the same place a lap later is not another road
+        if (apart < 20) continue;   // 40 m along the road: the two legs of a hairpin count, its own curve does not
         const dx = x[j] - x[k], dz = z[j] - z[k], along = dx * fx + dz * fz, lat = -dx * fz + dz * fx;
         if (Math.abs(along) > 6 || Math.abs(lat) > 2 * base) continue;
         const mid = Math.max(B.width / 2 + 0.4, Math.abs(lat) / 2);
@@ -99,7 +107,12 @@ export function buildTrack(T) {
   // and only zones worth opening for: a flap open for less than 30 m is a flicker
   for (let k = 0; k < n; k++) if (drsZone[k] && !drsZone[k - 1]) { let e = k; while (e < n && drsZone[e]) e++; if ((e - k) * ds < 30) drsZone.fill(0, k, e); k = e; }
 
-  return { n, ds, L, x, z, y, h, curv, bank, marks, wallL, wallR, drsZone, width: B.width, verge: B.verge, gateAt: Math.round(B.gateAt / ds), crests: P.filter(p => p.crest).length };
+  // the start line, each lap's line and the finish; the stretch of road the world is drawn for
+  const startK = closed ? sOf(B.preN) : Math.round(B.gateAt / ds);
+  const lineK = closed ? Array.from({ length: laps + 1 }, (_, i) => sOf(B.preN + i * L0)) : [startK, n - 12];
+  const finishK = closed ? lineK[laps] : n - 12;
+  const drawA = closed ? lineK[0] : 0, drawB = closed ? Math.min(n - 1, lineK[1] + 3) : n - 1;
+  return { n, ds, L, x, z, y, h, curv, bank, marks, wallL, wallR, drsZone, format: B.format || 'ring', laps, lineK, startK, finishK, drawA, drawB, lapN: closed ? lineK[1] - lineK[0] : n, width: B.width, verge: B.verge, gateAt: startK, crests: P.filter(p => p.crest).length };
 }
 
 function smooth(a, r) {

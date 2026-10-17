@@ -1,0 +1,104 @@
+{
+ "about": "The Coast Road, made up for Ring Kart: a point-to-point run north along a sunny coast with the sea on your left, from Surf Town past the Boardwalk and Pelican Point, up the switchbacks at Seal Rock to the Cliff Top, over the three Dune Jumps, through Palm Alley, the S of Smugglers' Bend and Driftwood, and up Lighthouse Hill to the finish. Sweepers, two switchbacks and three jumps, and nothing as brutal as the Ring's hairpins. Points are [east, north] in kilometres with heights in metres, laid out by hand; the game draws a smooth curve through them at the length below.",
+ "name": "Coast Road",
+ "look": {
+  "theme": "coast",
+  "start": "Surf Town",
+  "finish": "The Lighthouse",
+  "lighthouse": true,
+  "words": [
+   "SURF",
+   "GROOVY",
+   "BEACH",
+   "SUNSET",
+   "PEACE",
+   "GOOD VIBES",
+   "ALOHA",
+   "SLOW DOWN?",
+   "NO WAVE NO FUN",
+   "COAST"
+  ]
+ },
+ "build": {
+  "format": {
+   "value": "sprint",
+   "desc": "Point to point, from a grid to a finish line."
+  },
+  "realLength": {
+   "value": 7600,
+   "desc": "The length of the road, metres; the hand-drawn points are scaled to it."
+  },
+  "lengthScale": {
+   "value": 1,
+   "desc": "Game length per metre: the road is made for the game, so one to one."
+  },
+  "heightScale": {
+   "value": 1,
+   "desc": "Game height per metre of climb."
+  },
+  "sample": {
+   "value": 2,
+   "desc": "Distance between road samples, game metres."
+  },
+  "width": {
+   "value": 13,
+   "desc": "Road width, game metres."
+  },
+  "verge": {
+   "value": 4,
+   "desc": "Sand or grass between the road edge and the barrier, game metres."
+  },
+  "gateAt": {
+   "value": 160,
+   "desc": "Distance from the first point to the start line, game metres: the grid stands behind it."
+  }
+ },
+ "points": [
+  {"p": [0.0, 0.0], "el": 6, "name": "Surf Town"},
+  {"p": [0.0, 0.14], "el": 6},
+  {"p": [0.02, 0.32], "el": 7, "name": "Boardwalk"},
+  {"p": [-0.04, 0.5], "el": 8},
+  {"p": [0.0, 0.66], "el": 9},
+  {"p": [0.1, 0.78], "el": 10, "name": "Pelican Point"},
+  {"p": [0.24, 0.84], "el": 12},
+  {"p": [0.32, 0.96], "el": 14},
+  {"p": [0.3, 1.12], "el": 17},
+  {"p": [0.2, 1.26], "el": 21, "name": "Cliff Road"},
+  {"p": [0.12, 1.42], "el": 26},
+  {"p": [0.14, 1.6], "el": 31},
+  {"p": [0.22, 1.72], "el": 35, "name": "Seal Rock"},
+  {"p": [0.32, 1.74], "el": 38},
+  {"p": [0.36, 1.66], "el": 41},
+  {"p": [0.32, 1.58], "el": 43},
+  {"p": [0.42, 1.52], "el": 46},
+  {"p": [0.52, 1.56], "el": 49, "name": "The Switchback"},
+  {"p": [0.54, 1.66], "el": 52},
+  {"p": [0.48, 1.76], "el": 55},
+  {"p": [0.5, 1.9], "el": 58},
+  {"p": [0.58, 2.04], "el": 58, "name": "Cliff Top"},
+  {"p": [0.56, 2.22], "el": 55},
+  {"p": [0.48, 2.36], "el": 50, "name": "Dune Jumps", "crest": {"h": 2.6, "len": 30}},
+  {"p": [0.5, 2.54], "el": 43, "crest": {"h": 3.2, "len": 28}},
+  {"p": [0.6, 2.7], "el": 36, "crest": {"h": 2.4, "len": 26}},
+  {"p": [0.76, 2.82], "el": 29, "name": "Palm Alley"},
+  {"p": [0.94, 2.94], "el": 23},
+  {"p": [1.06, 3.1], "el": 19},
+  {"p": [1.04, 3.28], "el": 18},
+  {"p": [0.94, 3.4], "el": 19, "name": "Smugglers' Bend"},
+  {"p": [0.9, 3.52], "el": 21},
+  {"p": [0.98, 3.62], "el": 24},
+  {"p": [1.1, 3.62], "el": 27},
+  {"p": [1.18, 3.72], "el": 30},
+  {"p": [1.16, 3.88], "el": 33, "name": "Driftwood"},
+  {"p": [1.08, 4.02], "el": 36},
+  {"p": [1.12, 4.18], "el": 40},
+  {"p": [1.26, 4.28], "el": 44},
+  {"p": [1.4, 4.4], "el": 48, "name": "Lighthouse Hill"},
+  {"p": [1.42, 4.58], "el": 51},
+  {"p": [1.34, 4.72], "el": 53},
+  {"p": [1.38, 4.88], "el": 54},
+  {"p": [1.5, 4.98], "el": 54, "name": "Lighthouse"},
+  {"p": [1.62, 5.04], "el": 54},
+  {"p": [1.72, 5.08], "el": 54}
+ ]
+}
