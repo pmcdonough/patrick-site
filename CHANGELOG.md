@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.101 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.102 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.11 + Ring Kart 0.7. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.102
+- Ring Kart 0.7 (round cartoon cars, a real engine note and gearbox, reverse fixed). The home card says so. No change to the sim, Play Review or Cathedral Lab.
 
 ### 0.101
 - Ring Kart 0.6 (Beginner, Intermediate and Expert). The home card says so. No change to the sim, Play Review or Cathedral Lab.
@@ -598,6 +601,13 @@ Called Bruins vs Canadiens until 0.66; entries before it keep that name.
 - All driving data externalized to JSON with sources.
 
 ## Ring Kart
+
+### 0.7
+- Round cars. Every body is a smooth cartoon shell instead of extruded panels: lofted along the car from rounded sections, fat wings over tucked-up tyres, a round nose and tail, and a bubble glasshouse with the windows painted on and ringed in ink. Round headlights, a wide grille, slim lips, round-shouldered tyres on chrome dishes, a slimmer GT3 wing. Same sizes and the same seven styles, so the driving and the bumps are unchanged.
+- A real engine note and gearbox for each car you can drive, after an onboard GT3 RS lap: the GT3 RS is a 9,000 rpm flat-six on a seven-speed PDK, the GTI a turbo four on a six-speed DSG, the Civic a turbo four on a six-speed manual, the MX-5 a 7,200 rpm four on a five-speed manual, the Volvo a four on a lazy four-speed automatic. Each changes up at its redline and down one gear at a time under braking with a rev-matching blip and a pop; the PDK cracks on each upshift, the DSG braps, the flat-six crackles on the overrun, the turbos whistle and sigh. The note is synthesized from the cylinder count (the firing frequency and its harmonics). The rev counter reads to each car's redline and the shift light comes on near it.
+- The sound is heard from the camera: quieter and duller far away, and on the pro lap the trackside cameras hear the car's pitch drop as it goes past.
+- Fixed: after backing up, the car kept reversing when you let go of Down, and Up did nothing until it stopped. Letting go now stops it, and Up drives you forward.
+- The gearbox is `gearbox()` in `src/drive.js`, for the sound and the dials only; the engines are in `cars.json`. Two new tests: reverse stops and the gas drives you out of it, in every car; and every car works through its gears on the pro lap without over-revving or lugging.
 
 ### 0.6
 - Three driving modes, picked above the cars and kept in the browser. Beginner brakes for you when you come into a corner too fast and steers you off the Armco, and the walls and the grass hardly slow you. Intermediate brakes only when you are far too fast, nudges you off the rail, and a hit costs a little. Expert is the game as it was. New visitors start on Beginner.

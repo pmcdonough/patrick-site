@@ -5,7 +5,7 @@
 // Arcade on purpose: the car goes where it points, and grip only limits how fast it can turn. A drift turns harder than
 // grip allows and charges a mini-turbo, the kart-racing move. Hills slow you going up, and a crest taken fast enough
 // throws the car into the air, where it flies on gravity until the road comes back up to meet it.
-import { locate, pointAt } from './track.js?v=0.6';
+import { locate, pointAt } from './track.js?v=0.7';
 
 const G = 9.81;
 
@@ -31,11 +31,16 @@ export function step(car, dt, track, R, others = []) {
   if (car.boost > 0) { vmax *= 1 + B.gain; car.boost -= dt; }
   let a = 0;
   if (!car.air) {
-    if (inp.gas > 0 && car.v >= -0.5) a += inp.gas * sp.accel * Math.max(0, 1 - (car.v / vmax) ** 2) * (car.v > vmax ? 0 : 1);
+    // rolling backwards, the gas is drive: it stops the car first, as the brakes would, then takes it forward
+    if (inp.gas > 0 && car.v < -0.5) a += inp.gas * Math.max(sp.accel, sp.brake * 0.8);
+    else if (inp.gas > 0) a += inp.gas * sp.accel * Math.max(0, 1 - (car.v / vmax) ** 2) * (car.v > vmax ? 0 : 1);
     if (car.v > vmax) a -= (car.v - vmax) * 1.5;
     if (car.boost > 0) a += sp.accel * 1.4;
     if (inp.brake > 0) a -= car.v > 0.5 ? inp.brake * sp.brake : inp.brake * 4 * (car.v > -8 ? 1 : 0);
-    a -= 0.25 + 0.00022 * car.v * Math.abs(car.v) + (inp.gas > 0 || car.boost > 0 ? 0 : 0.6);
+    // rolling resistance and lifting off slow the car. Backing up, letting go of reverse stops it within a couple of
+    // seconds and never past a stop (until 0.7 both pushed backwards, so a car in reverse sped up on its own)
+    if (car.v >= 0) a -= 0.25 + 0.00022 * car.v * Math.abs(car.v) + (inp.gas > 0 || car.boost > 0 ? 0 : 0.6);
+    else { a -= 0.00022 * car.v * Math.abs(car.v); if (!(inp.brake > 0)) a += Math.min(4, -car.v / dt); }
     if (car.grass) a -= GR.drag * Math.max(0, car.v) * 0.25;
     // climbing costs speed and falling gives it back, at a fraction of real so the hills matter without stalling anyone
     a -= G * car.slope * 0.55;
@@ -283,16 +288,62 @@ export function driveAI(car, dt, track, cars, opts = {}) {
   car.input.drift = false;
 }
 
-// The gearbox the sound and the dials share: six gears spread over the top speed, and the revs in that gear, from
-// 2,600 when it drops into a gear to 6,800 at the change, a little more flat out in top. At a standstill the throttle
-// just revs it. Returns the gear (0 for neutral, -1 for reverse) and the revs it wants; the page eases toward them.
-export const REDLINE = 7200;
-export function revs(car) {
-  const v = Math.abs(car.v), band = car.spec.vmax / 6.2, gas = car.input.gas || car.boost > 0 ? 1 : 0;
-  if (car.v < -0.5) return { gear: -1, rpm: 2600 + Math.min(1, v / 8) * 2400 };
-  if (v < 1.5) return { gear: 0, rpm: gas ? 6400 : 900 };
-  const g = Math.min(5, Math.floor(v / band)), inGear = Math.min(1.3, (v - g * band) / band);
-  let rpm = 2600 + Math.min(1, inGear) * 4200 + (g === 5 ? Math.max(0, v - 6 * band) / band * 1200 : 0);
-  if (car.air && gas) rpm += 900;
-  return { gear: g + 1, rpm: Math.min(REDLINE + 600, rpm) };
+// ---------- the gearbox ----------
+// The engine and gearbox the sound and the dials share, from each car's `engine` in cars.json: its gears (the speed
+// at the redline in each, in km/h on the dial), idle and redline, and the kind of box. It is for the ears and the
+// eyes only: the physics above drives the car the same in any gear, so the line, the pro and the AI are untouched.
+// A twin-clutch box (pdk, dsg) changes up in a few hundredths of a second at the redline under full throttle, and
+// changes down one gear at a time under braking as soon as the lower gear fits, blipping the throttle to match the
+// revs: the bark-bark-bark into a hairpin. A manual takes longer over each change, an old automatic longer still and
+// lazily. Call it once a physics step for a car you want to hear; it keeps its state in car.gb and counts the
+// changes (ups, downs) so the sound can hear each one.
+export const BOXES = {
+  pdk:    { up: 0.05, down: 0.11, gap: 0.16, shift: 0.985, fit: 0.87, blip: 1.06 },
+  dsg:    { up: 0.07, down: 0.14, gap: 0.2, shift: 0.97, fit: 0.84, blip: 1.05 },
+  manual: { up: 0.32, down: 0.28, gap: 0.36, shift: 0.96, fit: 0.8, blip: 1.03 },
+  auto:   { up: 0.45, down: 0.4, gap: 0.6, shift: 0.92, fit: 0.66, blip: 1 },
+};
+const ENGINE = { cyl: 4, idle: 850, redline: 6800, box: 'manual', gears: null };
+export function engineOf(spec) {
+  const e = { ...ENGINE, ...(spec.engine || {}) };
+  // a car without its own gears gets six spread over its top speed, closer at the top
+  if (!e.gears) e.gears = [0.3, 0.46, 0.61, 0.75, 0.88, 1.02].map(f => Math.round(f * spec.vmax * 3.6));
+  e.vg = e.gears.map(k => k / 3.6);
+  return e;
+}
+export function gearbox(car, dt) {
+  const E = car.engine || (car.engine = engineOf(car.spec)), X = BOXES[E.box] || BOXES.manual, n = E.vg.length;
+  const gb = car.gb || (car.gb = { gear: 1, rpm: E.idle, shiftT: 0, kind: '', lastShift: 0, ups: 0, downs: 0, limiter: false, t: 0 });
+  gb.t += dt;
+  const v = car.v, gas = car.input.gas > 0 || car.boost > 0, brake = car.input.brake > 0;
+  const inGear = g => E.redline * Math.abs(v) / E.vg[g - 1];
+  let want;
+  if (v < -0.5) { gb.gear = -1; gb.shiftT = 0; want = E.idle + Math.min(1, -v / 8) * E.redline * 0.35; }
+  else if (v < 1.2 && !gas) { gb.gear = v < 0.3 ? 0 : 1; want = E.idle; }
+  else {
+    if (gb.gear < 1) gb.gear = 1;
+    const since = gb.t - gb.lastShift;
+    if (gb.shiftT <= 0 && since > X.gap) {
+      // up at the redline, or early in an old automatic cruising; down as soon as the gear below fits
+      const r = inGear(gb.gear), shiftAt = E.redline * (gas ? X.shift : E.box === 'auto' ? 0.55 : 0.99);
+      if (gb.gear < n && r > shiftAt) { gb.gear++; gb.shiftT = X.up; gb.kind = 'up'; gb.lastShift = gb.t; gb.ups++; }
+      else if (gb.gear > 1 && inGear(gb.gear - 1) < E.redline * X.fit && (brake || (!gas && E.box !== 'auto') || r < E.redline * 0.42)) {
+        gb.gear--; gb.shiftT = X.down; gb.kind = 'down'; gb.lastShift = gb.t; gb.downs++;
+      }
+    }
+    want = inGear(gb.gear);
+    // pulling away: the clutch slips, so the revs sit up the band until the road speed catches them
+    if (gb.gear === 1 && gas) want = Math.max(want, E.redline * 0.5 * (1 - Math.min(1, Math.abs(v) / E.vg[0])) + E.idle);
+    if (car.air && gas) want += E.redline * 0.15;   // wheels in the air spin up
+    want = Math.max(want, E.idle);
+  }
+  if (Math.abs(v) < 0.3 && gas) want = E.redline * 0.72;   // revving it at the barrier
+  // during a change the revs swing to the new gear: quickly in a twin-clutch box, and on a downshift the blip
+  // overshoots a little before the clutch bites
+  if (gb.shiftT > 0) { gb.shiftT -= dt; if (gb.kind === 'down') want *= X.blip; }
+  gb.limiter = want >= E.redline;
+  if (gb.limiter) want = E.redline - (Math.floor(gb.t * 14) % 2) * E.redline * 0.04;   // bouncing off the limiter
+  const rate = gb.shiftT > 0 ? (gb.kind === 'up' ? 1 / Math.max(0.02, X.up) : 1 / Math.max(0.03, X.down * 0.6)) * 2.2 : want > gb.rpm ? 12 : 8;
+  gb.rpm += (want - gb.rpm) * Math.min(1, dt * rate);
+  return gb;
 }

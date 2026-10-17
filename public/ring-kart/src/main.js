@@ -4,13 +4,13 @@
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp (Three.js
 // comes from Cathedral Lab's copy with Cathedral Lab's), so a visitor never mixes files from two deploys.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.11';
-import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.6';
-import { makeCar, step, collide, driveAI, assist, revs, REDLINE, cornerSpeed, nextCorner } from './drive.js?v=0.6';
-import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.6';
-import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.6';
-import { Sound } from './audio.js?v=0.6';
+import { buildTrack, cornerAt, locateGlobal, pointAt } from './track.js?v=0.7';
+import { makeCar, step, collide, driveAI, assist, gearbox, cornerSpeed, nextCorner } from './drive.js?v=0.7';
+import { buildWorld, buildSky, buildLine, HORIZON, setInkFog, carMesh, label } from './scene.js?v=0.7';
+import { racingPath, lineFor, drivePro, PHASE } from './line.js?v=0.7';
+import { Sound } from './audio.js?v=0.7';
 
-const VERSION = '0.6';
+const VERSION = '0.7';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const store = { get(k, d) { try { const v = localStorage.getItem('ringkart.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('ringkart.' + k, JSON.stringify(v)); } catch { /* private window */ } } };
@@ -342,6 +342,7 @@ function tick(dt) {
       if (c.hidden) continue;
       if (S.mode === 'pick' && c === player) continue;
       step(c, dt, track, R, cars);
+      if (c === player) gearbox(c, dt);
       // the arm, and the start of the road behind the queue
       if (!c.released) {
         const lim = gateS - 2.4 - c.spec.body.len / 2;
@@ -379,7 +380,7 @@ function proTick(dt) {
   if (S.mode === 'pro' && S.t > S.proStart) drivePro(player, dt, track, LINE);
   else if (S.mode === 'pro') player.input = { steer: 0, gas: 0, brake: 0, drift: false };   // waiting for the barrier; no brake, which at a standstill is reverse
   else player.input = { steer: Math.max(-1, Math.min(1, -player.lat * 0.1)), gas: 0, brake: player.v > 1 ? 0.8 : 0, drift: false };
-  step(player, dt, track, R, []);
+  step(player, dt, track, R, []); gearbox(player, dt);
   if (player.k >= track.n - 6) player.v = Math.min(player.v, 2);   // pull up before the end of the road
   if (S.mode === 'pro') S.raceT = Math.max(0, S.t - S.proStart);
   if (S.mode === 'pro' && player.s >= finishS) {
@@ -442,6 +443,9 @@ function draw(dt) {
   particles(dt);
   camera3(dt);
   hud(dt);
+  // where the ears are: the camera, so a trackside camera hears the car come and go
+  const ed = camera.position.distanceTo(new THREE.Vector3(player.x, player.y + 0.6, player.z));
+  sound.hear(ed, dt > 0 && S.earD != null && Math.abs(S.earD - ed) < 4 ? (S.earD - ed) / dt : 0); S.earD = ed;   // a cut is a jump, not a closing speed
   sound.update(player, S.mode, dt);
   renderer.render(scene, camera);
 }
@@ -580,20 +584,21 @@ function drawProfileBase() {
   const mk = fill => { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); shape(g, fill); g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 2; g.beginPath(); for (let k = a; k <= b; k += 3) g[k === a ? 'moveTo' : 'lineTo'](X(k), Y(k)); g.stroke(); return c; };
   profBase = { dim: mk('rgba(255,241,207,0.14)'), lit: mk('rgba(236,111,43,0.75)'), X, Y };
 }
-// the revs: an arc of bars from 0 to 8,000, green, then amber, red past the redline
-function drawTach(rpm, gear) {
-  const W = tach.width, H = tach.height, cx = W / 2, cy = H * 0.66, R = H * 0.52, a0 = Math.PI * 0.86, a1 = Math.PI * 2.14, top = 8000, N = 44;
+// the revs: an arc of bars from 0 to a thousand past the car's redline, green, then amber, red past the redline
+function drawTach(rpm, gear, E) {
+  const REDLINE = E.redline, top = Math.ceil(REDLINE / 1000 + 0.6) * 1000, shift = REDLINE * 0.93;
+  const W = tach.width, H = tach.height, cx = W / 2, cy = H * 0.66, R = H * 0.52, a0 = Math.PI * 0.86, a1 = Math.PI * 2.14, N = 44;
   tg.clearRect(0, 0, W, H);
   for (let i = 0; i < N; i++) {
     const f = (i + 0.5) / N, r = f * top, a = a0 + (a1 - a0) * f, on = r <= rpm;
-    tg.strokeStyle = !on ? 'rgba(255,241,207,0.14)' : r > REDLINE ? '#d8402b' : r > 6000 ? '#ec6f2b' : r > 4500 ? '#f2b631' : '#a8c043';
+    tg.strokeStyle = !on ? 'rgba(255,241,207,0.14)' : r > REDLINE ? '#d8402b' : r > REDLINE * 0.84 ? '#ec6f2b' : r > REDLINE * 0.62 ? '#f2b631' : '#a8c043';
     tg.lineWidth = 5; tg.beginPath();
     tg.moveTo(cx + Math.cos(a) * (R - 22), cy + Math.sin(a) * (R - 22)); tg.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); tg.stroke();
   }
   tg.font = '22px Righteous, Barlow, sans-serif'; tg.textAlign = 'center'; tg.textBaseline = 'middle';
-  for (let t = 0; t <= 8; t++) { const a = a0 + (a1 - a0) * t / 8; tg.fillStyle = t * 1000 > REDLINE ? '#ec6f2b' : '#fff1cf'; tg.fillText(t, cx + Math.cos(a) * (R - 40), cy + Math.sin(a) * (R - 40)); }
+  for (let t = 0, T = top / 1000; t <= T; t++) { const a = a0 + (a1 - a0) * t / T; tg.fillStyle = t * 1000 > REDLINE ? '#ec6f2b' : '#fff1cf'; tg.fillText(t, cx + Math.cos(a) * (R - 40), cy + Math.sin(a) * (R - 40)); }
   // a shift light when it is time to change up
-  if (rpm > 6500 && gear > 0 && gear < 6) { tg.fillStyle = '#2f9c9a'; tg.strokeStyle = '#fff1cf'; tg.lineWidth = 3; tg.beginPath(); tg.arc(cx, cy - 4, 10, 0, 7); tg.fill(); tg.stroke(); }
+  if (rpm > shift && gear > 0 && gear < E.vg.length) { tg.fillStyle = '#2f9c9a'; tg.strokeStyle = '#fff1cf'; tg.lineWidth = 3; tg.beginPath(); tg.arc(cx, cy - 4, 10, 0, 7); tg.fill(); tg.stroke(); }
   tg.fillStyle = '#f2b631'; tg.font = '18px Righteous, Barlow, sans-serif'; tg.fillText('rpm × 1000', cx, H - 12);
 }
 drawMapBase(); drawProfileBase();
@@ -608,11 +613,11 @@ function hud(dt) {
   const pos = order.indexOf(p) + 1;
   S.order = order;
   // the dials ease toward the gearbox and the pedals, every frame
-  const gb = revs(p), e = Math.min(1, dt * 10);
-  dial.rpm += (gb.rpm - dial.rpm) * Math.min(1, dt * (gb.rpm > dial.rpm ? 9 : 6));
+  const gb = p.gb || gearbox(p, 0), e = Math.min(1, dt * 10);
+  dial.rpm += (gb.rpm - dial.rpm) * Math.min(1, dt * 30);
   dial.gas += ((p.input.gas || p.boost > 0 ? 1 : 0) - dial.gas) * e; dial.brake += (p.input.brake - dial.brake) * e;
   $('thr').style.height = (dial.gas * 100).toFixed(0) + '%'; $('brk').style.height = (dial.brake * 100).toFixed(0) + '%';
-  drawTach(dial.rpm, gb.gear);
+  drawTach(dial.rpm, gb.gear, p.engine);
   $('time').textContent = fmt2(S.mode === 'queue' ? 0 : player.done ? player.time : S.raceT);
   if (performance.now() - lastHud > 90) {
     lastHud = performance.now();

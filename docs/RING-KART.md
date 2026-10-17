@@ -41,7 +41,7 @@ Controls, chosen so a lap that is all gas and brake sits under two hands:
 | Up (or W) | Gas |
 | Left, Right (or A, D) | Steer; eased in over about a sixth of a second, so a tap is a correction and a hold is full lock |
 | Space | Brake; a tap is a dab, a hold is everything; never reverses |
-| Down (or S) | Brake, and reverse from a standstill |
+| Down (or S) | Brake, and reverse from a standstill; let go and the car stops, or press Up to drive forward |
 | Shift | Drift; hold through a corner, let go for a mini-turbo (blue, then orange) |
 | E | Horn; slow traffic just ahead pulls over |
 | Q | Look back, while held |
@@ -99,7 +99,7 @@ Units and coordinates: metres and seconds throughout; speeds in game m/s (times 
 | `nextCorner(track, k, ahead)` | The next corner as a co-driver calls it: `{ dir, grade, dist, len, tightens, at }`, grade 1 (a hairpin, radius under 16 m) to 6 (under 95 m) |
 | `assist(car, track, M)` | The driving aids for the player, from a mode in `race.modes`: changes `car.input` before `step`, never the physics. The brake aid brakes to `cornerSpeed` at `M.brake` of the grip; the guard follows the car `M.guard.look` seconds ahead and, within `margin` of the Armco, blends in the AI's steering and brakes if the turn back needs more grip than there is. Returns how hard it worked, 0 to 1 |
 | `driveAI(car, dt, track, cars, opts)` | Sets `car.input` for an AI car: speed from `cornerSpeed`, a line (the inside of what is coming for racers, the right for traffic), passing on the left. `opts.paceScale` is the rubber band |
-| `revs(car)`, `REDLINE` | The gearbox the dials and the engine note share: six gears over the top speed, `{ gear, rpm }` |
+| `gearbox(car, dt)`, `engineOf(spec)`, `BOXES` | The engine and gearbox the dials and the engine note share, from the car's `engine` in `cars.json`: called once a physics step for the car you hear, keeps `car.gb` (`gear`, `rpm`, `limiter`, and counts of changes `ups` and `downs`). Twin-clutch boxes change up at the redline in a few hundredths of a second and down one gear at a time under braking with a blip; a manual is slower, an old automatic slower and lazier. Sound and dials only: the physics drives the same in any gear |
 
 ### `src/line.js` (pure)
 
@@ -124,7 +124,9 @@ The pro laps every player car without touching the grass or the Armco, within a 
 
 ### `src/audio.js` (browser, Web Audio)
 
-`new Sound()`: `start()` on the first click or key (browsers require it), `update(car, mode, dt)` every frame (engine from `revs`, tyres in a drift, wind with speed, whoosh on a turbo, thud on a bump), `beep()`, `finish()`, `horn()`, `toggle()`, `quiet()`.
+`new Sound()`: `start()` on the first click or key (browsers require it), `update(car, mode, dt)` every frame (the engine from `car.gb`, tyres in a drift, wind with speed, whoosh on a turbo, thud on a bump), `hear(d, vr)` (where the listener is: the page passes the camera's distance and closing speed, for distance and the Doppler shift), `beep()`, `finish()`, `horn()`, `toggle()`, `quiet()`.
+
+The engine note is synthesized from the car's engine, not recorded. A four-stroke fires each cylinder once every two turns, so the fundamental is the engine cycle (rpm / 120 Hz) and the loud partials are the firing order (the cylinder count times the cycle) and its multiples, with a little of every other partial for roughness; a flat-six keeps its high partials (the howl). Two copies a few cents apart, a soft clipper driven harder under load, a resonance and a low-pass that opens with revs and throttle. On each change up the ignition cuts (a crack in a PDK, a brap in a DSG); on each change down the throttle blips and the exhaust pops; off the throttle high in the revs it crackles; turbo cars whistle and sigh when you lift. The reference was an onboard GT3 RS lap: a 9,000 rpm flat-six on a seven-speed PDK.
 
 ### `src/main.js` (the page)
 
@@ -176,13 +178,13 @@ The AI looks ahead for the slowest corner it can still brake for (`cornerSpeed`,
 
 Real models, arcade numbers in the right order: the GT3 RS is the fastest thing in the lot and the Volvo 240 is a Volvo 240.
 
-Bodies are built in `carMesh` from each car's real length, width and height and its style: coupe, hatch, sedan, wagon, van, roadster or tiny. A style (`STYLE` in `scene.js`) is a side view, in shares of length from the back and of height:
+Bodies are built in `carMesh` from each car's real length, width and height and its style: coupe, hatch, sedan, wagon, van, roadster or tiny. Since 0.7 they are smooth cartoon shells, after the owner asked for round edges like an animated film's cars instead of panels. A style (`STYLE` in `scene.js`) is a side view, in shares of length from the back and of height:
 
-- `top`: the lower body's upper line, back to front (boot, beltline, bonnet, nose);
+- `top`: the body's upper line, back to front (boot, beltline, bonnet, nose);
 - `cab`: the glasshouse, four points from the foot of the rear window round to the foot of the windscreen (`null` for the roadster, which gets a windscreen, seats and a driver);
 - `wheels`: the two axles; `b`: where the B-pillar stands; `panel`: paint the glasshouse solid back to here (a van's load bay).
 
-The lower body is that outline cut round the wheel arches, with the wings raised over them, extruded across the width with fat rounded edges. The glasshouse is narrower (tumblehome), with the roof and pillars clipped from it in paint (`clip`, a half-plane clip of a polygon). Then mirrors, bumpers, skirts, grille, headlights, tail lights, German number plates, an exhaust, twin racing stripes over bonnet, roof and boot, wheels a size too big with whitewalls, and a soft oval shadow. Paint, trim, black parts and stripes are each merged into one geometry (`merge`), so a car is a handful of draw calls. No badges or logos.
+The body is a loft (`loft`): at every step along the car a superellipse section (`se`, a square with its corners blown round, flatter underneath), as wide as the car in the middle and closing into a round nose and tail (`plan`). Its top follows the `top` line, blurred so no corner survives (`smooth`), with the wings swelling over each wheel; its bottom rises over each wheel to just above the axle, so the tyres tuck up under the wings. The glasshouse is a second, narrower loft sitting on the body, with the windows painted on a canvas in its own coordinates: side glass split at the B-pillar, the windscreen over the front slope, the rear window over the back one, each pane ringed in ink with a glint across it, and the roof and pillars in the body colour. The body's own canvas carries the paint, a highlight along each shoulder and the twin stripes. Then round headlights and tail lights set into the surface (squashed balls placed with the loft's normal), a wide grille, slim lips, mirrors, the wing or the roof box, fat round-shouldered tyres on chrome dishes, German number plates, an exhaust, the ink outline and a soft oval shadow. Trim, black and chrome parts are each merged into one geometry (`merge`), so a car is a handful of draw calls. No badges, logos or faces.
 
 ## 8. The look: design system
 
@@ -249,6 +251,7 @@ Each version was one session's work and one commit; the changelog has the detail
 - **0.4 (site 0.99)**: the controls rethought around a lap that is all gas and brake (Up for gas, Space to brake, Shift to drift), pace notes and a BRAKE cue from the AI's own corner speeds (split out of `driveAI` unchanged, so the AI drives exactly as before), gas always on, a horn, look back; and the 70s cartoon look, replacing the realistic one.
 
 - **0.5 (site 0.100)**: the pro lap and the best line, from one new pure module (`line.js`), so what you are shown and what the pro drives cannot disagree; the director's cut; and the phone fixed after a screenshot from a real phone (buttons overlapping each other and the prompt, the corner buttons under the thumbs). Found on the way: the pro reversed off the start (a brake pedal at a standstill is reverse), a speed profile that braked for wiggles in the tracing (curvature measured over too short a span), and the gas switch, which did nothing until you picked a car.
+- **0.7 (site 0.102)**: smooth round cars in place of panels (lofted shells with painted windows), after the owner asked for the look of an animated film's cars; a real engine note and gearbox per car after an onboard GT3 RS lap (9,000 rpm flat-six, PDK upshifts with an ignition crack, rev-matched downshifts that pop), heard from where the camera is, with the Doppler shift on the pro lap's trackside cameras. Fixed: a car in reverse kept reversing after you let go, and the gas did nothing until it stopped, because rolling resistance always pushed backwards and the gas only worked going forward.
 - **0.6 (site 0.101)**: Beginner, Intermediate and Expert, after the owner found it too hard to stay off the walls. The aids were tuned in Node against a deliberately clumsy driver before anything was drawn: a guard on the steering alone barely helped, because the hits come from arriving too fast, so the brake aid (the AI's own corner speed) carries Beginner and, set past the grip, Intermediate.
 
 Decisions worth keeping:
@@ -265,7 +268,9 @@ Decisions worth keeping:
 
 **Add a car.** Add it to `player`, `rivals`, `chasers` or `traffic` in `data/cars.json` with its real length, width and height and a style. A player car needs an `id` and a `note`; the picker and the best times pick it up. Run the Ring Kart test (it drives every player car round the lap), then look at it in the picker.
 
-**Add a body style.** Add an entry to `STYLE` in `scene.js`: the `top` line, the `cab` (four points, or `null`), the `wheels`, and optionally `b` and `panel`. Keep the wings clear of the arches (the builder raises them, but a very low bonnet line over a big wheel will look odd). Check it in a lineup: render every car side by side from a scratch page that imports `carMesh`.
+**Add a body style.** Add an entry to `STYLE` in `scene.js`: the `top` line, the `cab` (four points, or `null`), the `wheels`, and optionally `b` and `panel`. The builder swells the wings over the wheels and rounds every corner, so the points can be rough. Check it in a lineup: render every car side by side, and close up from the front and the back, from a scratch page that imports `carMesh`.
+
+**Give a car its engine.** Add `engine` to the car in `cars.json`: `cyl`, `idle`, `redline`, `box` (`pdk`, `dsg`, `manual` or `auto`), `gears` (the speed on the dial at the redline in each gear, from real ratios if you have them), and `turbo` or `flat` for the voice. A car without one gets a four-cylinder with six gears spread over its top speed. The gearbox test drives every player car's gears on the pro lap.
 
 **Tune the best line or the pro.** The road margin and the reaches are in `racingPath`, the pace, the braking share and the phase thresholds in `lineFor`, the steering gains in `drivePro`. Run the third Ring Kart test after any change: it fails if the pro leaves the road, drifts off its line or stops beating the AI.
 

@@ -6,18 +6,24 @@
     "grip": "sideways grip, g",
     "brake": "braking, m/s2",
     "drift": "how hard the car rotates in a drift, 1 is normal",
-    "mass": "tonnes, for who wins a bump"
+    "mass": "tonnes, for who wins a bump",
+    "engine": "for the sound and the dials only: cylinders, idle and redline rpm, the gearbox (pdk and dsg are twin-clutch, manual, auto) and the speed in km/h at the redline in each gear"
   },
   "player": [
     { "id": "gti", "name": "VW Golf GTI", "note": "Mk7. The car half the queue came in. Balanced, easy, quick enough.", "vmax": 66, "accel": 7.6, "grip": 1.32, "brake": 11, "drift": 1.0, "mass": 1.35,
+      "engine": { "cyl": 4, "turbo": true, "idle": 820, "redline": 6700, "box": "dsg", "gears": [62, 100, 146, 190, 224, 254] },
       "body": { "style": "hatch", "len": 4.25, "wid": 1.8, "hgt": 1.45, "color": "#c8102e", "trim": "#111111" } },
     { "id": "gt3rs", "name": "Porsche 911 GT3 RS", "note": "992. Fastest car in the lot, and it knows it. Grip for days, a little nervous on the jumps.", "vmax": 80, "accel": 10.5, "grip": 1.6, "brake": 13.5, "drift": 0.9, "mass": 1.45,
+      "engine": { "cyl": 6, "flat": true, "idle": 980, "redline": 9000, "box": "pdk", "gears": [74, 117, 162, 208, 251, 290, 306] },
       "body": { "style": "coupe", "len": 4.57, "wid": 1.9, "hgt": 1.3, "color": "#4fb24a", "trim": "#111111", "wing": true } },
     { "id": "ctr", "name": "Honda Civic Type R", "note": "FL5. Front-wheel drive lap record hunter. Brakes late, turns in hard.", "vmax": 72, "accel": 8.6, "grip": 1.45, "brake": 12, "drift": 0.95, "mass": 1.43,
+      "engine": { "cyl": 4, "turbo": true, "idle": 800, "redline": 7000, "box": "manual", "gears": [66, 106, 150, 194, 236, 274] },
       "body": { "style": "hatch", "len": 4.6, "wid": 1.89, "hgt": 1.4, "color": "#f2f2f2", "trim": "#c8102e", "wing": true } },
     { "id": "mx5", "name": "Mazda MX-5", "note": "NA, pop-up lights. Slow on the straights, a joy everywhere else. Drifts on a thought.", "vmax": 56, "accel": 6.2, "grip": 1.5, "brake": 11.5, "drift": 1.3, "mass": 0.95,
+      "engine": { "cyl": 4, "idle": 900, "redline": 7200, "box": "manual", "gears": [56, 94, 135, 176, 212] },
       "body": { "style": "roadster", "len": 3.95, "wid": 1.68, "hgt": 1.22, "color": "#1f4fa8", "trim": "#111111" } },
     { "id": "v240", "name": "Volvo 240 Estate", "note": "1989, 300,000 km, a roof box. Slow, soft and heavy. Nothing it hits is safe.", "vmax": 50, "accel": 4.6, "grip": 1.08, "brake": 9, "drift": 1.15, "mass": 1.6,
+      "engine": { "cyl": 4, "idle": 750, "redline": 6000, "box": "auto", "gears": [64, 112, 162, 196] },
       "body": { "style": "wagon", "len": 4.79, "wid": 1.71, "hgt": 1.46, "color": "#7a8b6a", "trim": "#1a1a1a", "roofbox": true } }
   ],
   "rivals": [

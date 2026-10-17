@@ -4,7 +4,7 @@
 // view to its own proportions, with racing stripes. Everything is cel-shaded (three flat bands of light, no gradients)
 // and the cars and trees carry a brown ink outline. Three.js r128, the copy Cathedral Lab keeps on the site.
 import * as THREE from '../../cathedral-lab/src/vendor/three.module.js?v=0.11';
-import { pointAt } from './track.js?v=0.6';
+import { pointAt } from './track.js?v=0.7';
 
 // Colours here are written as on a paint chart (sRGB); the renderer works in linear light, so convert them.
 const col = c => new THREE.Color(c).convertSRGBToLinear();
@@ -424,17 +424,20 @@ function gantry(track) {
 }
 
 // ---------- cars ----------
-// Each car is drawn from a side view, as a designer would sketch it: the lower body's outline (bumpers, bonnet,
-// beltline, boot) cut round the wheel arches, with the wings bulging over them, extruded across the car's width with
-// rounded edges; on top a glasshouse that narrows toward the roof (the tumblehome), painted pillars and roof, then
-// mirrors, bumpers, grille, lights, number plates, an exhaust, wheels with whitewall tyres, and a soft shadow underneath.
-// Proportions come from each car's real length, width and height; the shape comes from its style. Cartoon touches:
-// fat rounded edges, wheels a size too big, streaky cartoon glass, twin racing stripes, and an ink outline.
+// Each car is a smooth shell, the way an animator models a cartoon car: no flat panels and no corners. The body is
+// lofted along the car, a rounded section at every step (a superellipse: a square with its corners blown round,
+// flatter underneath), as wide as the car in the middle and closing in a round nose and tail. Its top follows the
+// car's side view (bonnet, beltline, boot) with fat wings swelling over the wheels; its bottom rises over each wheel,
+// so the tyres tuck up under the wings. The glasshouse is a second, narrower loft sitting on it, a bubble with the
+// windows painted on: windscreen, side glass, rear window, the pillars and roof in the body colour, each pane with an
+// ink line round it and a glint across it. Then round lights ringed in ink, a grille, rounded bumpers, mirrors, the wing or the roof
+// box, fat round-shouldered tyres on chrome dishes, an ink outline and a soft shadow. Proportions come from the real
+// length, width and height; the shape from the style. Toon shading and the ink do the rest.
 //
-// Profiles are shares of length from the back (0) to the front (1) and of height: `top` is the lower body's upper
-// line, back to front; `cab` the glasshouse, from the bottom of the rear window round to the bottom of the windscreen;
-// `wheels` the axles; `b` where the B-pillar stands, if it has one; `panel` paints the glasshouse solid back to there
-// (a van's load bay).
+// Profiles are shares of length from the back (0) to the front (1) and of height: `top` is the body's upper line, back
+// to front; `cab` the glasshouse, from the bottom of the rear window round to the bottom of the windscreen; `wheels`
+// the axles; `b` where the B-pillar stands, if it has one; `panel` paints the glasshouse solid back to there (a van's
+// load bay).
 const STYLE = {
   coupe:    { top: [[0, 0.4], [0.03, 0.54], [0.2, 0.6], [0.68, 0.6], [0.93, 0.5], [1, 0.38]], cab: [[0.1, 0.6], [0.42, 1], [0.56, 1], [0.7, 0.6]], wheels: [0.2, 0.81] },
   hatch:    { top: [[0, 0.5], [0.02, 0.62], [0.72, 0.64], [0.95, 0.54], [1, 0.44]], cab: [[0.02, 0.63], [0.13, 1], [0.56, 1], [0.74, 0.64]], wheels: [0.17, 0.81], b: 0.4 },
@@ -445,17 +448,22 @@ const STYLE = {
   tiny:     { top: [[0, 0.5], [0.03, 0.6], [0.7, 0.6], [0.94, 0.54], [1, 0.46]], cab: [[0.04, 0.6], [0.09, 1], [0.6, 1], [0.75, 0.6]], wheels: [0.15, 0.84], b: 0.42 },
 };
 const lerpLine = (pts, x) => { for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + (y1 - y0) * (x - x0) / ((x1 - x0) || 1); } return pts[pts.length - 1][1]; };
-// keep the points of a polygon on one side of a line: a*x + b*y >= d
-function clip(poly, a, b, d) {
-  const out = [], f = p => a * p[0] + b * p[1] - d;
-  poly.forEach((p, i) => { const q = poly[(i + 1) % poly.length], fp = f(p), fq = f(q); if (fp >= 0) out.push(p); if ((fp >= 0) !== (fq >= 0)) { const t = fp / (fp - fq); out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]); } });
-  return out;
+// a profile sampled finely and blurred, so its corners round off: f from 0 to 1 -> value
+function smooth(fn, blur, N = 160) {
+  const raw = Array.from({ length: N + 1 }, (_, i) => fn(i / N)), out = new Float32Array(N + 1), r = Math.max(1, Math.round(blur * N));
+  for (let i = 0; i <= N; i++) { let t = 0, w = 0; for (let j = -r; j <= r; j++) { const k = Math.max(0, Math.min(N, i + j)), q = 1 - Math.abs(j) / (r + 1); t += raw[k] * q; w += q; } out[i] = t / w; }
+  return f => { const x = Math.max(0, Math.min(1, f)) * N, i = Math.min(N - 1, Math.floor(x)), t = x - i; return out[i] * (1 - t) + out[i + 1] * t; };
 }
-// a side-view polygon extruded across the car, centred on z, from width w
-function slab(poly, w, bevel = 0) {
-  const s = new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
-  const g = new THREE.ExtrudeGeometry(s, bevel ? { depth: w - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 2, curveSegments: 10 } : { depth: w, bevelEnabled: false });
-  g.translate(0, 0, -(bevel ? w - 2 * bevel : w) / 2); return g;
+// a superellipse: the point at angle th on a rounded square of half-sizes a by b, exponent n (2 is an ellipse)
+const se = (th, n) => { const c = Math.cos(th), s = Math.sin(th); return [Math.sign(c) * Math.abs(c) ** (2 / n), Math.sign(s) * Math.abs(s) ** (2 / n)]; };
+// a surface from a function of (u along, v around), U by V quads, with uvs; normals averaged across the seam
+function loft(U, V, fn, closed = true) {
+  const pos = new Float32Array((U + 1) * (V + 1) * 3), uv = new Float32Array((U + 1) * (V + 1) * 2), idx = [];
+  for (let i = 0; i <= U; i++) for (let j = 0; j <= V; j++) { const o = i * (V + 1) + j, p = fn(i / U, j / V); pos.set(p, o * 3); uv.set([i / U, j / V], o * 2); }
+  for (let i = 0; i < U; i++) for (let j = 0; j < V; j++) { const a = i * (V + 1) + j, b = a + V + 1; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  if (closed) { const n = g.attributes.normal.array; for (let i = 0; i <= U; i++) { const a = i * (V + 1) * 3, b = (i * (V + 1) + V) * 3; for (let k = 0; k < 3; k++) n[a + k] = n[b + k] = (n[a + k] + n[b + k]) / 2; } }
+  return g;
 }
 // one geometry from many, so a car is a handful of draw calls
 function merge(geos) {
@@ -464,131 +472,170 @@ function merge(geos) {
   let o = 0; for (const g of parts) { if (!g.attributes.normal) g.computeVertexNormals(); pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3); o += g.attributes.position.count; }
   const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(pos, 3)); m.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); return m;
 }
-const box = (w, h, d, x, y, z) => new THREE.BoxGeometry(w, h, d).translate(x, y, z);
-let shadowTex = null, plateTex = null, glassTex = null;
+// a side-view polygon extruded across the car with rounded edges, centred on z, width w
+function slab(poly, w, bevel = 0.02) {
+  const s = new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
+  const g = new THREE.ExtrudeGeometry(s, { depth: w - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 3, curveSegments: 10 });
+  g.translate(0, 0, -(w - 2 * bevel) / 2); return g;
+}
+// a ball squashed to sizes sx, sy, sz, at (x, y, z), turned to face along the normal (nx, ny, nz)
+const blob = (sx, sy, sz, x, y, z, nx = 1, ny = 0, nz = 0) => {
+  const g = new THREE.SphereGeometry(0.5, 16, 12).scale(sx, sy, sz);
+  g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), new THREE.Vector3(nx, ny, nz).normalize())));
+  return g.translate(x, y, z);
+};
+// a bar with round ends across the car, radius r, length w
+const capsule = (r, w, x, y) => merge([new THREE.CylinderGeometry(r, r, w, 14).rotateX(Math.PI / 2), new THREE.SphereGeometry(r, 14, 10).translate(0, 0, w / 2), new THREE.SphereGeometry(r, 14, 10).translate(0, 0, -w / 2)]).translate(x, y, 0);
+let shadowTex = null, plateTex = null;
 // a stripe colour that stands out from the paint: cream on dark or saturated cars, orange on pale ones
 const stripeFor = hex => { const c = new THREE.Color(hex); return c.r * 0.3 + c.g * 0.59 + c.b * 0.11 > 0.62 ? PAL.orange : PAL.cream; };
+const lighter = (hex, t) => '#' + new THREE.Color(hex).lerp(new THREE.Color(0xffffff), t).getHexString();
 
 export function carMesh(body) {
   const st = STYLE[body.style] || STYLE.hatch, L = body.len, Wd = body.wid, H = body.hgt;
-  const clear = 0.16, X = f => -L / 2 + f * L, Y = f => clear * 0.4 + f * (H - clear * 0.4);
-  const grp = new THREE.Group();
-  const paint = toon({ color: body.color }), trim = toon({ color: body.trim }), black = toon({ color: 0x2b2420 });
-  if (!glassTex) { glassTex = canvas(128, 128, (g, w, h) => { g.fillStyle = '#8fd0e6'; g.fillRect(0, 0, w, h); g.fillStyle = '#e9fbff'; g.save(); g.translate(w / 2, h / 2); g.rotate(-0.7); g.fillRect(-90, -30, 180, 14); g.fillRect(-90, -6, 180, 6); g.restore(); }); glassTex.wrapS = glassTex.wrapT = THREE.RepeatWrapping; glassTex.repeat.set(0.9, 0.9); }
-  const glass = toon({ map: glassTex });
-  const wr = Math.min(0.42, H * 0.27), arch = wr + 0.1, wx = st.wheels.map(X), inkParts = [];
+  const clear = 0.16, X = f => -L / 2 + f * L, Y = h => clear * 0.4 + h * (H - clear * 0.4);
+  const grp = new THREE.Group(), inkParts = [];
+  const wr = Math.min(0.48, H * 0.33), wf = st.wheels;
+  const stripes = body.style !== 'van', sc = stripeFor(body.color);
 
-  // ---------- the lower body, with arches and wings ----------
-  let top = st.top.map(([f, h]) => [X(f), Y(h)]);
-  for (const x of wx) {
-    // the wing over each wheel: at least a hand's width of metal above the arch
-    const need = wr + arch + 0.09;
-    for (const dx of [-arch * 1.25, 0, arch * 1.25]) top.push([x + dx, Math.max(lerpLine(top, x + dx), need - (dx ? 0.03 : 0))]);
-    top.sort((a, b) => a[0] - b[0]);
-  }
-  const sh = new THREE.Shape(), yb = clear + 0.1;
-  sh.moveTo(-L / 2, yb + 0.06); sh.lineTo(-L / 2 + 0.1, yb);
-  for (const x of wx) { sh.lineTo(x - arch, yb); sh.absarc(x, wr, arch, Math.PI - Math.asin(Math.min(1, (yb - wr) / arch)), Math.asin(Math.min(1, (yb - wr) / arch)), true); }
-  sh.lineTo(L / 2 - 0.12, yb); sh.lineTo(L / 2, yb + 0.1);
-  for (let i = top.length - 1; i >= 0; i--) sh.lineTo(top[i][0], top[i][1]);
-  const bev = 0.13;
-  const lowerGeo = new THREE.ExtrudeGeometry(sh, { depth: Wd - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: 0.08, bevelSegments: 4, curveSegments: 14 });
-  lowerGeo.translate(0, 0, -(Wd - 2 * bev) / 2);
-  const lower = new THREE.Mesh(lowerGeo, paint); lower.castShadow = true; grp.add(lower); inkParts.push(lowerGeo);
+  // ---------- the body ----------
+  // the top: the side view, with a wing swelling over each wheel, its corners rounded off
+  const bell = (f, c, w) => { const d = Math.abs(f - c) / w; return d >= 1 ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * d); };
+  const archW = wr * 1.5 / L, fender = wr * 2 + 0.14;
+  const top = smooth(f => { let y = Y(lerpLine(st.top, f)); for (const c of wf) y = Math.max(y, y + (fender - y) * bell(f, c, archW * 1.2)); return y; }, 0.035);
+  // the bottom: a sill between the wheels, rising over each one to just above the axle, and up into the nose and tail
+  const sill = clear + 0.07;
+  const bottom = smooth(f => { let y = sill; for (const c of wf) y += (wr * 1.02 - sill) * bell(f, c, archW); return y; }, 0.02);
+  // the plan: full width in the middle, a fat swelling over the wheels, a rounded nose and tail
+  const plan = f => (1 - Math.abs(2 * f - 1) ** 5) ** (1 / 5);
+  const half = f => Wd / 2 * (1 + 0.035 * Math.max(...wf.map(c => bell(f, c, archW * 1.3))));
+  const bodyAt = (f, th) => {
+    const p = plan(f), yt = top(f), yb = bottom(f), yc = (yt + yb) / 2 + (1 - p) * 0.04, hh = (yt - yb) / 2 * p ** 0.3;
+    const up = Math.sin(th) > 0, [cz, cy] = se(th, up ? 3 : 4.5);
+    const tumble = up ? 1 - 0.07 * Math.sin(th) ** 2 : 1;
+    return [X(f), yc + hh * cy, -half(f) * p * cz * tumble];
+  };
+  // the paint: the colour, a soft highlight along each shoulder, and the twin stripes over the top
+  const bodyTex = canvas(256, 128, (g, w, h) => {
+    g.fillStyle = body.color; g.fillRect(0, 0, w, h);
+    g.fillStyle = lighter(body.color, 0.28);
+    for (const v of [0.16, 0.34]) { round(g, w * 0.14, h * v - 2, w * 0.7, 4, 2); g.fill(); }
+    if (stripes) { g.fillStyle = sc; for (const v of [0.218, 0.262]) g.fillRect(0, h * v - h * 0.016, w, h * 0.032); }
+  });
+  bodyTex.flipY = false;
+  const bodyGeo = loft(64, 48, (u, v) => bodyAt(u, v * Math.PI * 2));
+  const paint = toon({ map: bodyTex });
+  const shell = new THREE.Mesh(bodyGeo, paint); shell.castShadow = true; grp.add(shell); inkParts.push(bodyGeo);
+  const surf = (f, th) => new THREE.Vector3(...bodyAt(f, th));
+  const normal = (f, th) => { const a = surf(f, th), b = surf(f + 0.004, th), c = surf(f, th + 0.01); return b.sub(a).cross(c.sub(a)).normalize(); };
 
-  // ---------- the glasshouse, pillars and roof ----------
-  const paintBits = [], trimBits = [], blackBits = [], stripeBits = [];
-  // racing stripes over the bonnet and boot: a band along the body's top line, standing just proud of it
-  if (body.style !== 'van') {
-    const band = [...top.map(([x, y]) => [x, y + 0.02]), ...top.slice().reverse().map(([x, y]) => [x, y - 0.1])];
-    for (const z of [-0.17, 0.17]) stripeBits.push(slab(band, 0.17).translate(0, 0, z));
-  }
-  const tw = Wd * 0.84;
+  // ---------- the glasshouse ----------
+  const trim = toon({ color: body.trim }), black = toon({ color: 0x2b2420 }), chrome = toon({ color: 0xe4ded2 });
+  const trimBits = [], blackBits = [], chromeBits = [], mirrorBits = [], rimBits = [];
   if (st.cab) {
-    const cab = st.cab.map(([f, h]) => [X(f), Y(h)]);
-    const g = new THREE.Mesh(slab(cab, tw), glass); g.castShadow = true; grp.add(g); inkParts.push(g.geometry);
-    // the roof, a skin over the top of the glass
-    const roofY = cab[1][1];
-    paintBits.push(slab(clip(cab, 0, 1, roofY - 0.05), tw + 0.04).translate(0, 0.015, 0));
-    // pillars: thin painted strips on each side of the glass along its front and rear edges, and the B-pillar
-    // a strip of the glasshouse within `thick` of the edge from p to q
-    const cx = cab.reduce((t, p) => t + p[0], 0) / cab.length, cy = cab.reduce((t, p) => t + p[1], 0) / cab.length;
-    const edge = (p, q, thick) => {
-      const dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy); let nx = dy / len, ny = -dx / len;
-      if (nx * (cx - p[0]) + ny * (cy - p[1]) > 0) { nx = -nx; ny = -ny; }   // n points out of the glass
-      return clip(cab, nx, ny, nx * p[0] + ny * p[1] - thick);
+    const [c0, c1, c2, c3] = st.cab, f0 = c0[0], f3 = c3[0];
+    const roof = smooth(f => Y(lerpLine([[f0 - 0.001, c0[1]], [c1[0], c1[1]], [c2[0], c2[1]], [f3 + 0.001, c3[1]]], f0 + f * (f3 - f0))), 0.06);
+    const cabAt = (u, th) => {
+      const f = f0 + u * (f3 - f0), base = top(f) - 0.05, hc = Math.max(0, roof(u) - base) * (1 - Math.abs(2 * u - 1) ** 8) ** 0.2;
+      const [cz, cy] = se(th, 2.6), w = half(f) * plan(f) * 0.88 * (1 - Math.abs(2 * u - 1) ** 6) ** (1 / 6);
+      return [X(f), base + hc * cy, -w * cz * (1 - 0.16 * Math.sin(th) ** 2)];
     };
-    const sides = poly => { if (poly.length > 2) for (const s of [-1, 1]) paintBits.push(slab(poly, 0.03).translate(0, 0, s * (tw / 2 + 0.01))); };
-    sides(edge(cab[3], cab[2], 0.09));    // the A-pillar
-    sides(edge(cab[0], cab[1], 0.12));    // the C-pillar
-    if (st.b) sides(clip(clip(cab, 1, 0, X(st.b) - 0.06), -1, 0, -(X(st.b) + 0.06)));
-    if (st.panel) sides(clip(cab, -1, 0, -X(st.panel)));
-    // the window line: a dark seal along the bottom of the glass
-    paintBits.push(slab([[cab[0][0], cab[0][1] - 0.01], [cab[3][0], cab[3][1] - 0.01], [cab[3][0], cab[3][1] + 0.03], [cab[0][0], cab[0][1] + 0.03]], tw + 0.02));
-    // racing stripes over the roof
-    if (body.style !== 'van') for (const z of [-0.17, 0.17]) stripeBits.push(slab(clip(cab, 0, 1, roofY - 0.03), 0.17).translate(0, 0.04, z));
-    // door mirrors at the foot of the windscreen
-    for (const s of [-1, 1]) paintBits.push(box(0.12, 0.1, 0.16, cab[3][0] - 0.12, cab[3][1] + 0.08, s * (Wd / 2 + 0.06)));
+    // the panes, painted on: u along the glasshouse, v round it from one sill over the roof to the other
+    const fu = f => (f - f0) / (f3 - f0), r1 = fu(c1[0]), r2 = fu(c2[0]);
+    const cabTex = canvas(384, 192, (g, w, h) => {
+      g.fillStyle = body.color; g.fillRect(0, 0, w, h);
+      const pane = (u0, u1, v0, v1) => {
+        if (u1 - u0 < 0.02) return;
+        const x = u0 * w, y = v0 * h, pw = (u1 - u0) * w, ph = (v1 - v0) * h;
+        round(g, x, y, pw, ph, Math.min(14, ph / 3)); g.fillStyle = '#8fd0e6'; g.fill();
+        g.save(); g.clip(); g.fillStyle = '#e9fbff'; g.translate(x + pw * 0.4, y + ph / 2); g.rotate(-0.5); g.fillRect(-pw, -ph * 0.14, pw * 2, ph * 0.12); g.fillRect(-pw, ph * 0.06, pw * 2, ph * 0.05); g.restore();
+        g.strokeStyle = PAL.ink; g.lineWidth = 2.5; round(g, x, y, pw, ph, Math.min(14, ph / 3)); g.stroke();
+      };
+      // side glass, either side, split at the B-pillar, and solid behind a van's panel
+      const s0 = st.panel ? fu(st.panel) + 0.01 : 0.05, s1 = 0.97, b = st.b ? fu(st.b) : null;
+      for (const [v0, v1] of [[0.07, 0.29], [0.71, 0.93]]) {
+        if (b != null) { pane(s0, b - 0.025, v0, v1); pane(b + 0.025, s1, v0, v1); } else pane(s0, s1, v0, v1);
+      }
+      // the windscreen over the front slope, the rear window over the back one
+      pane(r2 + 0.015, 0.985, 0.34, 0.66);
+      if (!st.panel) pane(0.02, Math.max(0.05, r1 - 0.015), 0.35, 0.65);
+      if (stripes) { g.fillStyle = sc; for (const v of [0.455, 0.545]) g.fillRect(r1 * w, h * v - h * 0.025, (r2 - r1) * w, h * 0.05); }
+    });
+    cabTex.flipY = false;
+    const cabGeo = loft(48, 32, (u, v) => cabAt(u, v * Math.PI), false);
+    const cab = new THREE.Mesh(cabGeo, toon({ map: cabTex })); cab.castShadow = true; grp.add(cab); inkParts.push(cabGeo);
+    // door mirrors at the foot of the windscreen: little round blobs on stalks
+    const fm = c3[0] - 0.05, ym = top(fm) + 0.06;
+    for (const s of [-1, 1]) mirrorBits.push(blob(0.12, 0.09, 0.12, X(fm), ym, s * half(fm) * plan(fm) * 0.9));
   } else {
-    // a roadster: the windscreen in its frame, roll hoops, two seats and the driver
-    const xs = X(0.6), ys = Y(0.68);
-    const ws = [[xs - 0.02, ys], [xs, ys], [xs - 0.3, H], [xs - 0.33, H]];
-    grp.add(new THREE.Mesh(slab(ws, Wd * 0.8), glass));
-    trimBits.push(slab([[xs - 0.33, H - 0.03], [xs - 0.29, H - 0.03], [xs - 0.3, H], [xs - 0.33, H]], Wd * 0.82));
-    for (const s of [-1, 1]) { blackBits.push(box(0.4, 0.38, 0.5, X(0.42), ys + 0.08, s * Wd * 0.22)); }
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), toon({ color: 0x6b3e1e })); head.position.set(X(0.4), ys + 0.42, Wd * 0.22); grp.add(head);
+    // a roadster: a windscreen in a rounded frame, two seats, the driver's head
+    const xs = X(0.6), ys = top(0.6);
+    const wt = ys + 0.3, ws = [[xs - 0.02, ys], [xs, ys], [xs - 0.24, wt], [xs - 0.27, wt]];
+    grp.add(new THREE.Mesh(slab(ws, Wd * 0.74, 0.015), toon({ color: 0x8fd0e6 })));
+    trimBits.push(slab([[xs - 0.28, wt - 0.04], [xs - 0.22, wt - 0.04], [xs - 0.23, wt + 0.01], [xs - 0.28, wt + 0.01]], Wd * 0.76, 0.02));
+    for (const s of [-1, 1]) blackBits.push(blob(0.42, 0.5, 0.48, X(0.42), ys + 0.12, s * Wd * 0.22));
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), toon({ color: 0x6b3e1e })); head.position.set(X(0.4), ys + 0.46, Wd * 0.22); grp.add(head);
   }
 
-  // ---------- bumpers, sills, grille, plates, exhaust ----------
-  trimBits.push(box(0.16, 0.2, Wd * 0.94, L / 2 - 0.05, yb + 0.06, 0), box(0.16, 0.2, Wd * 0.94, -L / 2 + 0.05, yb + 0.06, 0));
-  trimBits.push(box(L * 0.42, 0.08, Wd + 0.01, (wx[0] + wx[1]) / 2, yb + 0.02, 0));
-  const noseY = lerpLine(top, L / 2 - 0.05), tailY = lerpLine(top, -L / 2 + 0.05);
-  blackBits.push(box(0.06, Math.max(0.08, (noseY - yb) * 0.32), Wd * 0.42, L / 2 + 0.05, yb + (noseY - yb) * 0.55, 0));
-  blackBits.push(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 8).rotateZ(Math.PI / 2).translate(-L / 2 - 0.03, yb - 0.02, Wd * 0.28));
-  if (!plateTex) plateTex = canvas(128, 28, (g, w, h) => { g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h); g.fillStyle = '#1d3f9a'; g.fillRect(0, 0, 14, h); g.strokeStyle = '#222'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2); g.fillStyle = '#222'; for (let i = 0; i < 6; i++) g.fillRect(22 + i * 16, 7, 10, 14); });
-  const plate = new THREE.MeshBasicMaterial({ map: plateTex });
-  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.11), plate); p.position.set(s * (L / 2 + 0.09), yb + 0.06, 0); p.rotation.y = s * Math.PI / 2; grp.add(p); }
-
-  // ---------- lights ----------
-  const head = new THREE.MeshBasicMaterial({ color: col(0xfff6d8) }), tail = new THREE.MeshBasicMaterial({ color: col(0xa3101c) });
+  // ---------- lights, grille, bumpers, exhaust, plates ----------
+  const headM = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.55, 1.3) }), tail = new THREE.MeshBasicMaterial({ color: col(0xa3101c) });
   grp.tail = tail;   // the page lights it up under braking
   const heads = [], tails = [];
-  for (const s of [-1, 1]) {
-    heads.push(box(0.1, 0.09, Wd * 0.2, L / 2 + 0.035, noseY - 0.09, s * Wd * 0.32));
-    tails.push(box(0.08, 0.1, Wd * 0.24, -L / 2 - 0.03, tailY - 0.1, s * Wd * 0.33));
+  // round headlights set into the nose, round tail lights into the tail, each a squashed ball on the surface
+  const lamp = (f, th, size, list) => { const p = surf(f, th), n = normal(f, th); if (n.x * (f > 0.5 ? 1 : -1) < 0) n.negate(); list.push(blob(size * 0.35, size, size, p.x - n.x * 0.02, p.y - n.y * 0.02, p.z - n.z * 0.02, n.x, n.y, n.z)); };
+  const LAMP = [0.95, Math.PI - 0.95];   // either side, up on the shoulder of the nose and the tail
+  for (const th of LAMP) {
+    lamp(0.982, th, Math.min(0.34, H * 0.24), heads);
+    lamp(0.018, th, Math.min(0.26, H * 0.18), tails);
   }
-  grp.add(new THREE.Mesh(merge(heads), head), new THREE.Mesh(merge(tails), tail));
+  // a rim round each headlight, in the trim colour
+  for (const th of LAMP) { const p = surf(0.982, th), n = normal(0.982, th); if (n.x < 0) n.negate(); rimBits.push(blob(0.08, Math.min(0.4, H * 0.28), Math.min(0.4, H * 0.28), p.x - n.x * 0.04, p.y - n.y * 0.04, p.z - n.z * 0.04, n.x, n.y, n.z)); }
+  grp.add(new THREE.Mesh(merge(heads), headM), new THREE.Mesh(merge(tails), tail), new THREE.Mesh(merge(rimBits), toon({ color: PAL.ink })));
+  const noseB = bottom(0.97), tailB = bottom(0.03);
+  blackBits.push(blob(0.12, Math.max(0.12, (top(0.97) - noseB) * 0.32), Wd * 0.42, X(1) - 0.03, noseB + (top(0.97) - noseB) * 0.32, 0));
+  // a slim rounded lip under the nose and the tail
+  blackBits.push(capsule(0.05, Wd * 0.6, X(0.985), noseB + 0.04), capsule(0.05, Wd * 0.6, X(0.015), tailB + 0.04));
+  chromeBits.push(new THREE.CylinderGeometry(0.045, 0.05, 0.16, 12).rotateZ(Math.PI / 2).translate(X(0) + 0.02, tailB + 0.02, Wd * 0.26));
+  // the underside between the wheels, so nothing shows through under the car
+  blackBits.push(new THREE.BoxGeometry(L * 0.86, 0.12, Wd * 0.7).translate(0, wr * 0.95, 0));
+  if (!plateTex) plateTex = canvas(128, 28, (g, w, h) => { g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h); g.fillStyle = '#1d3f9a'; g.fillRect(0, 0, 14, h); g.strokeStyle = '#222'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2); g.fillStyle = '#222'; for (let i = 0; i < 6; i++) g.fillRect(22 + i * 16, 7, 10, 14); });
+  const plate = new THREE.MeshBasicMaterial({ map: plateTex });
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.1), plate); p.position.set(s * (L / 2 + 0.105), (s > 0 ? noseB : tailB) + 0.1, 0); p.rotation.y = s * Math.PI / 2; grp.add(p); }
 
   // ---------- the wing, the roof box ----------
   if (body.wing) {
-    const wy = Math.max(H * 0.82, tailY + 0.32), wxp = X(0.06);
-    trimBits.push(slab([[wxp - 0.2, wy], [wxp + 0.18, wy + 0.03], [wxp + 0.18, wy + 0.07], [wxp - 0.2, wy + 0.05]], Wd * 0.92));
-    for (const s of [-1, 1]) { trimBits.push(box(0.36, 0.14, 0.03, wxp, wy + 0.02, s * Wd * 0.46), box(0.08, wy - tailY + 0.02, 0.05, wxp + 0.05, (wy + tailY) / 2, s * Wd * 0.25)); }
+    const tailY = top(0.04), wy = Math.max(H * 0.84, tailY + 0.34), wxp = X(0.07);
+    // a slim plane on two swan necks, with small round-cornered end plates
+    trimBits.push(slab([[wxp - 0.2, wy], [wxp + 0.17, wy + 0.035], [wxp + 0.17, wy + 0.065], [wxp - 0.2, wy + 0.04]], Wd * 0.84, 0.015));
+    for (const s of [-1, 1]) trimBits.push(slab([[wxp - 0.16, wy - 0.03], [wxp + 0.17, wy], [wxp + 0.17, wy + 0.11], [wxp - 0.16, wy + 0.08]], 0.03, 0.01).translate(0, 0, s * Wd * 0.42), slab([[wxp + 0.02, tailY - 0.05], [wxp + 0.09, tailY - 0.05], [wxp + 0.07, wy + 0.04], [wxp + 0.03, wy + 0.04]], 0.04, 0.01).translate(0, 0, s * Wd * 0.2));
   }
-  if (body.roofbox) blackBits.push(box(1.7, 0.34, 0.9, X(0.4), H + 0.2, 0), box(0.06, 0.06, Wd * 0.8, X(0.25), H + 0.04, 0), box(0.06, 0.06, Wd * 0.8, X(0.55), H + 0.04, 0));
+  if (body.roofbox) blackBits.push(blob(1.8, 0.36, 0.92, X(0.4), H + 0.22, 0), new THREE.BoxGeometry(0.06, 0.08, Wd * 0.78).translate(X(0.27), H + 0.03, 0), new THREE.BoxGeometry(0.06, 0.08, Wd * 0.78).translate(X(0.53), H + 0.03, 0));
 
-  for (const [bits, mat] of [[paintBits, paint], [trimBits, trim], [blackBits, black], [stripeBits, toon({ color: stripeFor(body.color) })]]) if (bits.length) { const m = new THREE.Mesh(merge(bits), mat); m.castShadow = true; grp.add(m); if (mat !== black || !body.roofbox) inkParts.push(m.geometry); }
-  // the ink outline round the whole body
+  for (const [bits, mat] of [[trimBits, trim], [blackBits, black], [chromeBits, chrome], [mirrorBits, toon({ color: body.color })]]) if (bits.length) { const m = new THREE.Mesh(merge(bits), mat); m.castShadow = true; grp.add(m); inkParts.push(m.geometry); }
+  // the ink outline round the whole car
   grp.ink = new THREE.Mesh(inkNormals(merge(inkParts)), inkMat(0.035)); grp.add(grp.ink);   // the page hides it when the camera sits inside it, on the bonnet
 
-  // ---------- wheels: a fat tyre with a whitewall, a chrome dish, five slots ----------
-  const tyreG = new THREE.CylinderGeometry(wr, wr, 0.28, 20).rotateX(Math.PI / 2);
-  const wallG = new THREE.RingGeometry(wr * 0.66, wr * 0.84, 22).translate(0, 0, 0.142);
-  const rimG = merge([new THREE.CylinderGeometry(wr * 0.62, wr * 0.62, 0.04, 18).rotateX(Math.PI / 2).translate(0, 0, 0.12)]);
-  const slotG = merge([0, 1, 2, 3, 4].map(i => box(wr * 0.14, wr * 0.32, 0.02, 0, wr * 0.36, 0.142).rotateZ(i * Math.PI * 2 / 5)));
-  const tyre = toon({ color: 0x2b2420 }), wall = toon({ color: PAL.cream, side: THREE.DoubleSide }), rim = toon({ color: 0xd6d2c8 }), slot = toon({ color: 0x5a4a3a });
+  // ---------- wheels: a fat tyre with round shoulders, a chrome dish, five slots ----------
+  const tw = 0.3, prof = [];
+  // the tyre's cross-section, turned round the axle: a rounded rectangle from the rim out to the tread
+  for (let i = 0; i <= 12; i++) { const a = -Math.PI / 2 + Math.PI * i / 12, rr = 0.075; prof.push(new THREE.Vector2(wr - rr + Math.cos(a) * rr, Math.sin(a) * (tw / 2 - 0.02) * 0.9 + Math.sign(Math.sin(a)) * 0.0)); }
+  prof.unshift(new THREE.Vector2(wr * 0.62, -tw / 2 + 0.03)); prof.push(new THREE.Vector2(wr * 0.62, tw / 2 - 0.03));
+  const tyreG = new THREE.LatheGeometry(prof, 24).rotateX(Math.PI / 2);
+  const rimG = new THREE.CylinderGeometry(wr * 0.64, wr * 0.6, 0.06, 20).rotateX(Math.PI / 2).translate(0, 0, tw / 2 - 0.04);
+  const capG = new THREE.SphereGeometry(wr * 0.22, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2).translate(0, 0, tw / 2 - 0.02);
+  const slotG = merge([0, 1, 2, 3, 4].map(i => new THREE.BoxGeometry(wr * 0.13, wr * 0.22, 0.02).translate(0, wr * 0.4, tw / 2 - 0.005).rotateZ(i * Math.PI * 2 / 5)));
+  const tyre = toon({ color: 0x2b2420, side: THREE.DoubleSide }), slot = toon({ color: 0x5a4a3a }), hub = toon({ color: body.trim === '#111111' || body.trim === '#1a1a1a' ? 0xd6d2c8 : body.trim });
   const tyreInk = inkMat(0.03), tyreInkG = inkNormals(tyreG.clone());
   grp.wheels = [];
-  for (const [x, s] of [[wx[1], 1], [wx[1], -1], [wx[0], 1], [wx[0], -1]]) {
-    const w = new THREE.Group(); w.position.set(x, wr, s * (Wd / 2 - 0.14));
-    const face = new THREE.Group(); face.add(new THREE.Mesh(wallG, wall), new THREE.Mesh(rimG, rim), new THREE.Mesh(slotG, slot)); if (s < 0) face.rotation.y = Math.PI;
+  for (const [f, s] of [[wf[1], 1], [wf[1], -1], [wf[0], 1], [wf[0], -1]]) {
+    const w = new THREE.Group(); w.position.set(X(f), wr, s * (Wd / 2 - tw / 2 - 0.02));
+    const face = new THREE.Group(); face.add(new THREE.Mesh(rimG, chrome), new THREE.Mesh(capG, hub), new THREE.Mesh(slotG, slot)); if (s < 0) face.rotation.y = Math.PI;
     w.add(new THREE.Mesh(tyreG, tyre), new THREE.Mesh(tyreInkG, tyreInk), face); grp.add(w); grp.wheels.push(w);
   }
 
-  // ---------- a soft shadow, so the car sits on the road from any distance ----------
-  // a cartoon shadow: a flat oval with a soft edge
+  // ---------- a cartoon shadow: a flat oval with a soft edge ----------
   if (!shadowTex) shadowTex = canvas(64, 64, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(42,26,14,0.5)'); r.addColorStop(1, 'rgba(42,26,14,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
-  const blob = new THREE.Mesh(new THREE.PlaneGeometry(L * 1.15, Wd * 1.3).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
-  blob.position.y = 0.04; blob.renderOrder = 1; grp.add(blob);
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(L * 1.15, Wd * 1.3).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
+  shadow.position.y = 0.04; shadow.renderOrder = 1; grp.add(shadow);
   return grp;
 }

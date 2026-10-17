@@ -1,6 +1,7 @@
 // Ring Kart's road and driving, in Node: the lap builds to its real length scaled, and every car drives it to the
 // gantry on the AI without getting stuck, in a sensible time, with the faster cars faster; the pro drives the best line
-// clean; and the driving modes keep a clumsy driver off the Armco without slowing a good one.
+// clean; the driving modes keep a clumsy driver off the Armco without slowing a good one; reverse stops when you
+// let go; and the gearbox works through every gear.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -93,5 +94,36 @@ test('the driving modes: a clumsy driver stays off the Armco on Beginner, mostly
     const good = { ...spec, pace: 0.8 }, ai = car => driveAI(car, dt, t, [car]);
     const ge = lap(good, 'expert', ai), gb = lap(good, 'beginner', ai);
     assert.ok(gb.time < ge.time * 1.02, `${spec.name}: the AI ${ge.time.toFixed(1)} s bare, ${gb.time.toFixed(1)} s with Beginner's help`);
+  }
+});
+
+test('reverse: letting go stops the car, and the gas takes it forward again', async () => {
+  const [{ buildTrack }, { makeCar, step }] = await load();
+  const t = buildTrack(T), dt = 1 / 120;
+  const drive = (car, inp, secs) => { for (let i = 0; i < secs / dt; i++) { car.input = { steer: 0, drift: false, gas: 0, brake: 0, ...inp }; step(car, dt, t, C.race, []); } };
+  for (const spec of C.player) {
+    const car = makeCar(spec, t, t.gateAt - 20, 0);
+    drive(car, { brake: 1 }, 2); assert.ok(car.v < -5, `${spec.name} backs up: ${car.v.toFixed(2)}`);
+    drive(car, {}, 3); assert.ok(car.v === 0, `${spec.name} still rolling ${car.v.toFixed(2)} m/s 3 s after letting go of reverse`);
+    drive(car, { brake: 1 }, 2); drive(car, { gas: 1 }, 1.5); assert.ok(car.v > 0.5, `${spec.name}: the gas after reversing leaves it at ${car.v.toFixed(2)} m/s`);
+  }
+});
+
+test('the gearbox: every player car changes up through all its gears and back down, on the pro lap', async () => {
+  const [{ buildTrack }, { makeCar, step, gearbox }, { racingPath, lineFor, drivePro }] = await load();
+  const t = buildTrack(T), P = racingPath(t), dt = 1 / 120;
+  for (const spec of C.player) {
+    const L = lineFor(t, P, spec), car = makeCar(spec, t, t.gateAt - 3, 0);
+    let time = 0, top = 0, over = 0, low = 0;
+    while (car.s < t.L - 60 && time < 400) {
+      drivePro(car, dt, t, L); step(car, dt, t, C.race, []); const g = gearbox(car, dt); time += dt; top = Math.max(top, g.gear);
+      if (g.rpm > car.engine.redline * 1.01) over++;
+      if (g.gear > 1 && g.shiftT <= 0 && car.input.gas && g.rpm < car.engine.redline * 0.35) low++;
+    }
+    const n = car.engine.gears.length;
+    assert.ok(top >= n - 1, `${spec.name}: top gear reached ${top} of ${n}`);
+    assert.ok(car.gb.ups > 15 && car.gb.downs > 15, `${spec.name}: ${car.gb.ups} up, ${car.gb.downs} down`);
+    assert.ok(over === 0, `${spec.name}: over the redline for ${over} steps`);
+    assert.ok(low < 120, `${spec.name}: lugging in too high a gear on the gas for ${(low * dt).toFixed(1)} s`);
   }
 });
