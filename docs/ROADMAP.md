@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.92 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.93 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -46,7 +46,7 @@ From the brief, in order:
 4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
 
-## Cathedral Lab (0.8, Keystone until 0.6)
+## Cathedral Lab (0.9, Keystone until 0.6)
 
 The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, the transept and spire 0.5, the choir and apse 0.6), and the 2D arch lab, on one masonry solver. Amiens, the tallest complete French cathedral, is the second building since 0.8, made with `gothic.js`, a builder for aisled stretches from a cross-section. Next: build your own cathedral on that builder (choose the span, the heights, the aisles, the buttresses and the flyers, and see whether it stands), with Beauvais, whose 48 m vault fell in 1284, as the challenge. Then (`docs/CATHEDRAL-LAB.md`):
 

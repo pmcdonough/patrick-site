@@ -2,10 +2,10 @@
 // the parts that are its own: the crossing, the apse and its chapels, the west front and its two half-towers, the spire
 // and the labyrinth. The numbers are in docs/CATHEDRAL-LAB.md with their sources.
 // Units: metres, kN. x across (north negative), y up, z along the church: the crossing at 0, the west front at +62.
-import * as THREE from './vendor/three.module.js?v=0.8';
-import * as Solver from './solver.js?v=0.8';
-import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.8';
-import { frame, section, aisled, ribTop, pointed, beamG, tubeG, X, SIDES } from './gothic.js?v=0.8';
+import * as THREE from './vendor/three.module.js?v=0.9';
+import * as Solver from './solver.js?v=0.9';
+import { createKit, V3, GAMMA, OAK, LEAD, boxG, cylG, extr, extrVol, lancet, rect, circle, archShapes, ruled } from './kit.js?v=0.9';
+import { frame, section, aisled, ribTop, pointed, beamG, tubeG, X, SIDES } from './gothic.js?v=0.9';
 
 const K = createKit();
 const { pieces, steps, step, add, removeAt, placeArch, placeCentering } = K;

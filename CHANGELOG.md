@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.92 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.8. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.93 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.9. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.93
+- Cathedral Lab 0.9 (zooming in no longer sticks). No change to the sim or Play Review.
 
 ### 0.92
 - Cathedral Lab 0.8 (a second cathedral, Amiens). The home card says so; the smoke check loads both buildings. No change to the sim or Play Review.
@@ -203,6 +206,9 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 - Sim 0.30, Play Review 0.1.
 
 ## Cathedral Lab (Keystone until 0.6)
+
+### 0.9
+- Zooming in could stop dead, and sliding crawl, once the point the camera turns around ended up 8 m in front of it, even with the stone you pointed at far away. Each scroll now moves that point to the depth of what is under the pointer, and the zoom stops 1.5 m short of what you point at. Turning and sliding then work on what you are looking at, at any distance.
 
 ### 0.8
 - A second cathedral: Amiens, the tallest complete one in France, 5,775 pieces in 88 steps and 17 bags. The nave of seven bays with its four-part vault 42 m up, two tiers of flyers at every buttress; the west front with three porches, the Gallery of Kings, the rose, the bell-ringers' gallery and the two unequal half-towers (68 m and 61.7 m); the transept with aisled arms; the choir with double aisles and a glazed triforium; the seven-sided apse with its ambulatory, seven chapels and two-flight flyers; the nave chapels, the spire to 112.7 m and the labyrinth. Its push is about 50 kN a metre, a quarter more than Notre-Dame's, and its buttresses hold it with the resultant at 0.37, just inside the middle third.

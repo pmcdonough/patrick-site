@@ -3,18 +3,18 @@
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
 // visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.8';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.8';
+import * as THREE from './vendor/three.module.js?v=0.9';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.9';
 // The buildings: each is a module with the same exports (pieces, steps, KIT, forceLines and the rest). The address picks
 // one, ?b=notre-dame; with none, the first.
 const BUILDINGS = [
-  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.8') },
-  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.8') },
+  { id: 'notre-dame', name: 'Notre-Dame', load: () => import('./notre-dame.js?v=0.9') },
+  { id: 'amiens', name: 'Amiens', load: () => import('./amiens.js?v=0.9') },
 ];
 const CHOSEN = BUILDINGS.find(b => b.id === new URLSearchParams(location.search).get('b')) || BUILDINGS[0];
 const { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } = await CHOSEN.load();
 
-const VERSION = '0.8';
+const VERSION = '0.9';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 // the page's words for this building, and a link to every building
@@ -42,7 +42,7 @@ renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.localClippingEnabled = true;
 const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.5, 2400);
-const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 8; controls.maxDistance = 480;
+const controls = new OrbitControls(camera, cv); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 1.5; controls.maxDistance = 480;
 camera.position.set(-60, 34, 66); controls.target.set(0, 16, 0);
 const lin = h => new THREE.Color(h).convertSRGBToLinear();
 const hemi = new THREE.HemisphereLight(lin(0xeef2f6), lin(0xb9b1a3), 1.0); scene.add(hemi);
@@ -210,7 +210,8 @@ function showForces() {
 // ---------- Camera ----------
 // Scroll or pinch zooms toward what is under the pointer, so zooming in on the roof keeps the roof in view. Double-click
 // or double-tap a piece to fly to it, or the sky to see the whole building; Whole building does the same. The point the
-// camera turns around never leaves the building, so a drag can't lose it.
+// camera turns around never leaves the building, so a drag can't lose it, and each zoom moves it to the depth of what is
+// under the pointer, so zooming and sliding work at any distance.
 function frameBox(box, minDist = 26) {
   const c = box.getCenter(V3()), size = box.getSize(V3()).length();
   const dir = camera.position.clone().sub(controls.target).normalize();
@@ -265,11 +266,15 @@ $('stage').addEventListener('wheel', e => {
   if (e.target !== cv) return;
   e.preventDefault(); e.stopPropagation(); stopFollow();
   const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
-  const d = camera.position.distanceTo(controls.target);
-  const f = Math.min(Math.max(Math.exp(dy * (e.ctrlKey ? 0.01 : 0.0015)), controls.minDistance / d), controls.maxDistance / d);
-  const p = pointUnder(e);
+  const p = pointUnder(e), d = camera.position.distanceTo(p);
+  // the stop is a step short of what you point at, not of the point the camera turns around, which may be much nearer
+  const f = Math.min(Math.max(Math.exp(dy * (e.ctrlKey ? 0.01 : 0.0015)), controls.minDistance / d), controls.maxDistance / camera.position.distanceTo(controls.target));
   camera.position.sub(p).multiplyScalar(f).add(p);
   controls.target.sub(p).multiplyScalar(f).add(p);
+  // then turn around, and slide at, the depth of what you point at: the view is unchanged, but a drag moves the stone under
+  // the pointer with it instead of a point a few metres in front of the camera
+  const dir = camera.getWorldDirection(V3()), depth = p.clone().sub(camera.position).dot(dir);
+  if (depth > controls.minDistance) controls.target.copy(camera.position).addScaledVector(dir, depth);
   clampTarget(); redraw();
 }, { capture: true, passive: false });
 $('fit').onclick = frameAll;
@@ -385,4 +390,4 @@ theme(); resize();
 // open on the finished model, like the picture on the box
 go(NSTEPS, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.cathedralLab = { go, state, steps, pieces, batches, renderer, VERSION, building: KIT.id };
+window.cathedralLab = { go, state, steps, pieces, batches, renderer, camera, controls, VERSION, building: KIT.id };
