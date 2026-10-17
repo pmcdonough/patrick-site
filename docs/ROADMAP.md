@@ -65,6 +65,11 @@ The first playable version is a kart game on a hand-traced lap; 0.2 added onboar
 2. The real line. Trace the lap from OpenStreetMap's Nordschleife ways and a public elevation model instead of by hand, so the corners have their real radii and the hills their real gradients. Run the fetch on a machine with open internet, keep the raw download out of the repo (`raw/`), and commit the script and the points it writes, as with the hockey data.
 3. Ghost of your best lap, and a time-trial mode with an empty track.
 4. Performance on phones: fewer trees and a coarser ground on small screens.
+5. Tilt steering on phones (device orientation, which iPhones ask permission for), as an option beside the on-screen buttons.
+6. Corner-specific scenery from the 70s look: spectators and flags at Brünnchen, the Karussell and Pflanzgarten, dirt thrown up when you run wide.
+7. A seeded race, so a ghost or a replay repeats exactly (the queue's order and traffic from a seed, no `Math.random` in the physics path).
+
+`docs/RING-KART.md` is the project's full reference: the architecture and module APIs, the data model, the design system, how each version was built, and recipes for extending it.
 
 ## Engineering
 
