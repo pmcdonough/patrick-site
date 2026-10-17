@@ -3,7 +3,7 @@
 //   node tools/bump.js sim 0.47       the sim's VERSION, its page's two stamps, every import in its src/, and
 //                                     Play Review's imports from the sim's engine
 //   node tools/bump.js review 1.0     Play Review's VERSION and its page's two stamps
-//   node tools/bump.js keystone 0.2   Keystone's VERSION on both its pages (the 3D build and the arch lab), their
+//   node tools/bump.js cathedral 0.8  Cathedral Lab's VERSION on both its pages (the 3D build and the arch lesson), their
 //                                     stamps and every import in their src/, the vendored Three.js included
 //
 // The changelog, the home page badges and the docs' version lines stay by hand (CLAUDE.md, Shipping a version).
@@ -12,13 +12,13 @@ const fs = require('fs');
 const path = require('path');
 const PUB = path.join(__dirname, '..', 'public');
 const [which, v] = process.argv.slice(2);
-if (!['sim', 'review', 'keystone'].includes(which) || !/^\d+\.\d+$/.test(v || '')) { console.error('usage: node tools/bump.js sim|review|keystone 0.xx'); process.exit(2); }
-const dir = { sim: 'bruins-vs-canadiens', review: 'play-review', keystone: 'keystone' }[which];
+if (!['sim', 'review', 'cathedral'].includes(which) || !/^\d+\.\d+$/.test(v || '')) { console.error('usage: node tools/bump.js sim|review|cathedral 0.xx'); process.exit(2); }
+const dir = { sim: 'bruins-vs-canadiens', review: 'play-review', cathedral: 'cathedral-lab' }[which];
 const own = path.join(PUB, dir);
 const read = f => fs.readFileSync(f, 'utf8');
 const old = read(path.join(own, 'src', 'main.js')).match(/const VERSION = '([0-9.]+)';/)[1];
-// each page of the project: its index.html and its src/ (Keystone has a second page, the arch lab)
-const pages = which === 'keystone' ? ['', 'arch-lab'] : [''];
+// each page of the project: its index.html and its src/ (Cathedral Lab has a second page, the arch lesson)
+const pages = which === 'cathedral' ? ['', 'arch-lab'] : [''];
 const files = pages.flatMap(pg => ['index.html', ...fs.readdirSync(path.join(own, pg, 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => path.join('src', f))].map(f => path.join(own, pg, f)));
 let n = 0;
 const sub = (file, re, to) => { const s = read(file), t = s.replace(re, (...m) => { n++; return to(...m); }); if (t !== s) fs.writeFileSync(file, t); };

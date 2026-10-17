@@ -42,17 +42,17 @@ node --test tools/test               # the unit tests: "fail 0" (about 25 s)
 node tools/smoke.js                   # ends with "ERRORS: []"
 ```
 
-The unit tests run the engine in Node. `smoke.js` serves `public/` itself, plays a full game in headless Chromium, loads the home page, Play Review and both Keystone pages (the 3D build has to start its 3D graphics), and fails on any script error, any data file that does not load, or any `?v=` version stamp that disagrees with its project's version.
+The unit tests run the engine in Node. `smoke.js` serves `public/` itself, plays a full game in headless Chromium, loads the home page, Play Review and both Cathedral Lab pages (the 3D build has to start its 3D graphics), and fails on any script error, any data file that does not load, or any `?v=` version stamp that disagrees with its project's version.
 
 The version numbers should agree with the top of `CHANGELOG.md`:
 
 ```
-head -3 CHANGELOG.md                                                              # Site 0.xx = sim 0.yy + Play Review 0.z + Keystone 0.w
+head -3 CHANGELOG.md                                                              # Site 0.xx = sim 0.yy + Play Review 0.z + Cathedral Lab 0.w
 grep -o "Site v0\.[0-9]*" public/index.html                                       # the site version
 grep -o "const VERSION = '[0-9.]*'" public/bruins-vs-canadiens/src/main.js        # the sim version
 grep -o "const VERSION = '[0-9.]*'" public/play-review/src/main.js                # the Play Review version
-grep -o "const VERSION = '[0-9.]*'" public/keystone/src/main.js public/keystone/arch-lab/src/main.js   # Keystone, both pages
-grep -o 'class="ver">v[0-9.]*' public/index.html                                  # the card badges: sim, then Keystone
+grep -o "const VERSION = '[0-9.]*'" public/cathedral-lab/src/main.js public/cathedral-lab/arch-lab/src/main.js   # Cathedral Lab, both pages
+grep -o 'class="ver">v[0-9.]*' public/index.html                                  # the card badges: sim, then Cathedral Lab
 ```
 
 ## 5. Does the data reproduce?
@@ -73,12 +73,12 @@ Served (the pages fetch their data over HTTP):
 ```
 node tools/serve.js                   # or: python3 -m http.server --directory public 8000
 # open http://localhost:8000/  http://localhost:8000/bruins-vs-canadiens/#lab  http://localhost:8000/play-review/
-#      http://localhost:8000/keystone/  http://localhost:8000/keystone/arch-lab/
+#      http://localhost:8000/cathedral-lab/  http://localhost:8000/cathedral-lab/arch-lab/
 ```
 
 The pages need a server: opened straight from disk they cannot load their data or modules.
 
-Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, change a choice and Test against the baseline, rank every option for one choice, go to Watch and back (the results stay), Watch these plans in a game; Play Review, pick a shot, play the replay. Keystone: Start building, Next step a few times, a bag, Color by load, Cutaway, tap a stone; the arch lab: Build to keystone, Strike centering, each Try this. The browser console should stay clean.
+Things to click once: Edit plan and change a choice; Sight lines on and off; Settings; Open the Game plan lab, Games 10, Run the baseline, open the comparison with the real teams, change a choice and Test against the baseline, rank every option for one choice, go to Watch and back (the results stay), Watch these plans in a game; Play Review, pick a shot, play the replay. Cathedral Lab: Start building, Next step a few times, a bag, Color by load, Cutaway, tap a stone; the arch lab: Build to keystone, Strike centering, each Try this. The browser console should stay clean.
 
 The live site at pmcdonough.com serves `public/` through Cloudflare.
 

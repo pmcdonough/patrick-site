@@ -1,5 +1,5 @@
 // Plays one full game and reports script errors, the score line and the play-by-play mix. Then loads
-// the home page, Play Review and both Keystone pages, so a data file or module that fails to load fails the
+// the home page, Play Review, both Cathedral Lab pages and the old Keystone address, so a data file or module that fails to load fails the
 // check, and checks every version stamp on the pages and their imports against each project's version.
 const { open, openPage } = require('./harness');
 (async () => {
@@ -33,20 +33,21 @@ const { open, openPage } = require('./harness');
   checkStamps('bruins-vs-canadiens', simVersion);
   const pr = await openPage(browser, srv, 'play-review/', () => !!window.playReview).catch(e => ({ errors: [e.message.split('\n')[0]] }));
   if (pr.page) checkStamps('play-review', (await pr.page.textContent('#version')).replace(/^Play review v/, ''));
-  // Keystone: the 3D build has to start its 3D graphics and draw the model, and both pages show the same version
-  const ks = await openPage(browser, srv, 'keystone/', () => !!window.keystone).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+  // Cathedral Lab: the 3D build has to start its 3D graphics and draw the model, and both pages show the same version
+  const ks = await openPage(browser, srv, 'cathedral-lab/', () => !!window.cathedralLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
   if (ks.page) {
-    const v = await ks.page.evaluate(() => window.keystone.VERSION);
-    checkStamps('keystone', v, ['', 'arch-lab']);
-    const shown = await ks.page.evaluate(() => ({ nogl: !!document.querySelector('.nogl'), pieces: window.keystone.pieces.length, steps: window.keystone.steps.length }));
-    if (shown.nogl) errors.push('keystone/: the 3D graphics did not start');
-    else console.log(`keystone/ draws ${shown.pieces} pieces in ${shown.steps} steps (Keystone ${v}).`);
-    const al = await openPage(browser, srv, 'keystone/arch-lab/', () => !!window.archLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
-    if (al.page && await al.page.evaluate(() => window.archLab.VERSION) !== v) errors.push('keystone/arch-lab/: its VERSION differs from the 3D page');
+    const v = await ks.page.evaluate(() => window.cathedralLab.VERSION);
+    checkStamps('cathedral-lab', v, ['', 'arch-lab']);
+    const shown = await ks.page.evaluate(() => ({ nogl: !!document.querySelector('.nogl'), pieces: window.cathedralLab.pieces.length, steps: window.cathedralLab.steps.length }));
+    if (shown.nogl) errors.push('cathedral-lab/: the 3D graphics did not start');
+    else console.log(`cathedral-lab/ draws ${shown.pieces} pieces in ${shown.steps} steps (Cathedral Lab ${v}).`);
+    const al = await openPage(browser, srv, 'cathedral-lab/arch-lab/', () => !!window.archLab).catch(e => ({ errors: [e.message.split('\n')[0]] }));
+    if (al.page && await al.page.evaluate(() => window.archLab.VERSION) !== v) errors.push('cathedral-lab/arch-lab/: its VERSION differs from the 3D page');
     // close pages when done: an open 3D page keeps the CPU busy on a machine with no graphics card, and slows the next one
     await ks.page.close(); if (al.page) await al.page.close();
   }
-  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['keystone/', () => !!window.keystone], ['keystone/arch-lab/', () => !!window.archLab && document.readyState === 'complete']]) {
+  // the old Keystone addresses forward to Cathedral Lab, so they too have to end up on a working page
+  for (const [rel, ready] of [['', () => document.readyState === 'complete'], ['play-review/', () => !!window.playReview], ['cathedral-lab/', () => !!window.cathedralLab], ['cathedral-lab/arch-lab/', () => !!window.archLab && document.readyState === 'complete'], ['keystone/', () => !!window.cathedralLab], ['keystone/arch-lab/', () => !!window.archLab]]) {
     const p = await openPage(browser, srv, rel, ready).catch(e => ({ errors: [`${rel || 'home page'} did not finish loading: ${e.message.split('\n')[0]}`] }));
     errors.push(...p.errors.map(e => `${rel || 'home page'}: ${e}`));
     if (!p.errors.length) console.log(`${rel || 'home page'} loads cleanly.`);

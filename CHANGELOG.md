@@ -1,8 +1,11 @@
 # Changelog
 
-The site is versioned as a whole; each project keeps its own number too. Site 0.90 = sim 0.71 + Play Review 0.10 + Keystone 0.6. Site versions before 0.31 tracked the sim's number.
+The site is versioned as a whole; each project keeps its own number too. Site 0.91 = sim 0.71 + Play Review 0.10 + Cathedral Lab 0.7. Site versions before 0.31 tracked the sim's number.
 
 ## Site
+
+### 0.91
+- Keystone is now Cathedral Lab (0.7), at /cathedral-lab/; /keystone/ and /keystone/arch-lab/ forward there. The home card, Under the hood and the docs say so. No change to the sim or Play Review.
 
 ### 0.90
 - Keystone 0.6 (the choir, the apse and the apostles: the whole cathedral). The home card says so. No change to the sim or Play Review.
@@ -196,7 +199,12 @@ The site is versioned as a whole; each project keeps its own number too. Site 0.
 ### 0.30
 - Sim 0.30, Play Review 0.1.
 
-## Keystone
+## Cathedral Lab (Keystone until 0.6)
+
+### 0.7
+- Renamed Cathedral Lab, for what it has become: a lab for building cathedrals. New address /cathedral-lab/; the old /keystone/ pages forward to it, the hash included. The arch lab stays, as How an arch stands. In the repo: `public/cathedral-lab/`, `docs/CATHEDRAL-LAB.md`, `tools/test/cathedral-lab.test.js`, `node tools/bump.js cathedral`, `window.cathedralLab`; the smoke check also loads the old addresses.
+- Final touches to Notre-Dame from photographs: chapels between all the buttresses of the nave and choir, flush with the buttresses' faces, each with a window and a gable, and the ring of five chapels round the apse (6,809 pieces in 103 steps); slimmer flyers (0.45 m) that land lower on their buttresses (18 m along the nave, 16 m at the apse), so they sweep down three times as steeply; tall pinnacles, a shaft, a spire 7.5 m tall and a finial; the gallery's outer wall and roof 0.8 m lower to clear the flyers.
+- The solver's `supports()` takes `flyerTop`, where the flyer meets the wall. Tried and not used: a flyer leaning on the wall higher than the vault's push pushes the wall inward (its base resultant moves to 0.69 to 0.82, the inner third). Landing lower on the buttress keeps every check where it was (wall 0.52, buttress 0.40).
 
 ### 0.6
 - The whole cathedral: 6,631 pieces in 101 steps in 17 bags. The choir's straight bays, two six-part vaults with their double aisles, gallery and flyers, go up with the nave in the first eight bags (the same code builds both: `SEGS` and `eachSeg`); the nave's 3,607 pieces and the west front came out identical, checked piece by piece. The choir's first piers and first transverse rib are the crossing's east piers and arch, so the square crossing piers of 0.5 are gone.

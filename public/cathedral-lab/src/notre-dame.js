@@ -2,8 +2,8 @@
 // grouped in steps and bags in the order the masons built. Like the solver, it never touches the page: the page
 // (main.js) draws the pieces, steps through them and reads the loads and force lines from here.
 // Units: metres, kN. x runs across the nave (north negative), y up, z along the nave (the crossing at z = -30, west +30).
-import * as THREE from './vendor/three.module.js?v=0.6';
-import * as Solver from './solver.js?v=0.6';
+import * as THREE from './vendor/three.module.js?v=0.7';
+import * as Solver from './solver.js?v=0.7';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const GAMMA = Solver.GAMMA, OAK = 7.5, LEAD = 111;   // unit weights, kN/m3: limestone, oak, lead
@@ -16,7 +16,7 @@ const ARCH = Solver.build({ shape: 'pointed', span: S, thick: T, count: 11 });
 const SOL = Solver.solve(ARCH);
 const XI = ARCH.joints[0].A[0], XO = XI - WT, XW = (XI + XO) / 2;    // the nave wall: inner face, outer face, centre
 const XM = XW - L, XA = XM - L, AWT = 12.5;                          // aisle piers, outer aisle wall (centre), its top
-const SUP = Solver.supports(ARCH, SOL.state, { height: H0, width: WT, flyer: true, bdepth: 3.8, pinnacle: true, gap: XO - (XA + 0.5), bheight: 21 });
+const SUP = Solver.supports(ARCH, SOL.state, { height: H0, width: WT, flyer: true, bdepth: 3.8, pinnacle: true, gap: XO - (XA + 0.5), bheight: 18 });
 const FL = SUP.flyer;
 // The nave and the choir's straight bays are built by the same code: SEGS lists the bay lines of each, and eachSeg(f)
 // runs f once per stretch with ZS, NB, ND, Z0, pid and the name prefix TG switched to it. Outside eachSeg they are the nave's.
@@ -31,6 +31,7 @@ const ZC = b => ZS[b] + L / 2, HW = L / 2 - 0.7;
 const SIDES = [-1, 1], SN = s => s < 0 ? 'north' : 'south', X = (s, x) => s < 0 ? x : -x;
 const lr = (s, a, b) => s < 0 ? [a, b] : [-b, -a];                  // an x range on the north side, mirrored to the south
 const LEV = [9.2, 14.6, 19.6, 24, 29.4, 34.8];                       // arcade, gallery, band, clerestory courses, cornice
+const GT = 18.8;                                                     // the top of the gallery's outer wall, under the flyers
 export const KIT = { place: 'Notre-Dame de Paris', title: 'The whole cathedral', bays: NB, length: NB * L };
 
 // ---------- Pieces and steps ----------
@@ -66,6 +67,7 @@ function lancet(cx, y0, w, hr) {
   for (let i = 16; i >= 0; i--) { const a = Math.PI / 3 * i / 16; pts.push([cx + w / 2 - w * Math.cos(a), ys + w * Math.sin(a)]); }
   return pts;
 }
+const rect = (a0, a1, y0, y1) => [[a0, y0], [a1, y0], [a1, y1], [a0, y1]];
 function circle(cx, cy, r, n = 48) { const p = []; for (let i = 0; i < n; i++) { const a = 2 * Math.PI * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; }
 // voussoir outlines of an arch, both halves, optional keystone
 // (the solver draws each curved edge with 11 points; every other one is plenty on screen, and the weights come from the
@@ -261,13 +263,13 @@ eachSeg(() => {
   wallPier(1);
 });
 eachSeg(() => {
-  for (const s of SIDES) ZS.forEach((z, i) => add(pid('PM', s, i, 1), 'wall-pier stone', `Gallery pier, ${SN(s)} line ${i + 1}, course 2`, boxG(X(s, XM) - 0.4, X(s, XM) + 0.4, LEV[1], LEV[2], z - 0.6, z + 0.6), { w: 0.8 * 1.2 * (LEV[2] - LEV[1]) * GAMMA, bear: 0.8 * 1.2, sup: [[pid('PM', s, i, 0), 1]] }));
+  for (const s of SIDES) ZS.forEach((z, i) => add(pid('PM', s, i, 1), 'wall-pier stone', `Gallery pier, ${SN(s)} line ${i + 1}, course 2`, boxG(X(s, XM) - 0.4, X(s, XM) + 0.4, LEV[1], GT, z - 0.6, z + 0.6), { w: 0.8 * 1.2 * (GT - LEV[1]) * GAMMA, bear: 0.8 * 1.2, sup: [[pid('PM', s, i, 0), 1]] }));
 });
 eachSeg(() => {
   panel('G', 'wall stone', 'Gallery arcade wall', XW, WT, LEV[1], LEV[2], 1, GOPEN);
 });
 eachSeg(() => {
-  panel('GO', 'wall stone', 'Gallery outer wall', XM, 0.8, LEV[1], LEV[2], 1, GWIN, undefined, 'PM');
+  panel('GO', 'wall stone', 'Gallery outer wall', XM, 0.8, LEV[1], GT, 1, GWIN, undefined, 'PM');
 });
 step('The band', 'Next to the crossing, a plain band of wall with a round opening in each bay, the way the nave was first built. Viollet-le-Duc restored them in the 1800s. Elsewhere, in the 1220s, the windows above were lengthened down over the band.');
 eachSeg(() => {
@@ -306,7 +308,7 @@ eachSeg(() => {
   });
 });
 const NFLY = 7, flyerPolys = () => { // straight top, arched underside, in NFLY stones
-  const d = 0.6, x0 = XO, x1 = FL.xbI, top = x => FL.yA + (FL.yB - FL.yA) * (x - x0) / (x1 - x0) + d / 2, sag = x => 1.0 * Math.sin(Math.PI * (x - x1) / (x0 - x1));
+  const d = 0.45, x0 = XO, x1 = FL.xbI, top = x => FL.yA + (FL.yB - FL.yA) * (x - x0) / (x1 - x0) + d / 2, sag = x => 0.7 * Math.sin(Math.PI * (x - x1) / (x0 - x1));
   const bot = x => top(x) - d - sag(x), out = [];
   for (let i = 0; i < NFLY; i++) { const a = x0 + (x1 - x0) * i / NFLY, b = x0 + (x1 - x0) * (i + 1) / NFLY, pts = [];
     for (let k = 0; k <= 6; k++) { const x = a + (b - a) * k / 6; pts.push([x, top(x)]); }
@@ -328,20 +330,19 @@ step('Flying buttresses', `${NFLY} stones each, from the top of the nave wall do
 eachSeg(() => {
   for (const s of SIDES) ZS.forEach((z, i) => flyerPolys().forEach((poly, k) => {
     const pts = poly.map(([x, y]) => [X(s, x), y]);
-    add(pid('FY', s, i, k), 'flyer stone', `Flyer, ${SN(s)} line ${i + 1}, stone ${k + 1}`, extr(pts, [], 0.8, 0, z, 1, 0), { w: extrVol(pts, [], 0.8) * GAMMA, bear: 0.8 * 0.6, sup: [[pid('BU', s, i, 2), 0.5], [pid('P', s, i, 2), 0.5]] });
+    add(pid('FY', s, i, k), 'flyer stone', `Flyer, ${SN(s)} line ${i + 1}, stone ${k + 1}`, extr(pts, [], 0.8, 0, z, 1, 0), { w: extrVol(pts, [], 0.8) * GAMMA, bear: 0.8 * 0.45, sup: [[pid('BU', s, i, 2), 0.5], [pid('P', s, i, 2), 0.5]] });
   }));
 });
 step('Strike the flyer centering', 'The flyers stand on their own. They are in place before the vault, so when the vault starts pushing there is already something to push against.');
 removeAt(p => p.step === STEP_FLY_CEN);
-step('Pinnacles', 'A pinnacle on each buttress. It adds weight right where the flyer\'s push arrives. Try it in the arch lab: the effect is real but small.');
+const pinnacle = (id, nm, cx, cz, y0, rot, sup) => { add(`${id}-0`, 'pinnacle stone', `${nm}, shaft`, (() => { const g = new THREE.BoxGeometry(1.6, 3.2, 1.6); g.rotateY(rot); g.translate(cx, y0 + 1.6, cz); return g; })(), { w: 1.6 * 1.6 * 3.2 * GAMMA, bear: 2.56, sup });
+  const sp = new THREE.ConeGeometry(0.85, 7.5, 4); sp.rotateY(Math.PI / 4 + rot); sp.translate(cx, y0 + 3.2 + 3.75, cz); add(`${id}-1`, 'spire stone', `${nm}, spire`, sp, { w: 0.85 * 0.85 * 2 * 7.5 / 3 * GAMMA, bear: 1.4, sup: [[`${id}-0`, 1]] });
+  const fin = new THREE.SphereGeometry(0.22, 16, 12); fin.translate(cx, y0 + 10.9, cz); add(`${id}-2`, 'finial', `${nm}, finial`, fin, { w: 1, sup: [[`${id}-1`, 1]] }); };
+step('Pinnacles', 'A tall pinnacle on each buttress. It adds weight right where the flyer\'s push arrives. Try it in How an arch stands: the effect is real but small.');
 eachSeg(() => {
   for (const s of SIDES) ZS.forEach((z, i) => {
     const cx = (BX0(s) + BX1(s)) / 2;
-    add(pid('PN', s, i, 0), 'pinnacle stone', `Pinnacle shaft, ${SN(s)} line ${i + 1}`, boxG(cx - 0.95, cx + 0.95, FL.hb, FL.hb + 2.2, z - 0.6, z + 0.6), { w: 1.9 * 1.2 * 2.2 * GAMMA, bear: 1.9 * 1.2, sup: [[pid('BU', s, i, 2), 1]] });
-    const sp = new THREE.ConeGeometry(1.05, 3.6, 4); sp.rotateY(Math.PI / 4); sp.translate(cx, FL.hb + 2.2 + 1.8, z);
-    add(pid('PN', s, i, 1), 'spire stone', `Pinnacle spire, ${SN(s)} line ${i + 1}`, sp, { w: 1.3 * 3.6 / 3 * GAMMA, bear: 1.2, sup: [[pid('PN', s, i, 0), 1]] });
-    const fin = new THREE.SphereGeometry(0.22, 16, 12); fin.translate(cx, FL.hb + 6.0, z);
-    add(pid('PN', s, i, 2), 'finial', `Finial, ${SN(s)} line ${i + 1}`, fin, { w: 1, sup: [[pid('PN', s, i, 1), 1]] });
+    pinnacle(pid('PN', s, i), `Pinnacle, ${SN(s)} line ${i + 1}`, cx, z, FL.hb, 0, [[pid('BU', s, i, 2), 1]]);
   });
 });
 
@@ -360,7 +361,7 @@ eachSeg(() => {
   for (let d = 0; d < ND; d++) for (const [n, dir] of [['a', D1], ['b', D2]]) placeCentering(`${TG}DC${d}${n}`, ARCH, { sx: D / S, y0: H0, ox: 0, oz: ZS[2 * d + 1], dx: dir[0], dz: dir[1] });
 });
 const STEP_VAULT_CEN = cur;
-step('Transverse ribs', 'Eleven stones across the nave at every bay line, the arch from the arch lab at full size. Every other one is a heavy rib between vaults, closed with a keystone; the lighter one between them runs to the boss.');
+step('Transverse ribs', 'Eleven stones across the nave at every bay line, the arch from How an arch stands at full size. Every other one is a heavy rib between vaults, closed with a keystone; the lighter one between them runs to the boss.');
 eachSeg(() => {
   ZS.forEach((z, i) => i % 2 === 0
     ? placeArch(`${TG}TR${i}`, ARCH, { y0: H0, depth: RIBW, ox: 0, oz: z, dx: 1, dz: 0, springL: P3(-1, i), springR: P3(1, i), name: `${NMC}, transverse rib ${i / 2 + 1}` })
@@ -413,7 +414,7 @@ removeAt(p => p.step === STEP_VAULT_CEN);
 const STEP_STRUCK = cur;
 
 // ---------- Bag 8: Roof ----------
-bag(8, 'Roof');
+bag(8, 'Roofs and chapels');
 const RX = 7.3, RY = 35.2, RIDGE = 45.4, TSP = 1.5, truss = () => Array.from({ length: Math.round(NB * L / TSP) + 1 }, (_, i) => Z0 + i * TSP);
 const bayOf = z => Math.min(NB - 1, Math.max(0, Math.floor((z - Z0) / L)));
 const onCornice = z => [[pid('CO', -1, bayOf(z)), 0.5], [pid('CO', 1, bayOf(z)), 0.5]];
@@ -445,8 +446,28 @@ const leadSheet = (x0, y0, x1, y1, z0, z1, id, nm, sup) => { const len = Math.hy
 eachSeg(() => {
   for (const s of SIDES) for (let b = 0; b < NB; b++) {
     leadSheet(s * (RX + 0.25), RY + 0.2, 0, RIDGE + 0.42, ZS[b], ZS[b + 1], pid('LD', s, b), `Lead roof, ${SN(s)} bay ${b + 1}`, [[pid('CO', s, b), 1]]);
-    leadSheet(X(s, XO - 0.1), LEV[2] + 1.5, X(s, XM - 0.45), LEV[2] + 0.3, ZS[b] + 0.6, ZS[b + 1] - 0.6, pid('LG', s, b), `Gallery roof, ${SN(s)} bay ${b + 1}`, [[pid('GO', s, b), 0.5], [pid('P', s, b, 1), 0.5]]);
+    leadSheet(X(s, XO - 0.1), GT + 1.6, X(s, XM - 0.45), GT + 0.3, ZS[b] + 0.6, ZS[b + 1] - 0.6, pid('LG', s, b), `Gallery roof, ${SN(s)} bay ${b + 1}`, [[pid('GO', s, b), 0.5], [pid('P', s, b, 1), 0.5]]);
     leadSheet(X(s, XM - 0.45), LEV[1] + 0.3, X(s, XA - 0.6), AWT + 0.2, ZS[b] + 0.7, ZS[b + 1] - 0.7, pid('LA', s, b), `Outer aisle roof, ${SN(s)} bay ${b + 1}`, [[pid('AW', s, b), 0.5], [pid('PM', s, b, 0), 0.5]]);
+  }
+});
+
+// ---------- Chapels ----------
+// In 1235 to 1245 chapels were built between the nave's buttresses, and later between the choir's: the outer wall moved
+// out to the buttresses' faces, each bay under a gable. They stand on their own footings and carry only themselves.
+const CHX0 = FL.xbO, CHX1 = FL.xbO + 0.9, CHWIN = lancet(0, 3.2, 2.2, 5), CHY = AWT, CHG = AWT + 3.7;
+const wallBetween = (id, kind, nm, a, b, pts, holes, depth, sup) => { const t = b.clone().sub(a), m = a.clone().add(b).multiplyScalar(0.5); t.y = 0; t.normalize();
+  return add(id, kind, nm, extr(pts, holes, depth, m.x, m.z, t.x, t.z), { w: extrVol(pts, holes, depth) * GAMMA, bear: (Math.max(...pts.map(p => p[0])) - Math.min(...pts.map(p => p[0]))) * depth * 0.8, sup }); };
+const gablePin = (id, x, z, y) => { const g = new THREE.ConeGeometry(0.35, 2.2, 4); g.rotateY(Math.PI / 4); g.translate(x, y + 1.1, z); add(id, 'pinnacle stone', 'Gable pinnacle', g, { w: 0.25 * 2.2 / 3 * 2 * GAMMA, bear: 0.3, sup: [] }); };
+step('Chapels between the buttresses', 'Chapels go in between the buttresses, all along the nave and the choir: a new outer wall flush with the buttresses\' faces, a window, and a gable on top. They were added from 1235, and they give the outside of the cathedral its row of gables.');
+eachSeg(() => {
+  for (const s of SIDES) for (let b = 0; b < NB; b++) {
+    if (b === ORIGB) continue;                          // the bays next to the crossing, where the transept walls stand
+    const z0 = ZS[b] + 0.7, z1 = ZS[b + 1] - 0.7, xc = X(s, (CHX0 + CHX1) / 2), a = V3(xc, 0, z0), c = V3(xc, 0, z1);
+    add(pid('CHF', s, b), 'footing', `Footing, ${SN(s)} chapel ${b + 1}`, boxG(...lr(s, CHX0 - 0.4, CHX1 + 0.4), 0, 0.6, z0, z1), { w: 1.7 * (z1 - z0) * 0.6 * GAMMA, bear: 1.7 * (z1 - z0) });
+    wallBetween(pid('CH', s, b), 'wall stone', `${NMC} chapel, ${SN(s)} bay ${b + 1}`, a, c, rect(-(z1 - z0) / 2, (z1 - z0) / 2, 0.6, CHY), [CHWIN], 0.9, [[pid('CHF', s, b), 1]]);
+    wallBetween(pid('CHG', s, b), 'wall stone', `${NMC} chapel gable, ${SN(s)} bay ${b + 1}`, a, c, [[-(z1 - z0) / 2, CHY], [(z1 - z0) / 2, CHY], [0, CHG]], [circle(0, CHY + 1.3, 0.55, 20)], 0.9, [[pid('CH', s, b), 1]]);
+    gablePin(pid('CHP', s, b), xc, ZC(b), CHG - 0.4);
+    add(pid('CHT', s, b), 'lead sheet', `${NMC} chapel roof, ${SN(s)} bay ${b + 1}`, boxG(...lr(s, CHX1, XA - 0.5), CHY - 0.1, CHY + 0.05, z0, z1), { mat: 'lead', w: 2 * (z1 - z0) * 0.004 * LEAD, sup: [[pid('CH', s, b), 0.5], [pid('AW', s, b), 0.5]], group: 'roof' });
   }
 });
 
@@ -458,7 +479,6 @@ eachSeg(() => {
 const TX0 = -21.75, TX1 = XI, TZ0 = 30.7, TZ1 = 46.8, TW = 2.6, TZC = (TZ0 + TZ1) / 2, PX = (TX0 + TX1) / 2, WB = 42;
 const TL = [0.6, 14, 18, 31, 42, 45, 67.5], TOP = 69;
 const SECTIONS = [[-19.15, -8.25], [TX1, -TX1], [8.25, 19.15]];          // the three parts of the front between buttresses
-const rect = (a0, a1, y0, y1) => [[a0, y0], [a1, y0], [a1, y1], [a0, y1]];
 const mirror = (s, pts) => pts.map(([x, y]) => [X(s, x), y]);
 // a wall panel: a profile in (x, y) extruded along z (face 'x'), or in (z, y) extruded along x (face 'z')
 function wall(id, kind, name, along, pts, holes, depth, at, sup, o = {}) {
@@ -852,7 +872,7 @@ step('The twelve apostles', 'Twelve copper apostles stand in four groups of thre
 const ZA = SEGS[1].zs[0], PHI = [0, 1, 2, 3, 4, 5].map(k => Math.PI * k / 5), MID = [1, 2, 3, 4];
 const at = (phi, r, y = 0) => V3(Math.cos(phi) * r, y, ZA - Math.sin(phi) * r);
 const R1 = -XW, R2 = -XM, R3 = -XA, RI = -XI, RO = -XO, RB = RO + 15, RBD = 3.8;
-const SUPA = Solver.supports(ARCH, SOL.state, { height: H0, width: WT, flyer: true, bdepth: RBD, pinnacle: true, gap: RB - RO, bheight: 21 }), FLA = SUPA.flyer;
+const SUPA = Solver.supports(ARCH, SOL.state, { height: H0, width: WT, flyer: true, bdepth: RBD, pinnacle: true, gap: RB - RO, bheight: 16 }), FLA = SUPA.flyer;
 // a piece on a radial line: a box from radius r0 to r1, half as wide as hw either side
 function rbox(phi, r0, r1, y0, y1, hw) { const g = new THREE.BoxGeometry(r1 - r0, y1 - y0, 2 * hw); g.translate((r0 + r1) / 2, (y0 + y1) / 2, 0); g.rotateY(phi); g.translate(0, 0, ZA); return g; }
 // the chord between two radial lines at radius r: its middle and its direction
@@ -915,13 +935,13 @@ for (let k = 0; k < 5; k++) for (const [key, B, rc, sup] of [
 }
 step('Apse walls', 'The walls rise on the apse arches in five narrow panels: a gallery opening, then a tall window in each. The gallery\'s outer wall goes up on the ambulatory arcade.');
 MID.forEach(k => { for (let c = 0; c < 5; c++) add(apId('P', k, c), 'wall-pier stone', `Apse wall pier ${k}, course ${c + 1}`, rbox(PHI[k], RI, RO, LEV[c], LEV[c + 1], 0.5), { w: WT * 1.0 * (LEV[c + 1] - LEV[c]) * GAMMA, bear: WT, sup: [[c ? apId('P', k, c - 1) : apId('AB', k), 1]] });
-  for (let c = 0; c < 2; c++) add(apId('PM', k, c), 'wall-pier stone', `Apse gallery pier ${k}, course ${c + 1}`, rbox(PHI[k], R2 - 0.4, R2 + 0.4, LEV[c], LEV[c + 1], 0.5), { w: 0.8 * (LEV[c + 1] - LEV[c]) * GAMMA, bear: 0.8, sup: [[c ? apId('PM', k, c - 1) : apId('AM', k), 1]] }); });
+  for (let c = 0; c < 2; c++) add(apId('PM', k, c), 'wall-pier stone', `Apse gallery pier ${k}, course ${c + 1}`, rbox(PHI[k], R2 - 0.4, R2 + 0.4, LEV[c], c ? GT : LEV[1], 0.5), { w: 0.8 * ((c ? GT : LEV[1]) - LEV[c]) * GAMMA, bear: 0.8, sup: [[c ? apId('PM', k, c - 1) : apId('AM', k), 1]] }); });
 const ps = (k, c) => [[apId('P', k, c), 0.5], [apId('P', k + 1, c), 0.5]];
 for (let k = 0; k < 5; k++) {
   panelA(`APS-${k}`, 'spandrel', `Apse spandrel ${k + 1}`, k, R1, 11.6, LEV[1], WT, [], 0.5, [[`APA-${k}-K`, 1]]);
   panelA(`APG-${k}`, 'wall stone', `Apse gallery wall ${k + 1}`, k, R1, LEV[1], LEV[2], WT, [GOA], 0.5, ps(k, 1));
   panelA(`APC-${k}`, 'wall stone', `Apse clerestory wall ${k + 1}`, k, R1, LEV[2], LEV[5], WT, [CLA], 0.5, ps(k, 2));
-  panelA(`APGO-${k}`, 'wall stone', `Apse gallery, outer wall ${k + 1}`, k, R2, 15.2, LEV[2], 0.8, GLA, 0.4, [[apId('PM', k, 1), 0.5], [apId('PM', k + 1, 1), 0.5]]);
+  panelA(`APGO-${k}`, 'wall stone', `Apse gallery, outer wall ${k + 1}`, k, R2, 15.2, GT, 0.8, GLA, 0.4, [[apId('PM', k, 1), 0.5], [apId('PM', k + 1, 1), 0.5]]);
   add(`APCO-${k}`, 'cornice stone', `Apse cornice ${k + 1}`, cbox(k, R1, 34.8, 35.2, 1.6), { w: chord(k, R1).len * 1.6 * 0.4 * GAMMA, bear: chord(k, R1).len * 1.6, sup: [[`APC-${k}`, 1]] });
 }
 
@@ -929,7 +949,7 @@ bag(16, 'Chevet');
 step('Apse buttresses, upper courses', `The four apse buttresses rise to ${FLA.hb} m, standing alone ${Math.round(RB)} m from the centre of the apse, beyond both ambulatories.`);
 MID.forEach(k => { add(`AP-BU-${k}-1`, 'buttress stone', `Apse buttress ${k}, course 2`, rbox(PHI[k], RB, RB + RBD, LEV[0], LEV[1], 0.7), { w: RBD * 1.4 * 5.4 * GAMMA, bear: RBD * 1.4, sup: [[`AP-BU-${k}-0`, 1]] });
   add(`AP-BU-${k}-2`, 'buttress stone', `Apse buttress ${k}, course 3`, rbox(PHI[k], RB, RB + RBD, LEV[1], FLA.hb, 0.7), { w: RBD * 1.4 * (FLA.hb - LEV[1]) * GAMMA, bear: RBD * 1.4, sup: [[`AP-BU-${k}-1`, 1]] }); });
-const NFA = 9, flyerA = () => { const d = 0.6, x0 = RO, x1 = RB, top = r => FLA.yA + (FLA.yB - FLA.yA) * (r - x0) / (x1 - x0) + d / 2, sag = r => 1.3 * Math.sin(Math.PI * (r - x0) / (x1 - x0)), out = [];
+const NFA = 9, flyerA = () => { const d = 0.45, x0 = RO, x1 = RB, top = r => FLA.yA + (FLA.yB - FLA.yA) * (r - x0) / (x1 - x0) + d / 2, sag = r => 0.7 * Math.sin(Math.PI * (r - x0) / (x1 - x0)), out = [];
   for (let i = 0; i < NFA; i++) { const a = x0 + (x1 - x0) * i / NFA, b = x0 + (x1 - x0) * (i + 1) / NFA, pts = [];
     for (let k = 0; k <= 6; k++) { const r = a + (b - a) * k / 6; pts.push([r, top(r)]); }
     for (let k = 6; k >= 0; k--) { const r = a + (b - a) * k / 6; pts.push([r, top(r) - d - sag(r)]); }
@@ -948,9 +968,7 @@ step('Strike the flyer centering', 'The chevet flyers stand on their own, waitin
 removeAt(p => p.step === STEP_APF_CEN);
 step('Pinnacles round the apse', 'A pinnacle on each apse buttress, where the flyer\'s push arrives.');
 MID.forEach(k => { const c = at(PHI[k], RB + RBD / 2);
-  add(`APPN-${k}-0`, 'pinnacle stone', `Apse pinnacle ${k}, shaft`, rbox(PHI[k], RB + RBD / 2 - 0.95, RB + RBD / 2 + 0.95, FLA.hb, FLA.hb + 2.2, 0.6), { w: 1.9 * 1.2 * 2.2 * GAMMA, bear: 2.28, sup: [[`AP-BU-${k}-2`, 1]] });
-  const sp = new THREE.ConeGeometry(1.05, 3.6, 4); sp.rotateY(Math.PI / 4 + PHI[k]); sp.translate(c.x, FLA.hb + 4, c.z);
-  add(`APPN-${k}-1`, 'spire stone', `Apse pinnacle ${k}, spire`, sp, { w: 1.3 * 3.6 / 3 * GAMMA, bear: 1.2, sup: [[`APPN-${k}-0`, 1]] }); });
+  pinnacle(`APPN-${k}`, `Apse pinnacle ${k}`, c.x, c.z, FLA.hb, PHI[k], [[`AP-BU-${k}-2`, 1]]); });
 // the apse vault: a half-rib on each of the four lines, from its wall pier to the choir's last keystone
 step('Centering for the apse vault', 'A half-frame of timber under each of the four apse ribs, from the wall to the centre.');
 MID.forEach(k => { const p = PHI[k], half = ARCH.intrados.map(([x, y]) => at(p, -x, y + H0 - 0.14));
@@ -974,9 +992,21 @@ step('Apse roofs', 'Oak rafters fan out from the end of the choir\'s ridge, and 
   const on = rs.map((_, i) => [`APRF${i}`, 1 / rs.length]);
   for (let k = 0; k < 5; k++) {
     tri([V3(0, RIDGE + 0.42, ZA), eave(PHI[k], RY + 0.2), eave(PHI[k + 1], RY + 0.2)], 'lead', `APLD-${k}`, 'lead sheet', 'Apse roof', chord(k, RX).len * 11 / 2 * 0.004 * LEAD, on, 'roof');
-    tri(quad(at(PHI[k], RO + 0.1, LEV[2] + 1.5), at(PHI[k + 1], RO + 0.1, LEV[2] + 1.5), at(PHI[k + 1], R2 + 0.45, LEV[2] + 0.3), at(PHI[k], R2 + 0.45, LEV[2] + 0.3)), 'lead', `APLG-${k}`, 'lead sheet', 'Apse gallery roof', 8 * 0.004 * LEAD, [[`APGO-${k}`, 0.5], [apId('P', k, 1), 0.5]], 'roof');
+    tri(quad(at(PHI[k], RO + 0.1, GT + 1.6), at(PHI[k + 1], RO + 0.1, GT + 1.6), at(PHI[k + 1], R2 + 0.45, GT + 0.3), at(PHI[k], R2 + 0.45, GT + 0.3)), 'lead', `APLG-${k}`, 'lead sheet', 'Apse gallery roof', 8 * 0.004 * LEAD, [[`APGO-${k}`, 0.5], [apId('P', k, 1), 0.5]], 'roof');
     tri(quad(at(PHI[k], R2 + 0.45, LEV[1] + 0.3), at(PHI[k + 1], R2 + 0.45, LEV[1] + 0.3), at(PHI[k + 1], R3 + 0.6, AWT + 0.2), at(PHI[k], R3 + 0.6, AWT + 0.2)), 'lead', `APLA-${k}`, 'lead sheet', 'Ambulatory roof', 12 * 0.004 * LEAD, [[`APW-${k}`, 0.5], [`APGO-${k}`, 0.5]], 'roof');
   } }
+
+step('Chapels round the apse', 'Around 1300 a ring of chapels went in between the apse buttresses, each with its window and gable, closing in the foot of the chevet.');
+const CHA = k => k === 0 || k === 5 ? at(PHI[k], (CHX0 + CHX1) / -2) : at(PHI[k], RB + RBD - 0.45);
+for (let k = 0; k < 5; k++) {
+  const a = CHA(k), b = CHA(k + 1), len = a.distanceTo(b), h = len / 2 - 0.75, mid = a.clone().add(b).multiplyScalar(0.5);
+  add(`APCHF-${k}`, 'footing', `Footing, apse chapel ${k + 1}`, (() => { const t = b.clone().sub(a), g = new THREE.BoxGeometry(len - 1.5, 0.6, 1.7); g.rotateY(Math.atan2(-t.z, t.x)); g.translate(mid.x, 0.3, mid.z); return g; })(), { w: (len - 1.5) * 1.7 * 0.6 * GAMMA, bear: (len - 1.5) * 1.7 });
+  wallBetween(`APCH-${k}`, 'wall stone', `Apse chapel ${k + 1}`, a, b, rect(-h, h, 0.6, CHY), [CHWIN], 0.9, [[`APCHF-${k}`, 1]]);
+  wallBetween(`APCHG-${k}`, 'wall stone', `Apse chapel gable ${k + 1}`, a, b, [[-h, CHY], [h, CHY], [0, CHG]], [circle(0, CHY + 1.3, 0.55, 20)], 0.9, [[`APCH-${k}`, 1]]);
+  gablePin(`APCHP-${k}`, mid.x, mid.z, CHG - 0.4);
+  const ia = at(PHI[k], R3 + 0.5, CHY), ib = at(PHI[k + 1], R3 + 0.5, CHY), oa = a.clone().setY(CHY), ob = b.clone().setY(CHY);
+  tri(quad(ia, ib, ob, oa), 'lead', `APCHT-${k}`, 'lead sheet', `Apse chapel roof ${k + 1}`, len * 4 * 0.004 * LEAD, [[`APCH-${k}`, 0.5], [`APW-${k}`, 0.5]], 'roof');
+}
 
 // ---------- Bag 17: Finishing ----------
 bag(17, 'Finishing');
@@ -985,12 +1015,14 @@ for (let k = 0; k < 5; k++) {
   const a = chord(k, R1), b = chord(k, R3), c = chord(k, R2);
   add(`GL-APC-${k}`, 'glass panel', 'Stained glass', extr(CLA, [], 0.05, a.m.x, a.m.z, a.t.x, a.t.z), { mat: 'glass', tint: k % 3 });
   add(`GL-APW-${k}`, 'glass panel', 'Stained glass', extr(AWINA, [], 0.05, b.m.x, b.m.z, b.t.x, b.t.z), { mat: 'glass', tint: (k + 1) % 3 });
+  { const a = CHA(k), b2 = CHA(k + 1), t = b2.clone().sub(a).normalize(), m = a.clone().add(b2).multiplyScalar(0.5); add(`GL-APCH-${k}`, 'glass panel', 'Stained glass', extr(CHWIN, [], 0.05, m.x, m.z, t.x, t.z), { mat: 'glass', tint: (k + 2) % 3 }); }
   GLA.forEach((h, j) => add(`GL-APG-${k}${j}`, 'glass panel', 'Stained glass', extr(h, [], 0.05, c.m.x, c.m.z, c.t.x, c.t.z), { mat: 'glass', tint: (k + j) % 3 }));
 }
 eachSeg(() => {
   const ALL = [...Array(NB).keys()];
   const GLASS = [['aislewin', XA, [AWIN], ALL], ['gallery', XM, GWIN, ALL], ['oculus', XW, [circle(0, 21.8, 0.9)], [ORIGB]], ['clere', XW, [CWIN], [ORIGB]], ['clereT', XW, [CWIN_T], late()]];
   GLASS.forEach(([g, x0, shapes, bays]) => { for (const s of SIDES) for (const b of bays) shapes.forEach((pts, k) => add(`GL-${TG}${g}-${s}${b}${k}`, 'glass panel', 'Stained glass', extr(pts, [], 0.05, X(s, x0), ZC(b), 0, 1), { mat: 'glass', tint: (b + k + (s > 0 ? 1 : 0)) % 3 })); });
+  for (const s of SIDES) for (let b = 0; b < NB; b++) if (b !== ORIGB) add(`GL-${TG}chapel-${s}${b}`, 'glass panel', 'Stained glass', extr(CHWIN, [], 0.05, X(s, (CHX0 + CHX1) / 2), ZC(b), 0, 1), { mat: 'glass', tint: (b + 2) % 3 });
 });
 add('GL-rose-in', 'glass panel', 'Rose window glass', extr(circle(0, RY0, 2.7, 64), [], 0.05, 0, RZ - 0.3, 1, 0), { mat: 'glass', tint: 0 });
 add('GL-rose-out', 'glass panel', 'Rose window glass', extr(circle(0, RY0, 4.8, 64), [circle(0, RY0, 2.7, 64)], 0.05, 0, RZ - 0.3, 1, 0), { mat: 'glass', tint: 1 });

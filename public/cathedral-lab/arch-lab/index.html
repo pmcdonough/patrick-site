@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Cathedral Lab: how an arch stands</title>
+<meta name="description" content="Build a stone arch on its timber centering, strike it, and see whether it stands, and why.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../style.css?v=0.7">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Cathedral Lab</h1>
+    <p class="matchup">How an arch stands</p>
+    <p>A slice through one bay of a stone vault: the arch, the walls under it, and if you add them, flying buttresses. Build it stone by stone on its timber centering, then strike the centering and see whether it stands, and why. The red lines in the Notre-Dame build come from exactly this.</p>
+  </div>
+  <nav class="views" aria-label="Pages">
+    <a href="../">Build Notre-Dame</a>
+    <a href="./" aria-current="page">How an arch stands</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="drawing" aria-label="Section drawing">
+      <div class="canvas-box" id="box">
+        <canvas id="cv" role="img" aria-label="Section drawing of the arch, walls and supports"></canvas>
+        <div class="verdict" aria-live="polite"><span class="pill" id="pill">On centering</span><p id="msg"></p></div>
+      </div>
+      <div class="bar">
+        <button class="primary" id="next">Place next stone</button>
+        <button id="all">Build to keystone</button>
+        <button class="strike" id="strike">Strike centering</button>
+        <button id="reset">Start over</button>
+        <button class="toggle" id="forces" aria-pressed="true">Forces</button>
+        <span class="count" id="count"></span>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h2>Arch</h2>
+        <div class="seg" role="group" aria-label="Arch shape">
+          <button data-shape="round">Round</button>
+          <button data-shape="pointed">Pointed</button>
+          <button data-shape="catenary">Catenary</button>
+        </div>
+        <div class="ctrl"><label for="span">Span</label><output id="o-span"></output><input type="range" id="span" min="6" max="16" step="0.5"></div>
+        <div class="ctrl"><label for="thick">Stone depth</label><output id="o-thick"></output><input type="range" id="thick" min="0.2" max="1.6" step="0.05"></div>
+        <div class="ctrl"><label for="count">Stones in the arch</label><output id="o-count"></output><input type="range" id="count" min="7" max="15" step="2"></div>
+      </div>
+      <div class="card">
+        <h2>Supports</h2>
+        <div class="ctrl"><label for="height">Wall height</label><output id="o-height"></output><input type="range" id="height" min="4" max="30" step="0.5"></div>
+        <div class="ctrl"><label for="width">Wall thickness</label><output id="o-width"></output><input type="range" id="width" min="0.6" max="4" step="0.1"></div>
+        <div class="checks"><button class="toggle" id="flyer" aria-pressed="false">Flying buttress</button><button class="toggle" id="pinnacle" aria-pressed="true">Pinnacle</button></div>
+        <div class="ctrl" id="bd-row"><label for="bdepth">Buttress depth</label><output id="o-bdepth"></output><input type="range" id="bdepth" min="1" max="6" step="0.1"></div>
+      </div>
+      <div class="card">
+        <h2>The numbers</h2>
+        <dl class="nums" id="nums"></dl>
+        <div class="gauge" id="g-wall"></div>
+        <div class="gauge" id="g-butt"></div>
+      </div>
+      <div class="card inspect">
+        <h2>Inspect</h2>
+        <p id="insp">Tap any stone, wall or buttress in the drawing.</p>
+      </div>
+      <div class="card">
+        <h2>Try this</h2>
+        <div class="try">
+          <button data-try="early">Strike the centering early<span>Only part of the arch is built.</span></button>
+          <button data-try="thin">Thin a round arch<span>Make the stone too shallow for the shape.</span></button>
+          <button data-try="tall">Raise the walls<span>A Gothic clerestory, 20 m up, on thin walls.</span></button>
+          <button data-try="fly">Add flying buttresses<span>The same walls, braced the Notre-Dame way.</span></button>
+          <button data-try="chain">Hang a chain<span>Flip a hanging chain and you get the ideal arch.</span></button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="notes">
+    <div class="card"><h2>How it works</h2>
+      <p>Each stone is a rigid block. Blocks can push on each other but never pull, the way engineers have analyzed masonry since Jacques Heyman. The arch stands if some path for the pushing force, the line of thrust, fits inside the stone at every joint. If none fits, the joints where it escapes become hinges.</p>
+      <p>The drawing shows the smallest push that works, the state an arch settles into once its walls lean out a hair.</p></div>
+    <div class="card"><h2>Walls and buttresses</h2>
+      <p>A wall stands while the combined push of the arch and its own weight lands inside its base. Inside the middle third, the whole base presses down. Outside it, the inner edge of the joint opens. Past the outer edge, the wall tips over.</p>
+      <p>A flying buttress is treated as a strut that carries all of the arch's sideways push out to a buttress pier.</p></div>
+    <div class="card"><h2>Numbers and limits</h2>
+      <p>Limestone weighs 22 kN per cubic metre. Forces are per metre of vault length. Friction between dressed stones holds up to a 35° slope. Checked against a classic result: a semicircular arch needs stone at least 0.1075 times its radius deep, and this page gets 0.1075.</p>
+      <p>Not modeled yet: crushing, mortar, settlement, wind, and true 3D vaults.</p></div>
+  </section>
+</main>
+
+<footer class="version">Cathedral Lab <span id="version"></span></footer>
+<script type="module" src="src/main.js?v=0.7"></script>
+</body>
+</html>

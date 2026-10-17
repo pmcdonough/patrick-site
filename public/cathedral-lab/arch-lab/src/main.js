@@ -1,11 +1,11 @@
-// Keystone's arch lab: one arch in section on its timber centering, its walls and, if added, flying buttresses.
+// Cathedral Lab's arch lesson, How an arch stands: one arch in section on its timber centering, its walls and, if added, flying buttresses.
 // Build it, strike the centering, and the solver says whether it stands; the drawing shows the line of thrust and why.
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and its import of the solver carries the same
-// stamp. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as Solver from '../../src/solver.js?v=0.6';
+// stamp. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
+import * as Solver from '../../src/solver.js?v=0.7';
 
-const VERSION = '0.6';
+const VERSION = '0.7';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const P = { shape: 'pointed', span: 12, thick: 0.8, count: 11, height: 8, width: 2.2, flyer: false, bdepth: 3.2, pinnacle: true };

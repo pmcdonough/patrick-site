@@ -1,9 +1,9 @@
-// Keystone's masonry solver (public/keystone/src/solver.js) against known results: node --test tools/test
+// Cathedral Lab's masonry solver (public/cathedral-lab/src/solver.js) against known results: node --test tools/test
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const imp = () => import(pathToFileURL(path.join(__dirname, '..', '..', 'public', 'keystone', 'src', 'solver.js')).href);
+const imp = () => import(pathToFileURL(path.join(__dirname, '..', '..', 'public', 'cathedral-lab', 'src', 'solver.js')).href);
 
 test('a semicircular arch needs stone 0.1075 of its radius deep (Milankovitch)', async () => {
   const S = await imp();

@@ -2,86 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:,">
-<title>Keystone: Notre-Dame, stone by stone</title>
-<meta name="description" content="Build the whole of Notre-Dame in 3D, piece by piece, the way the masons did. Every stone carries real load.">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=0.6">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Cathedral Lab</title>
+<link rel="canonical" href="/cathedral-lab/">
+<meta http-equiv="refresh" content="0; url=/cathedral-lab/">
+<script>location.replace('/cathedral-lab/' + location.hash);</script>
 </head>
 <body>
-
-<header class="top">
-  <div class="brand">
-    <h1>Keystone</h1>
-    <p class="matchup">Notre-Dame, stone by stone</p>
-    <p>The whole of Notre-Dame, built the way the masons did: the nave and the choir with their piers, arcades, flying buttresses, vaults and oak roofs; the west front with its portals, rose and towers; the transept, the crossing and the spire; and the apse, with the longest flyers in the building. Every piece is a separate stone or timber, and every one carries real load.</p>
-  </div>
-  <nav class="views" aria-label="Pages">
-    <a href="./" aria-current="page">Build Notre-Dame</a>
-    <a href="arch-lab/">Arch lab</a>
-  </nav>
-</header>
-
-<main class="wrap">
-  <div class="stage" id="stage">
-    <canvas id="gl" aria-label="3D model of three nave bays of Notre-Dame under construction"></canvas>
-    <div class="page" id="page" aria-live="polite"></div>
-    <div class="keys">
-      <div class="legend" id="fkey" hidden>
-        <b><i class="swatch"></i>Line of thrust</b>
-        <span id="fkeyMsg">The path the vault's weight and outward push take to the ground: through a rib, down the wall, along the flyer and into the buttress. Shown at the bay line facing you.</span>
-      </div>
-      <div class="legend" id="legend" hidden>
-        <b>Pressure on each stone, MPa</b><div class="ramp"></div>
-        <div class="ticks"><span>0.05</span><span>0.3</span><span>1</span><span>4</span></div>
-        <span>From weight alone, along a simplified load path</span>
-      </div>
-    </div>
-    <div class="insp" id="insp" hidden></div>
-    <button class="fit" id="fit">Whole building</button>
-  </div>
-  <p class="hint">Drag to turn. Scroll or pinch to zoom in where you point. Right-drag, or drag with two fingers, to slide. Double-click a piece to go to it, and the sky to see it all.</p>
-
-  <div class="bar">
-    <button id="prev" aria-label="Previous step">Back</button>
-    <button class="primary" id="next">Next step</button>
-    <button id="play">Play</button>
-    <input type="range" id="scrub" min="0" step="1" aria-label="Jump to step">
-    <span class="count" id="count"></span>
-  </div>
-  <div class="views3d">
-    <button class="toggle" id="v-forces" aria-pressed="true">Forces</button>
-    <button class="toggle" id="v-load" aria-pressed="false">Color by load</button>
-    <button class="toggle" id="v-roof" aria-pressed="true">Roof</button>
-    <button class="toggle" id="v-cut" aria-pressed="false">Cutaway</button>
-    <label class="cutpos" hidden id="cutpos">Cut at <input type="range" id="v-cutz" min="-30" max="30" step="0.1" value="1" aria-label="Cutaway position"></label>
-    <span class="sep"></span>
-    <button class="toggle" id="v-follow" aria-pressed="true">Follow the build</button>
-  </div>
-  <div class="bags" id="bags"></div>
-
-  <div class="card labpromo">
-    <p><b>Why does the vault need flying buttresses?</b> The arch lab is the same physics on one arch, in a slice: build it on its centering, strike it, and watch it stand or fall.</p>
-    <a href="arch-lab/">Open the arch lab</a>
-  </div>
-
-  <section class="notes">
-    <div class="card"><h2>What you're building</h2>
-      <p>The nave: ten bays, 60 m from the crossing to the west front. Round piers carry the arcade. A second row of piers divides the two aisles on each side, and a gallery runs over the inner one. Six-part vaults cover each pair of bays, 12 m across. At every bay line a flying buttress leaps both aisles in one flight to a buttress pier topped with a pinnacle. Then the oak roof frame.</p>
-      <p>Then the west front, 43.5 m wide: two square towers 69 m tall over the ends of the aisles, three portals, the Gallery of Kings, the rose 9.6 m across behind the Gallery of the Virgin, the grand gallery, and Emmanuel, the great bell, in the south tower. Between the towers the last bay of the nave gets a four-part vault.</p>
-      <p>Then the transept, 48 m from end to end: each arm with a six-part vault and a short end bay, a portal, a row of windows, a rose 13.1 m across and a gable. Over the crossing, on four piers, Viollet-le-Duc's spire of oak and lead, 96 m to the top of its cross: the one that fell in the fire of 2019, rebuilt to the same design, with the twelve copper apostles at its foot.</p>
-      <p>East of the crossing, the choir: two more six-part vaults, built with the nave because they are the same design (in the real cathedral they came first, from 1163). It ends in the apse, a half-circle with a double ambulatory round it, a half-umbrella vault of four ribs, and flyers about 15 m long leaping both ambulatories to buttress piers standing alone outside.</p>
-      <p>Simplified: the vault's crown is about 35 m up here (33 m in the real nave); the chapels built between the buttresses in 1235 to 1245 are left out; every bay line carries the same share of the vault; the sculpture is plain shapes and the chimeras are left out; the transept's side walls are 3 m thick and carry the vault's push alone, where the real ones share it with the aisles and buttresses around them; the apse is five-sided and its ring of chapels, added around 1300, is left out.</p></div>
-    <div class="card"><h2>The forces</h2>
-      <p>The red line is the line of thrust through the vault's ribs, down the wall, along each flyer and through each buttress pier, worked out the same way as in the arch lab. They appear when the vault's centering is struck, the moment the vault starts carrying itself.</p>
-      <p>Color by load follows each piece's weight down to the ground and divides by the area it rests on. It ignores the sideways push, so it shows how load piles up, not exact stresses.</p></div>
-    <div class="card"><h2>Next</h2>
-      <p>A treadwheel crane lifting each stone, real physics when something is removed, the cut face drawn as a solid section, and the dome of Florence built the same way.</p></div>
-  </section>
-</main>
-
-<footer class="version">Keystone <span id="version"></span></footer>
-<script type="module" src="src/main.js?v=0.6"></script>
+<p>Keystone is now <a href="/cathedral-lab/">Cathedral Lab</a>.</p>
 </body>
 </html>

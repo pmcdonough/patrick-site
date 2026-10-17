@@ -1,8 +1,10 @@
-# Keystone
+# Cathedral Lab
+
+Called Keystone until 0.6; renamed in 0.7 (site 0.91) for what it became, a lab for building cathedrals. The old address forwards here.
 
 Build a famous building piece by piece, the way a big brick architecture kit does, except every piece is a real structural element and the building stands or falls for the same reasons the real one did. The audience is a high school freshman who has built the brick kits and likes how things work, so real forces and real units are fine.
 
-Version 0.6 (site 0.90). Live at `/keystone/` (the 3D build) and `/keystone/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
+Version 0.7 (site 0.91). Live at `/cathedral-lab/` (the 3D build) and `/cathedral-lab/arch-lab/` (the arch lab). It began as two prototypes built in a chat session: a 3D proof of three bays of Notre-Dame's nave and a 2D arch lab, each a single file with the solver pasted in.
 
 ## Concept
 
@@ -27,9 +29,9 @@ Masonry as rigid blocks that push but never pull (Heyman's safe theorem). The ch
 
 Limestone at 22 kN/m³, forces per metre of vault length. Not modeled: crushing, mortar, settlement, wind, full 3D shell behavior. Load coloring is weight only, along a simplified load path: each piece passes its weight and everything on it to the pieces it rests on, in fixed shares.
 
-How the solver works (`public/keystone/src/solver.js`): for a crown height, every joint's thrust position is a ratio of two linear functions of the horizontal thrust H, so the H values where it touches either face split the line into intervals that pass or fail as a whole. It tests each interval and keeps the smallest feasible H, over a sweep of crown heights: the minimum-thrust state, the one an arch settles into once its walls lean out a hair. Minimum thickness is a bisection on that. Walls and buttress piers are rectangles checked by where the resultant of the arch's thrust and their own weight meets the base; a flying buttress is a strut that carries all of the vault's horizontal thrust to the buttress pier.
+How the solver works (`public/cathedral-lab/src/solver.js`): for a crown height, every joint's thrust position is a ratio of two linear functions of the horizontal thrust H, so the H values where it touches either face split the line into intervals that pass or fail as a whole. It tests each interval and keeps the smallest feasible H, over a sweep of crown heights: the minimum-thrust state, the one an arch settles into once its walls lean out a hair. Minimum thickness is a bisection on that. Walls and buttress piers are rectangles checked by where the resultant of the arch's thrust and their own weight meets the base; a flying buttress is a strut that carries all of the vault's horizontal thrust to the buttress pier.
 
-Checked against known results in `tools/test/keystone.test.js`: a semicircular arch's minimum thickness is 0.1075 of its radius (Milankovitch), and the solver gets 0.1075 at 41 and 81 stones; a pointed arch needs less than a round one and a catenary far less; a 1.2 m wall 20 m tall tips under a 12 m pointed vault and stands with a flying buttress.
+Checked against known results in `tools/test/cathedral-lab.test.js`: a semicircular arch's minimum thickness is 0.1075 of its radius (Milankovitch), and the solver gets 0.1075 at 41 and 81 stones; a pointed arch needs less than a round one and a catenary far less; a 1.2 m wall 20 m tall tips under a 12 m pointed vault and stands with a flying buttress.
 
 The 3D bay uses the same solver at its own dimensions (12 m pointed vault 0.7 m deep, walls 1.2 m thick to 24 m, buttress piers 3.8 m deep with pinnacles): about 39 kN per metre of outward push, 50 kN per metre in each flyer, the wall's base resultant at 0.53 of its width and the buttress's at 0.40, both inside the middle third.
 
@@ -69,6 +71,10 @@ In the model the choir's straight bays (z = -66 to -42) are a second stretch of 
 
 The apse, centred on the choir's last line: six lines at 36° (the end ones are the choir's), piers at 6.25 m (the apse) and 12.25 m (the ambulatory), the outer wall at 18.25 m in five straight runs, buttress piers from 21.85 m, so the flyers reach 15 m from the wall's outer face. The solver gives the same verdicts as in the nave (`supports()` with `gap` 15): it treats a flyer as a strut, so length does not change the push; what a long flyer makes harder is carrying its own weight, which is not modeled. The apse vault is four half-ribs (the left half of the nave's transverse arch) from the apse wall piers to the keystone of the choir's last transverse rib, and five ruled cells between them. Its thrust lines are drawn on the four apse lines; the page shows the nearest line seen broadside.
 
+## Final touches from photographs (0.7)
+
+Two pictures (an elevation and plan drawing, and an aerial photo of the chevet) showed what the model lacked: chapels between all the buttresses with a row of gables, slender flyers sweeping down steeply to tall pinnacled piers. Added: the chapels along the nave and choir (outer wall at the buttresses' outer faces, 0.9 m, a window, a gable with a small oculus and a pinnacle, a lead roof back to the old outer wall; none in the bays next to the crossing, where the transept walls stand) and the ring of five round the apse; flyers 0.45 m deep with a 0.7 m arched underside, landing at 18 m on the nave's buttresses and 16 m at the apse; pinnacles 10.9 m tall. The steeper flyers needed the gallery's outer wall and roof 0.8 m lower (`GT`). The physics: `supports()` gained `flyerTop`. Raising the flyer's head above the springing pushes the wall in (base resultant 0.69 at 27 m, 0.78 at 29 m: the inner joint opens), which is why the steepness comes from landing lower instead (wall 0.52, buttress 0.40, both in the middle third).
+
 ## Current simplifications in the 3D build
 
 - The vault's crown is about 35 m up (33 m in the real nave).
@@ -77,7 +83,7 @@ The apse, centred on the choir's last line: six lines at 36° (the end ones are 
 - The flyer is a strut carrying all the vault's horizontal thrust; its own weight is not in the thrust line.
 - The west front's sculpture is plain shapes (the kings are simple turned figures); the chimeras and gargoyles, the spiral stairs and the tower floors are left out; the portals' arches stand in front of the wall rather than in a deep splay.
 - The transept's side walls are 3 m thick and solid above the aisle openings.
-- The apse is five-sided, with as many ambulatory piers as apse piers (the real outer ambulatory has more), and its ring of chapels, added around 1300, is left out, so the chevet's buttresses stand alone.
+- The apse is five-sided, with as many ambulatory piers as apse piers (the real outer ambulatory has more). The chapels are walls, gables and flat lead roofs, with no vaults; the old outer aisle wall stays behind them instead of opening into them.
 - The apostles weigh nothing in the load model (their weight is not sourced).
 - The drop-in animation is scripted, not physics.
 
@@ -86,7 +92,7 @@ Each is said on the page.
 ## How it is built
 
 ```
-public/keystone/
+public/cathedral-lab/
   index.html, style.css      the 3D build; style.css is shared with the arch lab
   src/main.js                the 3D page: scene, booklet, step controls, Inspect, load coloring, cutaway; VERSION
   src/notre-dame.js          the building as a kit: every piece with geometry, weight, bearing area and supports, in
@@ -97,13 +103,13 @@ public/keystone/
   arch-lab/src/main.js       its page: the section drawing, the panel, Try this; VERSION
 ```
 
-- Same rules as the rest of the site: plain ES modules, no build step, every file and import carries a `?v=` stamp with Keystone's version, and `node tools/smoke.js` fails if one disagrees. `node tools/bump.js keystone 0.x` sets `VERSION` on both pages and every stamp, the vendored Three.js included.
+- Same rules as the rest of the site: plain ES modules, no build step, every file and import carries a `?v=` stamp with Cathedral Lab's version, and `node tools/smoke.js` fails if one disagrees. `node tools/bump.js cathedral 0.x` sets `VERSION` on both pages and every stamp, the vendored Three.js included.
 - Three.js is the site's only library. It is served from the site, not a CDN, like everything else. The one change to the vendored files is OrbitControls' import of `three`, pointed at `./three.module.js` with the version stamp so both load the same copy; `src/vendor/README.md` says how to upgrade.
-- The solver and the building never touch the page. Unlike the hockey engine, nothing replays a seed, so Keystone uses `Math.sin` and friends freely; the hockey engine's `detmath.js` rule does not apply.
+- The solver and the building never touch the page. Unlike the hockey engine, nothing replays a seed, so Cathedral Lab uses `Math.sin` and friends freely; the hockey engine's `detmath.js` rule does not apply.
 - The camera: scroll or pinch zooms toward the point under the pointer (the page catches the wheel before the orbit controls, which only zoom toward their target); a double tap flies to a piece or, on the sky, to the whole building; the target is kept inside the building's bounds. The line of thrust is drawn for one bay line at a time (the one nearest the camera, or just behind the cut), over the stone and without tone mapping.
 - Batches: the pieces that come and go together (same step, same removal, same material, same roof group) are merged into one mesh, about 40 for the nave, about 60 draw calls a frame with shadows. Each piece keeps its range of vertices and triangles: its colors are rewritten only when they change, picking tests a ray against piece boxes and then that piece's triangles, and the drop into place runs in the vertex shader with a delay per piece.
 - Drawn on demand: the render loop draws only when something changed (the camera, an animation, a step, a toggle, a resize). Anything that changes the scene calls `redraw()`.
-- `window.keystone` (the 3D page) and `window.archLab` are the hooks the smoke check waits on.
+- `window.cathedralLab` (the 3D page) and `window.archLab` are the hooks the smoke check waits on.
 
 ## The look
 
@@ -113,8 +119,8 @@ Matched to the Hockey Strategy Lab, not to a CAD drawing: Barlow and Barlow Cond
 
 | Run | When | Passes when |
 |---|---|---|
-| `node --test tools/test` | any change to the solver | `fail 0` (the Keystone tests run in under a second) |
-| `node tools/smoke.js` | every change | `ERRORS: []`; it loads both Keystone pages, checks the 3D graphics started and the stamps agree |
+| `node --test tools/test` | any change to the solver | `fail 0` (the Cathedral Lab tests run in under a second) |
+| `node tools/smoke.js` | every change | `ERRORS: []`; it loads both Cathedral Lab pages, checks the 3D graphics started and the stamps agree |
 
 Before shipping a visible change, look at both pages at desktop and phone widths, light and dark.
 

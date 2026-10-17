@@ -1,13 +1,13 @@
-// Keystone's 3D build: the scene, the instruction booklet, the step controls, Inspect, load coloring and the cutaway.
+// Cathedral Lab's 3D build: the scene, the instruction booklet, the step controls, Inspect, load coloring and the cutaway.
 // The building and its loads come from notre-dame.js, the force lines from the solver behind it.
 //
 // index.html loads it with a version stamp (src/main.js?v=VERSION), and every import carries the same stamp, so a
-// visitor never mixes files from two deploys. node tools/bump.js keystone 0.x sets them all; tools/smoke.js checks them.
-import * as THREE from './vendor/three.module.js?v=0.6';
-import { OrbitControls } from './vendor/OrbitControls.js?v=0.6';
-import { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.6';
+// visitor never mixes files from two deploys. node tools/bump.js cathedral 0.x sets them all; tools/smoke.js checks them.
+import * as THREE from './vendor/three.module.js?v=0.7';
+import { OrbitControls } from './vendor/OrbitControls.js?v=0.7';
+import { pieces, steps, STEP_STRUCK, HIDERS, forceLines, computeLoads, live, KIT } from './notre-dame.js?v=0.7';
 
-const VERSION = '0.6';
+const VERSION = '0.7';
 const $ = id => document.getElementById(id);
 $('version').textContent = 'v' + VERSION;
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -370,4 +370,4 @@ theme(); resize();
 // open on the finished model, like the picture on the box
 go(NSTEPS, false); frameAll(); state.camT.t0 = -1e9;
 requestAnimationFrame(tick);
-window.keystone = { go, state, steps, pieces, batches, renderer, VERSION };
+window.cathedralLab = { go, state, steps, pieces, batches, renderer, VERSION };

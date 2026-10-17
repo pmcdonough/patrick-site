@@ -1,5 +1,5 @@
-// Keystone's masonry solver: rigid-block limit analysis (Heyman). Pure functions, no page, no drawing.
-// Both Keystone pages import it, and the unit tests run it in Node (tools/test/keystone.test.js).
+// Cathedral Lab's masonry solver: rigid-block limit analysis (Heyman). Pure functions, no page, no drawing.
+// Both Cathedral Lab pages import it, and the unit tests run it in Node (tools/test/cathedral-lab.test.js).
 // Units: metres, kN, per metre depth. Arch springs at y = 0, centred on x = 0.
 export const GAMMA = 22;          // limestone, kN/m3
 export const FRICTION_DEG = 35;   // friction angle between dressed stones, degrees
@@ -164,15 +164,16 @@ export function pierCheck(xo, w, h, loads) {
 
 // Wall under the left springing, optionally with a flying buttress to an outer buttress pier. The flyer reaches `gap`
 // metres from the wall's outer face to the buttress (default 0.4 of the span: one aisle) and lands at `bheight` (default
-// 0.8 of the wall height); a nave with double aisles passes a longer gap and a taller buttress.
-export function supports(arch, st, { height: h, width: w, flyer, bdepth: wb, pinnacle, gap, bheight }) {
+// 0.8 of the wall height); a nave with double aisles passes a longer gap and a taller buttress. `flyerTop` is where the
+// flyer meets the wall (default just under the springing); a steeper flyer that leans on the wall higher up passes it.
+export function supports(arch, st, { height: h, width: w, flyer, bdepth: wb, pinnacle, gap, bheight, flyerTop }) {
   const J0 = arch.joints[0], xi = J0.A[0], xo = xi - w;
   const xs = J0.A[0] + st.sg[0] * (J0.B[0] - J0.A[0]), H = st.H;
   const wallLoads = [{ x: xs, y: h, Fx: -H, Fy: -arch.Wh }];
   const out = { xi, xo, h, w, xs, H, V: arch.Wh };
   if (flyer) {
     const g = gap ?? 0.4 * arch.S, hb = bheight ?? 0.8 * h, xbI = xo - g, xbO = xbI - wb;
-    const yA = h - Math.min(1, 0.08 * h), yB = hb, s = (yA - yB) / g;
+    const yA = flyerTop ?? h - Math.min(1, 0.08 * h), yB = hb, s = (yA - yB) / g;
     wallLoads.push({ x: xo, y: yA, Fx: H, Fy: H * s });
     const pw = wb * 0.5, ph = pinnacle ? Math.max(3, 0.3 * hb) : 0, Wpin = pinnacle ? GAMMA * pw * ph * 0.6 : 0;
     const bLoads = [{ x: xbI, y: yB, Fx: -H, Fy: -H * s }];

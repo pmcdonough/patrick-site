@@ -1,6 +1,6 @@
 # Roadmap
 
-Where each project stands at site 0.90 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
+Where each project stands at site 0.91 and what comes next, in priority order. The product thinking behind Play Review is in the product brief (a Claude doc, https://claude.ai/code/artifact/c3d91c78-39ac-48bb-8d5b-bd518179cb7d); its substance is summarized here so the repo stands on its own.
 
 ## The idea, in one paragraph
 
@@ -46,9 +46,9 @@ From the brief, in order:
 4. Observed systems per club for inference, replacing the hard-coded `OZ` table in `public/play-review/src/main.js`.
 5. Tracking data. The replay and the inferred positions are placeholders for it; everything is built so real frames would replace them without changing the scoring.
 
-## Keystone (0.6)
+## Cathedral Lab (0.7, Keystone until 0.6)
 
-The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, the transept and spire 0.5, the choir and apse 0.6), and the 2D arch lab, on one masonry solver. Possible next for the building: the chapels between the buttresses and round the apse, the sacristy, the real crossing piers. Then (`docs/KEYSTONE.md`):
+The whole of Notre-Dame in 3D since 0.6 (the nave in 0.3, the west front 0.4, the transept and spire 0.5, the choir and apse 0.6), and the 2D arch lab, on one masonry solver. Next: Amiens, the tallest complete French cathedral, as a second building (0.8); then build your own cathedral, with Beauvais as the challenge. Then (`docs/CATHEDRAL-LAB.md`):
 
 1. A treadwheel crane lifting each stone.
 2. The cut face drawn as a solid section, with the 2D thrust diagram on it.
